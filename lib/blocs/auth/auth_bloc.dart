@@ -23,7 +23,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
 
-      if (user \!= null) {
+      if (user != null) {
         emit(AuthAuthenticated(user));
       } else {
         emit(const AuthError('فشل تسجيل الدخول'));
@@ -37,7 +37,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthRegisterRequested event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
 
-    if (event.password \!= event.confirmPassword) {
+    if (event.password != event.confirmPassword) {
       emit(const AuthError('كلمات المرور غير متطابقة'));
       return;
     }
@@ -49,7 +49,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
 
-      if (user \!= null) {
+      if (user != null) {
         emit(AuthAuthenticated(user));
         emit(const AuthSuccess('تم إنشاء الحساب بنجاح'));
       } else {
@@ -74,9 +74,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthCheckStatusRequested event, Emitter<AuthState> emit) async {
     try {
       final currentUser = authService.currentUser;
-      if (currentUser \!= null) {
+      if (currentUser != null) {
         final user = await authService.getCurrentUser(currentUser.uid);
-        if (user \!= null) {
+        if (user != null) {
           emit(AuthAuthenticated(user));
         } else {
           emit(const AuthUnauthenticated());
@@ -93,7 +93,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthUserUpdated event, Emitter<AuthState> emit) async {
     try {
       final currentUser = authService.currentUser;
-      if (currentUser \!= null) {
+      if (currentUser != null) {
         await authService.updateUserProfile(
           uid: currentUser.uid,
           name: event.name,
@@ -103,7 +103,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
 
         final updatedUser = await authService.getCurrentUser(currentUser.uid);
-        if (updatedUser \!= null) {
+        if (updatedUser != null) {
           emit(AuthAuthenticated(updatedUser));
           emit(const AuthSuccess('تم تحديث البيانات بنجاح'));
         }
@@ -113,3 +113,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 }
+
+
+
+
+
+

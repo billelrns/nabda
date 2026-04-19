@@ -93,7 +93,13 @@ class CommunityPostModel {
           : DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       updatedAt: json['updatedAt'] is Timestamp
           ? (json['updatedAt'] as Timestamp).toDate()
-          : json['updatedAt'] \!= null ? DateTime.parse(json['updatedAt']) : null,
+          : json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 }
+
+
+
+
+
+

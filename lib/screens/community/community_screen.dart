@@ -88,7 +88,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       onSelected: (selected) {
         setState(() => _selectedCategory = value);
       },
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Colors.grey.shade200,
       selectedColor: const Color(0xFFE91E63),
       labelStyle: TextStyle(
         color: isSelected ? Colors.white : Colors.black,
@@ -107,7 +107,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]\!),
+        border: Border.all(color: Colors.grey.shade300!),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -150,7 +150,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             content,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.grey[700]),
+            style: TextStyle(color: Colors.grey.shade700),
           ),
           const SizedBox(height: 12),
           Row(
@@ -178,3 +178,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 }
+
+
+
+
+
+

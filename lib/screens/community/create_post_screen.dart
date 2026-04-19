@@ -98,11 +98,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               items: categories.map((category) {
                 return DropdownMenuItem(
                   value: category,
-                  child: Text(categoryLabels[category]\!),
+                  child: Text(categoryLabels[category]!),
                 );
               }).toList(),
               onChanged: (value) {
-                if (value \!= null) {
+                if (value != null) {
                   setState(() => _selectedCategory = value);
                 }
               },
@@ -135,3 +135,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 }
+
+
+
+
+
+

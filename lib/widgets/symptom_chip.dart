@@ -34,7 +34,7 @@ class _SymptomChipState extends State<SymptomChip> {
         setState(() => _isSelected = selected);
         widget.onSelected(selected);
       },
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Colors.grey.shade200,
       selectedColor: const Color(0xFFE91E63).withOpacity(0.3),
       labelStyle: TextStyle(
         color: _isSelected ? const Color(0xFFE91E63) : Colors.black,
@@ -49,3 +49,9 @@ class _SymptomChipState extends State<SymptomChip> {
     );
   }
 }
+
+
+
+
+
+

@@ -44,7 +44,7 @@ class _PostCardState extends State<PostCard> {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]\!),
+        border: Border.all(color: Colors.grey.shade300!),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -89,7 +89,7 @@ class _PostCardState extends State<PostCard> {
             widget.content,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.grey[700]),
+            style: TextStyle(color: Colors.grey.shade700),
           ),
           const SizedBox(height: 12),
           Row(
@@ -98,7 +98,7 @@ class _PostCardState extends State<PostCard> {
               GestureDetector(
                 onTap: () {
                   setState(() {
-                    _isLiked = \!_isLiked;
+                    _isLiked = !_isLiked;
                     _likes = _isLiked ? _likes + 1 : _likes - 1;
                   });
                   widget.onLike?.call();
@@ -136,3 +136,9 @@ class _PostCardState extends State<PostCard> {
     );
   }
 }
+
+
+
+
+
+

@@ -22,7 +22,7 @@ class AuthService {
       );
 
       final user = userCredential.user;
-      if (user \!= null) {
+      if (user != null) {
         final userModel = UserModel(
           id: user.uid,
           name: name,
@@ -55,7 +55,7 @@ class AuthService {
       );
 
       final user = userCredential.user;
-      if (user \!= null) {
+      if (user != null) {
         final userDoc =
             await _firestore.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
@@ -93,10 +93,10 @@ class AuthService {
   }) async {
     try {
       final updateData = <String, dynamic>{
-        if (name \!= null) 'name': name,
-        if (avatar \!= null) 'avatar': avatar,
-        if (language \!= null) 'language': language,
-        if (mode \!= null) 'mode': mode,
+        if (name != null) 'name': name,
+        if (avatar != null) 'avatar': avatar,
+        if (language != null) 'language': language,
+        if (mode != null) 'mode': mode,
         'updatedAt': DateTime.now(),
       };
 
@@ -114,3 +114,9 @@ class AuthService {
     }
   }
 }
+
+
+
+
+
+

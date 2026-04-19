@@ -90,7 +90,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildModePage() {
     return Container(
-      color: Colors.grey[50],
+      color: Colors.grey.shade50,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -155,7 +155,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFE91E63).withOpacity(0.1) : Colors.white,
           border: Border.all(
-            color: isSelected ? const Color(0xFFE91E63) : Colors.grey[300]\!,
+            color: isSelected ? const Color(0xFFE91E63) : Colors.grey.shade300!,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -180,7 +180,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     description,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Colors.grey.shade600,
                     ),
                   ),
                 ],
@@ -194,14 +194,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildFinalPage() {
     return Container(
-      color: Colors.grey[50],
+      color: Colors.grey.shade50,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.check_circle, size: 80, color: Color(0xFF00897B)),
           const SizedBox(height: 30),
           const Text(
-            'جاهزة للبدء\!',
+            'جاهزة للبدء!',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -244,3 +244,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 }
+
+
+
+
+
+

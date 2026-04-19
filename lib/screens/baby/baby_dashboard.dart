@@ -38,7 +38,7 @@ class BabyDashboard extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(
                     'عمر: 6 أشهر',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -87,7 +87,7 @@ class BabyDashboard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]\!),
+        border: Border.all(color: Colors.grey.shade300!),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -150,7 +150,7 @@ class BabyDashboard extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   age,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -160,3 +160,9 @@ class BabyDashboard extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+

@@ -62,7 +62,7 @@ class _MoodSelectorState extends State<MoodSelector> {
                       shape: BoxShape.circle,
                       color: isSelected
                           ? const Color(0xFFE91E63).withOpacity(0.2)
-                          : Colors.grey[100],
+                          : Colors.grey.shade100,
                       border: Border.all(
                         color: isSelected
                             ? const Color(0xFFE91E63)
@@ -79,7 +79,7 @@ class _MoodSelectorState extends State<MoodSelector> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    moodLabels[entry.key]\!,
+                    moodLabels[entry.key]!,
                     style: const TextStyle(fontSize: 12),
                   ),
                 ],
@@ -91,3 +91,9 @@ class _MoodSelectorState extends State<MoodSelector> {
     );
   }
 }
+
+
+
+
+
+

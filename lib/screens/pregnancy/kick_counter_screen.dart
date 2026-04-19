@@ -48,9 +48,9 @@ class _KickCounterScreenState extends State<KickCounterScreen> {
               ),
             ),
             const SizedBox(height: 30),
-            if (_startTime \!= null)
+            if (_startTime != null)
               Text(
-                'الوقت المنقضي: ${DateTime.now().difference(_startTime\!).inMinutes} دقيقة',
+                'الوقت المنقضي: ${DateTime.now().difference(_startTime!).inMinutes} دقيقة',
                 style: const TextStyle(fontSize: 16),
               ),
             const SizedBox(height: 30),
@@ -95,3 +95,9 @@ class _KickCounterScreenState extends State<KickCounterScreen> {
     );
   }
 }
+
+
+
+
+
+

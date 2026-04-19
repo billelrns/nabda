@@ -122,12 +122,12 @@ class PregnancyDashboard extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             'الوزن: حوالي 300 غرام',
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(color: Colors.grey.shade600),
           ),
           const SizedBox(height: 5),
           Text(
             'الطول: حوالي 25 سم',
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(color: Colors.grey.shade600),
           ),
         ],
       ),
@@ -142,7 +142,7 @@ class PregnancyDashboard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]\!),
+        border: Border.all(color: Colors.grey.shade300!),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -168,7 +168,7 @@ class PregnancyDashboard extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   '$date - $doctor',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -178,3 +178,9 @@ class PregnancyDashboard extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+

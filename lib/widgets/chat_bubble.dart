@@ -25,7 +25,7 @@ class ChatBubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: isUser
               ? const Color(0xFFE91E63)
-              : Colors.grey[300],
+              : Colors.grey.shade300,
           borderRadius: BorderRadius.circular(15),
         ),
         constraints: BoxConstraints(
@@ -43,16 +43,16 @@ class ChatBubble extends StatelessWidget {
                 fontSize: 15,
               ),
             ),
-            if (timestamp \!= null)
+            if (timestamp != null)
               Padding(
                 padding: const EdgeInsets.only(top: 5),
                 child: Text(
-                  '${timestamp\!.hour}:${timestamp\!.minute.toString().padLeft(2, '0')}',
+                  '${timestamp!.hour}:${timestamp!.minute.toString().padLeft(2, '0')}',
                   style: TextStyle(
                     fontSize: 11,
                     color: isUser
                         ? Colors.white70
-                        : Colors.grey[600],
+                        : Colors.grey.shade600,
                   ),
                 ),
               ),
@@ -62,3 +62,9 @@ class ChatBubble extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+

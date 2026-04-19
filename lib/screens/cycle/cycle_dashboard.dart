@@ -155,7 +155,7 @@ class _CycleDashboardState extends State<CycleDashboard> {
                   date,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: Colors.grey.shade600,
                   ),
                 ),
               ],
@@ -166,3 +166,9 @@ class _CycleDashboardState extends State<CycleDashboard> {
     );
   }
 }
+
+
+
+
+
+

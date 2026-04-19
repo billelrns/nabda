@@ -55,7 +55,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
                     decoration: BoxDecoration(
                       color: message['isUser']
                           ? const Color(0xFFE91E63)
-                          : Colors.grey[300],
+                          : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Text(
@@ -74,7 +74,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(
-                top: BorderSide(color: Colors.grey[300]\!),
+                top: BorderSide(color: Colors.grey.shade300!),
               ),
             ),
             child: Row(
@@ -123,3 +123,9 @@ class _AIChatScreenState extends State<AIChatScreen> {
     );
   }
 }
+
+
+
+
+
+

@@ -42,7 +42,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 5),
                   Text(
                     'fatima@example.com',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -116,7 +116,7 @@ class ProfileScreen extends StatelessWidget {
             Center(
               child: Text(
                 'الإصدار 1.0.0',
-                style: TextStyle(color: Colors.grey[600]),
+                style: TextStyle(color: Colors.grey.shade600),
               ),
             ),
           ],
@@ -136,7 +136,7 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: Colors.grey[200]\!),
+            bottom: BorderSide(color: Colors.grey.shade200!),
           ),
         ),
         child: Row(
@@ -156,3 +156,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+

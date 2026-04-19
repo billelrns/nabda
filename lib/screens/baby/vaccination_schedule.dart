@@ -142,7 +142,7 @@ class VaccinationSchedule extends StatelessWidget {
                       status,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: Colors.grey.shade600,
                       ),
                     ),
                   ],
@@ -166,3 +166,9 @@ class VaccinationSchedule extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+

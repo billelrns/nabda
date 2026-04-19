@@ -42,10 +42,10 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _checkAuthStatus() async {
     await Future.delayed(const Duration(seconds: 3));
 
-    if (\!mounted) return;
+    if (!mounted) return;
 
     final user = FirebaseAuth.instance.currentUser;
-    if (user \!= null) {
+    if (user != null) {
       context.go('/home');
     } else {
       context.go('/onboarding');
@@ -116,3 +116,9 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
+
+
+
+
+
+

@@ -75,7 +75,7 @@ class CycleModel {
           : DateTime.parse(json['startDate'] ?? DateTime.now().toIso8601String()),
       endDate: json['endDate'] is Timestamp
           ? (json['endDate'] as Timestamp).toDate()
-          : json['endDate'] \!= null ? DateTime.parse(json['endDate']) : null,
+          : json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
       cycleLength: json['cycleLength'] ?? 28,
       symptoms: List<String>.from(json['symptoms'] ?? []),
       mood: json['mood'] ?? 'normal',
@@ -87,3 +87,9 @@ class CycleModel {
     );
   }
 }
+
+
+
+
+
+

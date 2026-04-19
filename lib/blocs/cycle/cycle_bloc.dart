@@ -28,7 +28,7 @@ class CycleBloc extends Bloc<CycleEvent, CycleState> {
 
       final newCycle = CycleModel(
         id: const Uuid().v4(),
-        userId: _userId\!,
+        userId: _userId!,
         startDate: DateTime.now(),
         cycleLength: 28,
         createdAt: DateTime.now(),
@@ -69,7 +69,7 @@ class CycleBloc extends Bloc<CycleEvent, CycleState> {
 
       final newCycle = CycleModel(
         id: const Uuid().v4(),
-        userId: _userId\!,
+        userId: _userId!,
         startDate: DateTime.now(),
         symptoms: event.symptoms,
         mood: event.mood,
@@ -112,9 +112,9 @@ class CycleBloc extends Bloc<CycleEvent, CycleState> {
     try {
       if (state is CycleLoaded) {
         final currentState = state as CycleLoaded;
-        if (currentState.currentCycle \!= null) {
+        if (currentState.currentCycle != null) {
           final updatedCycle =
-              currentState.currentCycle\!.copyWith(cycleLength: event.length);
+              currentState.currentCycle!.copyWith(cycleLength: event.length);
           await firestoreService.updateCycle(updatedCycle);
           emit(const CycleSuccess('تم تحديث طول الدورة'));
         }
@@ -124,3 +124,9 @@ class CycleBloc extends Bloc<CycleEvent, CycleState> {
     }
   }
 }
+
+
+
+
+
+

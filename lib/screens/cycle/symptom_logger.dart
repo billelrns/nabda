@@ -79,7 +79,7 @@ class _SymptomLoggerState extends State<SymptomLogger> {
                           shape: BoxShape.circle,
                           color: isSelected
                               ? const Color(0xFFE91E63).withOpacity(0.2)
-                              : Colors.grey[100],
+                              : Colors.grey.shade100,
                           border: Border.all(
                             color: isSelected
                                 ? const Color(0xFFE91E63)
@@ -141,7 +141,7 @@ class _SymptomLoggerState extends State<SymptomLogger> {
                       }
                     });
                   },
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: Colors.grey.shade200,
                   selectedColor: const Color(0xFFE91E63).withOpacity(0.3),
                 );
               }).toList(),
@@ -194,7 +194,7 @@ class _SymptomLoggerState extends State<SymptomLogger> {
           decoration: BoxDecoration(
             color: isSelected
                 ? const Color(0xFFE91E63)
-                : Colors.grey[200],
+                : Colors.grey.shade200,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -210,3 +210,9 @@ class _SymptomLoggerState extends State<SymptomLogger> {
     );
   }
 }
+
+
+
+
+
+

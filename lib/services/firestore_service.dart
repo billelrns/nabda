@@ -133,7 +133,7 @@ class FirestoreService {
         .collection('posts')
         .orderBy('createdAt', descending: true);
 
-    if (category \!= null && category.isNotEmpty) {
+    if (category != null && category.isNotEmpty) {
       query = query.where('category', isEqualTo: category);
     }
 
@@ -150,7 +150,7 @@ class FirestoreService {
       final postData = postDoc.data() as Map<String, dynamic>;
       final likedBy = List<String>.from(postData['likedBy'] ?? []);
 
-      if (\!likedBy.contains(userId)) {
+      if (!likedBy.contains(userId)) {
         likedBy.add(userId);
         await _firestore.collection('posts').doc(postId).update({
           'likes': FieldValue.increment(1),
@@ -187,3 +187,9 @@ class FirestoreService {
     });
   }
 }
+
+
+
+
+
+

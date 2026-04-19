@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: Colors.grey.shade600,
                 ),
               ),
               const SizedBox(height: 40),
@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     onPressed: () {
                       setState(() {
-                        _obscurePassword = \!_obscurePassword;
+                        _obscurePassword = !_obscurePassword;
                       });
                     },
                   ),
@@ -173,3 +173,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+
+
+
+
+
+

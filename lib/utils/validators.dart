@@ -9,7 +9,7 @@ class AppValidators {
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
 
-    if (\!emailRegex.hasMatch(value)) {
+    if (!emailRegex.hasMatch(value)) {
       return 'البريد الإلكتروني غير صحيح';
     }
 
@@ -49,7 +49,7 @@ class AppValidators {
     }
 
     final phoneRegex = RegExp(r'^[0-9]{10,}$');
-    if (\!phoneRegex.hasMatch(value.replaceAll(RegExp(r'[^0-9]'), ''))) {
+    if (!phoneRegex.hasMatch(value.replaceAll(RegExp(r'[^0-9]'), ''))) {
       return 'رقم الهاتف غير صحيح';
     }
 
@@ -70,7 +70,7 @@ class AppValidators {
       return 'الرجاء تأكيد كلمة المرور';
     }
 
-    if (value \!= password) {
+    if (value != password) {
       return 'كلمات المرور غير متطابقة';
     }
 
@@ -105,3 +105,9 @@ class AppValidators {
     return null;
   }
 }
+
+
+
+
+
+

@@ -82,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: Colors.grey.shade600,
                 ),
               ),
               const SizedBox(height: 30),
@@ -120,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     onPressed: () {
                       setState(() {
-                        _obscurePassword = \!_obscurePassword;
+                        _obscurePassword = !_obscurePassword;
                       });
                     },
                   ),
@@ -142,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     onPressed: () {
                       setState(() {
-                        _obscureConfirm = \!_obscureConfirm;
+                        _obscureConfirm = !_obscureConfirm;
                       });
                     },
                   ),
@@ -164,7 +164,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 builder: (context, state) {
                   final isLoading = state is AuthLoading;
                   return ElevatedButton(
-                    onPressed: (isLoading || \!_acceptTerms)
+                    onPressed: (isLoading || !_acceptTerms)
                         ? null
                         : () {
                             context.read<AuthBloc>().add(
@@ -218,3 +218,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
+
+
+
+
+
+

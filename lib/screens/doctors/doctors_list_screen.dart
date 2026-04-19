@@ -71,7 +71,7 @@ class DoctorsListScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]\!),
+        border: Border.all(color: Colors.grey.shade300!),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -107,7 +107,7 @@ class DoctorsListScreen extends StatelessWidget {
                       specialty,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Colors.grey.shade600,
                       ),
                     ),
                   ],
@@ -127,7 +127,7 @@ class DoctorsListScreen extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 '($reviewCount تقييم)',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -154,3 +154,9 @@ class DoctorsListScreen extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
