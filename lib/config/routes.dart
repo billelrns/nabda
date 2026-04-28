@@ -13,6 +13,7 @@ import '../screens/baby/baby_dashboard.dart';
 import '../screens/baby/vaccination_schedule.dart';
 import '../screens/community/community_screen.dart';
 import '../screens/community/create_post_screen.dart';
+import '../screens/community/post_detail_screen.dart';
 import '../screens/ai_chat/ai_chat_screen.dart';
 import '../screens/doctors/doctors_list_screen.dart';
 import '../screens/profile/profile_screen.dart';
@@ -31,6 +32,7 @@ class AppRoutes {
   static const String vaccinationSchedule = '/vaccinations';
   static const String community = '/community';
   static const String createPost = '/create-post';
+  static const String postDetail = '/post';
   static const String aiChat = '/ai-chat';
   static const String doctors = '/doctors';
   static const String profile = '/profile';
@@ -89,6 +91,12 @@ class AppRoutes {
       GoRoute(
         path: createPost,
         builder: (context, state) => const CreatePostScreen(),
+      ),
+      GoRoute(
+        path: '/post/:postId',
+        builder: (context, state) => PostDetailScreen(
+          postId: state.pathParameters['postId']!,
+        ),
       ),
       GoRoute(
         path: aiChat,

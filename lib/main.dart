@@ -3,22 +3,162 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'firebase_options.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+// ==================== LOCALE MANAGEMENT ====================
+class LocaleNotifier extends ChangeNotifier {
+  Locale _locale = Locale('ar', 'SA');
+  Locale get locale => _locale;
+
+  Future<void> loadSavedLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString('app_language') ?? 'ar';
+    _locale = _codeToLocale(code);
+    notifyListeners();
+  }
+
+  Future<void> setLocale(String langCode) async {
+    _locale = _codeToLocale(langCode);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('app_language', langCode);
+    notifyListeners();
+  }
+
+  Locale _codeToLocale(String code) {
+    switch (code) {
+      case 'fr': return Locale('fr', 'FR');
+      case 'en': return Locale('en', 'US');
+      default: return Locale('ar', 'SA');
+    }
+  }
+}
+
+final localeNotifier = LocaleNotifier();
+
+// ==================== TRANSLATIONS ====================
+class AppLocalizations {
+  static String get currentLang => localeNotifier.locale.languageCode;
+
+  static const Map<String, Map<String, String>> _t = {
+    'app_name': {'ar': 'نبضة', 'fr': 'Nabda', 'en': 'Nabda'},
+    'womens_health': {'ar': 'صحة المرأة العربية', 'fr': 'Santé féminine', 'en': 'Women\'s Health'},
+    'home': {'ar': 'الرئيسية', 'fr': 'Accueil', 'en': 'Home'},
+    'cycle': {'ar': 'الدورة', 'fr': 'Cycle', 'en': 'Cycle'},
+    'pregnancy': {'ar': 'الحمل', 'fr': 'Grossesse', 'en': 'Pregnancy'},
+    'baby': {'ar': 'الطفل', 'fr': 'Bébé', 'en': 'Baby'},
+    'profile': {'ar': 'حسابي', 'fr': 'Profil', 'en': 'Profile'},
+    'hello': {'ar': 'مرحباً', 'fr': 'Bonjour', 'en': 'Hello'},
+    'how_are_you': {'ar': 'كيف حالك اليوم؟', 'fr': 'Comment allez-vous aujourd\'hui?', 'en': 'How are you today?'},
+    'cycle_tracking': {'ar': 'متابعة\nالدورة', 'fr': 'Suivi\ndu cycle', 'en': 'Cycle\nTracking'},
+    'pregnancy_tracking': {'ar': 'متابعة\nالحمل', 'fr': 'Suivi\ngrossesse', 'en': 'Pregnancy\nTracking'},
+    'baby_care': {'ar': 'رعاية\nالطفل', 'fr': 'Soins\nbébé', 'en': 'Baby\nCare'},
+    'ai_assistant': {'ar': 'المساعد\nالذكي', 'fr': 'Assistant\nIA', 'en': 'AI\nAssistant'},
+    'community': {'ar': 'المجتمع\nالنسائي', 'fr': 'Communauté\nféminine', 'en': 'Women\'s\nCommunity'},
+    'reminders': {'ar': 'التذكيرات', 'fr': 'Rappels', 'en': 'Reminders'},
+    'quick_tips': {'ar': 'نصائح سريعة', 'fr': 'Conseils rapides', 'en': 'Quick Tips'},
+    'tip_water': {'ar': 'اشربي 8 أكواب ماء يومياً للحفاظ على رطوبة جسمك', 'fr': 'Buvez 8 verres d\'eau par jour pour rester hydratée', 'en': 'Drink 8 glasses of water daily to stay hydrated'},
+    'tip_sleep': {'ar': 'احصلي على 7 ساعات نوم على الأقل كل ليلة', 'fr': 'Dormez au moins 7 heures chaque nuit', 'en': 'Get at least 7 hours of sleep each night'},
+    'tip_walk': {'ar': 'امشي 30 دقيقة يومياً لصحة أفضل', 'fr': 'Marchez 30 minutes par jour pour une meilleure santé', 'en': 'Walk 30 minutes daily for better health'},
+    'login': {'ar': 'تسجيل الدخول', 'fr': 'Connexion', 'en': 'Login'},
+    'register': {'ar': 'إنشاء حساب', 'fr': 'Créer un compte', 'en': 'Register'},
+    'email': {'ar': 'البريد الإلكتروني', 'fr': 'E-mail', 'en': 'Email'},
+    'password': {'ar': 'كلمة المرور', 'fr': 'Mot de passe', 'en': 'Password'},
+    'full_name': {'ar': 'الاسم الكامل', 'fr': 'Nom complet', 'en': 'Full Name'},
+    'have_account': {'ar': 'لديك حساب؟ سجّلي الدخول', 'fr': 'Déjà un compte? Connectez-vous', 'en': 'Have an account? Login'},
+    'no_account': {'ar': 'ليس لديك حساب؟ سجّلي الآن', 'fr': 'Pas de compte? Inscrivez-vous', 'en': 'No account? Register now'},
+    'logout': {'ar': 'تسجيل الخروج', 'fr': 'Déconnexion', 'en': 'Logout'},
+    'edit_name': {'ar': 'تعديل الاسم', 'fr': 'Modifier le nom', 'en': 'Edit Name'},
+    'reset_data': {'ar': 'إعادة تعيين البيانات', 'fr': 'Réinitialiser les données', 'en': 'Reset Data'},
+    'notifications': {'ar': 'الإشعارات', 'fr': 'Notifications', 'en': 'Notifications'},
+    'privacy': {'ar': 'الخصوصية', 'fr': 'Confidentialité', 'en': 'Privacy'},
+    'help': {'ar': 'المساعدة', 'fr': 'Aide', 'en': 'Help'},
+    'language': {'ar': 'اللغة', 'fr': 'Langue', 'en': 'Language'},
+    'save': {'ar': 'حفظ', 'fr': 'Enregistrer', 'en': 'Save'},
+    'cancel': {'ar': 'إلغاء', 'fr': 'Annuler', 'en': 'Cancel'},
+    'delete': {'ar': 'حذف', 'fr': 'Supprimer', 'en': 'Delete'},
+    'confirm': {'ar': 'تأكيد', 'fr': 'Confirmer', 'en': 'Confirm'},
+    'community_title': {'ar': 'المجتمع النسائي', 'fr': 'Communauté féminine', 'en': 'Women\'s Community'},
+    'write_post': {'ar': 'شاركي تجربتك...', 'fr': 'Partagez votre expérience...', 'en': 'Share your experience...'},
+    'post': {'ar': 'نشر', 'fr': 'Publier', 'en': 'Post'},
+    'anonymous': {'ar': 'مجهولة', 'fr': 'Anonyme', 'en': 'Anonymous'},
+    'post_as_anonymous': {'ar': 'نشر بشكل مجهول', 'fr': 'Publier anonymement', 'en': 'Post anonymously'},
+    'new_post': {'ar': 'منشور جديد', 'fr': 'Nouveau post', 'en': 'New Post'},
+    'no_posts': {'ar': 'لا توجد منشورات بعد.\nكوني أول من يشارك!', 'fr': 'Pas encore de posts.\nSoyez la première à partager!', 'en': 'No posts yet.\nBe the first to share!'},
+    'post_hint': {'ar': 'اكتبي ما تريدين مشاركته مع المجتمع...', 'fr': 'Écrivez ce que vous souhaitez partager...', 'en': 'Write what you want to share with the community...'},
+    'category': {'ar': 'القسم', 'fr': 'Catégorie', 'en': 'Category'},
+    'cat_general': {'ar': 'عام', 'fr': 'Général', 'en': 'General'},
+    'cat_cycle': {'ar': 'الدورة الشهرية', 'fr': 'Cycle menstruel', 'en': 'Menstrual Cycle'},
+    'cat_pregnancy': {'ar': 'الحمل', 'fr': 'Grossesse', 'en': 'Pregnancy'},
+    'cat_baby': {'ar': 'رعاية الطفل', 'fr': 'Soins bébé', 'en': 'Baby Care'},
+    'cat_nutrition': {'ar': 'التغذية', 'fr': 'Nutrition', 'en': 'Nutrition'},
+    'cat_mental': {'ar': 'الصحة النفسية', 'fr': 'Santé mentale', 'en': 'Mental Health'},
+    'all': {'ar': 'الكل', 'fr': 'Tout', 'en': 'All'},
+    'period_phase': {'ar': 'فترة الدورة', 'fr': 'Période menstruelle', 'en': 'Period Phase'},
+    'fertile_phase': {'ar': 'فترة الخصوبة', 'fr': 'Période fertile', 'en': 'Fertile Phase'},
+    'regular_phase': {'ar': 'فترة عادية', 'fr': 'Période normale', 'en': 'Regular Phase'},
+    'day_of': {'ar': 'اليوم', 'fr': 'Jour', 'en': 'Day'},
+    'of_days': {'ar': 'من', 'fr': 'de', 'en': 'of'},
+    'reminders_subtitle': {'ar': 'الدورة • الماء • الدواء • التطعيم', 'fr': 'Cycle • Eau • Médicament • Vaccin', 'en': 'Cycle • Water • Medicine • Vaccine'},
+    'posted': {'ar': 'نُشر', 'fr': 'Publié', 'en': 'Posted'},
+    'just_now': {'ar': 'الآن', 'fr': 'À l\'instant', 'en': 'Just now'},
+    'minutes_ago': {'ar': 'دقائق', 'fr': 'minutes', 'en': 'minutes ago'},
+    'hours_ago': {'ar': 'ساعات', 'fr': 'heures', 'en': 'hours ago'},
+    'days_ago': {'ar': 'أيام', 'fr': 'jours', 'en': 'days ago'},
+  };
+
+  static String t(String key) {
+    return _t[key]?[currentLang] ?? _t[key]?['ar'] ?? key;
+  }
+
+  static bool get isRtl => currentLang == 'ar';
+  static TextDirection get textDir => isRtl ? TextDirection.rtl : TextDirection.ltr;
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize notifications
+  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const initSettings = InitializationSettings(android: androidInit);
+  try {
+    await flutterLocalNotificationsPlugin.initialize(initSettings);
+    // Request notification permission on Android 13+
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+  } catch (_) {}
+
+  await localeNotifier.loadSavedLocale();
   runApp(NabdaApp());
 }
 
 // ==================== APP ROOT ====================
-class NabdaApp extends StatelessWidget {
+class NabdaApp extends StatefulWidget {
+  @override
+  State<NabdaApp> createState() => _NabdaAppState();
+}
+
+class _NabdaAppState extends State<NabdaApp> {
+  @override
+  void initState() {
+    super.initState();
+    localeNotifier.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '\u0646\u0628\u0636\u0629',
+      title: AppLocalizations.t('app_name'),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.teal,
@@ -30,8 +170,8 @@ class NabdaApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: [Locale('ar', 'SA'), Locale('en', 'US')],
-      locale: Locale('ar', 'SA'),
+      supportedLocales: [Locale('ar', 'SA'), Locale('fr', 'FR'), Locale('en', 'US')],
+      locale: localeNotifier.locale,
       home: AuthGate(),
     );
   }
@@ -62,10 +202,359 @@ class DB {
       userDoc.collection('cycle_logs');
   static CollectionReference get babyLogs =>
       userDoc.collection('baby_logs');
+  static CollectionReference get communityPosts =>
+      FirebaseFirestore.instance.collection('community_posts');
 
   static String dateKey([DateTime? d]) {
     final dt = d ?? DateTime.now();
     return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+}
+
+// ==================== NOTIFICATION SERVICE ====================
+class NotifService {
+  static const _waterChannel = 'water_channel';
+  static const _cycleChannel = 'cycle_channel';
+  static const _vaccineChannel = 'vaccine_channel';
+  static const _medChannel = 'med_channel';
+
+  static Future<void> showNow(int id, String title, String body, String channel) async {
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        channel, channel,
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+      ),
+    );
+    try {
+      await flutterLocalNotificationsPlugin.show(id, title, body, details);
+    } catch (_) {}
+  }
+
+  static Future<void> scheduleWaterReminders(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('water_reminder', enabled);
+    // Cancel existing
+    for (int i = 100; i < 120; i++) {
+      await flutterLocalNotificationsPlugin.cancel(i);
+    }
+    if (!enabled) return;
+    // Schedule every 2 hours from 8am to 10pm
+    final now = DateTime.now();
+    for (int h = 8; h <= 22; h += 2) {
+      var scheduled = DateTime(now.year, now.month, now.day, h, 0);
+      if (scheduled.isBefore(now)) scheduled = scheduled.add(Duration(days: 1));
+      final delay = scheduled.difference(now);
+      final id = 100 + (h ~/ 2);
+      Future.delayed(delay, () {
+        showNow(id, '\u{1F4A7} \u062A\u0630\u0643\u064A\u0631 \u0634\u0631\u0628 \u0627\u0644\u0645\u0627\u0621', '\u062D\u0627\u0646 \u0648\u0642\u062A \u0634\u0631\u0628 \u0643\u0648\u0628 \u0645\u0627\u0621! \u062D\u0627\u0641\u0638\u064A \u0639\u0644\u0649 \u062A\u0631\u0637\u064A\u0628 \u062C\u0633\u0645\u0643.', _waterChannel);
+      });
+    }
+  }
+
+  static Future<void> scheduleCycleReminder(DateTime nextPeriod) async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('cycle_reminder') ?? true;
+    await flutterLocalNotificationsPlugin.cancel(200);
+    await flutterLocalNotificationsPlugin.cancel(201);
+    if (!enabled) return;
+    // Remind 2 days before
+    final remind = nextPeriod.subtract(Duration(days: 2));
+    final now = DateTime.now();
+    if (remind.isAfter(now)) {
+      Future.delayed(remind.difference(now), () {
+        showNow(200, '\u{1F4C5} \u062A\u0630\u0643\u064A\u0631 \u0627\u0644\u062F\u0648\u0631\u0629', '\u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0642\u0627\u062F\u0645\u0629 \u0628\u0639\u062F \u064A\u0648\u0645\u064A\u0646. \u062C\u0647\u0651\u0632\u064A \u0646\u0641\u0633\u0643!', _cycleChannel);
+      });
+    }
+    // Remind on the day
+    if (nextPeriod.isAfter(now)) {
+      Future.delayed(nextPeriod.difference(now), () {
+        showNow(201, '\u{1F4C5} \u0645\u0648\u0639\u062F \u0627\u0644\u062F\u0648\u0631\u0629', '\u0627\u0644\u064A\u0648\u0645 \u0627\u0644\u0645\u0648\u0639\u062F \u0627\u0644\u0645\u062A\u0648\u0642\u0639 \u0644\u0644\u062F\u0648\u0631\u0629. \u0627\u0639\u062A\u0646\u064A \u0628\u0646\u0641\u0633\u0643!', _cycleChannel);
+      });
+    }
+  }
+
+  static Future<void> scheduleMedReminder(bool enabled, String medName, int hour, int minute) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('med_reminder', enabled);
+    await flutterLocalNotificationsPlugin.cancel(300);
+    if (!enabled) return;
+    final now = DateTime.now();
+    var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
+    if (scheduled.isBefore(now)) scheduled = scheduled.add(Duration(days: 1));
+    Future.delayed(scheduled.difference(now), () {
+      showNow(300, '\u{1F48A} \u062A\u0630\u0643\u064A\u0631 \u0627\u0644\u062F\u0648\u0627\u0621', '\u062D\u0627\u0646 \u0645\u0648\u0639\u062F \u062A\u0646\u0627\u0648\u0644 $medName', _medChannel);
+    });
+  }
+
+  static Future<void> scheduleVaccineReminder(String vaccineName, DateTime date) async {
+    final remind = date.subtract(Duration(days: 1));
+    final now = DateTime.now();
+    if (remind.isAfter(now)) {
+      Future.delayed(remind.difference(now), () {
+        showNow(400, '\u{1F489} \u062A\u0630\u0643\u064A\u0631 \u0627\u0644\u062A\u0637\u0639\u064A\u0645', '\u063A\u062F\u0627\u064B \u0645\u0648\u0639\u062F \u062A\u0637\u0639\u064A\u0645: $vaccineName', _vaccineChannel);
+      });
+    }
+  }
+}
+
+// ==================== REMINDERS PAGE ====================
+class RemindersPage extends StatefulWidget {
+  @override
+  State<RemindersPage> createState() => _RemindersPageState();
+}
+
+class _RemindersPageState extends State<RemindersPage> {
+  bool _waterReminder = false;
+  bool _cycleReminder = true;
+  bool _medReminder = false;
+  bool _vaccineReminder = true;
+  String _medName = '';
+  TimeOfDay _medTime = TimeOfDay(hour: 8, minute: 0);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _waterReminder = prefs.getBool('water_reminder') ?? false;
+      _cycleReminder = prefs.getBool('cycle_reminder') ?? true;
+      _medReminder = prefs.getBool('med_reminder') ?? false;
+      _vaccineReminder = prefs.getBool('vaccine_reminder') ?? true;
+      _medName = prefs.getString('med_name') ?? '';
+      _medTime = TimeOfDay(
+        hour: prefs.getInt('med_hour') ?? 8,
+        minute: prefs.getInt('med_minute') ?? 0,
+      );
+    });
+  }
+
+  Future<void> _savePrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('cycle_reminder', _cycleReminder);
+    await prefs.setBool('vaccine_reminder', _vaccineReminder);
+    await prefs.setString('med_name', _medName);
+    await prefs.setInt('med_hour', _medTime.hour);
+    await prefs.setInt('med_minute', _medTime.minute);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('\u0627\u0644\u062A\u0630\u0643\u064A\u0631\u0627\u062A'),
+          backgroundColor: Colors.teal,
+          foregroundColor: Colors.white,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Colors.teal.shade700, Colors.teal.shade400]),
+            ),
+          ),
+        ),
+        body: ListView(
+          padding: EdgeInsets.all(16),
+          children: [
+            // Water Reminder
+            _buildReminderCard(
+              icon: Icons.water_drop,
+              color: Colors.blue,
+              title: '\u062A\u0630\u0643\u064A\u0631 \u0634\u0631\u0628 \u0627\u0644\u0645\u0627\u0621',
+              subtitle: '\u0643\u0644 \u0633\u0627\u0639\u062A\u064A\u0646 \u0645\u0646 8 \u0635\u0628\u0627\u062D\u0627\u064B \u0625\u0644\u0649 10 \u0645\u0633\u0627\u0621\u064B',
+              value: _waterReminder,
+              onChanged: (v) async {
+                setState(() => _waterReminder = v);
+                await NotifService.scheduleWaterReminders(v);
+                if (v && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('\u062A\u0645 \u062A\u0641\u0639\u064A\u0644 \u062A\u0630\u0643\u064A\u0631 \u0634\u0631\u0628 \u0627\u0644\u0645\u0627\u0621'), backgroundColor: Colors.blue));
+                }
+              },
+            ),
+            SizedBox(height: 12),
+            // Cycle Reminder
+            _buildReminderCard(
+              icon: Icons.calendar_month,
+              color: Colors.pink,
+              title: '\u062A\u0630\u0643\u064A\u0631 \u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0634\u0647\u0631\u064A\u0629',
+              subtitle: '\u0642\u0628\u0644 \u064A\u0648\u0645\u064A\u0646 \u0645\u0646 \u0627\u0644\u0645\u0648\u0639\u062F \u0627\u0644\u0645\u062A\u0648\u0642\u0639',
+              value: _cycleReminder,
+              onChanged: (v) async {
+                setState(() => _cycleReminder = v);
+                await _savePrefs();
+                if (v && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('\u062A\u0645 \u062A\u0641\u0639\u064A\u0644 \u062A\u0630\u0643\u064A\u0631 \u0627\u0644\u062F\u0648\u0631\u0629'), backgroundColor: Colors.pink));
+                }
+              },
+            ),
+            SizedBox(height: 12),
+            // Vaccine Reminder
+            _buildReminderCard(
+              icon: Icons.vaccines,
+              color: Colors.orange,
+              title: '\u062A\u0630\u0643\u064A\u0631 \u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A',
+              subtitle: '\u0642\u0628\u0644 \u064A\u0648\u0645 \u0645\u0646 \u0645\u0648\u0639\u062F \u0627\u0644\u062A\u0637\u0639\u064A\u0645',
+              value: _vaccineReminder,
+              onChanged: (v) async {
+                setState(() => _vaccineReminder = v);
+                await _savePrefs();
+                if (v && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('\u062A\u0645 \u062A\u0641\u0639\u064A\u0644 \u062A\u0630\u0643\u064A\u0631 \u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A'), backgroundColor: Colors.orange));
+                }
+              },
+            ),
+            SizedBox(height: 12),
+            // Medicine Reminder
+            _buildReminderCard(
+              icon: Icons.medication,
+              color: Colors.green,
+              title: '\u062A\u0630\u0643\u064A\u0631 \u0627\u0644\u062F\u0648\u0627\u0621',
+              subtitle: _medReminder && _medName.isNotEmpty
+                  ? '$_medName - ${_medTime.format(context)}'
+                  : '\u062D\u062F\u062F\u064A \u0627\u0633\u0645 \u0627\u0644\u062F\u0648\u0627\u0621 \u0648\u0627\u0644\u0648\u0642\u062A',
+              value: _medReminder,
+              onChanged: (v) async {
+                if (v) {
+                  await _showMedDialog();
+                } else {
+                  setState(() => _medReminder = false);
+                  await NotifService.scheduleMedReminder(false, '', 0, 0);
+                }
+              },
+            ),
+            SizedBox(height: 24),
+            // Test notification button
+            Container(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: Icon(Icons.notifications_active),
+                label: Text('\u0627\u062E\u062A\u0628\u0627\u0631 \u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  NotifService.showNow(999, '\u0646\u0628\u0636\u0629', '\u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A \u062A\u0639\u0645\u0644 \u0628\u0646\u062C\u0627\u062D! \u{1F49C}', 'test');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('\u062A\u0645 \u0625\u0631\u0633\u0627\u0644 \u062A\u0646\u0628\u064A\u0647 \u062A\u062C\u0631\u064A\u0628\u064A'), backgroundColor: Colors.teal));
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReminderCard({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required Function(bool) onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: color.withOpacity(0.15), blurRadius: 10, offset: Offset(0, 4))],
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 28),
+        ),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        subtitle: Text(subtitle, style: TextStyle(color: Colors.grey, fontSize: 13)),
+        trailing: Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: color,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showMedDialog() async {
+    final nameController = TextEditingController(text: _medName);
+    TimeOfDay selectedTime = _medTime;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: Text('\u062A\u0630\u0643\u064A\u0631 \u0627\u0644\u062F\u0648\u0627\u0621'),
+            content: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: '\u0627\u0633\u0645 \u0627\u0644\u062F\u0648\u0627\u0621',
+                  prefixIcon: Icon(Icons.medication),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              SizedBox(height: 16),
+              InkWell(
+                onTap: () async {
+                  final t = await showTimePicker(context: ctx, initialTime: selectedTime);
+                  if (t != null) setDialogState(() => selectedTime = t);
+                },
+                child: Container(
+                  padding: EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(children: [
+                    Icon(Icons.access_time, color: Colors.teal),
+                    SizedBox(width: 8),
+                    Text('\u0627\u0644\u0648\u0642\u062A: ${selectedTime.format(ctx)}', style: TextStyle(fontSize: 16)),
+                  ]),
+                ),
+              ),
+            ]),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('\u0625\u0644\u063A\u0627\u0621')),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                child: Text('\u062D\u0641\u0638'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (result == true && nameController.text.isNotEmpty) {
+      setState(() {
+        _medReminder = true;
+        _medName = nameController.text;
+        _medTime = selectedTime;
+      });
+      await _savePrefs();
+      await NotifService.scheduleMedReminder(true, _medName, _medTime.hour, _medTime.minute);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('\u062A\u0645 \u062A\u0641\u0639\u064A\u0644 \u062A\u0630\u0643\u064A\u0631 $_medName'), backgroundColor: Colors.green));
+      }
+    }
   }
 }
 
@@ -129,8 +618,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.t;
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: AppLocalizations.textDir,
       child: Scaffold(
         body: SafeArea(
           child: SingleChildScrollView(
@@ -141,24 +631,24 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(height: 40),
                 Icon(Icons.favorite, size: 80, color: Colors.teal),
                 SizedBox(height: 12),
-                Text('\u0646\u0628\u0636\u0629', textAlign: TextAlign.center,
+                Text(tr('app_name'), textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.teal)),
-                Text('\u0635\u062D\u0629 \u0627\u0644\u0645\u0631\u0623\u0629 \u0627\u0644\u0639\u0631\u0628\u064A\u0629', textAlign: TextAlign.center,
+                Text(tr('womens_health'), textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Colors.grey)),
                 SizedBox(height: 40),
                 if (isRegister) ...[
                   TextField(controller: nameC,
-                    decoration: InputDecoration(labelText: '\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644', prefixIcon: Icon(Icons.person),
+                    decoration: InputDecoration(labelText: tr('full_name'), prefixIcon: Icon(Icons.person),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
                   SizedBox(height: 14),
                 ],
                 TextField(controller: emailC, keyboardType: TextInputType.emailAddress,
                   textDirection: TextDirection.ltr,
-                  decoration: InputDecoration(labelText: '\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A', prefixIcon: Icon(Icons.email),
+                  decoration: InputDecoration(labelText: tr('email'), prefixIcon: Icon(Icons.email),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
                 SizedBox(height: 14),
                 TextField(controller: passC, obscureText: true, textDirection: TextDirection.ltr,
-                  decoration: InputDecoration(labelText: '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631', prefixIcon: Icon(Icons.lock),
+                  decoration: InputDecoration(labelText: tr('password'), prefixIcon: Icon(Icons.lock),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
                 SizedBox(height: 20),
                 if (msg.isNotEmpty) Padding(padding: EdgeInsets.only(bottom: 12),
@@ -170,11 +660,11 @@ class _LoginPageState extends State<LoginPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   child: loading ? SizedBox(height: 20, width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(isRegister ? '\u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628' : '\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644', style: TextStyle(fontSize: 18))),
+                    : Text(isRegister ? tr('register') : tr('login'), style: TextStyle(fontSize: 18))),
                 SizedBox(height: 12),
                 TextButton(
                   onPressed: () => setState(() { isRegister = !isRegister; msg = ''; }),
-                  child: Text(isRegister ? '\u0644\u062F\u064A\u0643 \u062D\u0633\u0627\u0628\u061F \u0633\u062C\u0651\u0644\u064A \u0627\u0644\u062F\u062E\u0648\u0644' : '\u0644\u064A\u0633 \u0644\u062F\u064A\u0643 \u062D\u0633\u0627\u0628\u061F \u0633\u062C\u0651\u0644\u064A \u0627\u0644\u0622\u0646',
+                  child: Text(isRegister ? tr('have_account') : tr('no_account'),
                     style: TextStyle(fontSize: 15))),
               ],
             ),
@@ -199,18 +689,18 @@ class _MainNavState extends State<MainNav> {
   Widget build(BuildContext context) {
     final pages = [HomePage(onCardTap: goToTab), CyclePage(), PregnancyPage(), BabyPage(), ProfilePage()];
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: AppLocalizations.textDir,
       child: Scaffold(
         body: pages[_index],
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: [
-            NavigationDestination(icon: Icon(Icons.home), label: '\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629'),
-            NavigationDestination(icon: Icon(Icons.calendar_month), label: '\u0627\u0644\u062F\u0648\u0631\u0629'),
-            NavigationDestination(icon: Icon(Icons.pregnant_woman), label: '\u0627\u0644\u062D\u0645\u0644'),
-            NavigationDestination(icon: Icon(Icons.child_care), label: '\u0627\u0644\u0637\u0641\u0644'),
-            NavigationDestination(icon: Icon(Icons.person), label: '\u062D\u0633\u0627\u0628\u064A'),
+            NavigationDestination(icon: Icon(Icons.home), label: AppLocalizations.t('home')),
+            NavigationDestination(icon: Icon(Icons.calendar_month), label: AppLocalizations.t('cycle')),
+            NavigationDestination(icon: Icon(Icons.pregnant_woman), label: AppLocalizations.t('pregnancy')),
+            NavigationDestination(icon: Icon(Icons.child_care), label: AppLocalizations.t('baby')),
+            NavigationDestination(icon: Icon(Icons.person), label: AppLocalizations.t('profile')),
           ],
         ),
       ),
@@ -226,74 +716,166 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    return Scaffold(
-      appBar: AppBar(title: Text('\u0646\u0628\u0636\u0629'), backgroundColor: Colors.teal, foregroundColor: Colors.white),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: DB.userDoc.snapshots(),
-        builder: (context, snapshot) {
-          Map<String, dynamic> data = {};
-          if (snapshot.hasData && snapshot.data!.exists) {
-            data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-          }
-          int cycleDay = _calcCycleDay(data);
-          int cycleLength = (data['cycleLength'] as int?) ?? 28;
+    final tr = AppLocalizations.t;
+    return Directionality(
+      textDirection: AppLocalizations.textDir,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(tr('app_name'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.teal.shade700, Colors.teal.shade400, Colors.teal.shade300],
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.notifications_outlined),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage())),
+              tooltip: tr('reminders'),
+            ),
+          ],
+        ),
+        body: StreamBuilder<DocumentSnapshot>(
+          stream: DB.userDoc.snapshots(),
+          builder: (context, snapshot) {
+            Map<String, dynamic> data = {};
+            if (snapshot.hasData && snapshot.data!.exists) {
+              data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+            }
+            int cycleDay = _calcCycleDay(data);
+            int cycleLength = (data['cycleLength'] as int?) ?? 28;
 
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('\u0645\u0631\u062D\u0628\u0627\u064B ${user?.displayName ?? ""}!',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
-                Text('\u0643\u064A\u0641 \u062D\u0627\u0644\u0643 \u0627\u0644\u064A\u0648\u0645\u061F', style: TextStyle(fontSize: 16, color: Colors.grey)),
-                SizedBox(height: 24),
-                // Quick status card
-                if (data['lastPeriodStart'] != null)
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Welcome header with gradient
                   Container(
-                    width: double.infinity, padding: EdgeInsets.all(16),
-                    margin: EdgeInsets.only(bottom: 16),
+                    width: double.infinity,
+                    padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [Colors.pink.shade300, Colors.pink.shade100]),
-                      borderRadius: BorderRadius.circular(16)),
-                    child: Row(children: [
-                      Icon(Icons.calendar_today, color: Colors.white, size: 32),
-                      SizedBox(width: 12),
-                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('\u0627\u0644\u064A\u0648\u0645 $cycleDay \u0645\u0646 $cycleLength',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                        Text(cycleDay <= 5 ? '\u0641\u062A\u0631\u0629 \u0627\u0644\u062F\u0648\u0631\u0629' :
-                             cycleDay >= 10 && cycleDay <= 16 ? '\u0641\u062A\u0631\u0629 \u0627\u0644\u062E\u0635\u0648\u0628\u0629' :
-                             '\u0641\u062A\u0631\u0629 \u0639\u0627\u062F\u064A\u0629',
-                          style: TextStyle(color: Colors.white70)),
-                      ]),
+                      gradient: LinearGradient(
+                        colors: [Colors.teal.shade50, Colors.white],
+                        begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${tr('hello')} ${user?.displayName ?? ""}!',
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.teal.shade800)),
+                      SizedBox(height: 4),
+                      Text(tr('how_are_you'), style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
                     ]),
                   ),
-                Row(children: [
-                  _buildCard('\u0645\u062A\u0627\u0628\u0639\u0629\n\u0627\u0644\u062F\u0648\u0631\u0629', Icons.calendar_month, Colors.pink.shade100, Colors.pink, () => onCardTap?.call(1)),
-                  SizedBox(width: 12),
-                  _buildCard('\u0645\u062A\u0627\u0628\u0639\u0629\n\u0627\u0644\u062D\u0645\u0644', Icons.pregnant_woman, Colors.purple.shade100, Colors.purple, () => onCardTap?.call(2)),
-                ]),
-                SizedBox(height: 12),
-                Row(children: [
-                  _buildCard('\u0631\u0639\u0627\u064A\u0629\n\u0627\u0644\u0637\u0641\u0644', Icons.child_care, Colors.blue.shade100, Colors.blue, () => onCardTap?.call(3)),
-                  SizedBox(width: 12),
-                  _buildCard('\u0627\u0644\u0645\u0633\u0627\u0639\u062F\n\u0627\u0644\u0630\u0643\u064A', Icons.smart_toy, Colors.teal.shade100, Colors.teal, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => AIChatPage()));
-                  }),
-                ]),
-                SizedBox(height: 24),
-                Text('\u0646\u0635\u0627\u0626\u062D \u0633\u0631\u064A\u0639\u0629', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 12),
-                _tipCard('\u0627\u0634\u0631\u0628\u064A 8 \u0623\u0643\u0648\u0627\u0628 \u0645\u0627\u0621 \u064A\u0648\u0645\u064A\u0627\u064B \u0644\u0644\u062D\u0641\u0627\u0638 \u0639\u0644\u0649 \u0631\u0637\u0648\u0628\u0629 \u062C\u0633\u0645\u0643', Icons.water_drop, Colors.blue),
-                SizedBox(height: 8),
-                _tipCard('\u0627\u062D\u0635\u0644\u064A \u0639\u0644\u0649 7 \u0633\u0627\u0639\u0627\u062A \u0646\u0648\u0645 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644 \u0643\u0644 \u0644\u064A\u0644\u0629', Icons.bedtime, Colors.indigo),
-                SizedBox(height: 8),
-                _tipCard('\u0627\u0645\u0634\u064A 30 \u062F\u0642\u064A\u0642\u0629 \u064A\u0648\u0645\u064A\u0627\u064B \u0644\u0635\u062D\u0629 \u0623\u0641\u0636\u0644', Icons.directions_walk, Colors.green),
-              ],
-            ),
-          );
-        },
+                  SizedBox(height: 16),
+                  // Cycle status card
+                  if (data['lastPeriodStart'] != null)
+                    Container(
+                      width: double.infinity, padding: EdgeInsets.all(20),
+                      margin: EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: cycleDay <= 5
+                            ? [Colors.pink.shade400, Colors.pink.shade200]
+                            : cycleDay >= 10 && cycleDay <= 16
+                              ? [Colors.purple.shade400, Colors.purple.shade200]
+                              : [Colors.teal.shade400, Colors.teal.shade200],
+                          begin: Alignment.topLeft, end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [BoxShadow(color: Colors.pink.withOpacity(0.3), blurRadius: 12, offset: Offset(0, 6))],
+                      ),
+                      child: Row(children: [
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(14)),
+                          child: Icon(Icons.calendar_today, color: Colors.white, size: 32),
+                        ),
+                        SizedBox(width: 16),
+                        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('${tr('day_of')} $cycleDay ${tr('of_days')} $cycleLength',
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                          SizedBox(height: 4),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.25), borderRadius: BorderRadius.circular(8)),
+                            child: Text(cycleDay <= 5 ? tr('period_phase') :
+                                 cycleDay >= 10 && cycleDay <= 16 ? tr('fertile_phase') :
+                                 tr('regular_phase'),
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                          ),
+                        ]),
+                      ]),
+                    ),
+                  // Feature cards
+                  Row(children: [
+                    _buildCard(tr('cycle_tracking'), Icons.calendar_month, Colors.pink.shade50, Colors.pink, () => onCardTap?.call(1)),
+                    SizedBox(width: 12),
+                    _buildCard(tr('pregnancy_tracking'), Icons.pregnant_woman, Colors.purple.shade50, Colors.purple, () => onCardTap?.call(2)),
+                  ]),
+                  SizedBox(height: 12),
+                  Row(children: [
+                    _buildCard(tr('baby_care'), Icons.child_care, Colors.blue.shade50, Colors.blue, () => onCardTap?.call(3)),
+                    SizedBox(width: 12),
+                    _buildCard(tr('ai_assistant'), Icons.smart_toy, Colors.teal.shade50, Colors.teal, () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => AIChatPage()));
+                    }),
+                  ]),
+                  SizedBox(height: 12),
+                  // Community quick card
+                  Row(children: [
+                    _buildCard(tr('community'), Icons.people, Colors.pink.shade50, Color(0xFFE91E63), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityPage()));
+                    }),
+                    SizedBox(width: 12),
+                    Expanded(child: SizedBox()),
+                  ]),
+                  SizedBox(height: 12),
+                  // Reminders quick card
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage())),
+                    child: Container(
+                      width: double.infinity, padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: [Colors.amber.shade100, Colors.orange.shade50]),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.amber.shade200),
+                      ),
+                      child: Row(children: [
+                        Container(
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: Colors.amber.shade200, borderRadius: BorderRadius.circular(12)),
+                          child: Icon(Icons.notifications_active, color: Colors.orange.shade700, size: 28),
+                        ),
+                        SizedBox(width: 14),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(tr('reminders'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange.shade800)),
+                          Text(tr('reminders_subtitle'), style: TextStyle(color: Colors.orange.shade600, fontSize: 13)),
+                        ])),
+                        Icon(Icons.arrow_forward_ios, color: Colors.orange.shade400, size: 18),
+                      ]),
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  Text(tr('quick_tips'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 12),
+                  _tipCard(tr('tip_water'), Icons.water_drop, Colors.blue),
+                  SizedBox(height: 8),
+                  _tipCard(tr('tip_sleep'), Icons.bedtime, Colors.indigo),
+                  SizedBox(height: 8),
+                  _tipCard(tr('tip_walk'), Icons.directions_walk, Colors.green),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -314,10 +896,19 @@ class HomePage extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(color: fg.withOpacity(0.15), blurRadius: 8, offset: Offset(0, 4))],
+          ),
           child: Column(children: [
-            Icon(icon, size: 40, color: fg), SizedBox(height: 8),
-            Text(title, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: fg)),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(color: fg.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
+              child: Icon(icon, size: 32, color: fg),
+            ),
+            SizedBox(height: 10),
+            Text(title, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: fg, fontSize: 14)),
           ]),
         ),
       ),
@@ -328,11 +919,19 @@ class HomePage extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3))),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))],
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
       child: Row(children: [
-        Icon(icon, color: color), SizedBox(width: 12),
-        Expanded(child: Text(text, style: TextStyle(fontSize: 14))),
+        Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        SizedBox(width: 12),
+        Expanded(child: Text(text, style: TextStyle(fontSize: 14, color: Colors.grey.shade800))),
       ]),
     );
   }
@@ -1050,20 +1649,24 @@ class _BabyPageState extends State<BabyPage> {
 // ==================== PROFILE PAGE (FIRESTORE) ====================
 class ProfilePage extends StatelessWidget {
   Future<void> _editName(BuildContext context) async {
+    final tr = AppLocalizations.t;
     final user = FirebaseAuth.instance.currentUser;
     final controller = TextEditingController(text: user?.displayName ?? '');
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0627\u0633\u0645'),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(labelText: '\u0627\u0644\u0627\u0633\u0645', border: OutlineInputBorder()),
+      builder: (ctx) => Directionality(
+        textDirection: AppLocalizations.textDir,
+        child: AlertDialog(
+          title: Text(tr('edit_name')),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(labelText: tr('full_name'), border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('cancel'))),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, controller.text), child: Text(tr('save'))),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('\u0625\u0644\u063A\u0627\u0621')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, controller.text), child: Text('\u062D\u0641\u0638')),
-        ],
       ),
     );
     if (result != null && result.isNotEmpty) {
@@ -1072,82 +1675,133 @@ class ProfilePage extends StatelessWidget {
     }
   }
 
+  void _showLanguagePicker(BuildContext context) {
+    final languages = [
+      {'code': 'ar', 'name': 'العربية', 'flag': '🇸🇦'},
+      {'code': 'fr', 'name': 'Français', 'flag': '🇫🇷'},
+      {'code': 'en', 'name': 'English', 'flag': '🇺🇸'},
+    ];
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Container(
+        padding: EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(AppLocalizations.t('language'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          SizedBox(height: 16),
+          ...languages.map((lang) {
+            bool isSelected = AppLocalizations.currentLang == lang['code'];
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: ListTile(
+                leading: Text(lang['flag']!, style: TextStyle(fontSize: 28)),
+                title: Text(lang['name']!, style: TextStyle(fontSize: 18, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                trailing: isSelected ? Icon(Icons.check_circle, color: Colors.teal) : null,
+                tileColor: isSelected ? Colors.teal.shade50 : Colors.grey.shade50,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onTap: () {
+                  localeNotifier.setLocale(lang['code']!);
+                  Navigator.pop(ctx);
+                },
+              ),
+            );
+          }),
+          SizedBox(height: 12),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.t;
     final user = FirebaseAuth.instance.currentUser;
-    return Scaffold(
-      appBar: AppBar(title: Text('\u062D\u0633\u0627\u0628\u064A'), backgroundColor: Colors.teal, foregroundColor: Colors.white),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: DB.userDoc.snapshots(),
-        builder: (context, snapshot) {
-          String name = user?.displayName ?? '\u0645\u0633\u062A\u062E\u062F\u0645\u0629';
-          if (snapshot.hasData && snapshot.data!.exists) {
-            var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-            if (data['name'] != null && (data['name'] as String).isNotEmpty) {
-              name = data['name'];
+    return Directionality(
+      textDirection: AppLocalizations.textDir,
+      child: Scaffold(
+        appBar: AppBar(title: Text(tr('profile')), backgroundColor: Colors.teal, foregroundColor: Colors.white),
+        body: StreamBuilder<DocumentSnapshot>(
+          stream: DB.userDoc.snapshots(),
+          builder: (context, snapshot) {
+            String name = user?.displayName ?? tr('anonymous');
+            if (snapshot.hasData && snapshot.data!.exists) {
+              var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+              if (data['name'] != null && (data['name'] as String).isNotEmpty) {
+                name = data['name'];
+              }
             }
-          }
 
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(20),
-            child: Column(children: [
-              SizedBox(height: 20),
-              CircleAvatar(radius: 50, backgroundColor: Colors.teal.shade100,
-                child: Icon(Icons.person, size: 60, color: Colors.teal)),
-              SizedBox(height: 12),
-              Text(name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              Text(user?.email ?? '', style: TextStyle(color: Colors.grey)),
-              SizedBox(height: 30),
-              _menuItem('\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0627\u0633\u0645', Icons.edit, Colors.teal, () => _editName(context)),
-              _menuItem('\u0625\u0639\u0627\u062F\u0629 \u062A\u0639\u064A\u064A\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A', Icons.refresh, Colors.orange, () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text('\u062A\u0623\u0643\u064A\u062F'),
-                    content: Text('\u0647\u0644 \u062A\u0631\u064A\u062F\u064A\u0646 \u062D\u0630\u0641 \u062C\u0645\u064A\u0639 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A\u061F \u0644\u0627 \u064A\u0645\u0643\u0646 \u0627\u0644\u062A\u0631\u0627\u062C\u0639'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('\u0625\u0644\u063A\u0627\u0621')),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                        child: Text('\u062D\u0630\u0641')),
-                    ],
-                  ),
-                );
-                if (confirm == true) {
-                  await DB.userDoc.set({
-                    'lastPeriodStart': null,
-                    'pregnancyStartDate': null,
-                    'babyName': '',
-                    'babyBirthDate': null,
-                    'baby_weight': null,
-                    'baby_height': null,
-                  }, SetOptions(merge: true));
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('\u062A\u0645 \u0625\u0639\u0627\u062F\u0629 \u062A\u0639\u064A\u064A\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A'), backgroundColor: Colors.orange));
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(20),
+              child: Column(children: [
+                SizedBox(height: 20),
+                CircleAvatar(radius: 50, backgroundColor: Colors.teal.shade100,
+                  child: Icon(Icons.person, size: 60, color: Colors.teal)),
+                SizedBox(height: 12),
+                Text(name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text(user?.email ?? '', style: TextStyle(color: Colors.grey)),
+                SizedBox(height: 30),
+                _menuItem(tr('edit_name'), Icons.edit, Colors.teal, () => _editName(context)),
+                _menuItem(tr('language'), Icons.language, Colors.indigo, () => _showLanguagePicker(context)),
+                _menuItem(tr('reset_data'), Icons.refresh, Colors.orange, () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => Directionality(
+                      textDirection: AppLocalizations.textDir,
+                      child: AlertDialog(
+                        title: Text(tr('confirm')),
+                        content: Text(AppLocalizations.currentLang == 'ar'
+                            ? 'هل تريدين حذف جميع البيانات؟ لا يمكن التراجع'
+                            : AppLocalizations.currentLang == 'fr'
+                              ? 'Voulez-vous supprimer toutes les données? Irréversible'
+                              : 'Delete all data? This cannot be undone'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('cancel'))),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                            child: Text(tr('delete'))),
+                        ],
+                      ),
+                    ),
+                  );
+                  if (confirm == true) {
+                    await DB.userDoc.set({
+                      'lastPeriodStart': null,
+                      'pregnancyStartDate': null,
+                      'babyName': '',
+                      'babyBirthDate': null,
+                      'baby_weight': null,
+                      'baby_height': null,
+                    }, SetOptions(merge: true));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(tr('reset_data')), backgroundColor: Colors.orange));
+                    }
                   }
-                }
-              }),
-              _menuItem('\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062A', Icons.notifications, Colors.blue, null),
-              _menuItem('\u0627\u0644\u062E\u0635\u0648\u0635\u064A\u0629', Icons.lock, Colors.purple, null),
-              _menuItem('\u0627\u0644\u0645\u0633\u0627\u0639\u062F\u0629', Icons.help, Colors.green, null),
-              SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => FirebaseAuth.instance.signOut(),
-                  icon: Icon(Icons.logout),
-                  label: Text('\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062E\u0631\u0648\u062C', style: TextStyle(fontSize: 16)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red, foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                }),
+                _menuItem(tr('notifications'), Icons.notifications, Colors.blue, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage()));
+                }),
+                _menuItem(tr('privacy'), Icons.lock, Colors.purple, null),
+                _menuItem(tr('help'), Icons.help, Colors.green, null),
+                SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => FirebaseAuth.instance.signOut(),
+                    icon: Icon(Icons.logout),
+                    label: Text(tr('logout'), style: TextStyle(fontSize: 16)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red, foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  ),
                 ),
-              ),
-            ]),
-          );
-        },
+              ]),
+            );
+          },
+        ),
       ),
     );
   }
@@ -1159,9 +1813,315 @@ class ProfilePage extends StatelessWidget {
         onTap: onTap,
         leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(icon, color: color)),
         title: Text(title),
-        trailing: Icon(Icons.chevron_left),
+        trailing: Icon(AppLocalizations.isRtl ? Icons.chevron_left : Icons.chevron_right),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         tileColor: Colors.grey.shade50,
+      ),
+    );
+  }
+}
+
+// ==================== COMMUNITY PAGE ====================
+class CommunityPage extends StatefulWidget {
+  @override
+  State<CommunityPage> createState() => _CommunityPageState();
+}
+
+class _CommunityPageState extends State<CommunityPage> {
+  String _selectedCategory = 'all';
+
+  final List<String> _categoryKeys = ['all', 'cat_general', 'cat_cycle', 'cat_pregnancy', 'cat_baby', 'cat_nutrition', 'cat_mental'];
+
+  Color _categoryColor(String catKey) {
+    switch (catKey) {
+      case 'cat_cycle': return Colors.pink;
+      case 'cat_pregnancy': return Colors.purple;
+      case 'cat_baby': return Colors.blue;
+      case 'cat_nutrition': return Colors.green;
+      case 'cat_mental': return Colors.orange;
+      default: return Colors.teal;
+    }
+  }
+
+  IconData _categoryIcon(String catKey) {
+    switch (catKey) {
+      case 'cat_cycle': return Icons.calendar_month;
+      case 'cat_pregnancy': return Icons.pregnant_woman;
+      case 'cat_baby': return Icons.child_care;
+      case 'cat_nutrition': return Icons.restaurant;
+      case 'cat_mental': return Icons.psychology;
+      default: return Icons.forum;
+    }
+  }
+
+  String _timeAgo(Timestamp? ts) {
+    if (ts == null) return AppLocalizations.t('just_now');
+    final diff = DateTime.now().difference(ts.toDate());
+    if (diff.inMinutes < 1) return AppLocalizations.t('just_now');
+    if (diff.inMinutes < 60) return '${diff.inMinutes} ${AppLocalizations.t('minutes_ago')}';
+    if (diff.inHours < 24) return '${diff.inHours} ${AppLocalizations.t('hours_ago')}';
+    return '${diff.inDays} ${AppLocalizations.t('days_ago')}';
+  }
+
+  void _showNewPostDialog() {
+    final tr = AppLocalizations.t;
+    final textController = TextEditingController();
+    bool isAnonymous = false;
+    String postCategory = 'cat_general';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Directionality(
+        textDirection: AppLocalizations.textDir,
+        child: StatefulBuilder(
+          builder: (ctx, setSheetState) => Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Row(children: [
+                Icon(Icons.edit_note, color: Colors.teal, size: 28),
+                SizedBox(width: 8),
+                Text(tr('new_post'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              ]),
+              SizedBox(height: 16),
+              TextField(
+                controller: textController,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  hintText: tr('post_hint'),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
+              ),
+              SizedBox(height: 12),
+              // Category selector
+              SizedBox(
+                height: 36,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: _categoryKeys.where((k) => k != 'all').map((catKey) {
+                    bool sel = postCategory == catKey;
+                    return Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(tr(catKey), style: TextStyle(fontSize: 12)),
+                        selected: sel,
+                        selectedColor: _categoryColor(catKey).withOpacity(0.2),
+                        onSelected: (_) => setSheetState(() => postCategory = catKey),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              SizedBox(height: 8),
+              // Anonymous toggle
+              Row(children: [
+                Checkbox(
+                  value: isAnonymous,
+                  onChanged: (v) => setSheetState(() => isAnonymous = v ?? false),
+                  activeColor: Colors.teal,
+                ),
+                Text(tr('post_as_anonymous'), style: TextStyle(fontSize: 14)),
+              ]),
+              SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.send),
+                  label: Text(tr('post'), style: TextStyle(fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal, foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () async {
+                    if (textController.text.trim().isEmpty) return;
+                    final user = FirebaseAuth.instance.currentUser;
+                    await DB.communityPosts.add({
+                      'text': textController.text.trim(),
+                      'category': postCategory,
+                      'authorId': user?.uid ?? '',
+                      'authorName': isAnonymous ? '' : (user?.displayName ?? ''),
+                      'isAnonymous': isAnonymous,
+                      'likes': [],
+                      'likesCount': 0,
+                      'createdAt': FieldValue.serverTimestamp(),
+                    });
+                    Navigator.pop(ctx);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(tr('post')), backgroundColor: Colors.teal));
+                    }
+                  },
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = AppLocalizations.t;
+    Query query = DB.communityPosts.orderBy('createdAt', descending: true);
+    if (_selectedCategory != 'all') {
+      query = query.where('category', isEqualTo: _selectedCategory);
+    }
+
+    return Directionality(
+      textDirection: AppLocalizations.textDir,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(tr('community_title')),
+          backgroundColor: Color(0xFFE91E63),
+          foregroundColor: Colors.white,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Color(0xFFE91E63), Colors.pink.shade300]),
+            ),
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _showNewPostDialog,
+          backgroundColor: Color(0xFFE91E63),
+          child: Icon(Icons.add, color: Colors.white),
+        ),
+        body: Column(children: [
+          // Category filter
+          Container(
+            height: 50,
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              children: _categoryKeys.map((catKey) {
+                bool sel = _selectedCategory == (catKey == 'all' ? 'all' : catKey);
+                Color c = catKey == 'all' ? Colors.teal : _categoryColor(catKey);
+                return Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(tr(catKey), style: TextStyle(fontSize: 12, color: sel ? Colors.white : c)),
+                    selected: sel,
+                    selectedColor: c,
+                    backgroundColor: c.withOpacity(0.1),
+                    onSelected: (_) => setState(() => _selectedCategory = catKey == 'all' ? 'all' : catKey),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          // Posts feed
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: query.limit(50).snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.forum_outlined, size: 80, color: Colors.grey.shade300),
+                      SizedBox(height: 16),
+                      Text(tr('no_posts'), textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    ]),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: EdgeInsets.all(12),
+                  itemCount: snapshot.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = snapshot.data!.docs[index];
+                    final post = doc.data() as Map<String, dynamic>;
+                    final isAnon = post['isAnonymous'] == true;
+                    final authorName = isAnon ? tr('anonymous') : (post['authorName'] ?? tr('anonymous'));
+                    final catKey = post['category'] ?? 'cat_general';
+                    final color = _categoryColor(catKey);
+                    final likes = List<String>.from(post['likes'] ?? []);
+                    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+                    final isLiked = likes.contains(uid);
+
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: Offset(0, 4))],
+                      ),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        // Header
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
+                          child: Row(children: [
+                            CircleAvatar(
+                              radius: 18,
+                              backgroundColor: isAnon ? Colors.grey.shade200 : Colors.teal.shade100,
+                              child: Icon(isAnon ? Icons.person_off : Icons.person, size: 20,
+                                color: isAnon ? Colors.grey : Colors.teal),
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(authorName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              Text(_timeAgo(post['createdAt'] as Timestamp?),
+                                style: TextStyle(fontSize: 11, color: Colors.grey)),
+                            ])),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                Icon(_categoryIcon(catKey), size: 14, color: color),
+                                SizedBox(width: 4),
+                                Text(tr(catKey), style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+                              ]),
+                            ),
+                          ]),
+                        ),
+                        // Post text
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
+                          child: Text(post['text'] ?? '', style: TextStyle(fontSize: 15, height: 1.6)),
+                        ),
+                        // Actions
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+                          child: Row(children: [
+                            TextButton.icon(
+                              onPressed: () async {
+                                if (isLiked) {
+                                  await doc.reference.update({
+                                    'likes': FieldValue.arrayRemove([uid]),
+                                    'likesCount': FieldValue.increment(-1),
+                                  });
+                                } else {
+                                  await doc.reference.update({
+                                    'likes': FieldValue.arrayUnion([uid]),
+                                    'likesCount': FieldValue.increment(1),
+                                  });
+                                }
+                              },
+                              icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border,
+                                color: isLiked ? Colors.red : Colors.grey, size: 20),
+                              label: Text('${likes.length}', style: TextStyle(color: Colors.grey)),
+                            ),
+                          ]),
+                        ),
+                      ]),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ]),
       ),
     );
   }

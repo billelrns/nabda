@@ -122,7 +122,7 @@ class FirestoreService {
   // Community Post operations
   Future<void> addPost(CommunityPostModel post) async {
     try {
-      await _firestore.collection('posts').doc(post.id).set(post.toJson());
+      await _firestore.collection('community_posts').doc(post.id).set(post.toJson());
     } catch (e) {
       throw Exception('خطأ في حفظ المنشور: $e');
     }
@@ -130,7 +130,7 @@ class FirestoreService {
 
   Stream<List<CommunityPostModel>> getPosts({String? category}) {
     Query query = _firestore
-        .collection('posts')
+        .collection('community_posts')
         .orderBy('createdAt', descending: true);
 
     if (category != null && category.isNotEmpty) {
@@ -139,26 +139,52 @@ class FirestoreService {
 
     return query.snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => CommunityPostModel.fromJson(doc.data()))
+          .map((doc) => CommunityPostModel.fromJson(doc.data() as Map<String, dynamic>))
           .toList();
     });
   }
 
-  Future<void> likePost(String postId, String userId) async {
-    try {
-      final postDoc = await _firestore.collection('posts').doc(postId).get();
-      final postData = postDoc.data() as Map<String, dynamic>;
-      final likedBy = List<String>.from(postData['likedBy'] ?? []);
+  Stream<CommunityPostModel?> getPost(String postId) {
+    return _firestore
+        .collection('community_posts')
+        .doc(postId)
+        .snapshots()
+        .map((doc) => doc.exists
+            ? CommunityPostModel.fromJson(doc.data() as Map<String, dynamic>)
+            : null);
+  }
 
-      if (!likedBy.contains(userId)) {
+  Future<void> toggleLike(String postId, String userId) async {
+    try {
+      final postRef = _firestore.collection('community_posts').doc(postId);
+      final postDoc = await postRef.get();
+      final likedBy = List<String>.from(postDoc.data()?['likedBy'] ?? []);
+
+      if (likedBy.contains(userId)) {
+        likedBy.remove(userId);
+        await postRef.update({
+          'likes': FieldValue.increment(-1),
+          'likedBy': likedBy,
+        });
+      } else {
         likedBy.add(userId);
-        await _firestore.collection('posts').doc(postId).update({
+        await postRef.update({
           'likes': FieldValue.increment(1),
           'likedBy': likedBy,
         });
       }
     } catch (e) {
-      throw Exception('خطأ في إضافة إعجاب: $e');
+      throw Exception('خطأ في الإعجاب: $e');
+    }
+  }
+
+  Future<void> addComment(String postId, Map<String, dynamic> comment) async {
+    try {
+      await _firestore.collection('community_posts').doc(postId).update({
+        'comments': FieldValue.arrayUnion([comment]),
+      });
+    } catch (e) {
+      throw Exception('خطأ في إضافة التعليق: $e');
     }
   }
 

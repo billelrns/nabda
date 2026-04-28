@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:uuid/uuid.dart';
 import '../../models/cycle_model.dart';
 import '../../services/firestore_service.dart';
 import 'cycle_event.dart';
@@ -27,7 +26,7 @@ class CycleBloc extends Bloc<CycleEvent, CycleState> {
       }
 
       final newCycle = CycleModel(
-        id: const Uuid().v4(),
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         userId: _userId!,
         startDate: DateTime.now(),
         cycleLength: 28,
@@ -68,7 +67,7 @@ class CycleBloc extends Bloc<CycleEvent, CycleState> {
       }
 
       final newCycle = CycleModel(
-        id: const Uuid().v4(),
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         userId: _userId!,
         startDate: DateTime.now(),
         symptoms: event.symptoms,

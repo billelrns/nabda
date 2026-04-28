@@ -81,3 +81,5 @@ coverage/
 *.pyc
 .DS_Store
 Thumbs.db
+nabda.apk
+.claude/

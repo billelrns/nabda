@@ -41,10 +41,13 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _checkAuthStatus() async {
     await Future.delayed(const Duration(seconds: 3));
-
     if (!mounted) return;
 
-    final user = FirebaseAuth.instance.currentUser;
+    // authStateChanges().first waits for Firebase to restore auth from
+    // localStorage/cookies on web before checking — avoids false null on reload.
+    final user = await FirebaseAuth.instance.authStateChanges().first;
+    if (!mounted) return;
+
     if (user != null) {
       context.go('/home');
     } else {

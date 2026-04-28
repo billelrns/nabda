@@ -7,6 +7,7 @@ class CommunityPostModel {
   final String content;
   final String author;
   final String category; // pregnancy, cycle, baby, general
+  final String? imageUrl;
   final int likes;
   final List<String> likedBy;
   final List<Map<String, dynamic>> comments;
@@ -21,6 +22,7 @@ class CommunityPostModel {
     required this.content,
     required this.author,
     this.category = 'general',
+    this.imageUrl,
     this.likes = 0,
     this.likedBy = const [],
     this.comments = const [],
@@ -36,6 +38,7 @@ class CommunityPostModel {
     String? content,
     String? author,
     String? category,
+    String? imageUrl,
     int? likes,
     List<String>? likedBy,
     List<Map<String, dynamic>>? comments,
@@ -50,6 +53,7 @@ class CommunityPostModel {
       content: content ?? this.content,
       author: author ?? this.author,
       category: category ?? this.category,
+      imageUrl: imageUrl ?? this.imageUrl,
       likes: likes ?? this.likes,
       likedBy: likedBy ?? this.likedBy,
       comments: comments ?? this.comments,
@@ -67,6 +71,7 @@ class CommunityPostModel {
       'content': content,
       'author': author,
       'category': category,
+      'imageUrl': imageUrl,
       'likes': likes,
       'likedBy': likedBy,
       'comments': comments,
@@ -84,6 +89,7 @@ class CommunityPostModel {
       content: json['content'] ?? '',
       author: json['author'] ?? '',
       category: json['category'] ?? 'general',
+      imageUrl: json['imageUrl'] as String?,
       likes: json['likes'] ?? 0,
       likedBy: List<String>.from(json['likedBy'] ?? []),
       comments: List<Map<String, dynamic>>.from(json['comments'] ?? []),
@@ -97,9 +103,3 @@ class CommunityPostModel {
     );
   }
 }
-
-
-
-
-
-
