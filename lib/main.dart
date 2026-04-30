@@ -2390,4 +2390,9 @@ class _AIChatPageState extends State<AIChatPage> {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
             SizedBox(width: 10),
-            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))
+            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))          ]),
+        ),
+      ]),
+    );
+  }
+}
