@@ -76,30 +76,66 @@ class CommunityPostModel {
       'likedBy': likedBy,
       'comments': comments,
       'isAnonymous': isAnonymous,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
     };
   }
 
   factory CommunityPostModel.fromJson(Map<String, dynamic> json) {
+    // Handle 'likes' field: old posts saved it as array, new ones as int
+    int likesCount = 0;
+    if (json['likes'] is int) {
+      likesCount = json['likes'];
+    } else if (json['likes'] is List) {
+      likesCount = (json['likes'] as List).length;
+    } else if (json['likesCount'] is int) {
+      likesCount = json['likesCount'];
+    }
+
+    // Handle 'likedBy': old posts used 'likes' array
+    List<String> likedByList = [];
+    if (json['likedBy'] is List) {
+      likedByList = List<String>.from(json['likedBy']);
+    } else if (json['likes'] is List) {
+      likedByList = List<String>.from(json['likes']);
+    }
+
+    // Parse createdAt safely
+    DateTime createdAtDate;
+    try {
+      if (json['createdAt'] is Timestamp) {
+        createdAtDate = (json['createdAt'] as Timestamp).toDate();
+      } else if (json['createdAt'] is String) {
+        createdAtDate = DateTime.parse(json['createdAt']);
+      } else {
+        createdAtDate = DateTime.now();
+      }
+    } catch (_) {
+      createdAtDate = DateTime.now();
+    }
+
+    // Handle category: old posts used 'cat_general' format
+    String category = json['category'] ?? 'general';
+    if (category.startsWith('cat_')) {
+      category = category.substring(4);
+    }
+
     return CommunityPostModel(
       id: json['id'] ?? '',
-      userId: json['userId'] ?? '',
+      userId: json['userId'] ?? json['authorId'] ?? '',
       title: json['title'] ?? '',
-      content: json['content'] ?? '',
-      author: json['author'] ?? '',
-      category: json['category'] ?? 'general',
+      content: json['content'] ?? json['text'] ?? '',
+      author: json['author'] ?? json['authorName'] ?? '',
+      category: category,
       imageUrl: json['imageUrl'] as String?,
-      likes: json['likes'] ?? 0,
-      likedBy: List<String>.from(json['likedBy'] ?? []),
+      likes: likesCount,
+      likedBy: likedByList,
       comments: List<Map<String, dynamic>>.from(json['comments'] ?? []),
       isAnonymous: json['isAnonymous'] ?? false,
-      createdAt: json['createdAt'] is Timestamp
-          ? (json['createdAt'] as Timestamp).toDate()
-          : DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: createdAtDate,
       updatedAt: json['updatedAt'] is Timestamp
           ? (json['updatedAt'] as Timestamp).toDate()
-          : json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+          : null,
     );
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+// Navigation uses Navigator.push/pop
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
@@ -94,7 +94,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
-      context.go('/login');
+      Navigator.pushReplacementNamed(context, '/login');
       return;
     }
 
@@ -125,7 +125,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
       if (mounted) {
         _showSnackbar('تم نشر المنشور بنجاح ✓', success: true);
-        context.pop();
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) _showSnackbar('حدث خطأ أثناء النشر، حاولي مرة أخرى');

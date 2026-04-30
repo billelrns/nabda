@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'create_post_screen.dart';
+import 'post_detail_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/community_post_model.dart';
@@ -48,7 +49,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         centerTitle: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/create-post'),
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen())),
         backgroundColor: const Color(0xFFE91E63),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.edit_outlined),
@@ -173,7 +174,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => context.push('/post/${post.id}'),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostDetailScreen(postId: post.id))),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -281,7 +282,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     icon: Icons.chat_bubble_outline_rounded,
                     label: '${post.comments.length}',
                     color: Colors.grey.shade500,
-                    onTap: () => context.push('/post/${post.id}'),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostDetailScreen(postId: post.id))),
                   ),
                   const Spacer(),
                   if (post.comments.isNotEmpty)
@@ -330,7 +331,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<void> _toggleLike(CommunityPostModel post) async {
     final uid = _currentUserId;
     if (uid == null) {
-      context.go('/login');
+      Navigator.pushReplacementNamed(context, '/login');
       return;
     }
     try {

@@ -9,6 +9,8 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'firebase_options.dart';
+import 'screens/community/community_screen.dart';
+import 'screens/pregnancy/pregnancy_weeks_screen.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -832,7 +834,7 @@ class HomePage extends StatelessWidget {
                   // Community quick card
                   Row(children: [
                     _buildCard(tr('community'), Icons.people, Colors.pink.shade50, Color(0xFFE91E63), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityPage()));
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityScreen()));
                     }),
                     SizedBox(width: 12),
                     Expanded(child: SizedBox()),
@@ -1192,101 +1194,47 @@ class _PregnancyPageState extends State<PregnancyPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644'),
-        backgroundColor: Colors.purple, foregroundColor: Colors.white,
-        actions: [
-          IconButton(icon: Icon(Icons.date_range), onPressed: _setPregnancyStart,
-            tooltip: '\u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
-        ],
-      ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: DB.userDoc.snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return _noPregnancy();
-          }
-          var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-          if (data['pregnancyStartDate'] == null) return _noPregnancy();
-
-          Timestamp ts = data['pregnancyStartDate'];
-          int daysSinceLastPeriod = DateTime.now().difference(ts.toDate()).inDays;
-          int week = (daysSinceLastPeriod / 7).floor();
-          if (week < 1) week = 1;
-          if (week > 42) week = 42;
-          int daysLeft = (40 * 7) - daysSinceLastPeriod;
-          if (daysLeft < 0) daysLeft = 0;
-          double percent = (week / 40).clamp(0.0, 1.0);
-          List<String> info = _getWeekInfo(week);
-
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(20),
-            child: Column(children: [
-              // Week header
-              Container(
-                width: double.infinity, padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [Colors.purple.shade300, Colors.purple.shade100]),
-                  borderRadius: BorderRadius.circular(20)),
-                child: Column(children: [
-                  Text('\u0627\u0644\u0623\u0633\u0628\u0648\u0639 $week', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white)),
-                  Text('$daysLeft \u064A\u0648\u0645 \u0645\u062A\u0628\u0642\u064A', style: TextStyle(fontSize: 16, color: Colors.white70)),
-                  SizedBox(height: 12),
-                  LinearProgressIndicator(value: percent, backgroundColor: Colors.white30, color: Colors.white, minHeight: 8),
-                  SizedBox(height: 8),
-                  Text('${(percent * 100).toInt()}% \u0645\u0643\u062A\u0645\u0644', style: TextStyle(color: Colors.white70)),
-                ]),
-              ),
-              SizedBox(height: 20),
-              _infoCard('\u062D\u062C\u0645 \u0627\u0644\u062C\u0646\u064A\u0646', info[0], Icons.straighten, Colors.orange),
-              SizedBox(height: 12),
-              _infoCard('\u0648\u0632\u0646 \u0627\u0644\u062C\u0646\u064A\u0646', info[1], Icons.monitor_weight, Colors.blue),
-              SizedBox(height: 12),
-              _infoCard('\u0627\u0644\u062A\u0637\u0648\u0631', info[2], Icons.hearing, Colors.green),
-              SizedBox(height: 20),
-              // Checklist from Firestore
-              Text('\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u0623\u0633\u0628\u0648\u0639\u064A\u0629', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              SizedBox(height: 12),
-              _interactiveCheck('\u062A\u0646\u0627\u0648\u0644 \u0641\u064A\u062A\u0627\u0645\u064A\u0646\u0627\u062A \u0645\u0627 \u0642\u0628\u0644 \u0627\u0644\u0648\u0644\u0627\u062F\u0629', 'vitamins'),
-              _interactiveCheck('\u0634\u0631\u0628 \u0643\u0645\u064A\u0629 \u0643\u0627\u0641\u064A\u0629 \u0645\u0646 \u0627\u0644\u0645\u0627\u0621', 'water'),
-              _interactiveCheck('\u062D\u062C\u0632 \u0645\u0648\u0639\u062F \u0641\u062D\u0635 \u0627\u0644\u0633\u0643\u0631', 'glucose'),
-              _interactiveCheck('\u0645\u0645\u0627\u0631\u0633\u0629 \u062A\u0645\u0627\u0631\u064A\u0646 \u0627\u0644\u062A\u0646\u0641\u0633', 'breathing'),
-              _interactiveCheck('\u0627\u0644\u0645\u0634\u064A 30 \u062F\u0642\u064A\u0642\u0629', 'walking'),
-              SizedBox(height: 20),
-              // Kick counter
-              Container(
-                width: double.infinity, padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(12)),
-                child: Column(children: [
-                  Text('\u0639\u062F\u0627\u062F \u062D\u0631\u0643\u0627\u062A \u0627\u0644\u062C\u0646\u064A\u0646', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  SizedBox(height: 12),
-                  Text('$kickCount', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.purple)),
-                  Text('\u062D\u0631\u0643\u0629', style: TextStyle(color: Colors.grey)),
-                  SizedBox(height: 12),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    ElevatedButton.icon(
-                      onPressed: () => setState(() => kickCount++),
-                      icon: Icon(Icons.touch_app), label: Text('\u0631\u0643\u0644\u0629!'),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white)),
-                    SizedBox(width: 12),
-                    OutlinedButton(
-                      onPressed: () async {
-                        await DB.userDoc.collection('kick_logs').doc(DB.dateKey()).set({
-                          'count': kickCount, 'date': DB.dateKey(), 'updatedAt': FieldValue.serverTimestamp()
-                        });
-                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('\u062A\u0645 \u062D\u0641\u0638 $kickCount \u062D\u0631\u0643\u0629'), backgroundColor: Colors.purple));
-                        setState(() => kickCount = 0);
-                      },
-                      child: Text('\u062D\u0641\u0638 \u0648\u0625\u0639\u0627\u062F\u0629')),
-                  ]),
-                ]),
-              ),
-            ]),
+    return StreamBuilder<DocumentSnapshot>(
+      stream: DB.userDoc.snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644'),
+              backgroundColor: Colors.purple, foregroundColor: Colors.white,
+              actions: [
+                IconButton(icon: Icon(Icons.date_range), onPressed: _setPregnancyStart,
+                  tooltip: '\u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
+              ],
+            ),
+            body: _noPregnancy(),
           );
-        },
-      ),
+        }
+        var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+        if (data['pregnancyStartDate'] == null) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644'),
+              backgroundColor: Colors.purple, foregroundColor: Colors.white,
+              actions: [
+                IconButton(icon: Icon(Icons.date_range), onPressed: _setPregnancyStart,
+                  tooltip: '\u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
+              ],
+            ),
+            body: _noPregnancy(),
+          );
+        }
+
+        Timestamp ts = data['pregnancyStartDate'];
+        int daysSinceLastPeriod = DateTime.now().difference(ts.toDate()).inDays;
+        int week = (daysSinceLastPeriod / 7).floor();
+        if (week < 1) week = 1;
+        if (week > 42) week = 42;
+        int daysLeft = (40 * 7) - daysSinceLastPeriod;
+        if (daysLeft < 0) daysLeft = 0;
+        double percent = (week / 40).clamp(0.0, 1.0);
+        return PregnancyWeeksScreen(currentWeek: week, daysLeft: daysLeft, percent: percent);
+      },
     );
   }
 
@@ -2442,10 +2390,4 @@ class _AIChatPageState extends State<AIChatPage> {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
             SizedBox(width: 10),
-            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey)),
-          ]),
-        ),
-      ]),
-    );
-  }
-}
+            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))
