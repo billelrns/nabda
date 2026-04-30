@@ -8,6 +8,75 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/pregnancy_week_articles.dart';
 
+// Fruit data mapping for all 40 weeks
+const Map<int, List<String>> _fruitData = {
+  1: ['🌱', 'بذرة خشخاش'],
+  2: ['🫐', 'حبة توت'],
+  3: ['🍚', 'حبة أرز'],
+  4: ['🌰', 'بندق صغير'],
+  5: ['🍎', 'بذرة التفاح'],
+  6: ['🥒', 'عدس'],
+  7: ['🫒', 'حمص'],
+  8: ['🍓', 'فراولة صغيرة'],
+  9: ['🍇', 'حبة العنب'],
+  10: ['🍑', 'خوخ صغير'],
+  11: ['🍋', 'ليمونة صغيرة'],
+  12: ['🥝', 'كيوي'],
+  13: ['🍑', 'خوخ متوسط'],
+  14: ['🫐', 'توت أزرق'],
+  15: ['🥬', 'تفاحة صغيرة'],
+  16: ['🍊', 'برتقالة صغيرة'],
+  17: ['🍌', 'موزة صغيرة'],
+  18: ['🍒', 'كيسان فلفل'],
+  19: ['🥒', 'خيار صغير'],
+  20: ['🍌', 'موزة'],
+  21: ['🍕', 'ذرة'],
+  22: ['🥕', 'جزرة'],
+  23: ['🥒', 'خيار متوسط'],
+  24: ['🌽', 'ذرة كاملة'],
+  25: ['🥬', 'كرة ملفوف'],
+  26: ['🥦', 'برنامج'],
+  27: ['🍆', 'باذنجان'],
+  28: ['🥔', 'حبة بطاطا'],
+  29: ['🥬', 'رأس ملفوف'],
+  30: ['🍉', 'شمام'],
+  31: ['🍈', 'كنتالوب'],
+  32: ['🍍', 'أناناس'],
+  33: ['🥝', 'جوز الهند'],
+  34: ['🍐', 'كمثرى'],
+  35: ['🍎', 'تفاح أحمر'],
+  36: ['🧅', 'بصلة'],
+  37: ['🥬', 'رومaine'],
+  38: ['🍯', 'عسل'],
+  39: ['🎃', 'يقطين صغير'],
+  40: ['🎃', 'يقطين'],
+};
+
+// Trimester-specific medical checklist items
+const Map<int, List<List<String>>> _trimesterChecklist = {
+  1: [
+    ['تناول حمض الفوليك 400 ميكروغرام يومياً', 'folic_acid'],
+    ['زيارة طبيب النساء وتسجيل الحمل', 'obgyn_register'],
+    ['إجراء اختبارات الدم الأولية', 'blood_test'],
+    ['قياس ضغط الدم', 'blood_pressure'],
+    ['الفحص الموجات الصوتية الأولى (الثلاثي)', 'ultrasound_1'],
+  ],
+  2: [
+    ['الفحص الموجات الصوتية التفصيلي', 'ultrasound_detailed'],
+    ['اختبار تحمل الجلوكوز (screening)', 'glucose_screening'],
+    ['فحص الأجسام المضادة', 'antibody_test'],
+    ['معالجة أي مشاكل صحية', 'health_issues'],
+    ['ممارسة تمارين آمنة للحمل', 'safe_exercises'],
+  ],
+  3: [
+    ['المزيد من اختبارات الموجات الصوتية', 'ultrasound_final'],
+    ['فحص انخفاض المشيمة', 'placenta_check'],
+    ['قياس كمية السائل الأمنيوسي', 'amniotic_fluid'],
+    ['اختبار المجموعة الدموية والعامل الريسوسي', 'blood_group'],
+    ['إجراء اختبار المكورات العقدية B', 'strep_b_test'],
+  ],
+};
+
 class PregnancyWeeksScreen extends StatelessWidget {
   final int? currentWeek;
   final int? daysLeft;
@@ -24,9 +93,14 @@ class PregnancyWeeksScreen extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F5F5),
-        appBar: AppBar(title: const Text('دليل الحمل أسبوعياً', style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: const Color(0xFF9C27B0), foregroundColor: Colors.white, elevation: 0, centerTitle: true),
+        backgroundColor: const Color(0xFF1A1A2E),
+        appBar: AppBar(
+          title: const Text('دليل الحمل أسبوعياً', style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: const Color(0xFF0F0F1E),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+        ),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: List.generate(3, (ti) {
@@ -39,32 +113,54 @@ class PregnancyWeeksScreen extends StatelessWidget {
             final color = [const Color(0xFF4CAF50), const Color(0xFF2196F3), const Color(0xFF9C27B0)][ti];
             final range = ['1 - 12', '13 - 27', '28 - 40'][ti];
             return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Container(width: double.infinity, margin: const EdgeInsets.only(bottom: 12),
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]), borderRadius: BorderRadius.circular(14)),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: Row(children: [
                   Icon([Icons.spa, Icons.child_friendly, Icons.favorite][ti], color: Colors.white, size: 28),
                   const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('الأسبوع $range', style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13)),
-                  ])),
-                ])),
-              ...weeks.map((a) => Card(margin: const EdgeInsets.only(bottom: 10), elevation: 1.5,
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text('الأسبوع $range', style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13)),
+                    ]),
+                  ),
+                ]),
+              ),
+              ...weeks.map((a) => Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                elevation: 2,
+                color: const Color(0xFF2A2A3E),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                child: InkWell(borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => WeekDetailScreen(article: a))),
-                  child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [
-                    Container(width: 48, height: 48,
-                      decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
-                      child: CustomPaint(painter: RealisticFetusIllustration(week: a.week, isSmall: true))),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('الأسبوع ${a.week}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      Text('${a.babySizeAr} (${a.babyLength})', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                    ])),
-                    Icon(Icons.arrow_back_ios, size: 16, color: Colors.grey.shade400),
-                  ]))))),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                        child: CustomPaint(painter: RealisticFetusIllustration(week: a.week, isSmall: true, isOnDark: true)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('الأسبوع ${a.week}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                          Text('${a.babySizeAr} (${a.babyLength})', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+                        ]),
+                      ),
+                      Icon(Icons.arrow_back_ios, size: 16, color: Colors.grey.shade600),
+                    ]),
+                  ),
+                ),
+              )),
               const SizedBox(height: 16),
             ]);
           }),
@@ -90,205 +186,853 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
   int _kickCount = 0;
 
   @override
-  void initState() { super.initState(); _loadSavedEcho(); }
+  void initState() {
+    super.initState();
+    _loadSavedEcho();
+  }
 
   Future<void> _loadSavedEcho() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) { setState(() => _loadingEcho = false); return; }
+    if (user == null) {
+      setState(() => _loadingEcho = false);
+      return;
+    }
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid)
-          .collection('echo_images').doc('week_${widget.article.week}').get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('echo_images')
+          .doc('week_${widget.article.week}')
+          .get();
       if (doc.exists && doc.data()?['imageBase64'] != null) {
-        setState(() { _echoImage = base64Decode(doc.data()!['imageBase64']); _loadingEcho = false; });
-      } else { setState(() => _loadingEcho = false); }
-    } catch (_) { setState(() => _loadingEcho = false); }
+        setState(() {
+          _echoImage = base64Decode(doc.data()!['imageBase64']);
+          _loadingEcho = false;
+        });
+      } else {
+        setState(() => _loadingEcho = false);
+      }
+    } catch (_) {
+      setState(() => _loadingEcho = false);
+    }
   }
 
   Future<void> _pickEchoImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 72, maxWidth: 1024);
     if (picked == null) return;
     final bytes = await picked.readAsBytes();
-    if (bytes.length > 500 * 1024) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الصورة كبيرة جداً'))); return; }
+    if (bytes.length > 500 * 1024) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الصورة كبيرة جداً')));
+      return;
+    }
     setState(() => _echoImage = bytes);
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid)
-          .collection('echo_images').doc('week_${widget.article.week}').set({
-        'imageBase64': base64Encode(bytes), 'week': widget.article.week, 'updatedAt': FieldValue.serverTimestamp()});
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('تم حفظ صورة الإيكو بنجاح'), backgroundColor: Colors.green.shade600));
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('echo_images')
+          .doc('week_${widget.article.week}')
+          .set({
+        'imageBase64': base64Encode(bytes),
+        'week': widget.article.week,
+        'updatedAt': FieldValue.serverTimestamp()
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: const Text('تم حفظ صورة الإيكو بنجاح'), backgroundColor: const Color(0xFF4CAF50)),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final a = widget.article;
-    final color = a.week <= 12 ? const Color(0xFF4CAF50) : a.week <= 27 ? const Color(0xFF2196F3) : const Color(0xFF9C27B0);
-    return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: CustomScrollView(slivers: [
-        SliverAppBar(expandedHeight: 300, pinned: true, backgroundColor: color, foregroundColor: Colors.white,
-          automaticallyImplyLeading: widget.currentWeek == null,
-          actions: [
-            IconButton(icon: const Icon(Icons.list_alt), tooltip: 'جميع الأسابيع',
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PregnancyWeeksScreen()))),
-            IconButton(icon: const Icon(Icons.date_range), tooltip: 'تغيير تاريخ الحمل',
-              onPressed: () async {
-                final date = await showDatePicker(context: context, initialDate: DateTime.now().subtract(const Duration(days: 140)),
-                  firstDate: DateTime.now().subtract(const Duration(days: 280)), lastDate: DateTime.now());
-                if (date != null) { final user = FirebaseAuth.instance.currentUser;
-                  if (user != null) await FirebaseFirestore.instance.collection('users').doc(user.uid).set({'pregnancyStartDate': Timestamp.fromDate(date)}, SetOptions(merge: true));
-                }
-              }),
+    final color = a.week <= 12
+        ? const Color(0xFF4CAF50)
+        : a.week <= 27
+            ? const Color(0xFF2196F3)
+            : const Color(0xFF9C27B0);
+    final trimester = a.week <= 12 ? 1 : a.week <= 27 ? 2 : 3;
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF1A1A2E),
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 340,
+              pinned: true,
+              backgroundColor: const Color(0xFF0F0F1E),
+              foregroundColor: Colors.white,
+              automaticallyImplyLeading: widget.currentWeek == null,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.list_alt),
+                  tooltip: 'جميع الأسابيع',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PregnancyWeeksScreen()),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.date_range),
+                  tooltip: 'تغيير تاريخ الحمل',
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().subtract(const Duration(days: 140)),
+                      firstDate: DateTime.now().subtract(const Duration(days: 280)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user != null) {
+                        await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
+                          {'pregnancyStartDate': Timestamp.fromDate(date)},
+                          SetOptions(merge: true),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text('الأسبوع ${a.week}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [const Color(0xFF0F0F1E), color.withOpacity(0.5), color.withOpacity(0.7)],
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 40),
+                      // Circular progress ring
+                      SizedBox(
+                        width: 180,
+                        height: 180,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Background circle
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white.withOpacity(0.1), width: 2),
+                              ),
+                            ),
+                            // Progress ring
+                            SizedBox(
+                              width: 180,
+                              height: 180,
+                              child: CustomPaint(
+                                painter: _ProgressRingPainter(
+                                  progress: (a.week / 40).clamp(0.0, 1.0),
+                                  color: const Color(0xFFFF6D00),
+                                ),
+                              ),
+                            ),
+                            // Fetus illustration
+                            Container(
+                              width: 140,
+                              height: 140,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [Colors.white.withOpacity(0.1), Colors.transparent],
+                                ),
+                              ),
+                              child: CustomPaint(painter: RealisticFetusIllustration(week: a.week, isOnDark: true)),
+                            ),
+                            // Week number in center
+                            Positioned(
+                              bottom: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF6D00).withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  'الأسبوع ${a.week}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Fruit comparison
+                      _fruitData[a.week] != null
+                          ? Column(
+                              children: [
+                                Text(
+                                  _fruitData[a.week]![0],
+                                  style: const TextStyle(fontSize: 32),
+                                ),
+                                Text(
+                                  _fruitData[a.week]![1],
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.85),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  a.getTrimesterAr(),
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  'حجم الجنين: ${a.babySizeAr}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : const SizedBox.shrink(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    if (widget.currentWeek != null) ...[
+                      _buildProgressCard(color),
+                      const SizedBox(height: 16),
+                    ],
+                    // Baby size card
+                    _buildArticleCard(
+                      '🍎 حجم الجنين',
+                      'عن البيبي',
+                      const Color(0xFFFF6D00),
+                      child: Column(
+                        children: [
+                          _buildSizeRow('مثل', a.babySizeAr, Icons.circle),
+                          const SizedBox(height: 12),
+                          _buildSizeRow('الطول', a.babyLength, Icons.height),
+                          const SizedBox(height: 12),
+                          _buildSizeRow('الوزن', a.babyWeight, Icons.monitor_weight_outlined),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Echo card
+                    _buildEchoCard(color),
+                    const SizedBox(height: 16),
+                    // Fetal development card
+                    _buildArticleCard(
+                      '👶 تطور الجنين',
+                      'عن البيبي',
+                      const Color(0xFF4CAF50),
+                      child: Text(
+                        a.fetalDevAr,
+                        style: const TextStyle(fontSize: 14, height: 1.8, color: Colors.white70),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Mother symptoms card
+                    _buildArticleCard(
+                      '❤️ أعراض الأم',
+                      'عن الأم',
+                      const Color(0xFFE91E63),
+                      child: Text(
+                        a.symptomsAr,
+                        style: const TextStyle(fontSize: 14, height: 1.8, color: Colors.white70),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Nutrition card
+                    _buildArticleCard(
+                      '🥗 التغذية',
+                      'التغذية',
+                      const Color(0xFFFF9800),
+                      child: Text(
+                        a.nutritionAr,
+                        style: const TextStyle(fontSize: 14, height: 1.8, color: Colors.white70),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Tips card
+                    _buildArticleCard(
+                      '💡 نصائح',
+                      'نصائح نفسية',
+                      const Color(0xFF2196F3),
+                      child: Text(
+                        a.tipsAr,
+                        style: const TextStyle(fontSize: 14, height: 1.8, color: Colors.white70),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Medical checklist
+                    if (widget.currentWeek != null) ...[
+                      _buildMedicalChecklist(trimester, color),
+                      const SizedBox(height: 16),
+                      // Kick counter
+                      _buildKickCounter(color),
+                      const SizedBox(height: 16),
+                    ],
+                    // Navigation buttons
+                    Row(
+                      children: [
+                        if (a.week > 1)
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                final p = pregnancyWeekArticles.firstWhere((x) => x.week == a.week - 1);
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => WeekDetailScreen(
+                                      article: p,
+                                      currentWeek: widget.currentWeek,
+                                      daysLeft: widget.daysLeft,
+                                      percent: widget.percent,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.arrow_forward),
+                              label: Text('الأسبوع ${a.week - 1}'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: color,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                        if (a.week > 1 && a.week < 40) const SizedBox(width: 12),
+                        if (a.week < 40)
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                final n = pregnancyWeekArticles.firstWhere((x) => x.week == a.week + 1);
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => WeekDetailScreen(
+                                      article: n,
+                                      currentWeek: widget.currentWeek,
+                                      daysLeft: widget.daysLeft,
+                                      percent: widget.percent,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.arrow_back),
+                              label: Text('الأسبوع ${a.week + 1}'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: color,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              ),
+            ),
           ],
-          flexibleSpace: FlexibleSpaceBar(
-            title: Text('الأسبوع ${a.week}', style: const TextStyle(fontWeight: FontWeight.bold)),
-            background: Container(
-              decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                colors: [const Color(0xFF1A1A2E), color.withOpacity(0.9), color])),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const SizedBox(height: 40),
-                Container(width: 160, height: 160, decoration: BoxDecoration(shape: BoxShape.circle,
-                  gradient: RadialGradient(colors: [const Color(0xFFE8B4B8).withOpacity(0.15), Colors.transparent])),
-                  child: CustomPaint(painter: RealisticFetusIllustration(week: a.week))),
-                const SizedBox(height: 8),
-                Text(a.getTrimesterAr(), style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
-                Text('حجم الجنين: ${a.babySizeAr}', style: const TextStyle(color: Colors.white70, fontSize: 13)),
-              ])))),
-        SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [
-          if (widget.currentWeek != null) ...[_buildProgress(color), const SizedBox(height: 12)],
-          _card(Icons.straighten, 'حجم الجنين', color, child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            _sz('مثل', a.babySizeAr, Icons.circle), _sz('الطول', a.babyLength, Icons.height), _sz('الوزن', a.babyWeight, Icons.monitor_weight_outlined)])),
-          const SizedBox(height: 12),
-          _buildEcho(color), const SizedBox(height: 12),
-          _card(Icons.child_care, 'تطور الجنين', const Color(0xFF4CAF50), child: Text(a.fetalDevAr, style: const TextStyle(fontSize: 14, height: 1.8))),
-          const SizedBox(height: 12),
-          _card(Icons.favorite, 'أعراض الأم', const Color(0xFFE91E63), child: Text(a.symptomsAr, style: const TextStyle(fontSize: 14, height: 1.8))),
-          const SizedBox(height: 12),
-          _card(Icons.restaurant, 'نصائح التغذية', const Color(0xFFFF9800), child: Text(a.nutritionAr, style: const TextStyle(fontSize: 14, height: 1.8))),
-          const SizedBox(height: 12),
-          _card(Icons.lightbulb_outline, 'نصائح عامة', const Color(0xFF2196F3), child: Text(a.tipsAr, style: const TextStyle(fontSize: 14, height: 1.8))),
-          const SizedBox(height: 12),
-          if (widget.currentWeek != null) ...[_buildChecklist(color), const SizedBox(height: 12), _buildKicks(color), const SizedBox(height: 12)],
-          Row(children: [
-            if (a.week > 1) Expanded(child: OutlinedButton.icon(
-              onPressed: () { final p = pregnancyWeekArticles.firstWhere((x) => x.week == a.week - 1);
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => WeekDetailScreen(article: p, currentWeek: widget.currentWeek, daysLeft: widget.daysLeft, percent: widget.percent))); },
-              icon: const Icon(Icons.arrow_forward), label: Text('الأسبوع ${a.week - 1}'),
-              style: OutlinedButton.styleFrom(foregroundColor: color, padding: const EdgeInsets.symmetric(vertical: 12)))),
-            if (a.week > 1 && a.week < 40) const SizedBox(width: 12),
-            if (a.week < 40) Expanded(child: ElevatedButton.icon(
-              onPressed: () { final n = pregnancyWeekArticles.firstWhere((x) => x.week == a.week + 1);
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => WeekDetailScreen(article: n, currentWeek: widget.currentWeek, daysLeft: widget.daysLeft, percent: widget.percent))); },
-              icon: const Icon(Icons.arrow_back), label: Text('الأسبوع ${a.week + 1}'),
-              style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)))),
-          ]),
-          const SizedBox(height: 30),
-        ]))),
-      ])));
+        ),
+      ),
+    );
   }
 
-  Widget _buildProgress(Color c) {
+  Widget _buildProgressCard(Color color) {
     final w = widget.currentWeek ?? widget.article.week;
     final d = widget.daysLeft ?? max(0, (40 * 7) - (w * 7));
     final p = widget.percent ?? (w / 40).clamp(0.0, 1.0);
-    return Container(width: double.infinity, padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(gradient: LinearGradient(colors: [c, c.withOpacity(0.7)]), borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: c.withOpacity(0.25), blurRadius: 10, offset: const Offset(0, 4))]),
-      child: Column(children: [
-        Text('الأسبوع $w', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white)),
-        const SizedBox(height: 6), Text('$d يوم متبقي', style: const TextStyle(fontSize: 15, color: Colors.white70)),
-        const SizedBox(height: 14),
-        ClipRRect(borderRadius: BorderRadius.circular(8), child: LinearProgressIndicator(value: p, backgroundColor: Colors.white30, color: Colors.white, minHeight: 10)),
-        const SizedBox(height: 8), Text('${(p * 100).toInt()}% مكتمل', style: const TextStyle(color: Colors.white70, fontSize: 13)),
-      ]));
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: color.withOpacity(0.25), blurRadius: 10, offset: const Offset(0, 4))
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'الأسبوع $w',
+            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$d يوم متبقي',
+            style: const TextStyle(fontSize: 15, color: Colors.white70),
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: p,
+              backgroundColor: Colors.white30,
+              color: Colors.white,
+              minHeight: 10,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${(p * 100).toInt()}% مكتمل',
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildChecklist(Color c) {
-    final user = FirebaseAuth.instance.currentUser; if (user == null) return const SizedBox.shrink();
+  Widget _buildArticleCard(
+    String title,
+    String category,
+    Color accentColor, {
+    required Widget child,
+  }) {
+    return Card(
+      elevation: 2,
+      color: const Color(0xFF2A2A3E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: accentColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    category,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSizeRow(String label, String value, IconData icon) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: const Color(0xFFFF6D00)),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+            ),
+          ],
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          textAlign: TextAlign.right,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEchoCard(Color c) {
+    return Card(
+      elevation: 2,
+      color: const Color(0xFF2A2A3E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7B1FA2).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.camera_alt, color: Color(0xFFFF6D00), size: 20),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'صورة الإيكو / السونار 3D',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (_loadingEcho)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_echoImage != null)
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      _echoImage!,
+                      width: double.infinity,
+                      height: 220,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: GestureDetector(
+                      onTap: _pickEchoImage,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.edit, color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text('تغيير', style: TextStyle(color: Colors.white, fontSize: 12))
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              GestureDetector(
+                onTap: _pickEchoImage,
+                child: Container(
+                  width: double.infinity,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6D00).withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFF6D00).withOpacity(0.3), width: 2),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_a_photo, size: 40, color: const Color(0xFFFF6D00).withOpacity(0.5)),
+                      const SizedBox(height: 10),
+                      Text(
+                        'أضيفي صورة الإيكو أو السونار 3D',
+                        style: TextStyle(
+                          color: const Color(0xFFFF6D00).withOpacity(0.7),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMedicalChecklist(int trimester, Color c) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox.shrink();
+    
     final mk = DateTime.now().toIso8601String().substring(0, 7);
-    final items = [['تناول فيتامينات ما قبل الولادة','vitamins'],['شرب كمية كافية من الماء','water'],['حجز موعد فحص السكر','glucose'],['ممارسة تمارين التنفس','breathing'],['المشي 30 دقيقة','walking']];
-    return _card(Icons.checklist, 'قائمة المهام الأسبوعية', c, child: Column(children: items.map((i) {
-      final did = '${mk}_${i[1]}';
-      return StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').doc(user.uid).collection('weekly_checklist').doc(did).snapshots(),
-        builder: (ctx, snap) {
-          bool done = snap.hasData && snap.data!.exists && ((snap.data!.data() as Map<String, dynamic>?)?['done'] ?? false);
-          return InkWell(onTap: () => FirebaseFirestore.instance.collection('users').doc(user.uid).collection('weekly_checklist').doc(did).set(
-            {'text': i[0], 'done': !done, 'key': i[1], 'updatedAt': FieldValue.serverTimestamp()}),
-            child: Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Row(children: [
-              Icon(done ? Icons.check_circle : Icons.circle_outlined, color: done ? Colors.green : Colors.grey, size: 26),
-              const SizedBox(width: 10),
-              Expanded(child: Text(i[0], style: TextStyle(fontSize: 14, decoration: done ? TextDecoration.lineThrough : null, color: done ? Colors.grey : Colors.black87))),
-            ])));
-        });
-    }).toList()));
+    final items = _trimesterChecklist[trimester] ?? [];
+
+    return Card(
+      elevation: 2,
+      color: const Color(0xFF2A2A3E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: c.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'أسئلة للطبيب',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: c,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '📋 الفحوصات الطبية - الثلث ${['الأول', 'الثاني', 'الثالث'][trimester - 1]}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: c,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Column(
+              children: items.map((item) {
+                final did = '${mk}_${item[1]}';
+                return StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .collection('weekly_checklist')
+                      .doc(did)
+                      .snapshots(),
+                  builder: (ctx, snap) {
+                    bool done = snap.hasData &&
+                        snap.data!.exists &&
+                        ((snap.data!.data() as Map<String, dynamic>?)?['done'] ?? false);
+                    return InkWell(
+                      onTap: () => FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .collection('weekly_checklist')
+                          .doc(did)
+                          .set({
+                        'text': item[0],
+                        'done': !done,
+                        'key': item[1],
+                        'updatedAt': FieldValue.serverTimestamp()
+                      }),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            Icon(
+                              done ? Icons.check_circle : Icons.circle_outlined,
+                              color: done ? const Color(0xFF4CAF50) : Colors.grey,
+                              size: 26,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                item[0],
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  decoration: done ? TextDecoration.lineThrough : null,
+                                  color: done ? Colors.grey : Colors.white70,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  Widget _buildKicks(Color c) {
-    return _card(Icons.touch_app, 'عداد حركات الجنين', c, child: Column(children: [
-      Text('$_kickCount', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: c)),
-      const Text('حركة', style: TextStyle(color: Colors.grey)), const SizedBox(height: 12),
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        ElevatedButton.icon(onPressed: () => setState(() => _kickCount++), icon: const Icon(Icons.touch_app), label: const Text('ركلة!'),
-          style: ElevatedButton.styleFrom(backgroundColor: c, foregroundColor: Colors.white)),
-        const SizedBox(width: 12),
-        OutlinedButton(onPressed: () async {
-          final user = FirebaseAuth.instance.currentUser;
-          if (user != null) { final dk = DateTime.now().toIso8601String().substring(0, 10);
-            await FirebaseFirestore.instance.collection('users').doc(user.uid).collection('kick_logs').doc(dk).set(
-              {'count': _kickCount, 'date': dk, 'updatedAt': FieldValue.serverTimestamp()});
-            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم حفظ $_kickCount حركة'), backgroundColor: c));
-          } setState(() => _kickCount = 0);
-        }, child: const Text('حفظ وإعادة')),
-      ])]));
+  Widget _buildKickCounter(Color c) {
+    return Card(
+      elevation: 2,
+      color: const Color(0xFF2A2A3E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: c.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'مراقبة',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: c,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '👣 عداد حركات الجنين',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: c,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Text(
+                '$_kickCount',
+                style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: c),
+              ),
+            ),
+            const Text(
+              'حركة',
+              style: TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => setState(() => _kickCount++),
+                  icon: const Icon(Icons.touch_app),
+                  label: const Text('ركلة!'),
+                  style: ElevatedButton.styleFrom(backgroundColor: c, foregroundColor: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: () async {
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user != null) {
+                      final dk = DateTime.now().toIso8601String().substring(0, 10);
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .collection('kick_logs')
+                          .doc(dk)
+                          .set({
+                        'count': _kickCount,
+                        'date': dk,
+                        'updatedAt': FieldValue.serverTimestamp()
+                      });
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('تم حفظ $_kickCount حركة'), backgroundColor: c),
+                        );
+                      }
+                    }
+                    setState(() => _kickCount = 0);
+                  },
+                  style: OutlinedButton.styleFrom(foregroundColor: c),
+                  child: const Text('حفظ وإعادة'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Progress ring painter for circular progress visualization
+class _ProgressRingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _ProgressRingPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = min(size.width, size.height) / 2 - 8;
+    final strokeWidth = 6.0;
+
+    // Background circle
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = Colors.white.withOpacity(0.1)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
+
+    // Progress arc
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    canvas.drawArc(
+      rect,
+      -pi / 2,
+      2 * pi * progress,
+      false,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round,
+    );
   }
 
-  Widget _buildEcho(Color c) {
-    return Card(elevation: 1.5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xFF7B1FA2).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.camera_alt, color: Color(0xFF7B1FA2), size: 20)),
-          const SizedBox(width: 10),
-          const Text('صورة الإيكو / السونار 3D', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF7B1FA2))),
-        ]),
-        const SizedBox(height: 12),
-        if (_loadingEcho) const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
-        else if (_echoImage != null) Stack(children: [
-          ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.memory(_echoImage!, width: double.infinity, height: 220, fit: BoxFit.cover)),
-          Positioned(top: 8, left: 8, child: GestureDetector(onTap: _pickEchoImage, child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, color: Colors.white, size: 14), SizedBox(width: 4), Text('تغيير', style: TextStyle(color: Colors.white, fontSize: 12))])))),
-        ])
-        else GestureDetector(onTap: _pickEchoImage, child: Container(width: double.infinity, height: 150,
-          decoration: BoxDecoration(color: const Color(0xFF7B1FA2).withOpacity(0.05), borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF7B1FA2).withOpacity(0.3), width: 2)),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(Icons.add_a_photo, size: 40, color: const Color(0xFF7B1FA2).withOpacity(0.5)),
-            const SizedBox(height: 10),
-            Text('أضيفي صورة الإيكو أو السونار 3D', style: TextStyle(color: const Color(0xFF7B1FA2).withOpacity(0.7), fontWeight: FontWeight.bold)),
-          ]))),
-      ])));
-  }
-
-  Widget _card(IconData icon, String title, Color c, {required Widget child}) {
-    return Card(elevation: 1.5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: c.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: c, size: 20)),
-          const SizedBox(width: 10),
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: c)),
-        ]),
-        const SizedBox(height: 12), child,
-      ])));
-  }
-
-  Widget _sz(String l, String v, IconData i) {
-    return Column(children: [Icon(i, size: 24, color: Colors.grey.shade500), const SizedBox(height: 6),
-      Text(l, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)), const SizedBox(height: 2),
-      Text(v, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), textAlign: TextAlign.center)]);
-  }
+  @override
+  bool shouldRepaint(_ProgressRingPainter old) => old.progress != progress;
 }
 
 class RealisticFetusIllustration extends CustomPainter {
@@ -300,7 +1044,6 @@ class RealisticFetusIllustration extends CustomPainter {
   static const Color _skinBase = Color(0xFFE8A090);
   static const Color _skinLight = Color(0xFFF2C4B6);
   static const Color _skinDark = Color(0xFFC47A6C);
-
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -608,4 +1351,3 @@ class RealisticFetusIllustration extends CustomPainter {
   @override
   bool shouldRepaint(covariant RealisticFetusIllustration old) => old.week != week;
 }
-                                                   
