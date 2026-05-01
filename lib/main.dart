@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'firebase_options.dart';
 import 'screens/community/community_screen.dart';
 import 'screens/pregnancy/pregnancy_weeks_screen.dart';
+import 'screens/shop/shop_page.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -56,6 +57,7 @@ class AppLocalizations {
     'pregnancy': {'ar': 'الحمل', 'fr': 'Grossesse', 'en': 'Pregnancy'},
     'baby': {'ar': 'الطفل', 'fr': 'Bébé', 'en': 'Baby'},
     'profile': {'ar': 'حسابي', 'fr': 'Profil', 'en': 'Profile'},
+    'shop': {'ar': 'المتجر', 'fr': 'Boutique', 'en': 'Shop'},
     'hello': {'ar': 'مرحباً', 'fr': 'Bonjour', 'en': 'Hello'},
     'how_are_you': {'ar': 'كيف حالك اليوم؟', 'fr': 'Comment allez-vous aujourd\'hui?', 'en': 'How are you today?'},
     'cycle_tracking': {'ar': 'متابعة\nالدورة', 'fr': 'Suivi\ndu cycle', 'en': 'Cycle\nTracking'},
@@ -689,11 +691,37 @@ class _MainNavState extends State<MainNav> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [HomePage(onCardTap: goToTab), CyclePage(), PregnancyPage(), BabyPage(), ProfilePage()];
+    final pages = [HomePage(onCardTap: goToTab), CyclePage(), PregnancyPage(), BabyPage(), ShopPage()];
     return Directionality(
       textDirection: AppLocalizations.textDir,
       child: Scaffold(
-        body: pages[_index],
+        body: Stack(
+          children: [
+            pages[_index],
+            // Profile circle button at top
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              left: AppLocalizations.textDir == TextDirection.rtl ? 16 : null,
+              right: AppLocalizations.textDir == TextDirection.rtl ? null : 16,
+              child: GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage())),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 2)),
+                    ],
+                    border: Border.all(color: const Color(0xFF00897B).withOpacity(0.2), width: 1.5),
+                  ),
+                  child: const Icon(Icons.person, color: Color(0xFF00897B), size: 22),
+                ),
+              ),
+            ),
+          ],
+        ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
@@ -702,7 +730,7 @@ class _MainNavState extends State<MainNav> {
             NavigationDestination(icon: Icon(Icons.calendar_month), label: AppLocalizations.t('cycle')),
             NavigationDestination(icon: Icon(Icons.pregnant_woman), label: AppLocalizations.t('pregnancy')),
             NavigationDestination(icon: Icon(Icons.child_care), label: AppLocalizations.t('baby')),
-            NavigationDestination(icon: Icon(Icons.person), label: AppLocalizations.t('profile')),
+            NavigationDestination(icon: Icon(Icons.store), label: AppLocalizations.t('shop')),
           ],
         ),
       ),
@@ -2359,40 +2387,4 @@ class _AIChatPageState extends State<AIChatPage> {
                   bottomRight: isUser ? Radius.circular(4) : Radius.circular(16),
                 ),
               ),
-              child: Text(text, style: TextStyle(fontSize: 15, height: 1.5)),
-            ),
-          ),
-          if (isUser) ...[
-            SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.teal,
-              child: Icon(Icons.person, size: 18, color: Colors.white),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _typingIndicator() {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        CircleAvatar(radius: 16, backgroundColor: Colors.teal.shade100,
-          child: Icon(Icons.smart_toy, size: 18, color: Colors.teal)),
-        SizedBox(width: 8),
-        Container(
-          padding: EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
-            SizedBox(width: 10),
-            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))          ]),
-        ),
-      ]),
-    );
-  }
-}
+              child: Text(text, style: TextStyle(fontSize: 15, hei
