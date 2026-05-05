@@ -355,7 +355,6 @@ class _RemindersPageState extends State<RemindersPage> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(centerTitle: true,
-          centerTitle: true,
           title: Text('\u0627\u0644\u062A\u0630\u0643\u064A\u0631\u0627\u062A'),
           backgroundColor: Colors.teal,
           foregroundColor: Colors.white,
@@ -753,7 +752,6 @@ class HomePage extends StatelessWidget {
       textDirection: AppLocalizations.textDir,
       child: Scaffold(
         appBar: AppBar(centerTitle: true,
-          centerTitle: true,
           title: Text(tr('app_name'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
@@ -1955,7 +1953,6 @@ class _CommunityPageState extends State<CommunityPage> {
       textDirection: AppLocalizations.textDir,
       child: Scaffold(
         appBar: AppBar(centerTitle: true,
-          centerTitle: true,
           title: Text(tr('community_title')),
           backgroundColor: Color(0xFFE91E63),
           foregroundColor: Colors.white,
@@ -2267,7 +2264,6 @@ class _AIChatPageState extends State<AIChatPage> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(centerTitle: true,
-          centerTitle: true,
           title: Text('\u0627\u0644\u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0630\u0643\u064A'),
           backgroundColor: Colors.teal,
           foregroundColor: Colors.white,
@@ -2429,4 +2425,3 @@ class _AIChatPageState extends State<AIChatPage> {
     );
   }
 }
-                                                                                                                                      
