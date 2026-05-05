@@ -12,6 +12,7 @@ import 'firebase_options.dart';
 import 'screens/community/community_screen.dart';
 import 'screens/pregnancy/pregnancy_weeks_screen.dart';
 import 'screens/shop/shop_page.dart';
+import 'services/country_currency_service.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -141,6 +142,7 @@ void main() async {
   } catch (_) {}
 
   await localeNotifier.loadSavedLocale();
+  CountryCurrencyService().initialize();
   runApp(NabdaApp());
 }
 
@@ -2387,4 +2389,40 @@ class _AIChatPageState extends State<AIChatPage> {
                   bottomRight: isUser ? Radius.circular(4) : Radius.circular(16),
                 ),
               ),
-              child: Text(text, style: TextStyle(fontSize: 15, hei
+              child: Text(text, style: TextStyle(fontSize: 15, height: 1.5)),
+            ),
+          ),
+          if (isUser) ...[
+            SizedBox(width: 8),
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.teal,
+              child: Icon(Icons.person, size: 18, color: Colors.white),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _typingIndicator() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CircleAvatar(radius: 16, backgroundColor: Colors.teal.shade100,
+          child: Icon(Icons.smart_toy, size: 18, color: Colors.teal)),
+        SizedBox(width: 8),
+        Container(
+          padding: EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
+            SizedBox(width: 10),
+            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))          ]),
+        ),
+      ]),
+    );
+  }
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/country_currency_service.dart';
 
 // ─── Theme Colors ───
 const Color _bgColor = Color(0xFFFFF5F7);
@@ -393,12 +394,66 @@ final List<_ShopCategory> _shopCategories = [
   ]),
 ];
 
+// ─── Helper: parse DZD price from string ───
+double _parseDZD(String s) {
+  final c = s.replaceAll('د.ج', '').replaceAll(',', '').replaceAll(' ', '').trim();
+  return double.tryParse(c) ?? 0;
+}
+
+// ─── Helper: format price using currency service ───
+String _fmtPrice(String dzdPriceStr) {
+  final svc = CountryCurrencyService();
+  final dzd = _parseDZD(dzdPriceStr);
+  if (dzd == 0) return dzdPriceStr;
+  return svc.formatPrice(dzd);
+}
+
 // ─── Shop Page Widget ───
-class ShopPage extends StatelessWidget {
+class ShopPage extends StatefulWidget {
   const ShopPage({Key? key}) : super(key: key);
 
   @override
+  State<ShopPage> createState() => _ShopPageState();
+}
+
+class _ShopPageState extends State<ShopPage> {
+  final _currencyService = CountryCurrencyService();
+
+  @override
+  void initState() {
+    super.initState();
+    _currencyService.addListener(_onCurrencyChanged);
+    _currencyService.initialize();
+  }
+
+  @override
+  void dispose() {
+    _currencyService.removeListener(_onCurrencyChanged);
+    super.dispose();
+  }
+
+  void _onCurrencyChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _showCountryPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CountryPickerSheet(
+        currentCode: _currencyService.currentCountry.code,
+        onSelect: (code) {
+          _currencyService.setCountry(code);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final country = _currencyService.currentCountry;
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -434,6 +489,33 @@ class ShopPage extends StatelessWidget {
                   ),
                 ),
               ),
+              actions: [
+                // Country / Currency selector button
+                GestureDetector(
+                  onTap: _showCountryPicker,
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 16, top: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(country.flag, style: const TextStyle(fontSize: 18)),
+                        const SizedBox(width: 4),
+                        Text(
+                          country.currencyCode,
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             // Search bar
@@ -620,10 +702,10 @@ class ShopPage extends StatelessWidget {
                                         const SizedBox(height: 6),
                                         Row(
                                           children: [
-                                            Text(p.price, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _teal)),
+                                            Text(_fmtPrice(p.price), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _teal)),
                                             if (p.oldPrice.isNotEmpty) ...[
                                               const SizedBox(width: 6),
-                                              Text(p.oldPrice, style: TextStyle(fontSize: 10, color: _textSecondary, decoration: TextDecoration.lineThrough)),
+                                              Text(_fmtPrice(p.oldPrice), style: TextStyle(fontSize: 10, color: _textSecondary, decoration: TextDecoration.lineThrough)),
                                             ],
                                           ],
                                         ),
@@ -733,8 +815,8 @@ class _CategoryProductsScreen extends StatelessWidget {
                           children: [
                             Text(p.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
                             const Spacer(),
-                            Text(p.price, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _teal)),
-                            if (p.oldPrice.isNotEmpty) Text(p.oldPrice, style: TextStyle(fontSize: 10, color: _textSecondary, decoration: TextDecoration.lineThrough)),
+                            Text(_fmtPrice(p.price), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _teal)),
+                            if (p.oldPrice.isNotEmpty) Text(_fmtPrice(p.oldPrice), style: TextStyle(fontSize: 10, color: _textSecondary, decoration: TextDecoration.lineThrough)),
                             Row(children: [
                               Icon(Icons.star, size: 13, color: Colors.amber[700]),
                               const SizedBox(width: 2),
@@ -815,10 +897,10 @@ class _ProductDetailScreen extends StatelessWidget {
                     // Price
                     Row(
                       children: [
-                        Text(product.price, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _teal)),
+                        Text(_fmtPrice(product.price), style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _teal)),
                         if (product.oldPrice.isNotEmpty) ...[
                           const SizedBox(width: 12),
-                          Text(product.oldPrice, style: TextStyle(fontSize: 16, color: _textSecondary, decoration: TextDecoration.lineThrough)),
+                          Text(_fmtPrice(product.oldPrice), style: TextStyle(fontSize: 16, color: _textSecondary, decoration: TextDecoration.lineThrough)),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -848,7 +930,7 @@ class _ProductDetailScreen extends StatelessWidget {
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('تمت إضافة "${product.name}" للسلة'),
+                              content: Text('تمت إضافة "\${product.name}" للسلة'),
                               backgroundColor: _teal,
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -871,7 +953,11 @@ class _ProductDetailScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 52,
                       child: OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => _CheckoutScreen(product: product),
+                          ));
+                        },
                         icon: const Icon(Icons.flash_on),
                         label: const Text('اشتري الآن', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         style: OutlinedButton.styleFrom(
@@ -909,6 +995,381 @@ class _ProductDetailScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Country Picker Bottom Sheet ───
+class _CountryPickerSheet extends StatefulWidget {
+  final String currentCode;
+  final ValueChanged<String> onSelect;
+  const _CountryPickerSheet({Key? key, required this.currentCode, required this.onSelect}) : super(key: key);
+
+  @override
+  State<_CountryPickerSheet> createState() => _CountryPickerSheetState();
+}
+
+class _CountryPickerSheetState extends State<_CountryPickerSheet> {
+  String _search = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = supportedCountries.where((c) =>
+      c.nameAr.contains(_search) || c.nameEn.toLowerCase().contains(_search.toLowerCase()) || c.code.toLowerCase().contains(_search.toLowerCase())
+    ).toList();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            const Text('اختاري بلدك', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textPrimary)),
+            const SizedBox(height: 4),
+            Text('لعرض الأسعار بعملتك المحلية', style: TextStyle(fontSize: 13, color: _textSecondary)),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                onChanged: (v) => setState(() => _search = v),
+                decoration: InputDecoration(
+                  hintText: 'ابحثي عن بلد...',
+                  prefixIcon: const Icon(Icons.search, color: _teal),
+                  filled: true,
+                  fillColor: _bgColor,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                itemCount: filtered.length,
+                itemBuilder: (context, i) {
+                  final c = filtered[i];
+                  final isSelected = c.code == widget.currentCode;
+                  return ListTile(
+                    onTap: () => widget.onSelect(c.code),
+                    leading: Text(c.flag, style: const TextStyle(fontSize: 28)),
+                    title: Text(c.nameAr, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? _teal : _textPrimary)),
+                    subtitle: Text('${c.currencyNameAr} (${c.currencySymbol})', style: TextStyle(fontSize: 12, color: _textSecondary)),
+                    trailing: isSelected ? const Icon(Icons.check_circle, color: _teal) : null,
+                    tileColor: isSelected ? _teal.withOpacity(0.05) : null,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Checkout Screen with Dynamic Address Form ───
+class _CheckoutScreen extends StatefulWidget {
+  final _Product product;
+  const _CheckoutScreen({Key? key, required this.product}) : super(key: key);
+
+  @override
+  State<_CheckoutScreen> createState() => _CheckoutScreenState();
+}
+
+class _CheckoutScreenState extends State<_CheckoutScreen> {
+  final _currencyService = CountryCurrencyService();
+  final _formKey = GlobalKey<FormState>();
+  final Map<String, TextEditingController> _controllers = {};
+  String? _selectedPayment;
+
+  @override
+  void initState() {
+    super.initState();
+    _currencyService.addListener(_refresh);
+    for (final field in _currencyService.currentCountry.addressFields) {
+      _controllers[field.key] = TextEditingController();
+    }
+    final methods = _currencyService.currentCountry.paymentMethods;
+    _selectedPayment = methods.isNotEmpty ? methods.first.id : null;
+  }
+
+  @override
+  void dispose() {
+    _currencyService.removeListener(_refresh);
+    for (final c in _controllers.values) c.dispose();
+    super.dispose();
+  }
+
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final country = _currencyService.currentCountry;
+    final fields = country.addressFields;
+    final payments = country.paymentMethods;
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: _bgColor,
+        appBar: AppBar(
+          title: const Text('إتمام الطلب', style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 18)),
+          backgroundColor: Colors.white,
+          foregroundColor: _teal,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Order summary
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 60, height: 60,
+                        decoration: BoxDecoration(
+                          color: widget.product.color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(child: Text(widget.product.emoji, style: const TextStyle(fontSize: 30))),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(widget.product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _textPrimary)),
+                            const SizedBox(height: 4),
+                            Text(_fmtPrice(widget.product.price), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _teal)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Country indicator
+                GestureDetector(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => _CountryPickerSheet(
+                        currentCode: country.code,
+                        onSelect: (code) {
+                          _currencyService.setCountry(code);
+                          Navigator.pop(context);
+                          for (final c in _controllers.values) c.dispose();
+                          _controllers.clear();
+                          for (final field in _currencyService.currentCountry.addressFields) {
+                            _controllers[field.key] = TextEditingController();
+                          }
+                          setState(() {
+                            _selectedPayment = _currencyService.currentCountry.paymentMethods.isNotEmpty
+                              ? _currencyService.currentCountry.paymentMethods.first.id : null;
+                          });
+                        },
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: _teal.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _teal.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(country.flag, style: const TextStyle(fontSize: 24)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('التوصيل إلى: ${country.nameAr}', style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 14)),
+                              Text('العملة: ${country.currencyNameAr} (${country.currencySymbol})', style: TextStyle(fontSize: 12, color: _textSecondary)),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.edit, color: _teal, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Address form
+                const Text('عنوان التوصيل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+                const SizedBox(height: 12),
+
+                ...fields.map((field) {
+                  if (!_controllers.containsKey(field.key)) {
+                    _controllers[field.key] = TextEditingController();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: TextFormField(
+                      controller: _controllers[field.key],
+                      decoration: InputDecoration(
+                        labelText: field.labelAr,
+                        hintText: field.labelAr,
+                        filled: true,
+                        fillColor: _cardColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[200]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[200]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: _teal, width: 1.5),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                      validator: field.required ? (v) => (v == null || v.isEmpty) ? 'هذا الحقل مطلوب' : null : null,
+                    ),
+                  );
+                }),
+
+                const SizedBox(height: 16),
+
+                // Payment methods
+                const Text('طريقة الدفع', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+                const SizedBox(height: 12),
+
+                ...payments.map((pm) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedPayment = pm.id),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: _selectedPayment == pm.id ? _teal.withOpacity(0.06) : _cardColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _selectedPayment == pm.id ? _teal : Colors.grey[200]!,
+                          width: _selectedPayment == pm.id ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(pm.icon, style: const TextStyle(fontSize: 22)),
+                          const SizedBox(width: 12),
+                          Text(pm.nameAr, style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _selectedPayment == pm.id ? _teal : _textPrimary,
+                            fontSize: 14,
+                          )),
+                          const Spacer(),
+                          if (_selectedPayment == pm.id)
+                            const Icon(Icons.check_circle, color: _teal, size: 22),
+                        ],
+                      ),
+                    ),
+                  ),
+                )),
+
+                const SizedBox(height: 24),
+
+                // Order total
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+                  ),
+                  child: Column(
+                    children: [
+                      _orderRow('المنتج', _fmtPrice(widget.product.price)),
+                      const SizedBox(height: 8),
+                      _orderRow('التوصيل', 'مجاني'),
+                      const Divider(height: 20),
+                      _orderRow('المجموع', _fmtPrice(widget.product.price), isBold: true),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Confirm button
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('تم تأكيد طلبك بنجاح! ✅'),
+                            backgroundColor: _teal,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        );
+                        Navigator.popUntil(context, (route) => route.isFirst);
+                      }
+                    },
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('تأكيد الطلب', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _teal,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _orderRow(String label, String value, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(
+          fontSize: isBold ? 16 : 14,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          color: isBold ? _textPrimary : _textSecondary,
+        )),
+        Text(value, style: TextStyle(
+          fontSize: isBold ? 18 : 14,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          color: isBold ? _teal : _textPrimary,
+        )),
+      ],
     );
   }
 }
