@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/pregnancy_week_articles.dart';
+import '../trackers/health_trackers_screen.dart';
 
 
 // ─── Fetus Image Helper ───
@@ -777,6 +778,47 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
 
                     // ── Discover Section Header ──
                     const SizedBox(height: 24),
+                    // ─── Health Trackers Banner ───
+                    GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthTrackersScreen())),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [const Color(0xFF5C6BC0).withOpacity(0.1), _teal.withOpacity(0.08)],
+                            begin: Alignment.centerRight,
+                            end: Alignment.centerLeft,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF5C6BC0).withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.monitor_heart, color: Color(0xFF5C6BC0), size: 22),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("العدادات الصحية 📊", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D2D3A))),
+                                  SizedBox(height: 2),
+                                  Text("تتبعي الوزن والضغط والانقباضات وشرب الماء", style: TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_back_ios, size: 16, color: Color(0xFF6B7280)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
