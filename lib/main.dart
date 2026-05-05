@@ -354,7 +354,8 @@ class _RemindersPageState extends State<RemindersPage> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppBar(centerTitle: true,
+          centerTitle: true,
           title: Text('\u0627\u0644\u062A\u0630\u0643\u064A\u0631\u0627\u062A'),
           backgroundColor: Colors.teal,
           foregroundColor: Colors.white,
@@ -703,8 +704,7 @@ class _MainNavState extends State<MainNav> {
             // Profile circle button at top
             Positioned(
               top: MediaQuery.of(context).padding.top + 8,
-              left: AppLocalizations.textDir == TextDirection.rtl ? 16 : null,
-              right: AppLocalizations.textDir == TextDirection.rtl ? null : 16,
+              right: 16,
               child: GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage())),
                 child: Container(
@@ -752,7 +752,8 @@ class HomePage extends StatelessWidget {
     return Directionality(
       textDirection: AppLocalizations.textDir,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppBar(centerTitle: true,
+          centerTitle: true,
           title: Text(tr('app_name'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
@@ -1040,7 +1041,7 @@ class _CyclePageState extends State<CyclePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062F\u0648\u0631\u0629'), backgroundColor: Colors.pink, foregroundColor: Colors.white),
+      appBar: AppBar(centerTitle: true, title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062F\u0648\u0631\u0629'), backgroundColor: Colors.pink, foregroundColor: Colors.white),
       body: StreamBuilder<DocumentSnapshot>(
         stream: DB.userDoc.snapshots(),
         builder: (context, snapshot) {
@@ -1229,7 +1230,7 @@ class _PregnancyPageState extends State<PregnancyPage> {
       builder: (context, snapshot) {
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return Scaffold(
-            appBar: AppBar(
+            appBar: AppBar(centerTitle: true,
               title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644'),
               backgroundColor: Colors.purple, foregroundColor: Colors.white,
               actions: [
@@ -1243,7 +1244,7 @@ class _PregnancyPageState extends State<PregnancyPage> {
         var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
         if (data['pregnancyStartDate'] == null) {
           return Scaffold(
-            appBar: AppBar(
+            appBar: AppBar(centerTitle: true,
               title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644'),
               backgroundColor: Colors.purple, foregroundColor: Colors.white,
               actions: [
@@ -1401,7 +1402,7 @@ class _BabyPageState extends State<BabyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: AppBar(centerTitle: true,
         title: Text('\u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0637\u0641\u0644'),
         backgroundColor: Colors.blue, foregroundColor: Colors.white,
         actions: [
@@ -1697,7 +1698,7 @@ class ProfilePage extends StatelessWidget {
     return Directionality(
       textDirection: AppLocalizations.textDir,
       child: Scaffold(
-        appBar: AppBar(title: Text(tr('profile')), backgroundColor: Colors.teal, foregroundColor: Colors.white),
+        appBar: AppBar(centerTitle: true, title: Text(tr('profile')), backgroundColor: Colors.teal, foregroundColor: Colors.white),
         body: StreamBuilder<DocumentSnapshot>(
           stream: DB.userDoc.snapshots(),
           builder: (context, snapshot) {
@@ -1953,7 +1954,8 @@ class _CommunityPageState extends State<CommunityPage> {
     return Directionality(
       textDirection: AppLocalizations.textDir,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppBar(centerTitle: true,
+          centerTitle: true,
           title: Text(tr('community_title')),
           backgroundColor: Color(0xFFE91E63),
           foregroundColor: Colors.white,
@@ -2264,7 +2266,8 @@ class _AIChatPageState extends State<AIChatPage> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppBar(centerTitle: true,
+          centerTitle: true,
           title: Text('\u0627\u0644\u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0630\u0643\u064A'),
           backgroundColor: Colors.teal,
           foregroundColor: Colors.white,
@@ -2426,3 +2429,4 @@ class _AIChatPageState extends State<AIChatPage> {
     );
   }
 }
+                                                                                                                                      
