@@ -81,6 +81,7 @@ const _mastercard = PaymentMethod(id: 'mastercard', nameAr: 'ماستركارد'
 const _ccp = PaymentMethod(id: 'ccp', nameAr: 'بريد الجزائر CCP', nameEn: 'Algerie Poste CCP', icon: '🏦');
 const _baridimob = PaymentMethod(id: 'baridimob', nameAr: 'بريدي موب', nameEn: 'BaridiMob', icon: '📱');
 const _dahabia = PaymentMethod(id: 'dahabia', nameAr: 'بطاقة الذهبية', nameEn: 'Dahabia Card', icon: '💳');
+const _cib = PaymentMethod(id: 'cib', nameAr: 'بطاقة CIB', nameEn: 'CIB Card', icon: '💳');
 const _mada = PaymentMethod(id: 'mada', nameAr: 'مدى', nameEn: 'Mada', icon: '💳');
 const _stcPay = PaymentMethod(id: 'stc_pay', nameAr: 'STC Pay', nameEn: 'STC Pay', icon: '📱');
 const _applePay = PaymentMethod(id: 'apple_pay', nameAr: 'Apple Pay', nameEn: 'Apple Pay', icon: '🍎');
@@ -95,8 +96,8 @@ final List<CountryData> supportedCountries = [
     code: 'DZ', nameAr: 'الجزائر', nameEn: 'Algeria', flag: '🇩🇿',
     currencyCode: 'DZD', currencyNameAr: 'دينار جزائري', currencyNameEn: 'Algerian Dinar',
     currencySymbol: 'د.ج', phonePrefix: '+213', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _communeField, _wilayaField, _zipField, _notesField],
-    paymentMethods: [_cod, _dahabia, _ccp, _baridimob],
+    addressFields: [_nameField, _phoneField, _wilayaField, _communeField],
+    paymentMethods: [_cod, _dahabia, _cib],
   ),
   // 🇸🇦 Saudi Arabia
   CountryData(
@@ -293,6 +294,7 @@ class CountryCurrencyService extends ChangeNotifier {
   CountryData get currentCountry => _currentCountry ?? supportedCountries.first; // default Algeria
   bool get isLoading => _isLoading;
   Map<String, double> get exchangeRates => _exchangeRates;
+  double? get exchangeRate => _exchangeRates[currentCountry.currencyCode];
 
   // ─── Initialize: detect country or load saved preference ───
   Future<void> initialize() async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/admin_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -49,6 +50,9 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (user != null) {
+      // Initialize admin role check for staff members
+      await AdminService().initialize();
+      if (!mounted) return;
       context.go('/home');
     } else {
       context.go('/onboarding');

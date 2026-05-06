@@ -855,6 +855,76 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       ),
                     ),
 
+                    // ── Firestore Articles Section ──
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance.collection('articles').orderBy('createdAt', descending: true).limit(10).snapshots(),
+                      builder: (context, snap) {
+                        if (!snap.hasData || snap.data!.docs.isEmpty) return const SizedBox.shrink();
+                        final docs = snap.data!.docs;
+                        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          const SizedBox(height: 20),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(children: [
+                              Container(width: 4, height: 22, decoration: BoxDecoration(color: _teal, borderRadius: BorderRadius.circular(2))),
+                              const SizedBox(width: 8),
+                              const Text('📰', style: TextStyle(fontSize: 20)),
+                              const SizedBox(width: 6),
+                              const Text('مقالات جديدة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+                            ]),
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            height: 200,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              itemCount: docs.length,
+                              itemBuilder: (_, i) {
+                                final d = docs[i].data() as Map<String, dynamic>;
+                                final hasImg = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
+                                return GestureDetector(
+                                  onTap: () => _showFirestoreArticle(context, d),
+                                  child: Container(
+                                    width: 160, margin: const EdgeInsets.symmetric(horizontal: 4),
+                                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)]),
+                                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                      Container(
+                                        height: 100,
+                                        decoration: BoxDecoration(
+                                          color: _teal.withOpacity(0.08),
+                                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                        ),
+                                        child: hasImg
+                                          ? ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                              child: Image.network(d['imageUrl'], width: 160, height: 100, fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.article, size: 40, color: _teal))))
+                                          : const Center(child: Icon(Icons.article, size: 40, color: _teal)),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(10),
+                                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                          Text(d['title'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _textPrimary),
+                                            maxLines: 2, overflow: TextOverflow.ellipsis),
+                                          const SizedBox(height: 4),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                                            child: Text(d['category'] ?? '', style: TextStyle(fontSize: 9, color: _teal, fontWeight: FontWeight.bold)),
+                                          ),
+                                        ]),
+                                      ),
+                                    ]),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ]);
+                      },
+                    ),
+
                     // ── All Discover Sections ──
                     ..._buildAllDiscoverSections(),
 
@@ -1159,6 +1229,65 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
   }
 
   // ── All Discover Sections embedded in page ──
+  void _showFirestoreArticle(BuildContext context, Map<String, dynamic> d) {
+    final hasImg = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
+    final contentImages = (d['contentImages'] as List<dynamic>?) ?? [];
+    Navigator.push(context, MaterialPageRoute(builder: (_) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: Text(d['category'] ?? '', style: const TextStyle(color: _textPrimary, fontSize: 16)),
+          backgroundColor: Colors.white, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent),
+        body: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (hasImg)
+            Image.network(d['imageUrl'], width: double.infinity, height: 220, fit: BoxFit.cover,
+              loadingBuilder: (_, child, progress) {
+                if (progress == null) return child;
+                return SizedBox(height: 220, child: Center(child: CircularProgressIndicator(
+                  value: progress.expectedTotalBytes != null ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes! : null,
+                  color: _teal)));
+              },
+              errorBuilder: (_, error, ___) {
+                debugPrint('Article header image error: $error');
+                return Container(height: 120, color: _teal.withOpacity(0.05),
+                  child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.image_not_supported_outlined, size: 40, color: _teal.withOpacity(0.3)),
+                    const SizedBox(height: 8),
+                    Text('تعذّر تحميل الصورة', style: TextStyle(fontSize: 12, color: _textSecondary)),
+                  ])));
+              }),
+          Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(d['title'] ?? '', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _textPrimary, height: 1.4)),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              child: Text(d['category'] ?? '', style: TextStyle(fontSize: 12, color: _teal, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 20),
+            Text(d['content'] ?? '', style: TextStyle(fontSize: 16, color: _textSecondary, height: 1.8)),
+            if (contentImages.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ...contentImages.map((url) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ClipRRect(borderRadius: BorderRadius.circular(12),
+                  child: Image.network(url.toString(), width: double.infinity, fit: BoxFit.cover,
+                    loadingBuilder: (_, child, progress) {
+                      if (progress == null) return child;
+                      return SizedBox(height: 150, child: Center(child: CircularProgressIndicator(color: _teal)));
+                    },
+                    errorBuilder: (_, error, ___) {
+                      debugPrint('Article content image error: $error');
+                      return const SizedBox.shrink();
+                    })))),
+            ],
+          ])),
+        ])),
+      ),
+    )));
+  }
+
   List<Widget> _buildAllDiscoverSections() {
     return _discoverCategories.map((cat) {
       return Column(

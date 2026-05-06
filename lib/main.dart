@@ -8,11 +8,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'screens/community/community_screen.dart';
 import 'screens/pregnancy/pregnancy_weeks_screen.dart';
 import 'screens/shop/shop_page.dart';
 import 'services/country_currency_service.dart';
+import 'services/notification_service.dart';
+import 'services/admin_service.dart';
+import 'screens/admin/admin_panel_screen.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -130,16 +134,23 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Initialize notifications
-  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-  const initSettings = InitializationSettings(android: androidInit);
+  // Register FCM background handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  // Initialize notifications (FCM + Local)
   try {
-    await flutterLocalNotificationsPlugin.initialize(initSettings);
-    // Request notification permission on Android 13+
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
-  } catch (_) {}
+    await NotificationService().initialize();
+  } catch (_) {
+    // Fallback: basic local notifications init
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initSettings = InitializationSettings(android: androidInit);
+    try {
+      await flutterLocalNotificationsPlugin.initialize(initSettings);
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+    } catch (_) {}
+  }
 
   await localeNotifier.loadSavedLocale();
   CountryCurrencyService().initialize();
@@ -1624,7 +1635,26 @@ class _BabyPageState extends State<BabyPage> {
 }
 
 // ==================== PROFILE PAGE (FIRESTORE) ====================
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final AdminService _admin = AdminService();
+  bool _adminReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initAdmin();
+  }
+
+  Future<void> _initAdmin() async {
+    await _admin.initialize();
+    if (mounted) setState(() => _adminReady = true);
+  }
+
   Future<void> _editName(BuildContext context) async {
     final tr = AppLocalizations.t;
     final user = FirebaseAuth.instance.currentUser;
@@ -1718,6 +1748,46 @@ class ProfilePage extends StatelessWidget {
                 Text(name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 Text(user?.email ?? '', style: TextStyle(color: Colors.grey)),
                 SizedBox(height: 30),
+
+                // ─── Admin Panel Button (visible only for staff) ───
+                if (_adminReady && _admin.isAdmin)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: InkWell(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AdminPanelScreen())),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [Colors.teal.shade700, Colors.teal.shade400]),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [BoxShadow(color: Colors.teal.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                              child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 24),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('لوحة التحكم', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                                  Text('إدارة الطلبات والمنتجات', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
                 _menuItem(tr('edit_name'), Icons.edit, Colors.teal, () => _editName(context)),
                 _menuItem(tr('language'), Icons.language, Colors.indigo, () => _showLanguagePicker(context)),
                 _menuItem(tr('reset_data'), Icons.refresh, Colors.orange, () async {

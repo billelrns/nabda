@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/country_currency_service.dart';
+import '../../services/cart_service.dart';
+import 'cart_screen.dart';
 
 // ─── Theme Colors ───
 const Color _bgColor = Color(0xFFFFF5F7);
@@ -418,22 +421,48 @@ class ShopPage extends StatefulWidget {
 
 class _ShopPageState extends State<ShopPage> {
   final _currencyService = CountryCurrencyService();
+  final _cart = CartService();
 
   @override
   void initState() {
     super.initState();
-    _currencyService.addListener(_onCurrencyChanged);
+    _currencyService.addListener(_onChanged);
+    _cart.addListener(_onChanged);
     _currencyService.initialize();
   }
 
   @override
   void dispose() {
-    _currencyService.removeListener(_onCurrencyChanged);
+    _currencyService.removeListener(_onChanged);
+    _cart.removeListener(_onChanged);
     super.dispose();
   }
 
-  void _onCurrencyChanged() {
+  void _onChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _showFirestoreProductDetail(BuildContext context, Map<String, dynamic> d) {
+    // Build list of all product images (support both old single imageUrl and new imageUrls list)
+    final List<String> allImages = [];
+    final imageUrls = d['imageUrls'] as List<dynamic>? ?? [];
+    if (imageUrls.isNotEmpty) {
+      for (final url in imageUrls) {
+        final s = url.toString();
+        if (s.isNotEmpty) allImages.add(s);
+      }
+    } else {
+      final oldUrl = d['imageUrl'] as String?;
+      if (oldUrl != null && oldUrl.isNotEmpty) allImages.add(oldUrl);
+    }
+    final descImages = (d['descImages'] as List<dynamic>?) ?? [];
+
+    Navigator.push(context, MaterialPageRoute(builder: (_) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: _ProductDetailPage(d: d, allImages: allImages, descImages: descImages,
+        fmtPrice: _fmtPrice, teal: _teal, bgColor: _bgColor, cardColor: _cardColor,
+        textPrimary: _textPrimary, textSecondary: _textSecondary),
+    )));
   }
 
   void _showCountryPicker() {
@@ -515,6 +544,31 @@ class _ShopPageState extends State<ShopPage> {
                     ),
                   ),
                 ),
+                // Cart icon with badge
+                GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen())),
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 12, top: 8),
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                          child: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 22),
+                        ),
+                        if (_cart.isNotEmpty)
+                          Positioned(
+                            right: 0, top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(color: _pink, shape: BoxShape.circle),
+                              child: Text('${_cart.itemCount}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
 
@@ -586,6 +640,81 @@ class _ShopPageState extends State<ShopPage> {
                     );
                   },
                 ),
+              ),
+            ),
+
+            // ─── Firestore Products Section ───
+            SliverToBoxAdapter(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('products').orderBy('createdAt', descending: true).limit(20).snapshots(),
+                builder: (context, snap) {
+                  if (!snap.hasData || snap.data!.docs.isEmpty) return const SizedBox.shrink();
+                  final docs = snap.data!.docs;
+                  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+                      child: Row(children: [
+                        Container(width: 4, height: 22, decoration: BoxDecoration(color: _pink, borderRadius: BorderRadius.circular(2))),
+                        const SizedBox(width: 8),
+                        const Text('🆕', style: TextStyle(fontSize: 20)),
+                        const SizedBox(width: 6),
+                        const Text('منتجات جديدة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+                      ]),
+                    ),
+                    SizedBox(
+                      height: 220,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: docs.length,
+                        itemBuilder: (_, i) {
+                          final d = docs[i].data() as Map<String, dynamic>;
+                          final hasImage = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
+                          final price = d['price'] ?? '0';
+                          final oldPrice = d['oldPrice'] ?? '';
+                          return GestureDetector(
+                            onTap: () => _showFirestoreProductDetail(context, d),
+                            child: Container(
+                              width: 150, margin: const EdgeInsets.symmetric(horizontal: 4),
+                              decoration: BoxDecoration(color: _cardColor, borderRadius: BorderRadius.circular(16),
+                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)]),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                // Image or emoji
+                                Container(
+                                  height: 110,
+                                  decoration: BoxDecoration(
+                                    color: _teal.withOpacity(0.08),
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                  ),
+                                  child: hasImage
+                                    ? ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                        child: Image.network(d['imageUrl'], width: 150, height: 110, fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Center(child: Text(d['emoji'] ?? '🛍️', style: const TextStyle(fontSize: 45)))))
+                                    : Center(child: Text(d['emoji'] ?? '🛍️', style: const TextStyle(fontSize: 45))),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                    Text(d['name'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _textPrimary),
+                                      maxLines: 2, overflow: TextOverflow.ellipsis),
+                                    const SizedBox(height: 6),
+                                    Row(children: [
+                                      Flexible(child: Text(_fmtPrice(price), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _teal), overflow: TextOverflow.ellipsis)),
+                                      if (oldPrice.isNotEmpty) ...[
+                                        const SizedBox(width: 4),
+                                        Flexible(child: Text(_fmtPrice(oldPrice), style: TextStyle(fontSize: 10, color: _textSecondary, decoration: TextDecoration.lineThrough), overflow: TextOverflow.ellipsis)),
+                                      ],
+                                    ]),
+                                  ]),
+                                ),
+                              ]),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ]);
+                },
               ),
             ),
 
@@ -702,10 +831,10 @@ class _ShopPageState extends State<ShopPage> {
                                         const SizedBox(height: 6),
                                         Row(
                                           children: [
-                                            Text(_fmtPrice(p.price), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _teal)),
+                                            Flexible(child: Text(_fmtPrice(p.price), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _teal), overflow: TextOverflow.ellipsis)),
                                             if (p.oldPrice.isNotEmpty) ...[
-                                              const SizedBox(width: 6),
-                                              Text(_fmtPrice(p.oldPrice), style: TextStyle(fontSize: 10, color: _textSecondary, decoration: TextDecoration.lineThrough)),
+                                              const SizedBox(width: 4),
+                                              Flexible(child: Text(_fmtPrice(p.oldPrice), style: TextStyle(fontSize: 10, color: _textSecondary, decoration: TextDecoration.lineThrough), overflow: TextOverflow.ellipsis)),
                                             ],
                                           ],
                                         ),
@@ -928,11 +1057,31 @@ class _ProductDetailScreen extends StatelessWidget {
                       height: 52,
                       child: ElevatedButton.icon(
                         onPressed: () {
+                          CartService().addItem(
+                            name: product.name,
+                            emoji: product.emoji,
+                            category: categoryName,
+                            priceValue: CartService.parsePrice(product.price),
+                            priceDisplay: product.price,
+                            color: product.color,
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('تمت إضافة "\${product.name}" للسلة'),
+                              content: Row(children: [
+                                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(child: Text('تمت إضافة "${product.name}" للسلة')),
+                                GestureDetector(
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
+                                  },
+                                  child: const Text('عرض السلة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                                ),
+                              ]),
                               backgroundColor: _teal,
                               behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 3),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                           );
@@ -954,8 +1103,17 @@ class _ProductDetailScreen extends StatelessWidget {
                       height: 52,
                       child: OutlinedButton.icon(
                         onPressed: () {
+                          // Add to cart then go to checkout
+                          CartService().addItem(
+                            name: product.name,
+                            emoji: product.emoji,
+                            category: categoryName,
+                            priceValue: CartService.parsePrice(product.price),
+                            priceDisplay: product.price,
+                            color: product.color,
+                          );
                           Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => _CheckoutScreen(product: product),
+                            builder: (_) => const CartCheckoutScreen(),
                           ));
                         },
                         icon: const Icon(Icons.flash_on),
@@ -1370,6 +1528,130 @@ class _CheckoutScreenState extends State<_CheckoutScreen> {
           color: isBold ? _teal : _textPrimary,
         )),
       ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  PRODUCT DETAIL PAGE (with image gallery)
+// ═══════════════════════════════════════════════
+class _ProductDetailPage extends StatefulWidget {
+  final Map<String, dynamic> d;
+  final List<String> allImages;
+  final List<dynamic> descImages;
+  final String Function(String) fmtPrice;
+  final Color teal, bgColor, cardColor, textPrimary, textSecondary;
+
+  const _ProductDetailPage({
+    required this.d, required this.allImages, required this.descImages,
+    required this.fmtPrice, required this.teal, required this.bgColor,
+    required this.cardColor, required this.textPrimary, required this.textSecondary,
+  });
+
+  @override
+  State<_ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends State<_ProductDetailPage> {
+  int _currentPage = 0;
+  final _pageController = PageController();
+
+  @override
+  void dispose() { _pageController.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = widget.d;
+    final hasImages = widget.allImages.isNotEmpty;
+    return Scaffold(
+      backgroundColor: widget.bgColor,
+      appBar: AppBar(
+        title: Text(d['name'] ?? '', style: TextStyle(color: widget.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+        backgroundColor: widget.cardColor, foregroundColor: widget.teal, elevation: 0, surfaceTintColor: Colors.transparent),
+      body: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (hasImages) ...[
+          SizedBox(
+            height: 300,
+            child: Stack(children: [
+              PageView.builder(
+                controller: _pageController,
+                itemCount: widget.allImages.length,
+                onPageChanged: (i) => setState(() => _currentPage = i),
+                itemBuilder: (_, i) => Image.network(widget.allImages[i],
+                  width: double.infinity, height: 300, fit: BoxFit.cover,
+                  loadingBuilder: (_, child, progress) {
+                    if (progress == null) return child;
+                    return Center(child: CircularProgressIndicator(color: widget.teal));
+                  },
+                  errorBuilder: (_, __, ___) => Container(color: widget.teal.withOpacity(0.1),
+                    child: Center(child: Text(d['emoji'] ?? '', style: const TextStyle(fontSize: 80))))),
+              ),
+              if (widget.allImages.length > 1)
+                Positioned(bottom: 12, left: 0, right: 0,
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(widget.allImages.length, (i) => Container(
+                      width: _currentPage == i ? 24 : 8, height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: _currentPage == i ? widget.teal : Colors.white.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(4)),
+                    )),
+                  ),
+                ),
+              if (widget.allImages.length > 1)
+                Positioned(top: 12, left: 12, child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)),
+                  child: Text('${_currentPage + 1}/${widget.allImages.length}',
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                )),
+            ]),
+          ),
+        ] else
+          Container(height: 200, width: double.infinity, color: widget.teal.withOpacity(0.08),
+            child: Center(child: Text(d['emoji'] ?? '', style: const TextStyle(fontSize: 80)))),
+        Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(d['name'] ?? '', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: widget.textPrimary)),
+          const SizedBox(height: 8),
+          Row(children: [
+            Text(widget.fmtPrice(d['price'] ?? '0'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: widget.teal)),
+            if ((d['oldPrice'] ?? '').isNotEmpty) ...[
+              const SizedBox(width: 10),
+              Text(widget.fmtPrice(d['oldPrice']), style: TextStyle(fontSize: 14, color: widget.textSecondary, decoration: TextDecoration.lineThrough)),
+            ],
+          ]),
+          const SizedBox(height: 16),
+          if ((d['description'] ?? '').isNotEmpty) ...[
+            Text('الوصف', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: widget.textPrimary)),
+            const SizedBox(height: 8),
+            Text(d['description'], style: TextStyle(fontSize: 14, color: widget.textSecondary, height: 1.6)),
+          ],
+          if (widget.descImages.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            ...widget.descImages.map((url) => Padding(padding: const EdgeInsets.only(bottom: 10),
+              child: ClipRRect(borderRadius: BorderRadius.circular(12),
+                child: Image.network(url.toString(), width: double.infinity, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink())))),
+          ],
+          const SizedBox(height: 20),
+          SizedBox(width: double.infinity, height: 52, child: ElevatedButton.icon(
+            onPressed: () {
+              CartService().addItem(name: d['name'] ?? '', emoji: d['emoji'] ?? '',
+                category: d['category'] ?? '', priceValue: CartService.parsePrice(d['price'] ?? '0'),
+                priceDisplay: d['price'] ?? '0', color: widget.teal);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: const Row(children: [Icon(Icons.check_circle, color: Colors.white, size: 20), SizedBox(width: 8), Expanded(child: Text('\u062a\u0645\u062a \u0627\u0644\u0627\u0636\u0627\u0641\u0629 \u0644\u0644\u0633\u0644\u0629'))]),
+                backgroundColor: widget.teal, behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))));
+            },
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text('\u0623\u0636\u064a\u0641\u064a \u0644\u0644\u0633\u0644\u0629', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(backgroundColor: widget.teal, foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+          )),
+        ])),
+      ])),
     );
   }
 }

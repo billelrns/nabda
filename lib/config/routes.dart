@@ -17,6 +17,8 @@ import '../screens/community/post_detail_screen.dart';
 import '../screens/ai_chat/ai_chat_screen.dart';
 import '../screens/doctors/doctors_list_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/admin/admin_panel_screen.dart';
+import '../screens/shop/cart_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -36,6 +38,8 @@ class AppRoutes {
   static const String aiChat = '/ai-chat';
   static const String doctors = '/doctors';
   static const String profile = '/profile';
+  static const String adminPanel = '/admin';
+  static const String cart = '/cart';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -109,6 +113,14 @@ class AppRoutes {
       GoRoute(
         path: profile,
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: adminPanel,
+        builder: (context, state) => const AdminPanelScreen(),
+      ),
+      GoRoute(
+        path: cart,
+        builder: (context, state) => const CartScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
