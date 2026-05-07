@@ -61,7 +61,7 @@ class _MoodSelectorState extends State<MoodSelector> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isSelected
-                          ? const Color(0xFFE91E63).withOpacity(0.2)
+                          ? const Color(0xFFE91E63).withValues(alpha: 0.2)
                           : Colors.grey.shade100,
                       border: Border.all(
                         color: isSelected

@@ -35,7 +35,7 @@ class _SymptomChipState extends State<SymptomChip> {
         widget.onSelected(selected);
       },
       backgroundColor: Colors.grey.shade200,
-      selectedColor: const Color(0xFFE91E63).withOpacity(0.3),
+      selectedColor: const Color(0xFFE91E63).withValues(alpha: 0.3),
       labelStyle: TextStyle(
         color: _isSelected ? const Color(0xFFE91E63) : Colors.black,
         fontWeight: _isSelected ? FontWeight.bold : FontWeight.normal,

@@ -123,6 +123,11 @@ class FirestoreService {
   Future<void> addPost(CommunityPostModel post) async {
     try {
       await _firestore.collection('community_posts').doc(post.id).set(post.toJson());
+      // Update community points: +3 for posting
+      await _firestore.collection('users').doc(post.userId).set({
+        'communityPoints': FieldValue.increment(3),
+        'postCount': FieldValue.increment(1),
+      }, SetOptions(merge: true));
     } catch (e) {
       throw Exception('خطأ في حفظ المنشور: $e');
     }
@@ -160,18 +165,39 @@ class FirestoreService {
       final postDoc = await postRef.get();
       final likedBy = List<String>.from(postDoc.data()?['likedBy'] ?? []);
 
+      final postOwnerId = postDoc.data()?['userId'] as String?;
       if (likedBy.contains(userId)) {
         likedBy.remove(userId);
         await postRef.update({
           'likes': FieldValue.increment(-1),
           'likedBy': likedBy,
         });
+        // Remove points: -1 for the liker, -1 receivedLikes for post owner
+        await _firestore.collection('users').doc(userId).set({
+          'communityPoints': FieldValue.increment(-1),
+        }, SetOptions(merge: true));
+        if (postOwnerId != null && postOwnerId != userId) {
+          await _firestore.collection('users').doc(postOwnerId).set({
+            'receivedLikes': FieldValue.increment(-1),
+            'communityPoints': FieldValue.increment(-1),
+          }, SetOptions(merge: true));
+        }
       } else {
         likedBy.add(userId);
         await postRef.update({
           'likes': FieldValue.increment(1),
           'likedBy': likedBy,
         });
+        // Add points: +1 for the liker, +1 receivedLikes for post owner
+        await _firestore.collection('users').doc(userId).set({
+          'communityPoints': FieldValue.increment(1),
+        }, SetOptions(merge: true));
+        if (postOwnerId != null && postOwnerId != userId) {
+          await _firestore.collection('users').doc(postOwnerId).set({
+            'receivedLikes': FieldValue.increment(1),
+            'communityPoints': FieldValue.increment(1),
+          }, SetOptions(merge: true));
+        }
       }
     } catch (e) {
       throw Exception('خطأ في الإعجاب: $e');
@@ -183,6 +209,14 @@ class FirestoreService {
       await _firestore.collection('community_posts').doc(postId).update({
         'comments': FieldValue.arrayUnion([comment]),
       });
+      // Update community points: +2 for commenting
+      final commenterId = comment['userId'] as String?;
+      if (commenterId != null) {
+        await _firestore.collection('users').doc(commenterId).set({
+          'communityPoints': FieldValue.increment(2),
+          'commentCount': FieldValue.increment(1),
+        }, SetOptions(merge: true));
+      }
     } catch (e) {
       throw Exception('خطأ في إضافة التعليق: $e');
     }

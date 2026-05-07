@@ -142,7 +142,7 @@ class PregnancyDashboard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300!),
+        border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

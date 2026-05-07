@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-
 /// Payment Gateway Service
 /// Supports multiple payment providers based on country:
 /// - Stripe: International cards (Visa, Mastercard)
@@ -19,11 +15,12 @@ class PaymentService {
   PaymentService._internal();
 
   // ─── API Keys (move to env variables in production!) ───
-  // Stripe Test Keys
+  // ignore: unused_field
   static const String _stripePublishableKey = 'pk_test_YOUR_STRIPE_KEY';
+  // ignore: unused_field
   static const String _stripeSecretKey = 'sk_test_YOUR_STRIPE_SECRET';
 
-  // Tap Payments Test Keys (for MENA region)
+  // ignore: unused_field
   static const String _tapSecretKey = 'sk_test_YOUR_TAP_KEY';
 
   // ─── Payment Method Types ───

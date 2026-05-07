@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
+import 'leaderboard_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/community_post_model.dart';
@@ -18,6 +19,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   String _selectedCategory = 'all';
   String? get _currentUserId => FirebaseAuth.instance.currentUser?.uid;
+  int _mainTab = 0; // 0 = المنشورات, 1 = الترتيب
 
   static const Map<String, String> _categoryLabels = {
     'all': 'الكل',
@@ -37,7 +39,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFFFF8FB),
       appBar: AppBar(
         title: const Text(
           'مجتمع نبضة',
@@ -47,19 +49,62 @@ class _CommunityScreenState extends State<CommunityScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(42),
+          child: Container(
+            color: Colors.white,
+            child: Row(
+              children: [
+                _mainTabButton('المنشورات', Icons.forum_outlined, 0),
+                _mainTabButton('الترتيب', Icons.emoji_events_outlined, 1),
+              ],
+            ),
+          ),
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen())),
-        backgroundColor: const Color(0xFFE91E63),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.edit_outlined),
-        label: const Text('منشور جديد', style: TextStyle(fontWeight: FontWeight.bold)),
-      ),
-      body: Column(
-        children: [
-          _buildCategoryFilter(),
-          Expanded(child: _buildPostFeed()),
-        ],
+      floatingActionButton: _mainTab == 0
+        ? FloatingActionButton.extended(
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen())),
+            backgroundColor: const Color(0xFFE91E63),
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('منشور جديد', style: TextStyle(fontWeight: FontWeight.bold)),
+          )
+        : null,
+      body: _mainTab == 0
+        ? Column(
+            children: [
+              _buildCategoryFilter(),
+              Expanded(child: _buildPostFeed()),
+            ],
+          )
+        : const LeaderboardScreen(),
+    );
+  }
+
+  Widget _mainTabButton(String label, IconData icon, int index) {
+    final isSelected = _mainTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _mainTab = index),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(
+              color: isSelected ? const Color(0xFF00897B) : Colors.transparent,
+              width: 2.5)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: isSelected ? const Color(0xFF00897B) : const Color(0xFF6B7280)),
+              const SizedBox(width: 6),
+              Text(label, style: TextStyle(
+                fontSize: 13, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? const Color(0xFF2D2D3A) : const Color(0xFF6B7280))),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -127,6 +127,7 @@ class AdminService extends ChangeNotifier {
 
   AdminRole _currentRole = AdminRole.user;
   StaffMember? _currentStaff;
+  // ignore: unused_field
   bool _isLoaded = false;
 
   AdminRole get currentRole => _currentRole;

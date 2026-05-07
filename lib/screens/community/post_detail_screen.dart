@@ -130,7 +130,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F5F5),
+        backgroundColor: const Color(0xFFFFF8FB),
         appBar: AppBar(
           title: const Text(
             'تفاصيل المنشور',

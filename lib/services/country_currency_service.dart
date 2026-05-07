@@ -97,7 +97,7 @@ final List<CountryData> supportedCountries = [
     currencyCode: 'DZD', currencyNameAr: 'دينار جزائري', currencyNameEn: 'Algerian Dinar',
     currencySymbol: 'د.ج', phonePrefix: '+213', decimalPlaces: 2,
     addressFields: [_nameField, _phoneField, _wilayaField, _communeField],
-    paymentMethods: [_cod, _dahabia, _cib],
+    paymentMethods: [_cod, _dahabia, _cib, _ccp, _baridimob],
   ),
   // 🇸🇦 Saudi Arabia
   CountryData(

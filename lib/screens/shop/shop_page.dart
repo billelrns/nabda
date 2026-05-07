@@ -9,7 +9,6 @@ const Color _bgColor = Color(0xFFFFF5F7);
 const Color _cardColor = Colors.white;
 const Color _teal = Color(0xFF00897B);
 const Color _pink = Color(0xFFE91E63);
-const Color _softPink = Color(0xFFFFE8EC);
 const Color _textPrimary = Color(0xFF2D2D3A);
 const Color _textSecondary = Color(0xFF6B7280);
 

@@ -17,6 +17,7 @@ import 'services/country_currency_service.dart';
 import 'services/notification_service.dart';
 import 'services/admin_service.dart';
 import 'screens/admin/admin_panel_screen.dart';
+import 'config/theme.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -177,11 +178,9 @@ class _NabdaAppState extends State<NabdaApp> {
     return MaterialApp(
       title: AppLocalizations.t('app_name'),
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.light,
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -718,17 +717,26 @@ class _MainNavState extends State<MainNav> {
               child: GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage())),
                 child: Container(
-                  width: 40,
-                  height: 40,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: Colors.white,
                     shape: BoxShape.circle,
+                    gradient: LinearGradient(colors: [const Color(0xFFE91E63), const Color(0xFF7E57C2)]),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 2)),
+                      BoxShadow(color: const Color(0x4DE91E63), blurRadius: 12, offset: const Offset(0, 4)),
                     ],
-                    border: Border.all(color: const Color(0xFF00897B).withOpacity(0.2), width: 1.5),
                   ),
-                  child: const Icon(Icons.person, color: Color(0xFF00897B), size: 22),
+                  child: Center(
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.person, color: Color(0xFF00897B), size: 20),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -763,24 +771,33 @@ class HomePage extends StatelessWidget {
       textDirection: AppLocalizations.textDir,
       child: Scaffold(
         appBar: AppBar(centerTitle: true,
-          title: Text(tr('app_name'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+          title: Text(tr('app_name'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 24, letterSpacing: 0.5)),
           backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
+          foregroundColor: const Color(0xFF1F1A20),
           elevation: 0,
           flexibleSpace: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.teal.shade700, Colors.teal.shade400, Colors.teal.shade300],
+                colors: [const Color(0xFFFCE4EC), const Color(0xFFFFF8FB), const Color(0xFFE0F2F1)],
                 begin: Alignment.topLeft, end: Alignment.bottomRight,
+                stops: const [0.0, 0.5, 1.0],
               ),
             ),
           ),
           actions: [
-            IconButton(
-              icon: Icon(Icons.notifications_outlined),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage())),
-              tooltip: tr('reminders'),
+            Container(
+              margin: const EdgeInsets.only(left: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: Icon(Icons.notifications_outlined, color: const Color(0xFF5E35B1)),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage())),
+                tooltip: tr('reminders'),
+              ),
             ),
+            const SizedBox(width: 8),
           ],
         ),
         body: StreamBuilder<DocumentSnapshot>(
@@ -798,22 +815,27 @@ class HomePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Welcome header with gradient
+                  // Welcome header with warm gradient (Claude Design)
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Colors.teal.shade50, Colors.white],
-                        begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                        colors: [const Color(0xFFFCE4EC), const Color(0xFFFFF8FB), const Color(0xFFE0F2F1)],
+                        begin: Alignment.topLeft, end: Alignment.bottomRight,
+                        stops: const [0.0, 0.5, 1.0],
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white.withOpacity(0.8)),
+                      boxShadow: [
+                        BoxShadow(color: const Color(0x14E91E63), blurRadius: 16, offset: const Offset(0, 6)),
+                      ],
                     ),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('${tr('hello')} ${user?.displayName ?? ""}!',
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.teal.shade800)),
+                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20))),
                       SizedBox(height: 4),
-                      Text(tr('how_are_you'), style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+                      Text(tr('how_are_you'), style: TextStyle(fontSize: 15, color: const Color(0xFF8B8190))),
                     ]),
                   ),
                   SizedBox(height: 16),
@@ -831,13 +853,13 @@ class HomePage extends StatelessWidget {
                               : [Colors.teal.shade400, Colors.teal.shade200],
                           begin: Alignment.topLeft, end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [BoxShadow(color: Colors.pink.withOpacity(0.3), blurRadius: 12, offset: Offset(0, 6))],
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [BoxShadow(color: const Color(0x40E91E63), blurRadius: 20, offset: Offset(0, 8))],
                       ),
                       child: Row(children: [
                         Container(
                           padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(14)),
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(16)),
                           child: Icon(Icons.calendar_today, color: Colors.white, size: 32),
                         ),
                         SizedBox(width: 16),
@@ -846,8 +868,8 @@ class HomePage extends StatelessWidget {
                             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                           SizedBox(height: 4),
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.25), borderRadius: BorderRadius.circular(8)),
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.25), borderRadius: BorderRadius.circular(999)),
                             child: Text(cycleDay <= 5 ? tr('period_phase') :
                                  cycleDay >= 10 && cycleDay <= 16 ? tr('fertile_phase') :
                                  tr('regular_phase'),
@@ -887,7 +909,7 @@ class HomePage extends StatelessWidget {
                       width: double.infinity, padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(colors: [Colors.amber.shade100, Colors.orange.shade50]),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: Colors.amber.shade200),
                       ),
                       child: Row(children: [
@@ -940,17 +962,20 @@ class HomePage extends StatelessWidget {
           padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: fg.withOpacity(0.15), blurRadius: 8, offset: Offset(0, 4))],
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(color: fg.withOpacity(0.12), blurRadius: 12, offset: Offset(0, 6)),
+              BoxShadow(color: const Color(0x0AE91E63), blurRadius: 6, offset: Offset(0, 2)),
+            ],
           ),
           child: Column(children: [
             Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(color: fg.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
+              padding: EdgeInsets.all(14),
+              decoration: BoxDecoration(color: fg.withOpacity(0.15), borderRadius: BorderRadius.circular(18)),
               child: Icon(icon, size: 32, color: fg),
             ),
             SizedBox(height: 10),
-            Text(title, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: fg, fontSize: 14)),
+            Text(title, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w800, color: fg, fontSize: 14)),
           ]),
         ),
       ),
@@ -959,21 +984,24 @@ class HomePage extends StatelessWidget {
 
   Widget _tipCard(String text, IconData icon, Color color) {
     return Container(
-      padding: EdgeInsets.all(14),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))],
-        border: Border.all(color: color.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: const Color(0x0AE91E63), blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(color: color.withOpacity(0.08), blurRadius: 12, offset: Offset(0, 4)),
+        ],
+        border: Border.all(color: color.withOpacity(0.12)),
       ),
       child: Row(children: [
         Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+          padding: EdgeInsets.all(10),
+          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
           child: Icon(icon, color: color, size: 22),
         ),
-        SizedBox(width: 12),
-        Expanded(child: Text(text, style: TextStyle(fontSize: 14, color: Colors.grey.shade800))),
+        SizedBox(width: 14),
+        Expanded(child: Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF4A434B)))),
       ]),
     );
   }
@@ -989,7 +1017,6 @@ class _CyclePageState extends State<CyclePage> {
   String mood = '';
   List<String> symptoms = [];
   final allSymptoms = ['\u062A\u0634\u0646\u062C\u0627\u062A', '\u0635\u062F\u0627\u0639', '\u0625\u0631\u0647\u0627\u0642', '\u0627\u0646\u062A\u0641\u0627\u062E', '\u0622\u0644\u0627\u0645 \u0627\u0644\u0638\u0647\u0631', '\u062A\u0642\u0644\u0628\u0627\u062A \u0645\u0632\u0627\u062C\u064A\u0629'];
-  bool _loaded = false;
 
   @override
   void initState() {
@@ -1008,7 +1035,7 @@ class _CyclePageState extends State<CyclePage> {
         });
       }
     } catch (_) {}
-    _loaded = true;
+    // loaded
   }
 
   Future<void> _saveTodayLog() async {
@@ -1200,25 +1227,6 @@ class _PregnancyPageState extends State<PregnancyPage> {
   bool counting = false;
   Map<String, bool> checklist = {};
 
-  // Baby development data by week
-  static const weekData = {
-    4: ['\u0628\u062D\u062C\u0645 \u0628\u0630\u0631\u0629 \u0627\u0644\u062E\u0634\u062E\u0627\u0634', '0.4 \u063A\u0631\u0627\u0645', '\u064A\u0628\u062F\u0623 \u0627\u0644\u0642\u0644\u0628 \u0628\u0627\u0644\u0646\u0628\u0636'],
-    8: ['\u0628\u062D\u062C\u0645 \u062D\u0628\u0629 \u0627\u0644\u062A\u0648\u062A', '1 \u063A\u0631\u0627\u0645', '\u062A\u062A\u0634\u0643\u0644 \u0627\u0644\u0623\u0635\u0627\u0628\u0639'],
-    12: ['\u0628\u062D\u062C\u0645 \u0627\u0644\u0644\u064A\u0645\u0648\u0646\u0629', '14 \u063A\u0631\u0627\u0645', '\u062A\u062A\u0634\u0643\u0644 \u0627\u0644\u0623\u0639\u0636\u0627\u0621'],
-    16: ['\u0628\u062D\u062C\u0645 \u0627\u0644\u0623\u0641\u0648\u0643\u0627\u062F\u0648', '100 \u063A\u0631\u0627\u0645', '\u064A\u0628\u062F\u0623 \u0628\u0627\u0644\u062D\u0631\u0643\u0629'],
-    20: ['\u0628\u062D\u062C\u0645 \u0627\u0644\u0645\u0648\u0632\u0629', '300 \u063A\u0631\u0627\u0645', '\u064A\u0633\u0645\u0639 \u0627\u0644\u0623\u0635\u0648\u0627\u062A'],
-    24: ['\u0628\u062D\u062C\u0645 \u0643\u0648\u0632 \u0627\u0644\u0630\u0631\u0629', '600 \u063A\u0631\u0627\u0645', '\u064A\u0633\u062A\u062C\u064A\u0628 \u0644\u0644\u0636\u0648\u0621'],
-    28: ['\u0628\u062D\u062C\u0645 \u0627\u0644\u0628\u0627\u0630\u0646\u062C\u0627\u0646', '1 \u0643\u063A', '\u064A\u0641\u062A\u062D \u0639\u064A\u0646\u064A\u0647'],
-    32: ['\u0628\u062D\u062C\u0645 \u0627\u0644\u0628\u0637\u064A\u062E\u0629 \u0627\u0644\u0635\u063A\u064A\u0631\u0629', '1.7 \u0643\u063A', '\u064A\u062A\u0646\u0641\u0633 \u0628\u0627\u0646\u062A\u0638\u0627\u0645'],
-    36: ['\u0628\u062D\u062C\u0645 \u0627\u0644\u0634\u0645\u0627\u0645', '2.6 \u0643\u063A', '\u0627\u0644\u0631\u0626\u062A\u0627\u0646 \u0645\u0643\u062A\u0645\u0644\u062A\u0627\u0646'],
-    40: ['\u0628\u062D\u062C\u0645 \u0627\u0644\u0628\u0637\u064A\u062E\u0629', '3.4 \u0643\u063A', '\u062C\u0627\u0647\u0632 \u0644\u0644\u0648\u0644\u0627\u062F\u0629!'],
-  };
-
-  List<String> _getWeekInfo(int week) {
-    int closest = weekData.keys.reduce((a, b) => (a - week).abs() <= (b - week).abs() ? a : b);
-    return weekData[closest]!;
-  }
-
   Future<void> _setPregnancyStart() async {
     final date = await showDatePicker(
       context: context,
@@ -1298,50 +1306,6 @@ class _PregnancyPageState extends State<PregnancyPage> {
     );
   }
 
-  Widget _interactiveCheck(String text, String key) {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: DB.userDoc.collection('weekly_checklist').doc('${DB.dateKey().substring(0, 7)}_$key').snapshots(),
-      builder: (context, snap) {
-        bool done = false;
-        if (snap.hasData && snap.data!.exists) {
-          done = (snap.data!.data() as Map<String, dynamic>?)?['done'] ?? false;
-        }
-        return InkWell(
-          onTap: () {
-            DB.userDoc.collection('weekly_checklist').doc('${DB.dateKey().substring(0, 7)}_$key').set({
-              'text': text, 'done': !done, 'key': key, 'updatedAt': FieldValue.serverTimestamp()
-            });
-          },
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 6),
-            child: Row(children: [
-              Icon(done ? Icons.check_circle : Icons.circle_outlined,
-                color: done ? Colors.green : Colors.grey, size: 28),
-              SizedBox(width: 10),
-              Expanded(child: Text(text, style: TextStyle(
-                fontSize: 15,
-                decoration: done ? TextDecoration.lineThrough : null,
-                color: done ? Colors.grey : Colors.black))),
-            ]),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _infoCard(String title, String desc, IconData icon, Color color) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-      child: Row(children: [
-        Icon(icon, color: color, size: 36), SizedBox(width: 14),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text(desc, style: TextStyle(color: Colors.grey.shade700)),
-        ])),
-      ]),
-    );
-  }
 }
 
 // ==================== BABY PAGE (FIRESTORE) ====================
@@ -1726,7 +1690,6 @@ class _ProfilePageState extends State<ProfilePage> {
     return Directionality(
       textDirection: AppLocalizations.textDir,
       child: Scaffold(
-        appBar: AppBar(centerTitle: true, title: Text(tr('profile')), backgroundColor: Colors.teal, foregroundColor: Colors.white),
         body: StreamBuilder<DocumentSnapshot>(
           stream: DB.userDoc.snapshots(),
           builder: (context, snapshot) {
@@ -1739,15 +1702,63 @@ class _ProfilePageState extends State<ProfilePage> {
             }
 
             return SingleChildScrollView(
-              padding: EdgeInsets.all(20),
               child: Column(children: [
-                SizedBox(height: 20),
-                CircleAvatar(radius: 50, backgroundColor: Colors.teal.shade100,
-                  child: Icon(Icons.person, size: 60, color: Colors.teal)),
-                SizedBox(height: 12),
-                Text(name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                Text(user?.email ?? '', style: TextStyle(color: Colors.grey)),
-                SizedBox(height: 30),
+                // Gradient profile header (Claude Design)
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 16, bottom: 28, left: 20, right: 20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [const Color(0xFFFCE4EC), const Color(0xFFFFF8FB), const Color(0xFFE0F2F1)],
+                      begin: Alignment.topLeft, end: Alignment.bottomRight,
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
+                  ),
+                  child: Column(children: [
+                    // Back button row
+                    Row(children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.arrow_back_ios_new, size: 18, color: const Color(0xFF1F1A20)),
+                        ),
+                      ),
+                      Spacer(),
+                      Text(tr('profile'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20))),
+                      Spacer(),
+                      const SizedBox(width: 36),
+                    ]),
+                    SizedBox(height: 20),
+                    // Avatar with gradient border
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(colors: [const Color(0xFFE91E63), const Color(0xFF7E57C2)]),
+                        boxShadow: [BoxShadow(color: const Color(0x40E91E63), blurRadius: 16, offset: const Offset(0, 6))],
+                      ),
+                      child: CircleAvatar(radius: 48, backgroundColor: Colors.white,
+                        child: Icon(Icons.person, size: 56, color: const Color(0xFF00897B))),
+                    ),
+                    SizedBox(height: 14),
+                    Text(name, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20))),
+                    SizedBox(height: 4),
+                    Text(user?.email ?? '', style: TextStyle(color: const Color(0xFF8B8190), fontSize: 13)),
+                  ]),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Column(children: [
+                SizedBox(height: 8),
 
                 // ─── Admin Panel Button (visible only for staff) ───
                 if (_adminReady && _admin.isAdmin)
@@ -1760,9 +1771,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: [Colors.teal.shade700, Colors.teal.shade400]),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [BoxShadow(color: Colors.teal.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+                          gradient: LinearGradient(colors: [const Color(0xFF7E57C2), const Color(0xFF5E35B1)]),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [BoxShadow(color: const Color(0x407E57C2), blurRadius: 16, offset: const Offset(0, 6))],
                         ),
                         child: Row(
                           children: [
@@ -1842,9 +1853,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red, foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999))),
                   ),
                 ),
+              ])),  // close Padding + Column
               ]),
             );
           },
@@ -1858,11 +1870,18 @@ class _ProfilePageState extends State<ProfilePage> {
       padding: EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         onTap: onTap,
-        leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(icon, color: color)),
-        title: Text(title),
-        trailing: Icon(AppLocalizations.isRtl ? Icons.chevron_left : Icons.chevron_right),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        tileColor: Colors.grey.shade50,
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+        trailing: Icon(AppLocalizations.isRtl ? Icons.chevron_left : Icons.chevron_right, color: const Color(0xFF8B8190)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        tileColor: const Color(0xFFFAF7F8),
       ),
     );
   }

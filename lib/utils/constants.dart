@@ -4,7 +4,7 @@ class AppConstants {
   // Colors
   static const Color primaryColor = Color(0xFF00897B);
   static const Color accentColor = Color(0xFFE91E63);
-  static const Color backgroundColor = Color(0xFFFAFAFA);
+  static const Color backgroundColor = Color(0xFFFFF8FB);  // warm pinkish white
   static const Color errorColor = Color(0xFFE53935);
   static const Color successColor = Color(0xFF43A047);
   static const Color warningColor = Color(0xFFFFA726);

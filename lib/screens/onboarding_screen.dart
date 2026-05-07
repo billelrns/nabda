@@ -10,7 +10,6 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   late PageController _pageController;
-  int _currentPage = 0;
   String _selectedMode = 'cycle';
 
   @override
@@ -30,9 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       body: PageView(
         controller: _pageController,
-        onPageChanged: (page) {
-          setState(() => _currentPage = page);
-        },
+        onPageChanged: (_) {},
         children: [
           _buildWelcomePage(),
           _buildModePage(),
@@ -155,7 +152,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFE91E63).withOpacity(0.1) : Colors.white,
           border: Border.all(
-            color: isSelected ? const Color(0xFFE91E63) : Colors.grey.shade300!,
+            color: isSelected ? const Color(0xFFE91E63) : Colors.grey.shade300,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),

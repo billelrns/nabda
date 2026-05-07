@@ -496,7 +496,6 @@ class _ContractionTimerScreen extends StatefulWidget {
 
 class _ContractionTimerScreenState extends State<_ContractionTimerScreen> {
   bool _isActive = false;
-  DateTime? _startTime;
   Timer? _timer;
   int _seconds = 0;
   final List<Map<String, dynamic>> _contractions = [];
@@ -520,7 +519,6 @@ class _ContractionTimerScreenState extends State<_ContractionTimerScreen> {
       setState(() { _isActive = false; _seconds = 0; });
     } else {
       // Start contraction
-      _startTime = DateTime.now();
       _timer = Timer.periodic(const Duration(seconds: 1), (_) {
         setState(() => _seconds++);
       });
@@ -1033,7 +1031,7 @@ class _SleepTrackerScreenState extends State<_SleepTrackerScreen> {
                                 Text(dateStr, style: TextStyle(fontSize: 11, color: _text2)),
                               ],
                             )),
-                            Text(qualityLabels[(q as int) - 1], style: TextStyle(fontSize: 12, color: _text2)),
+                            Text(qualityLabels[q - 1], style: TextStyle(fontSize: 12, color: _text2)),
                           ],
                         ),
                       );

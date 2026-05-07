@@ -74,7 +74,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(
-                top: BorderSide(color: Colors.grey.shade300!),
+                top: BorderSide(color: Colors.grey.shade300),
               ),
             ),
             child: Row(
