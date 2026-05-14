@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
@@ -18,6 +20,19 @@ import 'services/notification_service.dart';
 import 'services/admin_service.dart';
 import 'screens/admin/admin_panel_screen.dart';
 import 'config/theme.dart';
+import 'screens/onboarding_screen.dart' show PrivacyPolicyPage, TermsOfServicePage;
+import 'screens/baby_names/baby_names_screen.dart';
+import 'screens/trackers/weight_tracker_screen.dart';
+import 'screens/trackers/health_trackers_screen.dart';
+import 'screens/pregnancy/pregnancy_calendar_screen.dart';
+import 'screens/pregnancy/pregnancy_journal_screen.dart';
+import 'screens/pregnancy/fetus_size_screen.dart';
+import 'screens/pregnancy/hospital_bag_screen.dart';
+import 'screens/pregnancy/due_date_countdown_screen.dart';
+import 'screens/pregnancy/nutrition_screen.dart';
+import 'screens/pregnancy/exercises_screen.dart';
+import 'screens/pregnancy/achievements_screen.dart';
+import 'screens/pregnancy/share_progress_screen.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -580,17 +595,89 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final emailC = TextEditingController();
   final passC = TextEditingController();
+  final confirmPassC = TextEditingController();
   final nameC = TextEditingController();
   bool loading = false;
   String msg = '';
   bool isRegister = false;
+  bool obscurePass = true;
+  bool obscureConfirm = true;
+  bool acceptTerms = false;
+  int passwordStrength = 0;
+
+  late AnimationController _bgController;
+  late AnimationController _formController;
+  late Animation<double> _logoScale;
+  late Animation<Offset> _titleSlide;
+  late Animation<double> _formFade;
+  late Animation<Offset> _field1Slide;
+  late Animation<Offset> _field2Slide;
+  late Animation<Offset> _field3Slide;
+  late Animation<double> _buttonScale;
+
+  @override
+  void initState() {
+    super.initState();
+    passC.addListener(_calcStrength);
+
+    _bgController = AnimationController(vsync: this, duration: const Duration(seconds: 20))..repeat();
+    _formController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400));
+
+    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _formController, curve: const Interval(0.0, 0.3, curve: Curves.elasticOut)));
+    _titleSlide = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+      CurvedAnimation(parent: _formController, curve: const Interval(0.15, 0.4, curve: Curves.easeOutCubic)));
+    _formFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _formController, curve: const Interval(0.25, 0.5, curve: Curves.easeIn)));
+    _field1Slide = Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero).animate(
+      CurvedAnimation(parent: _formController, curve: const Interval(0.3, 0.55, curve: Curves.easeOutCubic)));
+    _field2Slide = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(
+      CurvedAnimation(parent: _formController, curve: const Interval(0.4, 0.65, curve: Curves.easeOutCubic)));
+    _field3Slide = Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero).animate(
+      CurvedAnimation(parent: _formController, curve: const Interval(0.45, 0.7, curve: Curves.easeOutCubic)));
+    _buttonScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _formController, curve: const Interval(0.6, 0.85, curve: Curves.elasticOut)));
+
+    _formController.forward();
+  }
+
+  void _calcStrength() {
+    final p = passC.text;
+    int s = 0;
+    if (p.length >= 6) s++;
+    if (p.length >= 10) s++;
+    if (RegExp(r'[A-Z]').hasMatch(p)) s++;
+    if (RegExp(r'[0-9]').hasMatch(p)) s++;
+    if (RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(p)) s++;
+    setState(() => passwordStrength = s.clamp(0, 5));
+  }
+
+  @override
+  void dispose() {
+    emailC.dispose(); passC.dispose(); confirmPassC.dispose(); nameC.dispose();
+    _bgController.dispose(); _formController.dispose();
+    super.dispose();
+  }
+
+  void _restartAnimation() {
+    _formController.reset();
+    _formController.forward();
+  }
 
   void doAuth() async {
     if (emailC.text.isEmpty || passC.text.isEmpty) {
       setState(() { msg = '\u064A\u0631\u062C\u0649 \u0645\u0644\u0621 \u062C\u0645\u064A\u0639 \u0627\u0644\u062D\u0642\u0648\u0644'; });
+      return;
+    }
+    if (isRegister && passC.text != confirmPassC.text) {
+      setState(() { msg = '\u0643\u0644\u0645\u062A\u0627 \u0627\u0644\u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0645\u062A\u0637\u0627\u0628\u0642\u062A\u064A\u0646'; });
+      return;
+    }
+    if (isRegister && !acceptTerms) {
+      setState(() { msg = '\u064A\u0631\u062C\u0649 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0639\u0644\u0649 \u0627\u0644\u0634\u0631\u0648\u0637 \u0648\u0627\u0644\u0623\u062D\u0643\u0627\u0645'; });
       return;
     }
     setState(() { loading = true; msg = ''; });
@@ -599,7 +686,6 @@ class _LoginPageState extends State<LoginPage> {
         var cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: emailC.text.trim(), password: passC.text);
         if (nameC.text.isNotEmpty) await cred.user?.updateDisplayName(nameC.text.trim());
-        // Create initial user document in Firestore
         await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
           'name': nameC.text.trim(),
           'email': emailC.text.trim(),
@@ -616,79 +702,305 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       String error = e.toString().split(']').last.trim();
-      if (error.contains('user-not-found')) {
-        error = '\u0644\u0627 \u064A\u0648\u062C\u062F \u062D\u0633\u0627\u0628 \u0628\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F';
-      } else if (error.contains('wrong-password') || error.contains('invalid-credential')) {
-        error = '\u0627\u0644\u0628\u0631\u064A\u062F \u0623\u0648 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629';
-      } else if (error.contains('email-already-in-use')) {
-        error = '\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0627\u0644\u0641\u0639\u0644';
-      } else if (error.contains('weak-password')) {
-        error = '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0636\u0639\u064A\u0641\u0629 \u062C\u062F\u0627\u064B';
-      } else {
-        error = '\u062D\u062F\u062B \u062E\u0637\u0623 \u063A\u064A\u0631 \u0645\u062A\u0648\u0642\u0639';
-      }
+      if (error.contains('user-not-found')) error = '\u0644\u0627 \u064A\u0648\u062C\u062F \u062D\u0633\u0627\u0628 \u0628\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F';
+      else if (error.contains('wrong-password') || error.contains('invalid-credential')) error = '\u0627\u0644\u0628\u0631\u064A\u062F \u0623\u0648 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629';
+      else if (error.contains('email-already-in-use')) error = '\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0627\u0644\u0641\u0639\u0644';
+      else if (error.contains('weak-password')) error = '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0636\u0639\u064A\u0641\u0629 \u062C\u062F\u0627\u064B';
+      else error = '\u062D\u062F\u062B \u062E\u0637\u0623 \u063A\u064A\u0631 \u0645\u062A\u0648\u0642\u0639';
       setState(() { msg = error; });
     }
     if (mounted) setState(() { loading = false; });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final tr = AppLocalizations.t;
-    return Directionality(
-      textDirection: AppLocalizations.textDir,
-      child: Scaffold(
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: 40),
-                Icon(Icons.favorite, size: 80, color: Colors.teal),
-                SizedBox(height: 12),
-                Text(tr('app_name'), textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.teal)),
-                Text(tr('womens_health'), textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey)),
-                SizedBox(height: 40),
-                if (isRegister) ...[
-                  TextField(controller: nameC,
-                    decoration: InputDecoration(labelText: tr('full_name'), prefixIcon: Icon(Icons.person),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-                  SizedBox(height: 14),
-                ],
-                TextField(controller: emailC, keyboardType: TextInputType.emailAddress,
-                  textDirection: TextDirection.ltr,
-                  decoration: InputDecoration(labelText: tr('email'), prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-                SizedBox(height: 14),
-                TextField(controller: passC, obscureText: true, textDirection: TextDirection.ltr,
-                  decoration: InputDecoration(labelText: tr('password'), prefixIcon: Icon(Icons.lock),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-                SizedBox(height: 20),
-                if (msg.isNotEmpty) Padding(padding: EdgeInsets.only(bottom: 12),
-                  child: Text(msg, style: TextStyle(color: Colors.red), textAlign: TextAlign.center)),
-                ElevatedButton(
-                  onPressed: loading ? null : doAuth,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  child: loading ? SizedBox(height: 20, width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(isRegister ? tr('register') : tr('login'), style: TextStyle(fontSize: 18))),
-                SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => setState(() { isRegister = !isRegister; msg = ''; }),
-                  child: Text(isRegister ? tr('have_account') : tr('no_account'),
-                    style: TextStyle(fontSize: 15))),
-              ],
-            ),
-          ),
+  void _showForgotPassword() {
+    final resetC = TextEditingController();
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Container(
+          padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            const Text('\u0627\u0633\u062A\u0639\u0627\u062F\u0629 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('\u0623\u062F\u062E\u0644\u064A \u0628\u0631\u064A\u062F\u0643 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A \u0644\u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u062F\u0629', style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+            const SizedBox(height: 24),
+            TextField(controller: resetC, keyboardType: TextInputType.emailAddress, textDirection: TextDirection.ltr,
+              decoration: InputDecoration(labelText: '\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A', prefixIcon: const Icon(Icons.email_rounded, color: Color(0xFFE91E63)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2)))),
+            const SizedBox(height: 20),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: () async {
+                if (resetC.text.trim().isEmpty) return;
+                try {
+                  await FirebaseAuth.instance.sendPasswordResetEmail(email: resetC.text.trim());
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('\u062A\u0645 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u062F\u0629 \u0625\u0644\u0649 \u0628\u0631\u064A\u062F\u0643'), backgroundColor: const Color(0xFF00897B), behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))));
+                } catch (e) { if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('\u062E\u0637\u0623: $e'))); }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE91E63), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+              child: const Text('\u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u062F\u0629', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)))),
+          ]),
         ),
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        body: Stack(
+          children: [
+            // Animated background
+            AnimatedBuilder(
+              animation: _bgController,
+              builder: (context, _) => CustomPaint(
+                painter: _AuthBgPainter(_bgController.value, isRegister),
+                size: Size.infinite,
+              ),
+            ),
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  children: [
+                    SizedBox(height: isRegister ? 30 : 50),
+                    // Logo with bounce
+                    ScaleTransition(
+                      scale: _logoScale,
+                      child: Container(
+                        width: 95, height: 95,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isRegister ? [const Color(0xFF00897B), const Color(0xFF4DB6AC)] : [const Color(0xFFE91E63), const Color(0xFFFF6090)],
+                            begin: Alignment.topLeft, end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [BoxShadow(color: (isRegister ? const Color(0xFF00897B) : const Color(0xFFE91E63)).withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8))],
+                        ),
+                        child: Icon(isRegister ? Icons.person_add_rounded : Icons.favorite_rounded, color: Colors.white, size: 46),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    // Title with slide
+                    SlideTransition(
+                      position: _titleSlide,
+                      child: Column(children: [
+                        Text(isRegister ? '\u0627\u0646\u0636\u0645\u064A \u0625\u0644\u064A\u0646\u0627' : '\u0645\u0631\u062D\u0628\u0627\u064B \u0628\u0639\u0648\u062F\u062A\u0643',
+                          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF2D2D3A))),
+                        const SizedBox(height: 6),
+                        Text(isRegister ? '\u0623\u0646\u0634\u0626\u064A \u062D\u0633\u0627\u0628\u0643 \u0648\u0627\u0633\u062A\u0645\u062A\u0639\u064A \u0628\u062E\u062F\u0645\u0627\u062A\u0646\u0627' : '\u0633\u062C\u0644\u064A \u0627\u0644\u062F\u062E\u0648\u0644 \u0644\u0645\u062A\u0627\u0628\u0639\u0629 \u0635\u062D\u062A\u0643',
+                          style: TextStyle(fontSize: 15, color: Colors.grey.shade500)),
+                      ]),
+                    ),
+                    const SizedBox(height: 30),
+                    // Form card with fade
+                    FadeTransition(
+                      opacity: _formFade,
+                      child: Container(
+                        padding: const EdgeInsets.all(22),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 30, offset: const Offset(0, 10))],
+                        ),
+                        child: Column(children: [
+                          // Name field (register only)
+                          if (isRegister) ...[
+                            SlideTransition(position: _field1Slide, child: _styledField(nameC, '\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644', '\u0641\u0627\u0637\u0645\u0629', Icons.person_rounded)),
+                            const SizedBox(height: 14),
+                          ],
+                          // Email
+                          SlideTransition(position: isRegister ? _field2Slide : _field1Slide,
+                            child: _styledField(emailC, '\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A', 'example@gmail.com', Icons.email_rounded, keyboardType: TextInputType.emailAddress, isLtr: true)),
+                          const SizedBox(height: 14),
+                          // Password
+                          SlideTransition(position: isRegister ? _field3Slide : _field2Slide,
+                            child: _styledField(passC, '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631', '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022', Icons.lock_rounded, isPassword: true, obscure: obscurePass,
+                              onToggle: () => setState(() => obscurePass = !obscurePass))),
+                          // Password strength (register)
+                          if (isRegister && passC.text.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            _buildPasswordStrength(),
+                          ],
+                          // Confirm password (register)
+                          if (isRegister) ...[
+                            const SizedBox(height: 14),
+                            _styledField(confirmPassC, '\u062A\u0623\u0643\u064A\u062F \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631', '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022', Icons.lock_outline_rounded, isPassword: true, obscure: obscureConfirm,
+                              onToggle: () => setState(() => obscureConfirm = !obscureConfirm)),
+                          ],
+                          // Forgot password (login only)
+                          if (!isRegister) ...[
+                            const SizedBox(height: 6),
+                            Align(alignment: Alignment.centerLeft,
+                              child: TextButton(onPressed: _showForgotPassword,
+                                child: Text('\u0647\u0644 \u0646\u0633\u064A\u062A\u0650 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631\u061F', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)))),
+                          ],
+                          // Terms checkbox (register)
+                          if (isRegister) ...[
+                            const SizedBox(height: 12),
+                            _buildTermsCheckbox(),
+                          ],
+                          const SizedBox(height: 18),
+                          // Error message
+                          if (msg.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 12),
+                            child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
+                              child: Row(children: [Icon(Icons.error_outline, color: Colors.red.shade400, size: 20), const SizedBox(width: 8), Expanded(child: Text(msg, style: TextStyle(color: Colors.red.shade700, fontSize: 13)))]))),
+                          // Button with scale
+                          ScaleTransition(
+                            scale: _buttonScale,
+                            child: SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
+                              onPressed: (loading || (isRegister && !acceptTerms)) ? null : doAuth,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isRegister ? const Color(0xFF00897B) : const Color(0xFFE91E63),
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.grey.shade300,
+                                elevation: 8,
+                                shadowColor: (isRegister ? const Color(0xFF00897B) : const Color(0xFFE91E63)).withOpacity(0.4),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
+                              child: loading
+                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation(Colors.white)))
+                                : Text(isRegister ? '\u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628' : '\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold))))),
+                        ]),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Divider
+                    FadeTransition(opacity: _formFade, child: Row(children: [
+                      Expanded(child: Divider(color: Colors.grey.shade300)),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text('\u0623\u0648', style: TextStyle(color: Colors.grey.shade400, fontSize: 13))),
+                      Expanded(child: Divider(color: Colors.grey.shade300)),
+                    ])),
+                    const SizedBox(height: 16),
+                    // Toggle
+                    FadeTransition(opacity: _formFade, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Text(isRegister ? '\u0644\u062F\u064A\u0643 \u062D\u0633\u0627\u0628 \u0628\u0627\u0644\u0641\u0639\u0644\u061F ' : '\u0644\u064A\u0633 \u0644\u062F\u064A\u0643 \u062D\u0633\u0627\u0628\u061F ', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+                      GestureDetector(
+                        onTap: () { setState(() { isRegister = !isRegister; msg = ''; }); _restartAnimation(); },
+                        child: Text(isRegister ? '\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644' : '\u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: isRegister ? const Color(0xFF00897B) : const Color(0xFFE91E63), fontSize: 14))),
+                    ])),
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _styledField(TextEditingController ctrl, String label, String hint, IconData icon, {
+    TextInputType? keyboardType, bool isPassword = false, bool obscure = false,
+    VoidCallback? onToggle, bool isLtr = false,
+  }) {
+    final accentColor = isRegister ? const Color(0xFF00897B) : const Color(0xFFE91E63);
+    return Container(
+      decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+      child: TextField(
+        controller: ctrl, keyboardType: keyboardType,
+        obscureText: isPassword ? obscure : false,
+        textDirection: isLtr ? TextDirection.ltr : null,
+        style: const TextStyle(fontSize: 15),
+        decoration: InputDecoration(
+          labelText: label, hintText: hint,
+          labelStyle: TextStyle(color: Colors.grey.shade500),
+          hintStyle: TextStyle(color: Colors.grey.shade400),
+          prefixIcon: Container(margin: const EdgeInsets.all(8), padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: accentColor, size: 20)),
+          suffixIcon: isPassword ? IconButton(
+            icon: Icon(obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: Colors.grey.shade400),
+            onPressed: onToggle) : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordStrength() {
+    final labels = ['', '\u0636\u0639\u064A\u0641\u0629 \u062C\u062F\u0627\u064B', '\u0636\u0639\u064A\u0641\u0629', '\u0645\u062A\u0648\u0633\u0637\u0629', '\u062C\u064A\u062F\u0629', '\u0642\u0648\u064A\u0629'];
+    final colors = [Colors.grey, Colors.red, Colors.orange, Colors.amber, Colors.lightGreen, Colors.green];
+    return Row(children: [
+      ...List.generate(5, (i) => Expanded(child: Container(height: 4, margin: EdgeInsets.only(left: i < 4 ? 3 : 0),
+        decoration: BoxDecoration(color: i < passwordStrength ? colors[passwordStrength] : Colors.grey.shade200, borderRadius: BorderRadius.circular(2))))),
+      const SizedBox(width: 8),
+      Text(passwordStrength > 0 ? labels[passwordStrength] : '', style: TextStyle(fontSize: 11, color: colors[passwordStrength])),
+    ]);
+  }
+
+  Widget _buildTermsCheckbox() {
+    return GestureDetector(
+      onTap: () => setState(() => acceptTerms = !acceptTerms),
+      child: Row(children: [
+        AnimatedContainer(duration: const Duration(milliseconds: 300), width: 24, height: 24,
+          decoration: BoxDecoration(
+            color: acceptTerms ? const Color(0xFF00897B) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: acceptTerms ? const Color(0xFF00897B) : Colors.grey.shade400, width: 2)),
+          child: acceptTerms ? const Icon(Icons.check, color: Colors.white, size: 16) : null),
+        const SizedBox(width: 10),
+        Expanded(child: Wrap(children: [
+          Text('\u0623\u0648\u0627\u0641\u0642 \u0639\u0644\u0649 ', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+          GestureDetector(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsOfServicePage())),
+            child: Text('\u0627\u0644\u0634\u0631\u0648\u0637', style: TextStyle(fontSize: 13, color: isRegister ? const Color(0xFF00897B) : const Color(0xFFE91E63), fontWeight: FontWeight.bold, decoration: TextDecoration.underline))),
+          Text(' \u0648', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+          GestureDetector(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyPage())),
+            child: Text('\u0627\u0644\u062E\u0635\u0648\u0635\u064A\u0629', style: TextStyle(fontSize: 13, color: isRegister ? const Color(0xFF00897B) : const Color(0xFFE91E63), fontWeight: FontWeight.bold, decoration: TextDecoration.underline))),
+        ])),
+      ]),
+    );
+  }
+}
+
+// Animated background painter for Auth pages
+class _AuthBgPainter extends CustomPainter {
+  final double animValue;
+  final bool isRegister;
+  _AuthBgPainter(this.animValue, this.isRegister);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final mainColor = isRegister ? const Color(0xFF00897B) : const Color(0xFFE91E63);
+    final bgTop = isRegister ? const Color(0xFFE0F2F1) : const Color(0xFFFFF0F3);
+    final bgMid = isRegister ? const Color(0xFFF5FAFA) : const Color(0xFFFFF5F7);
+
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..shader = LinearGradient(
+      begin: Alignment.topCenter, end: Alignment.bottomCenter,
+      colors: [bgTop, bgMid, Colors.white], stops: const [0.0, 0.4, 1.0],
+    ).createShader(Rect.fromLTWH(0, 0, w, h)));
+
+    // Floating circles
+    final positions = [
+      [0.1, 0.12, 75.0], [0.88, 0.08, 55.0], [0.75, 0.85, 90.0], [0.12, 0.78, 45.0], [0.5, 0.03, 35.0],
+    ];
+    for (int i = 0; i < positions.length; i++) {
+      final px = positions[i][0], py = positions[i][1], pr = positions[i][2];
+      final dx = w * px + sin(animValue * 2 * 3.14159 + i * 1.5) * 18;
+      final dy = h * py + cos(animValue * 2 * 3.14159 + i * 1.5) * 12;
+      canvas.drawCircle(Offset(dx, dy), pr, Paint()..color = mainColor.withOpacity(0.06));
+    }
+
+    // Wave
+    final wavePath = Path()..moveTo(0, h * 0.88);
+    for (double x = 0; x <= w; x += 1) {
+      wavePath.lineTo(x, h * 0.88 + sin((x / w * 4 * 3.14159) + animValue * 2 * 3.14159) * 12);
+    }
+    wavePath.lineTo(w, h); wavePath.lineTo(0, h); wavePath.close();
+    canvas.drawPath(wavePath, Paint()..color = mainColor.withOpacity(0.03));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 // ==================== MAIN NAVIGATION ====================
@@ -893,13 +1205,77 @@ class HomePage extends StatelessWidget {
                     }),
                   ]),
                   SizedBox(height: 12),
-                  // Community quick card
+                  // Community & Baby Names cards
                   Row(children: [
                     _buildCard(tr('community'), Icons.people, Colors.pink.shade50, Color(0xFFE91E63), () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityScreen()));
                     }),
                     SizedBox(width: 12),
-                    Expanded(child: SizedBox()),
+                    _buildCard('أسماء المواليد', Icons.child_care, Colors.purple.shade50, Color(0xFF7C4DFF), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => BabyNamesScreen()));
+                    }),
+                  ]),
+                  SizedBox(height: 12),
+                  // Weight tracker & health trackers
+                  Row(children: [
+                    _buildCard('تتبع الوزن', Icons.monitor_weight, Colors.indigo.shade50, Color(0xFF5C6BC0), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackerScreen()));
+                    }),
+                    SizedBox(width: 12),
+                    _buildCard('العدادات الصحية', Icons.monitor_heart, Colors.teal.shade50, Color(0xFF00897B), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => HealthTrackersScreen()));
+                    }),
+                  ]),
+                  SizedBox(height: 12),
+                  // Calendar & more
+                  Row(children: [
+                    _buildCard('تقويم الحمل', Icons.calendar_month, Colors.orange.shade50, Color(0xFFFF7043), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyCalendarScreen()));
+                    }),
+                    SizedBox(width: 12),
+                    _buildCard('حقيبة الولادة', Icons.card_travel, Colors.green.shade50, Color(0xFF66BB6A), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => HospitalBagScreen()));
+                    }),
+                  ]),
+                  SizedBox(height: 12),
+                  Row(children: [
+                    _buildCard('يوميات الحمل', Icons.auto_stories, Colors.pink.shade50, Color(0xFFE91E63), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyJournalScreen()));
+                    }),
+                    SizedBox(width: 12),
+                    _buildCard('حجم الجنين', Icons.child_friendly, Colors.amber.shade50, Color(0xFFFF8F00), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => FetusSizeScreen()));
+                    }),
+                  ]),
+                  SizedBox(height: 12),
+                  Row(children: [
+                    _buildCard('العد التنازلي', Icons.timer, Colors.red.shade50, Color(0xFFE91E63), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => DueDateCountdownScreen()));
+                    }),
+                    SizedBox(width: 12),
+                    _buildCard('التغذية', Icons.restaurant_menu, Colors.green.shade50, Color(0xFF43A047), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => NutritionScreen()));
+                    }),
+                  ]),
+                  SizedBox(height: 12),
+                  Row(children: [
+                    _buildCard('التمارين', Icons.fitness_center, Colors.purple.shade50, Color(0xFF7B1FA2), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => ExercisesScreen()));
+                    }),
+                    SizedBox(width: 12),
+                    _buildCard('مراحل الحمل', Icons.auto_awesome, Colors.cyan.shade50, Color(0xFF00ACC1), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyWeeksScreen()));
+                    }),
+                  ]),
+                  SizedBox(height: 12),
+                  Row(children: [
+                    _buildCard('الإنجازات', Icons.emoji_events, Colors.amber.shade50, Color(0xFFFF8F00), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsScreen()));
+                    }),
+                    SizedBox(width: 12),
+                    _buildCard('شاركي تقدمك', Icons.share, Colors.blue.shade50, Color(0xFF1565C0), () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => ShareProgressScreen()));
+                    }),
                   ]),
                   SizedBox(height: 12),
                   // Reminders quick card
@@ -935,6 +1311,9 @@ class HomePage extends StatelessWidget {
                   _tipCard(tr('tip_sleep'), Icons.bedtime, Colors.indigo),
                   SizedBox(height: 8),
                   _tipCard(tr('tip_walk'), Icons.directions_walk, Colors.green),
+                  SizedBox(height: 28),
+                  // ─── Home Articles from Firestore ───
+                  _HomeArticlesSection(),
                 ],
               ),
             );
@@ -1180,6 +1559,9 @@ class _CyclePageState extends State<CyclePage> {
                     }),
                 ]),
               ),
+              SizedBox(height: 24),
+              // \u2500\u2500\u2500 Articles & Tips (Firestore) \u2500\u2500\u2500
+              _CycleArticlesSection(),
             ]),
           );
         },
@@ -1482,6 +1864,8 @@ class _BabyPageState extends State<BabyPage> {
                   _vaccineItem('\u0627\u0644\u0644\u0642\u0627\u062D \u0627\u0644\u062B\u0644\u0627\u062B\u064A', 'dtap'),
                   _vaccineItem('\u0644\u0642\u0627\u062D \u0634\u0644\u0644 \u0627\u0644\u0623\u0637\u0641\u0627\u0644', 'polio'),
                   _vaccineItem('\u0644\u0642\u0627\u062D \u0627\u0644\u062D\u0635\u0628\u0629', 'mmr'),
+                  SizedBox(height: 24),
+                  _BabyArticlesSection(),
                 ]),
               );
             },
@@ -1598,25 +1982,444 @@ class _BabyPageState extends State<BabyPage> {
   }
 }
 
+// ==================== FIRESTORE ARTICLES SECTION (shared) ====================
+class _FirestoreArticlesSection extends StatelessWidget {
+  final String type; // 'cycle' or 'baby'
+  final Color color;
+  const _FirestoreArticlesSection({required this.type, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('articles')
+        .where('type', isEqualTo: type)
+        .snapshots(),
+      builder: (context, snap) {
+        if (!snap.hasData || snap.data!.docs.isEmpty) return SizedBox.shrink();
+        // Group by category
+        final Map<String, List<QueryDocumentSnapshot>> grouped = {};
+        for (final doc in snap.data!.docs) {
+          final d = doc.data() as Map<String, dynamic>;
+          final cat = (d['category'] ?? '') as String;
+          grouped.putIfAbsent(cat, () => []).add(doc);
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: grouped.entries.map((entry) {
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(Icons.auto_stories, color: color, size: 22),
+                SizedBox(width: 8),
+                Text(entry.key, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color.withOpacity(0.85))),
+              ]),
+              SizedBox(height: 10),
+              SizedBox(
+                height: 220,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: entry.value.length,
+                  itemBuilder: (_, i) {
+                    final d = entry.value[i].data() as Map<String, dynamic>;
+                    final title = d['title'] ?? '';
+                    final content = d['content'] ?? '';
+                    final imageUrl = d['imageUrl'] as String? ?? '';
+                    final contentImages = (d['contentImages'] as List<dynamic>?)?.cast<String>() ?? [];
+                    return _firestoreArticleCard(context, title, content, imageUrl, contentImages, color);
+                  },
+                ),
+              ),
+              SizedBox(height: 20),
+            ]);
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _firestoreArticleCard(BuildContext context, String title, String content, String imageUrl, List<String> contentImages, Color cardColor) {
+    final hasImage = imageUrl.isNotEmpty;
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(
+        builder: (_) => _ArticleDetailPage(title: title, body: content, color: cardColor, imageUrl: imageUrl, contentImages: contentImages))),
+      child: Container(
+        width: 260,
+        margin: EdgeInsets.only(left: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: cardColor.withOpacity(0.08), blurRadius: 8, offset: Offset(0, 3))],
+          border: Border.all(color: cardColor.withOpacity(0.15)),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Image header
+          if (hasImage)
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              child: Image.network(imageUrl, height: 100, width: 260, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(height: 100, color: cardColor.withOpacity(0.08),
+                  child: Center(child: Icon(Icons.image, color: cardColor.withOpacity(0.3), size: 36)))),
+            )
+          else
+            Container(
+              height: 100,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [cardColor.withOpacity(0.15), cardColor.withOpacity(0.05)]),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: Center(child: Icon(Icons.article_outlined, color: cardColor.withOpacity(0.4), size: 42)),
+            ),
+          // Content
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1F1A20)),
+                  maxLines: 2, overflow: TextOverflow.ellipsis),
+                SizedBox(height: 6),
+                Expanded(child: Text(content, style: TextStyle(fontSize: 12, color: Color(0xFF4A434B), height: 1.4),
+                  maxLines: 3, overflow: TextOverflow.ellipsis)),
+                Align(alignment: Alignment.centerLeft,
+                  child: Text('اقرأي المزيد ←', style: TextStyle(color: cardColor, fontSize: 11, fontWeight: FontWeight.bold))),
+              ]),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _CycleArticlesSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _FirestoreArticlesSection(type: 'cycle', color: Colors.pink);
+}
+
+class _BabyArticlesSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _FirestoreArticlesSection(type: 'baby', color: Colors.blue);
+}
+
+class _HomeArticlesSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final categories = [
+      {'name': 'صحة المرأة', 'icon': Icons.favorite, 'color': Colors.pink},
+      {'name': 'تغذية وجمال', 'icon': Icons.spa, 'color': Colors.purple},
+      {'name': 'صحة نفسية', 'icon': Icons.psychology, 'color': Colors.teal},
+      {'name': 'أمومة وطفولة', 'icon': Icons.child_care, 'color': Colors.blue},
+      {'name': 'رياضة ولياقة', 'icon': Icons.fitness_center, 'color': Colors.orange},
+      {'name': 'وصفات صحية', 'icon': Icons.restaurant, 'color': Colors.green},
+      {'name': 'علاقات أسرية', 'icon': Icons.people, 'color': Colors.indigo},
+      {'name': 'نصائح طبية', 'icon': Icons.medical_services, 'color': Colors.red},
+    ];
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('articles')
+        .where('type', isEqualTo: 'home')
+        .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return SizedBox.shrink();
+        }
+        final allDocs = snapshot.data!.docs;
+        // Group by category
+        final grouped = <String, List<QueryDocumentSnapshot>>{};
+        for (final doc in allDocs) {
+          final cat = (doc.data() as Map<String, dynamic>)['category'] ?? '';
+          grouped.putIfAbsent(cat, () => []).add(doc);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('مقالات ونصائح', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20))),
+            SizedBox(height: 4),
+            Text('آخر المقالات في مختلف المجالات', style: TextStyle(fontSize: 14, color: const Color(0xFF8B8190))),
+            SizedBox(height: 16),
+            for (final catInfo in categories)
+              if (grouped.containsKey(catInfo['name']))
+                _buildHomeSection(
+                  context,
+                  catInfo['name'] as String,
+                  catInfo['icon'] as IconData,
+                  catInfo['color'] as Color,
+                  grouped[catInfo['name']]!,
+                ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildHomeSection(BuildContext context, String title, IconData icon, Color color, List<QueryDocumentSnapshot> docs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          SizedBox(width: 10),
+          Expanded(child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1F1A20)))),
+        ]),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 240,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: docs.length,
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            itemBuilder: (context, i) {
+              final data = docs[i].data() as Map<String, dynamic>;
+              final imgUrl = data['imageUrl'] ?? '';
+              final articleTitle = data['title'] ?? '';
+              final content = data['content'] ?? '';
+              final contentImages = List<String>.from(data['contentImages'] ?? []);
+              return GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => _ArticleDetailPage(
+                    title: articleTitle, body: content, color: color,
+                    imageUrl: imgUrl, contentImages: contentImages,
+                  ),
+                )),
+                child: Container(
+                  width: 200, margin: EdgeInsets.only(left: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: color.withOpacity(0.15)),
+                    boxShadow: [BoxShadow(color: color.withOpacity(0.08), blurRadius: 12, offset: Offset(0, 4))],
+                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    // Image
+                    ClipRRect(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      child: imgUrl.isNotEmpty
+                        ? Image.network(imgUrl, height: 120, width: 200, fit: BoxFit.cover,
+                            loadingBuilder: (c, child, progress) => progress == null ? child
+                              : Container(height: 120, width: 200, color: color.withOpacity(0.05),
+                                  child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: color))),
+                            errorBuilder: (c, e, s) => Container(height: 120, width: 200,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]),
+                              ),
+                              child: Icon(icon, size: 40, color: color.withOpacity(0.4)),
+                            ),
+                          )
+                        : Container(height: 120, width: 200,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]),
+                            ),
+                            child: Icon(icon, size: 40, color: color.withOpacity(0.4)),
+                          ),
+                    ),
+                    // Title & preview
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(articleTitle, maxLines: 2, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF1F1A20), height: 1.3)),
+                          SizedBox(height: 4),
+                          Expanded(child: Text(content, maxLines: 2, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 11, color: const Color(0xFF8B8190), height: 1.4))),
+                        ]),
+                      ),
+                    ),
+                  ]),
+                ),
+              );
+            },
+          ),
+        ),
+        SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+// ==================== ARTICLE DETAIL PAGE ====================
+class _ArticleDetailPage extends StatelessWidget {
+  final String title;
+  final String body;
+  final Color color;
+  final String imageUrl;
+  final List<String> contentImages;
+  const _ArticleDetailPage({required this.title, required this.body, required this.color, this.imageUrl = '', this.contentImages = const []});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasHeaderImage = imageUrl.isNotEmpty;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(title, style: TextStyle(fontSize: 18)),
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Container(
+          color: Color(0xFFFFF8FB),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(0),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // Header image
+              if (hasHeaderImage)
+                Image.network(imageUrl, height: 220, width: double.infinity, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(height: 220,
+                    decoration: BoxDecoration(gradient: LinearGradient(colors: [color.withOpacity(0.2), color.withOpacity(0.05)])),
+                    child: Center(child: Icon(Icons.image, color: color.withOpacity(0.3), size: 60)))),
+              Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  if (!hasHeaderImage)
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(20),
+                      margin: EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(children: [
+                        Icon(Icons.article_outlined, color: color, size: 40),
+                        SizedBox(width: 14),
+                        Expanded(child: Text(title,
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F1A20)))),
+                      ]),
+                    )
+                  else ...[
+                    Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1F1A20))),
+                    SizedBox(height: 20),
+                  ],
+                  ...body.split('\n\n').map((para) => Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: Text(para.trim(),
+                      style: TextStyle(fontSize: 16, height: 1.8, color: Color(0xFF4A434B))),
+                  )),
+                  // Content images
+                  if (contentImages.isNotEmpty) ...[
+                    SizedBox(height: 10),
+                    ...contentImages.map((url) => Padding(
+                      padding: EdgeInsets.only(bottom: 16),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(url, width: double.infinity, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => SizedBox.shrink()),
+                      ),
+                    )),
+                  ],
+                  SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: color.withOpacity(0.2)),
+                    ),
+                    child: Row(children: [
+                      Icon(Icons.info_outline, color: color, size: 20),
+                      SizedBox(width: 10),
+                      Expanded(child: Text('هذا المقال للأغراض التثقيفية فقط. استشيري طبيبتك للحصول على نصيحة طبية شخصية.',
+                        style: TextStyle(fontSize: 13, color: color.withOpacity(0.8), fontStyle: FontStyle.italic))),
+                    ]),
+                  ),
+                ]),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ==================== PROFILE PAGE (FIRESTORE) ====================
 class ProfilePage extends StatefulWidget {
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
   final AdminService _admin = AdminService();
   bool _adminReady = false;
+  int _totalPoints = 0;
+  int _unlockedCount = 0;
+  int _streak = 0;
+  bool _achievementsLoaded = false;
+  late AnimationController _arrowController;
 
   @override
   void initState() {
     super.initState();
     _initAdmin();
+    _loadAchievements();
+    _arrowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _arrowController.dispose();
+    super.dispose();
   }
 
   Future<void> _initAdmin() async {
     await _admin.initialize();
     if (mounted) setState(() => _adminReady = true);
+  }
+
+  Future<void> _loadAchievements() async {
+    try {
+      final doc = await DB.userDoc.get();
+      final data = doc.data() as Map<String, dynamic>? ?? {};
+      final achievements = data['achievements'] as Map<String, dynamic>? ?? {};
+      final streak = (data['login_streak'] as num?)?.toInt() ?? 0;
+
+      // Achievement points map
+      final pointsMap = {
+        'first_week': 10, 'trimester_1': 50, 'trimester_2': 75, 'trimester_3': 100, 'due_date': 200, 'baby_size_fan': 30,
+        'first_weight': 10, 'weight_5': 25, 'weight_20': 75, 'vitamins_day': 15, 'vitamins_week': 50, 'exercise_first': 10,
+        'bag_10': 20, 'bag_complete': 100, 'journal_first': 10, 'journal_10': 40, 'journal_30': 100, 'calendar_check': 10,
+        'streak_3': 15, 'streak_7': 35, 'streak_14': 70, 'streak_30': 150, 'streak_60': 300, 'first_login': 5,
+      };
+
+      int points = 0;
+      int count = 0;
+      // Auto-unlock first_login
+      if (achievements['first_login'] != true) {
+        await DB.userDoc.set({'achievements': {'first_login': true}}, SetOptions(merge: true));
+        achievements['first_login'] = true;
+      }
+      for (final entry in achievements.entries) {
+        if (entry.value == true) { count++; points += pointsMap[entry.key] ?? 0; }
+      }
+
+      if (mounted) setState(() { _totalPoints = points; _unlockedCount = count; _streak = streak; _achievementsLoaded = true; });
+    } catch (_) {
+      if (mounted) setState(() => _achievementsLoaded = true);
+    }
+  }
+
+  String get _levelName {
+    if (_totalPoints >= 1000) return 'ملكة نبضة';
+    if (_totalPoints >= 600) return 'خبيرة';
+    if (_totalPoints >= 300) return 'متقدمة';
+    if (_totalPoints >= 100) return 'نشيطة';
+    if (_totalPoints >= 30) return 'مبتدئة';
+    return 'جديدة';
+  }
+
+  int get _levelIndex {
+    if (_totalPoints >= 1000) return 5;
+    if (_totalPoints >= 600) return 4;
+    if (_totalPoints >= 300) return 3;
+    if (_totalPoints >= 100) return 2;
+    if (_totalPoints >= 30) return 1;
+    return 0;
   }
 
   Future<void> _editName(BuildContext context) async {
@@ -1799,6 +2602,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
 
+                // ─── Achievements & Levels Section ───
+                if (_achievementsLoaded) ...[
+                  _buildLevelProgressCard(),
+                  const SizedBox(height: 12),
+                  _buildAchievementStatsRow(),
+                  const SizedBox(height: 16),
+                ],
+
+                _menuItem('الإنجازات والشارات', Icons.emoji_events, Colors.amber.shade700, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsScreen()));
+                }),
                 _menuItem(tr('edit_name'), Icons.edit, Colors.teal, () => _editName(context)),
                 _menuItem(tr('language'), Icons.language, Colors.indigo, () => _showLanguagePicker(context)),
                 _menuItem(tr('reset_data'), Icons.refresh, Colors.orange, () async {
@@ -1841,13 +2655,26 @@ class _ProfilePageState extends State<ProfilePage> {
                 _menuItem(tr('notifications'), Icons.notifications, Colors.blue, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage()));
                 }),
-                _menuItem(tr('privacy'), Icons.lock, Colors.purple, null),
+                _menuItem(tr('privacy'), Icons.lock, Colors.purple, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => PrivacyPolicyPage()));
+                }),
                 _menuItem(tr('help'), Icons.help, Colors.green, null),
                 SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => FirebaseAuth.instance.signOut(),
+                    onPressed: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.remove('onboarding_done');
+                      await prefs.remove('life_stage');
+                      await prefs.remove('user_name');
+                      await prefs.remove('pregnancy_start');
+                      await FirebaseAuth.instance.signOut();
+                      if (!mounted) return;
+                      // Pop the ProfilePage first, then navigate
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                      GoRouter.of(context).go('/onboarding');
+                    },
                     icon: Icon(Icons.logout),
                     label: Text(tr('logout'), style: TextStyle(fontSize: 16)),
                     style: ElevatedButton.styleFrom(
@@ -1860,6 +2687,178 @@ class _ProfilePageState extends State<ProfilePage> {
               ]),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLevelProgressCard() {
+    final levels = [
+      {'name': 'جديدة', 'emoji': '👋', 'points': 0},
+      {'name': 'مبتدئة', 'emoji': '🌱', 'points': 30},
+      {'name': 'نشيطة', 'emoji': '🔥', 'points': 100},
+      {'name': 'متقدمة', 'emoji': '💎', 'points': 300},
+      {'name': 'خبيرة', 'emoji': '🌟', 'points': 600},
+      {'name': 'ملكة نبضة', 'emoji': '👑', 'points': 1000},
+    ];
+    final currentIdx = _levelIndex;
+
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsScreen())),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [Color(0xFF1A237E), Color(0xFF283593)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [BoxShadow(color: const Color(0xFF1A237E).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 6))],
+        ),
+        child: Column(
+          children: [
+            // Current level header
+            Row(
+              children: [
+                Container(
+                  width: 56, height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [const Color(0xFFFFD700), const Color(0xFFFFC107)]),
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.4), blurRadius: 12)],
+                  ),
+                  child: Center(child: Text(levels[currentIdx]['emoji'] as String, style: const TextStyle(fontSize: 26))),
+                ),
+                const SizedBox(width: 14),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_levelName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 2),
+                    Text('$_totalPoints نقطة  •  $_unlockedCount/24 إنجاز', style: const TextStyle(fontSize: 12, color: Colors.white60)),
+                  ],
+                )),
+                const Icon(Icons.arrow_forward_ios, color: Colors.white38, size: 16),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Level path with animated arrow
+            SizedBox(
+              height: 80,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final totalWidth = constraints.maxWidth;
+                  final stepWidth = totalWidth / (levels.length - 1);
+
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Background line
+                      Positioned(
+                        top: 18, left: 0, right: 0,
+                        child: Container(height: 4, decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(2))),
+                      ),
+                      // Progress line
+                      Positioned(
+                        top: 18, left: 0,
+                        child: Container(
+                          height: 4,
+                          width: (stepWidth * currentIdx).clamp(0, totalWidth),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFFC107)]),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      // Level dots
+                      ...List.generate(levels.length, (i) {
+                        final x = i * stepWidth;
+                        final isReached = i <= currentIdx;
+                        final isCurrent = i == currentIdx;
+                        return Positioned(
+                          left: x - 14,
+                          top: 6,
+                          child: Column(
+                            children: [
+                              Container(
+                                width: isCurrent ? 28 : 22,
+                                height: isCurrent ? 28 : 22,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isReached ? const Color(0xFFFFD700) : Colors.white.withOpacity(0.2),
+                                  border: isCurrent ? Border.all(color: Colors.white, width: 2.5) : null,
+                                  boxShadow: isCurrent ? [BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.5), blurRadius: 8)] : null,
+                                ),
+                                child: Center(child: Text(
+                                  levels[i]['emoji'] as String,
+                                  style: TextStyle(fontSize: isCurrent ? 14 : 10),
+                                )),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                levels[i]['name'] as String,
+                                style: TextStyle(
+                                  fontSize: isCurrent ? 10 : 8,
+                                  color: isReached ? const Color(0xFFFFD700) : Colors.white38,
+                                  fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      // Animated arrow pointing to current level
+                      AnimatedBuilder(
+                        animation: _arrowController,
+                        builder: (context, _) {
+                          final bounce = _arrowController.value * 6;
+                          return Positioned(
+                            left: (currentIdx * stepWidth) - 8,
+                            top: -14 - bounce,
+                            child: Column(
+                              children: [
+                                Text('▼', style: TextStyle(fontSize: 14, color: const Color(0xFFFFD700), shadows: [Shadow(color: const Color(0xFFFFD700).withOpacity(0.6), blurRadius: 6)])),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAchievementStatsRow() {
+    return Row(
+      children: [
+        _achievementStatCard('🔥', '$_streak', 'أيام متتالية', const Color(0xFFFF6D00)),
+        const SizedBox(width: 10),
+        _achievementStatCard('⭐', '$_totalPoints', 'نقطة', const Color(0xFFFFB300)),
+        const SizedBox(width: 10),
+        _achievementStatCard('🏆', '$_unlockedCount', 'إنجاز', const Color(0xFF7B1FA2)),
+      ],
+    );
+  }
+
+  Widget _achievementStatCard(String emoji, String value, String label, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withOpacity(0.15)),
+        ),
+        child: Column(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 20)),
+            const SizedBox(height: 4),
+            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+            Text(label, style: TextStyle(fontSize: 10, color: color.withOpacity(0.7))),
+          ],
         ),
       ),
     );

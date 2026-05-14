@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_event.dart';
 import '../../services/admin_service.dart';
+import '../onboarding_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -181,18 +183,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildSettingItem(
               icon: Icons.description,
               title: 'شروط الاستخدام',
-              onTap: () {},
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TermsOfServicePage()),
+              ),
             ),
             _buildSettingItem(
               icon: Icons.policy,
               title: 'سياسة الخصوصية',
-              onTap: () {},
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+              ),
             ),
             const SizedBox(height: 30),
             ElevatedButton.icon(
-              onPressed: () {
-                context.read<AuthBloc>().add(const AuthLogoutRequested());
-                context.go('/login');
+              onPressed: () async {
+                final nav = GoRouter.of(context);
+                final bloc = context.read<AuthBloc>();
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('onboarding_done');
+                await prefs.remove('life_stage');
+                await prefs.remove('user_name');
+                await prefs.remove('pregnancy_start');
+                bloc.add(const AuthLogoutRequested());
+                nav.go('/onboarding');
               },
               icon: const Icon(Icons.logout),
               label: const Text('تسجيل الخروج'),

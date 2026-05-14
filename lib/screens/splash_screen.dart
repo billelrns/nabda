@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/admin_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -49,13 +50,18 @@ class _SplashScreenState extends State<SplashScreen>
     final user = await FirebaseAuth.instance.authStateChanges().first;
     if (!mounted) return;
 
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingDone = prefs.getBool('onboarding_done') ?? false;
+
     if (user != null) {
       // Initialize admin role check for staff members
       await AdminService().initialize();
       if (!mounted) return;
       context.go('/home');
-    } else {
+    } else if (!onboardingDone) {
       context.go('/onboarding');
+    } else {
+      context.go('/login');
     }
   }
 

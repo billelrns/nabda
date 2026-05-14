@@ -19,6 +19,7 @@ import '../screens/doctors/doctors_list_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/admin/admin_panel_screen.dart';
 import '../screens/shop/cart_screen.dart';
+import '../screens/baby_names/baby_names_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -40,6 +41,9 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String adminPanel = '/admin';
   static const String cart = '/cart';
+  static const String babyNames = '/baby-names';
+  static const String terms = '/terms';
+  static const String privacy = '/privacy';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -121,6 +125,18 @@ class AppRoutes {
       GoRoute(
         path: cart,
         builder: (context, state) => const CartScreen(),
+      ),
+      GoRoute(
+        path: babyNames,
+        builder: (context, state) => const BabyNamesScreen(),
+      ),
+      GoRoute(
+        path: terms,
+        builder: (context, state) => const TermsOfServicePage(),
+      ),
+      GoRoute(
+        path: privacy,
+        builder: (context, state) => const PrivacyPolicyPage(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
