@@ -3444,13 +3444,16 @@ class _BabyPageState extends State<BabyPage> {
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             children: [
                               _insightCard('\u0627\u0644\u0646\u0648\u0645 \u0627\u0644\u0635\u062D\u064A', '\u064A\u062D\u062A\u0627\u062C \u0637\u0641\u0644\u0643\u0650 \u0625\u0644\u0649 \u0661\u0664\u2013\u0661\u0667 \u0633\u0627\u0639\u0629 \u0646\u0648\u0645 \u064A\u0648\u0645\u064A\u064B\u0627 \u0641\u064A \u0647\u0630\u0627 \u0627\u0644\u0639\u0645\u0631.',
-                                '\uD83C\uDF19 \u0646\u0635\u064A\u062D\u0629 \u0627\u0644\u0646\u0648\u0645', [const Color(0xFF1A2238), const Color(0xFF2D2851), const Color(0xFF3E2A56)]),
+                                '\uD83C\uDF19 \u0646\u0635\u064A\u062D\u0629 \u0627\u0644\u0646\u0648\u0645', [const Color(0xFF1A2238), const Color(0xFF2D2851), const Color(0xFF3E2A56)],
+                                '\u0646\u0635\u0627\u0626\u062D \u0627\u0644\u0646\u0648\u0645 \u0627\u0644\u0635\u062D\u064A \u0644\u0644\u0637\u0641\u0644:\n\n\u2022 \u0636\u0639\u064A \u0637\u0641\u0644\u0643\u0650 \u0639\u0644\u0649 \u0638\u0647\u0631\u0647 \u0639\u0646\u062F \u0627\u0644\u0646\u0648\u0645\n\u2022 \u062D\u0627\u0641\u0638\u064A \u0639\u0644\u0649 \u063A\u0631\u0641\u0629 \u0647\u0627\u062F\u0626\u0629 \u0648\u0645\u0639\u062A\u0645\u0629\n\u2022 \u0627\u062A\u0628\u0639\u064A \u0631\u0648\u062A\u064A\u0646 \u062B\u0627\u0628\u062A \u0642\u0628\u0644 \u0627\u0644\u0646\u0648\u0645 (\u062D\u0645\u0627\u0645\u060C \u0642\u0635\u0629\u060C \u062A\u0647\u0648\u064A\u062F\u0629)\n\u2022 \u062A\u062C\u0646\u0628\u064A \u0627\u0644\u0634\u0627\u0634\u0627\u062A \u0642\u0628\u0644 \u0627\u0644\u0646\u0648\u0645 \u0628\u0633\u0627\u0639\u0629\n\u2022 \u062F\u0631\u062C\u0629 \u062D\u0631\u0627\u0631\u0629 \u0627\u0644\u063A\u0631\u0641\u0629 \u0627\u0644\u0645\u062B\u0627\u0644\u064A\u0629: \u0662\u0660-\u0662\u0662 \u062F\u0631\u062C\u0629\n\u2022 \u0644\u0627 \u062A\u0636\u0639\u064A \u0648\u0633\u0627\u0626\u062F \u0623\u0648 \u0623\u0644\u0639\u0627\u0628 \u0641\u064A \u0633\u0631\u064A\u0631 \u0627\u0644\u0631\u0636\u064A\u0639\n\n\u0633\u0627\u0639\u0627\u062A \u0627\u0644\u0646\u0648\u0645 \u062D\u0633\u0628 \u0627\u0644\u0639\u0645\u0631:\n\u2022 \u062D\u062F\u064A\u062B \u0627\u0644\u0648\u0644\u0627\u062F\u0629: \u0661\u0664-\u0661\u0667 \u0633\u0627\u0639\u0629\n\u2022 \u0663-\u0666 \u0623\u0634\u0647\u0631: \u0661\u0662-\u0661\u0665 \u0633\u0627\u0639\u0629\n\u2022 \u0666-\u0661\u0662 \u0634\u0647\u0631: \u0661\u0662-\u0661\u0664 \u0633\u0627\u0639\u0629\n\u2022 \u0661-\u0663 \u0633\u0646\u0648\u0627\u062A: \u0661\u0661-\u0661\u0664 \u0633\u0627\u0639\u0629'),
                               const SizedBox(width: 12),
                               _insightCard('\u0627\u0644\u062A\u063A\u0630\u064A\u0629', '\u0627\u0644\u0631\u0636\u0627\u0639\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629 \u0647\u064A \u0627\u0644\u0623\u0641\u0636\u0644 \u062E\u0644\u0627\u0644 \u0627\u0644\u0666 \u0623\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644\u0649.',
-                                '\uD83C\uDF7C \u062A\u063A\u0630\u064A\u0629 \u0645\u062B\u0627\u0644\u064A\u0629', [_teal, _tealDeep, const Color(0xFF0A5F60)]),
+                                '\uD83C\uDF7C \u062A\u063A\u0630\u064A\u0629 \u0645\u062B\u0627\u0644\u064A\u0629', [_teal, _tealDeep, const Color(0xFF0A5F60)],
+                                '\u062F\u0644\u064A\u0644 \u062A\u063A\u0630\u064A\u0629 \u0627\u0644\u0637\u0641\u0644:\n\n\u2022 \u0660-\u0666 \u0623\u0634\u0647\u0631: \u0631\u0636\u0627\u0639\u0629 \u0637\u0628\u064A\u0639\u064A\u0629 \u062D\u0635\u0631\u064A\u0629\n\u2022 \u0666 \u0623\u0634\u0647\u0631: \u0628\u062F\u0621 \u0625\u062F\u062E\u0627\u0644 \u0627\u0644\u0623\u0637\u0639\u0645\u0629 \u0627\u0644\u0635\u0644\u0628\u0629 \u062A\u062F\u0631\u064A\u062C\u064A\u064B\u0627\n\u2022 \u0627\u0628\u062F\u0626\u064A \u0628\u0627\u0644\u062D\u0628\u0648\u0628 \u0648\u0627\u0644\u062E\u0636\u0631\u0648\u0627\u062A \u0627\u0644\u0645\u0647\u0631\u0648\u0633\u0629\n\u2022 \u0642\u062F\u0651\u0645\u064A \u0637\u0639\u0627\u0645 \u0648\u0627\u062D\u062F \u062C\u062F\u064A\u062F \u0643\u0644 \u0663-\u0665 \u0623\u064A\u0627\u0645\n\u2022 \u062A\u062C\u0646\u0628\u064A \u0627\u0644\u0639\u0633\u0644 \u0642\u0628\u0644 \u0639\u0645\u0631 \u0627\u0644\u0633\u0646\u0629\n\u2022 \u062A\u062C\u0646\u0628\u064A \u0627\u0644\u0645\u0644\u062D \u0648\u0627\u0644\u0633\u0643\u0631 \u0627\u0644\u0645\u0636\u0627\u0641\n\n\u0639\u0644\u0627\u0645\u0627\u062A \u0627\u0644\u062C\u0648\u0639:\n\u2022 \u0648\u0636\u0639 \u0627\u0644\u064A\u062F \u0641\u064A \u0627\u0644\u0641\u0645\n\u2022 \u0627\u0644\u0628\u062D\u062B \u0639\u0646 \u0627\u0644\u062B\u062F\u064A\n\u2022 \u0627\u0644\u0628\u0643\u0627\u0621 (\u0639\u0644\u0627\u0645\u0629 \u0645\u062A\u0623\u062E\u0631\u0629)\n\n\u0639\u0644\u0627\u0645\u0627\u062A \u0627\u0644\u0634\u0628\u0639:\n\u2022 \u0625\u0628\u0639\u0627\u062F \u0627\u0644\u0631\u0623\u0633\n\u2022 \u0625\u063A\u0644\u0627\u0642 \u0627\u0644\u0641\u0645\n\u2022 \u0641\u0642\u062F\u0627\u0646 \u0627\u0644\u0627\u0647\u062A\u0645\u0627\u0645 \u0628\u0627\u0644\u0637\u0639\u0627\u0645'),
                               const SizedBox(width: 12),
                               _insightCard('\u0627\u0644\u0646\u0645\u0648 \u0627\u0644\u062D\u0631\u0643\u064A', '\u0634\u062C\u0651\u0639\u064A \u0637\u0641\u0644\u0643\u0650 \u0639\u0644\u0649 \u0648\u0642\u062A \u0627\u0644\u0628\u0637\u0646 (tummy time) \u064A\u0648\u0645\u064A\u064B\u0627.',
-                                '\uD83D\uDCAA \u0646\u0634\u0627\u0637 \u064A\u0648\u0645\u064A', [const Color(0xFFFF6BA3), _pink, _lavender2]),
+                                '\uD83D\uDCAA \u0646\u0634\u0627\u0637 \u064A\u0648\u0645\u064A', [const Color(0xFFFF6BA3), _pink, _lavender2],
+                                '\u0645\u0631\u0627\u062D\u0644 \u0627\u0644\u0646\u0645\u0648 \u0627\u0644\u062D\u0631\u0643\u064A:\n\n\u2022 \u0634\u0647\u0631 \u0661-\u0662: \u0631\u0641\u0639 \u0627\u0644\u0631\u0623\u0633 \u0642\u0644\u064A\u0644\u0627\u064B\n\u2022 \u0634\u0647\u0631 \u0663-\u0664: \u0627\u0644\u062A\u0642\u0644\u0651\u0628 \u0648\u0627\u0644\u0625\u0645\u0633\u0627\u0643 \u0628\u0627\u0644\u0623\u0634\u064A\u0627\u0621\n\u2022 \u0634\u0647\u0631 \u0665-\u0666: \u0627\u0644\u062C\u0644\u0648\u0633 \u0628\u0645\u0633\u0627\u0639\u062F\u0629\n\u2022 \u0634\u0647\u0631 \u0667-\u0668: \u0627\u0644\u062C\u0644\u0648\u0633 \u0628\u062F\u0648\u0646 \u0645\u0633\u0627\u0639\u062F\u0629 \u0648\u0627\u0644\u0632\u062D\u0641\n\u2022 \u0634\u0647\u0631 \u0669-\u0661\u0660: \u0627\u0644\u0648\u0642\u0648\u0641 \u0628\u0645\u0633\u0627\u0639\u062F\u0629\n\u2022 \u0634\u0647\u0631 \u0661\u0661-\u0661\u0662: \u0627\u0644\u0645\u0634\u064A \u0627\u0644\u0623\u0648\u0644\n\n\u0646\u0635\u0627\u0626\u062D \u0644\u062A\u062D\u0641\u064A\u0632 \u0627\u0644\u0646\u0645\u0648:\n\u2022 \u062E\u0635\u0635\u064A \u0648\u0642\u062A \u0627\u0644\u0628\u0637\u0646 \u064A\u0648\u0645\u064A\u064B\u0627 (tummy time)\n\u2022 \u0636\u0639\u064A \u0623\u0644\u0639\u0627\u0628 \u0623\u0645\u0627\u0645 \u0627\u0644\u0637\u0641\u0644 \u0644\u062A\u062D\u0641\u064A\u0632\u0647 \u0639\u0644\u0649 \u0627\u0644\u062D\u0631\u0643\u0629\n\u2022 \u0633\u0627\u0639\u062F\u064A\u0647 \u0639\u0644\u0649 \u0627\u0644\u0648\u0642\u0648\u0641 \u0645\u0639 \u0627\u0644\u0625\u0645\u0633\u0627\u0643 \u0628\u064A\u062F\u064A\u0647\n\u2022 \u0648\u0641\u0651\u0631\u064A \u0645\u0633\u0627\u062D\u0629 \u0622\u0645\u0646\u0629 \u0644\u0644\u0627\u0633\u062A\u0643\u0634\u0627\u0641\n\u2022 \u0644\u0627 \u062A\u0642\u0627\u0631\u0646\u064A \u0637\u0641\u0644\u0643\u0650 \u0628\u0627\u0644\u0623\u0637\u0641\u0627\u0644 \u0627\u0644\u0622\u062E\u0631\u064A\u0646'),
                             ],
                           ),
                         ),
@@ -3675,8 +3678,10 @@ class _BabyPageState extends State<BabyPage> {
   }
 
   // \u2500\u2500 Insight Card \u2500\u2500
-  Widget _insightCard(String title, String desc, String prob, List<Color> colors) {
-    return Container(
+  Widget _insightCard(String title, String desc, String prob, List<Color> colors, [String? detailText]) {
+    return GestureDetector(
+      onTap: () => _showInsightDetail(title, detailText ?? desc, colors),
+      child: Container(
       width: 260, padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
@@ -3715,6 +3720,79 @@ class _BabyPageState extends State<BabyPage> {
           ]),
         ),
       ]),
+    ),
+    );
+  }
+
+  // \u2500\u2500 Insight Detail Bottom Sheet \u2500\u2500
+  void _showInsightDetail(String title, String content, List<Color> colors) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.75),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40, height: 4,
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: _line),
+            ),
+            // Header with gradient
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
+              ),
+              child: Row(children: [
+                Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: Colors.white.withOpacity(0.2)),
+                  child: const Icon(Icons.auto_awesome, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                  const Text('\u0646\u0635\u064a\u062d\u0629 \u0630\u0643\u064a\u0629 \u0645\u0646 \u0646\u0628\u0636\u0629', style: TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.w600)),
+                ])),
+              ]),
+            ),
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Text(content, style: const TextStyle(fontSize: 14, color: _ink2, height: 1.8, fontWeight: FontWeight.w500)),
+              ),
+            ),
+            // Close button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    color: _cream,
+                    border: Border.all(color: _line),
+                  ),
+                  child: const Center(child: Text('\u0625\u063a\u0644\u0627\u0642', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _ink2))),
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 
