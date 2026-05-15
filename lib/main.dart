@@ -3110,33 +3110,74 @@ class BabyPage extends StatefulWidget {
 }
 
 class _BabyPageState extends State<BabyPage> {
+  // \u2500\u2500 Premium Design Tokens \u2500\u2500
+  static const _pink = Color(0xFFFF4F93);
+  static const _pinkHot = Color(0xFFE53B7E);
+  static const _pink50 = Color(0xFFFFF1F6);
+  static const _lavender = Color(0xFFEADCF8);
+  static const _lavender2 = Color(0xFFC7A8EB);
+  static const _teal = Color(0xFF15B8A6);
+  static const _tealDeep = Color(0xFF0F8B8D);
+  static const _teal50 = Color(0xFFE7F7F5);
+  static const _cream = Color(0xFFFFF8FA);
+  static const _peach = Color(0xFFFFB38A);
+  static const _sky = Color(0xFFDDEEFF);
+  static const _gold = Color(0xFFFFD79A);
+  static const _ink = Color(0xFF1B1320);
+  static const _ink2 = Color(0xFF4A3F4F);
+  static const _ink3 = Color(0xFF8E8295);
+  static const _line = Color(0xFFF0E6EE);
+
+  // \u2500\u2500 Data Methods (preserved) \u2500\u2500
   Future<void> _setBabyInfo() async {
     final nameC = TextEditingController();
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0637\u0641\u0644'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: nameC,
-            decoration: InputDecoration(labelText: '\u0627\u0633\u0645 \u0627\u0644\u0637\u0641\u0644',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-          SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () async {
-              final date = await showDatePicker(
-                context: ctx,
-                initialDate: DateTime.now().subtract(Duration(days: 90)),
-                firstDate: DateTime.now().subtract(Duration(days: 365 * 3)),
-                lastDate: DateTime.now(),
-                helpText: '\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F',
-              );
-              if (date != null) {
-                Navigator.pop(ctx, {'name': nameC.text, 'birthDate': date});
-              }
-            },
-            child: Text('\u0627\u062E\u062A\u0627\u0631\u064A \u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F'),
-          ),
-        ]),
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: Colors.white,
+          title: const Text('\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0637\u0641\u0644', style: TextStyle(fontWeight: FontWeight.w800, color: _ink)),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextField(controller: nameC,
+              decoration: InputDecoration(
+                labelText: '\u0627\u0633\u0645 \u0627\u0644\u0637\u0641\u0644',
+                prefixIcon: const Icon(Icons.child_care, color: _pink),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _pink, width: 2)),
+              )),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: ctx,
+                  initialDate: DateTime.now().subtract(const Duration(days: 90)),
+                  firstDate: DateTime.now().subtract(const Duration(days: 365 * 3)),
+                  lastDate: DateTime.now(),
+                  helpText: '\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F',
+                );
+                if (date != null) {
+                  Navigator.pop(ctx, {'name': nameC.text, 'birthDate': date});
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  gradient: const LinearGradient(colors: [Color(0xFFFF6BA3), _pink, _pinkHot]),
+                  boxShadow: [BoxShadow(color: _pink.withOpacity(0.22), blurRadius: 28, offset: const Offset(0, 12))],
+                ),
+                child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.calendar_month, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text('\u0627\u062E\u062A\u0627\u0631\u064A \u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                ]),
+              ),
+            ),
+          ]),
+        ),
       ),
     );
     if (result != null) {
@@ -3152,12 +3193,13 @@ class _BabyPageState extends State<BabyPage> {
     final snap = await doc.get();
     Map<String, dynamic> data = {};
     if (snap.exists) data = snap.data() as Map<String, dynamic>? ?? {};
-
     int current = (data[type] as int?) ?? 0;
     data[type] = current + 1;
     data['date'] = DB.dateKey();
     data['updatedAt'] = FieldValue.serverTimestamp();
     await doc.set(data, SetOptions(merge: true));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 $type \u2713'), backgroundColor: _teal, duration: const Duration(seconds: 1)));
   }
 
   Future<void> _updateGrowth(String field, double value) async {
@@ -3167,197 +3209,415 @@ class _BabyPageState extends State<BabyPage> {
     }, SetOptions(merge: true));
   }
 
+  String _arabicDate() {
+    final now = DateTime.now();
+    final days = ['\u0627\u0644\u0623\u062D\u062F', '\u0627\u0644\u0625\u062B\u0646\u064A\u0646', '\u0627\u0644\u062B\u0644\u0627\u062B\u0627\u0621', '\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621', '\u0627\u0644\u062E\u0645\u064A\u0633', '\u0627\u0644\u062C\u0645\u0639\u0629', '\u0627\u0644\u0633\u0628\u062A'];
+    final months = ['\u064A\u0646\u0627\u064A\u0631', '\u0641\u0628\u0631\u0627\u064A\u0631', '\u0645\u0627\u0631\u0633', '\u0623\u0628\u0631\u064A\u0644', '\u0645\u0627\u064A\u0648', '\u064A\u0648\u0646\u064A\u0648', '\u064A\u0648\u0644\u064A\u0648', '\u0623\u063A\u0633\u0637\u0633', '\u0633\u0628\u062A\u0645\u0628\u0631', '\u0623\u0643\u062A\u0648\u0628\u0631', '\u0646\u0648\u0641\u0645\u0628\u0631', '\u062F\u064A\u0633\u0645\u0628\u0631'];
+    return '${days[now.weekday % 7]} ${now.day} ${months[now.month - 1]}';
+  }
+
+  String _milestoneForAge(int days) {
+    if (days < 30) return '\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u2014 \u0627\u0644\u0627\u0628\u062A\u0633\u0627\u0645\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u0642\u0631\u064A\u0628\u0629';
+    if (days < 90) return '\u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u062A\u0641\u0627\u0639\u0644 \u0627\u0644\u0627\u062C\u062A\u0645\u0627\u0639\u064A \u0648\u0627\u0644\u0645\u0646\u0627\u063A\u0627\u0629';
+    if (days < 180) return '\u064A\u0628\u062F\u0623 \u0628\u0627\u0644\u0625\u0645\u0633\u0627\u0643 \u0648\u0627\u0644\u062A\u0642\u0644\u0651\u0628';
+    if (days < 270) return '\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u062C\u0644\u0648\u0633 \u0648\u0627\u0644\u0637\u0639\u0627\u0645 \u0627\u0644\u0635\u0644\u0628';
+    if (days < 365) return '\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u0632\u062D\u0641 \u0648\u0627\u0644\u0648\u0642\u0648\u0641';
+    return '\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u0645\u0634\u064A \u0648\u0627\u0644\u0643\u0644\u0627\u0645';
+  }
+
+  String _emojiForAge(int days) {
+    if (days < 30) return '\uD83D\uDC76';
+    if (days < 90) return '\uD83D\uDE0A';
+    if (days < 180) return '\u270B';
+    if (days < 270) return '\uD83C\uDF7D\uFE0F';
+    if (days < 365) return '\uD83D\uDEB6';
+    return '\uD83D\uDCAC';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(centerTitle: true,
-        title: Text('\u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0637\u0641\u0644'),
-        backgroundColor: Colors.blue, foregroundColor: Colors.white,
-        actions: [
-          IconButton(icon: Icon(Icons.edit), onPressed: _setBabyInfo,
-            tooltip: '\u062A\u0639\u062F\u064A\u0644 \u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0637\u0641\u0644'),
-        ],
-      ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: DB.userDoc.snapshots(),
-        builder: (context, userSnap) {
-          Map<String, dynamic> userData = {};
-          if (userSnap.hasData && userSnap.data!.exists) {
-            userData = userSnap.data!.data() as Map<String, dynamic>? ?? {};
-          }
-          String babyName = userData['babyName'] ?? '';
-          String ageText = '';
-          if (userData['babyBirthDate'] != null) {
-            try {
-              Timestamp ts = userData['babyBirthDate'];
-              int days = DateTime.now().difference(ts.toDate()).inDays;
-              if (days < 30) ageText = '$days \u064A\u0648\u0645';
-              else if (days < 365) ageText = '${(days / 30).floor()} \u0623\u0634\u0647\u0631';
-              else ageText = '${(days / 365).floor()} \u0633\u0646\u0629 \u0648 ${((days % 365) / 30).floor()} \u0623\u0634\u0647\u0631';
-            } catch (_) {}
-          }
-          double weight = (userData['baby_weight'] as num?)?.toDouble() ?? 0;
-          double height = (userData['baby_height'] as num?)?.toDouble() ?? 0;
-
-          if (babyName.isEmpty && userData['babyBirthDate'] == null) {
-            return Center(
-              child: Padding(
-                padding: EdgeInsets.all(40),
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.child_care, size: 80, color: Colors.blue.shade200),
-                  SizedBox(height: 20),
-                  Text('\u0644\u0645 \u064A\u062A\u0645 \u0625\u0636\u0627\u0641\u0629 \u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0637\u0641\u0644',
-                    style: TextStyle(fontSize: 18, color: Colors.grey), textAlign: TextAlign.center),
-                  SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    onPressed: _setBabyInfo,
-                    icon: Icon(Icons.add),
-                    label: Text('\u0623\u0636\u064A\u0641\u064A \u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0637\u0641\u0644'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white)),
-                ]),
-              ),
-            );
-          }
-
-          return StreamBuilder<DocumentSnapshot>(
-            stream: DB.babyLogs.doc(DB.dateKey()).snapshots(),
-            builder: (context, logSnap) {
-              Map<String, dynamic> log = {};
-              if (logSnap.hasData && logSnap.data!.exists) {
-                log = logSnap.data!.data() as Map<String, dynamic>? ?? {};
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: _cream,
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [_cream, Colors.white, _cream],
+            ),
+          ),
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: DB.userDoc.snapshots(),
+            builder: (context, userSnap) {
+              Map<String, dynamic> userData = {};
+              if (userSnap.hasData && userSnap.data!.exists) {
+                userData = userSnap.data!.data() as Map<String, dynamic>? ?? {};
               }
-              int feeding = (log['feeding'] as int?) ?? 0;
-              int sleep = (log['sleep'] as int?) ?? 0;
-              int diaper = (log['diaper'] as int?) ?? 0;
+              String babyName = userData['babyName'] ?? '';
+              int ageDays = 0;
+              String ageText = '';
+              if (userData['babyBirthDate'] != null) {
+                try {
+                  Timestamp ts = userData['babyBirthDate'];
+                  ageDays = DateTime.now().difference(ts.toDate()).inDays;
+                  if (ageDays < 30) ageText = '$ageDays \u064A\u0648\u0645';
+                  else if (ageDays < 365) ageText = '${(ageDays / 30).floor()} \u0623\u0634\u0647\u0631';
+                  else ageText = '${(ageDays / 365).floor()} \u0633\u0646\u0629 \u0648 ${((ageDays % 365) / 30).floor()} \u0623\u0634\u0647\u0631';
+                } catch (_) {}
+              }
+              double weight = (userData['baby_weight'] as num?)?.toDouble() ?? 0;
+              double babyHeight = (userData['baby_height'] as num?)?.toDouble() ?? 0;
 
-              return SingleChildScrollView(
-                padding: EdgeInsets.all(20),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  // Baby header
-                  Container(
-                    width: double.infinity, padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [Colors.blue.shade300, Colors.blue.shade100]),
-                      borderRadius: BorderRadius.circular(20)),
-                    child: Row(children: [
-                      Icon(Icons.child_care, size: 60, color: Colors.white),
-                      SizedBox(width: 16),
-                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(babyName.isEmpty ? '\u0637\u0641\u0644\u064A' : babyName,
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-                        if (ageText.isNotEmpty)
-                          Text('\u0627\u0644\u0639\u0645\u0631: $ageText', style: TextStyle(color: Colors.white70)),
-                      ]),
-                    ]),
-                  ),
-                  SizedBox(height: 20),
-                  // Growth
-                  Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u0646\u0645\u0648', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 12),
-                  Row(children: [
-                    _growthCard('\u0627\u0644\u0648\u0632\u0646', weight > 0 ? '${weight.toStringAsFixed(1)} \u0643\u063A' : '-- \u0643\u063A',
-                      Icons.monitor_weight, Colors.orange, () => _showGrowthInput('\u0627\u0644\u0648\u0632\u0646 (\u0643\u063A)', 'weight')),
-                    SizedBox(width: 12),
-                    _growthCard('\u0627\u0644\u0637\u0648\u0644', height > 0 ? '${height.toStringAsFixed(0)} \u0633\u0645' : '-- \u0633\u0645',
-                      Icons.height, Colors.green, () => _showGrowthInput('\u0627\u0644\u0637\u0648\u0644 (\u0633\u0645)', 'height')),
-                  ]),
-                  SizedBox(height: 20),
-                  // Daily log
-                  Text('\u0627\u0644\u0633\u062C\u0644 \u0627\u0644\u064A\u0648\u0645\u064A', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 12),
-                  _logItem('\u0627\u0644\u0631\u0636\u0627\u0639\u0629', '$feeding \u0645\u0631\u0629', Icons.restaurant, Colors.orange, () => _addLog('feeding')),
-                  _logItem('\u0627\u0644\u0646\u0648\u0645', '$sleep \u0633\u0627\u0639\u0629', Icons.bedtime, Colors.indigo, () => _addLog('sleep')),
-                  _logItem('\u0627\u0644\u062D\u0641\u0627\u0636', '$diaper \u062A\u063A\u064A\u064A\u0631', Icons.baby_changing_station, Colors.teal, () => _addLog('diaper')),
-                  SizedBox(height: 20),
-                  // Vaccines
-                  Text('\u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 12),
-                  _vaccineItem('\u0644\u0642\u0627\u062D \u0627\u0644\u062A\u0647\u0627\u0628 \u0627\u0644\u0643\u0628\u062F \u0628', 'hepb'),
-                  _vaccineItem('\u0644\u0642\u0627\u062D BCG', 'bcg'),
-                  _vaccineItem('\u0627\u0644\u0644\u0642\u0627\u062D \u0627\u0644\u062B\u0644\u0627\u062B\u064A', 'dtap'),
-                  _vaccineItem('\u0644\u0642\u0627\u062D \u0634\u0644\u0644 \u0627\u0644\u0623\u0637\u0641\u0627\u0644', 'polio'),
-                  _vaccineItem('\u0644\u0642\u0627\u062D \u0627\u0644\u062D\u0635\u0628\u0629', 'mmr'),
-                  SizedBox(height: 24),
-                  _BabyArticlesSection(),
-                ]),
+              if (babyName.isEmpty && userData['babyBirthDate'] == null) {
+                return _buildEmptyState();
+              }
+
+              return StreamBuilder<DocumentSnapshot>(
+                stream: DB.babyLogs.doc(DB.dateKey()).snapshots(),
+                builder: (context, logSnap) {
+                  Map<String, dynamic> log = {};
+                  if (logSnap.hasData && logSnap.data!.exists) {
+                    log = logSnap.data!.data() as Map<String, dynamic>? ?? {};
+                  }
+                  int feeding = (log['feeding'] as int?) ?? 0;
+                  int sleep = (log['sleep'] as int?) ?? 0;
+                  int diaper = (log['diaper'] as int?) ?? 0;
+
+                  return CustomScrollView(
+                    slivers: [
+                      // \u2500\u2500 Top Bar \u2500\u2500
+                      SliverAppBar(
+                        floating: true, snap: true,
+                        backgroundColor: Colors.transparent, elevation: 0,
+                        toolbarHeight: 68,
+                        flexibleSpace: Container(
+                          margin: const EdgeInsets.only(top: 8, left: 12, right: 12),
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.75),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: Colors.white.withOpacity(0.85), width: 0.5),
+                            boxShadow: [BoxShadow(color: _ink.withOpacity(0.06), blurRadius: 24, offset: const Offset(0, 8))],
+                          ),
+                          child: Row(children: [
+                            const SizedBox(width: 14),
+                            GestureDetector(
+                              onTap: () => Navigator.maybePop(context),
+                              child: Container(
+                                width: 40, height: 40,
+                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: Colors.white.withOpacity(0.8)),
+                                child: const Icon(Icons.arrow_forward_ios, size: 18, color: _ink),
+                              ),
+                            ),
+                            Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              const Text('\u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0637\u0641\u0644', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _ink)),
+                              Row(mainAxisSize: MainAxisSize.min, children: [
+                                Container(width: 5, height: 5, decoration: BoxDecoration(shape: BoxShape.circle, color: _teal, boxShadow: [BoxShadow(color: _teal.withOpacity(0.6), blurRadius: 6)])),
+                                const SizedBox(width: 5),
+                                Text('\u0627\u0644\u064A\u0648\u0645 \u2022 ${_arabicDate()}', style: const TextStyle(fontSize: 10.5, color: _ink3, fontWeight: FontWeight.w600)),
+                              ]),
+                            ])),
+                            GestureDetector(
+                              onTap: _setBabyInfo,
+                              child: Container(
+                                width: 40, height: 40,
+                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: Colors.white.withOpacity(0.8)),
+                                child: const Icon(Icons.edit_outlined, size: 18, color: _pink),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                          ]),
+                        ),
+                      ),
+
+                      SliverToBoxAdapter(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const SizedBox(height: 8),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 HERO BABY CARD \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 20),
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(32),
+                            color: Colors.white.withOpacity(0.75),
+                            border: Border.all(color: Colors.white.withOpacity(0.9), width: 0.5),
+                            boxShadow: [
+                              BoxShadow(color: _ink.withOpacity(0.08), blurRadius: 48, offset: const Offset(0, 24)),
+                              BoxShadow(color: _lavender2.withOpacity(0.12), blurRadius: 60, offset: const Offset(0, 30)),
+                            ],
+                          ),
+                          child: Column(children: [
+                            // Baby avatar orb
+                            Container(
+                              width: 100, height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const RadialGradient(colors: [Color(0xFFFFE6EF), Color(0xFFFFC0D6), Color(0xFFFF8DB7)]),
+                                boxShadow: [BoxShadow(color: _pink.withOpacity(0.25), blurRadius: 32, offset: const Offset(0, 12))],
+                              ),
+                              child: Center(child: Text(_emojiForAge(ageDays), style: const TextStyle(fontSize: 48))),
+                            ),
+                            const SizedBox(height: 14),
+                            // Name
+                            Text(babyName.isEmpty ? '\u0637\u0641\u0644\u064A' : babyName,
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: _ink)),
+                            if (ageText.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(999),
+                                  gradient: LinearGradient(colors: [_lavender2.withOpacity(0.18), _pink.withOpacity(0.12)]),
+                                ),
+                                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                  const Icon(Icons.cake_outlined, size: 14, color: _pinkHot),
+                                  const SizedBox(width: 6),
+                                  Text('\u0627\u0644\u0639\u0645\u0631: $ageText', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _pinkHot)),
+                                ]),
+                              ),
+                            ],
+                            const SizedBox(height: 10),
+                            // Milestone
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                color: _teal50,
+                                border: Border.all(color: _teal.withOpacity(0.2)),
+                              ),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                const Icon(Icons.auto_awesome, size: 14, color: _teal),
+                                const SizedBox(width: 6),
+                                Flexible(child: Text(_milestoneForAge(ageDays), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: _tealDeep))),
+                              ]),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // \u2500\u2500 Growth Stats \u2500\u2500
+                            Row(children: [
+                              _growthCard('\u0627\u0644\u0648\u0632\u0646', weight > 0 ? '${weight.toStringAsFixed(1)}' : '--', '\u0643\u063A',
+                                Icons.monitor_weight_outlined, const [Color(0xFFFFB38A), Color(0xFFFF8852)], () => _showGrowthInput('\u0627\u0644\u0648\u0632\u0646 (\u0643\u063A)', 'weight')),
+                              const SizedBox(width: 12),
+                              _growthCard('\u0627\u0644\u0637\u0648\u0644', babyHeight > 0 ? '${babyHeight.toStringAsFixed(0)}' : '--', '\u0633\u0645',
+                                Icons.height, const [_teal, _tealDeep], () => _showGrowthInput('\u0627\u0644\u0637\u0648\u0644 (\u0633\u0645)', 'height')),
+                            ]),
+                          ]),
+                        ),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 DAILY LOG SECTION \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        _sectionHeader('\u0627\u0644\u0633\u062C\u0644 \u0627\u0644\u064A\u0648\u0645\u064A', '\u062A\u062A\u0628\u0639\u064A \u0646\u0634\u0627\u0637 \u0637\u0641\u0644\u0643\u0650'),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(children: [
+                            _logCard('\uD83C\uDF7C', '\u0627\u0644\u0631\u0636\u0627\u0639\u0629', '$feeding \u0645\u0631\u0629',
+                              [const Color(0xFFFF6BA3), _pink], () => _addLog('feeding')),
+                            const SizedBox(width: 10),
+                            _logCard('\uD83D\uDE34', '\u0627\u0644\u0646\u0648\u0645', '$sleep \u0633\u0627\u0639\u0629',
+                              [_lavender2, const Color(0xFF9B6FE1)], () => _addLog('sleep')),
+                            const SizedBox(width: 10),
+                            _logCard('\uD83D\uDC76', '\u0627\u0644\u062D\u0641\u0627\u0636', '$diaper \u062A\u063A\u064A\u064A\u0631',
+                              [_teal, _tealDeep], () => _addLog('diaper')),
+                          ]),
+                        ),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 VACCINES SECTION \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        _sectionHeader('\u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A', '\u0633\u062C\u0644 \u0627\u0644\u0644\u0642\u0627\u062D\u0627\u062A'),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(children: [
+                            _vaccineItem('\u0644\u0642\u0627\u062D \u0627\u0644\u062A\u0647\u0627\u0628 \u0627\u0644\u0643\u0628\u062F \u0628', 'hepb', '\u0639\u0646\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629'),
+                            _vaccineItem('\u0644\u0642\u0627\u062D BCG', 'bcg', '\u0627\u0644\u0623\u0633\u0628\u0648\u0639 \u0627\u0644\u0623\u0648\u0644'),
+                            _vaccineItem('\u0627\u0644\u0644\u0642\u0627\u062D \u0627\u0644\u062B\u0644\u0627\u062B\u064A', 'dtap', '\u0634\u0647\u0631\u064A\u0646'),
+                            _vaccineItem('\u0644\u0642\u0627\u062D \u0634\u0644\u0644 \u0627\u0644\u0623\u0637\u0641\u0627\u0644', 'polio', '\u0634\u0647\u0631\u064A\u0646'),
+                            _vaccineItem('\u0644\u0642\u0627\u062D \u0627\u0644\u062D\u0635\u0628\u0629', 'mmr', '\u0669 \u0623\u0634\u0647\u0631'),
+                          ]),
+                        ),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 AI INSIGHTS \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        _sectionHeader('\u0631\u0624\u0649 \u0646\u0628\u0636\u0629 \u0627\u0644\u0630\u0643\u064A\u0629', '\u0646\u0635\u0627\u0626\u062D \u0644\u0639\u0645\u0631 \u0637\u0641\u0644\u0643\u0650'),
+                        SizedBox(
+                          height: 180,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            children: [
+                              _insightCard('\u0627\u0644\u0646\u0648\u0645 \u0627\u0644\u0635\u062D\u064A', '\u064A\u062D\u062A\u0627\u062C \u0637\u0641\u0644\u0643\u0650 \u0625\u0644\u0649 \u0661\u0664\u2013\u0661\u0667 \u0633\u0627\u0639\u0629 \u0646\u0648\u0645 \u064A\u0648\u0645\u064A\u064B\u0627 \u0641\u064A \u0647\u0630\u0627 \u0627\u0644\u0639\u0645\u0631.',
+                                '\uD83C\uDF19 \u0646\u0635\u064A\u062D\u0629 \u0627\u0644\u0646\u0648\u0645', [const Color(0xFF1A2238), const Color(0xFF2D2851), const Color(0xFF3E2A56)]),
+                              const SizedBox(width: 12),
+                              _insightCard('\u0627\u0644\u062A\u063A\u0630\u064A\u0629', '\u0627\u0644\u0631\u0636\u0627\u0639\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629 \u0647\u064A \u0627\u0644\u0623\u0641\u0636\u0644 \u062E\u0644\u0627\u0644 \u0627\u0644\u0666 \u0623\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644\u0649.',
+                                '\uD83C\uDF7C \u062A\u063A\u0630\u064A\u0629 \u0645\u062B\u0627\u0644\u064A\u0629', [_teal, _tealDeep, const Color(0xFF0A5F60)]),
+                              const SizedBox(width: 12),
+                              _insightCard('\u0627\u0644\u0646\u0645\u0648 \u0627\u0644\u062D\u0631\u0643\u064A', '\u0634\u062C\u0651\u0639\u064A \u0637\u0641\u0644\u0643\u0650 \u0639\u0644\u0649 \u0648\u0642\u062A \u0627\u0644\u0628\u0637\u0646 (tummy time) \u064A\u0648\u0645\u064A\u064B\u0627.',
+                                '\uD83D\uDCAA \u0646\u0634\u0627\u0637 \u064A\u0648\u0645\u064A', [const Color(0xFFFF6BA3), _pink, _lavender2]),
+                            ],
+                          ),
+                        ),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 ARTICLES \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: _BabyArticlesSection(),
+                        ),
+                        const SizedBox(height: 30),
+                      ])),
+                    ],
+                  );
+                },
               );
             },
-          );
-        },
-      ),
-    );
-  }
-
-  void _showGrowthInput(String label, String field) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(label),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          textDirection: TextDirection.ltr,
-          decoration: InputDecoration(labelText: label, border: OutlineInputBorder()),
+          ),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('\u0625\u0644\u063A\u0627\u0621')),
-          ElevatedButton(
-            onPressed: () {
-              double? val = double.tryParse(controller.text);
-              if (val != null) {
-                _updateGrowth(field, val);
-                Navigator.pop(ctx);
-              }
-            },
-            child: Text('\u062D\u0641\u0638')),
-        ],
       ),
     );
   }
 
-  Widget _growthCard(String title, String value, IconData icon, Color color, VoidCallback onTap) {
+  // \u2500\u2500 Empty State \u2500\u2500
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(
+            width: 120, height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(colors: [_pink.withOpacity(0.15), _lavender.withOpacity(0.1)]),
+            ),
+            child: const Center(child: Text('\uD83D\uDC76', style: TextStyle(fontSize: 56))),
+          ),
+          const SizedBox(height: 20),
+          const Text('\u0644\u0645 \u064A\u062A\u0645 \u0625\u0636\u0627\u0641\u0629 \u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0637\u0641\u0644',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _ink), textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          const Text('\u0623\u0636\u064A\u0641\u064A \u0627\u0633\u0645 \u0648\u062A\u0627\u0631\u064A\u062E \u0645\u064A\u0644\u0627\u062F \u0637\u0641\u0644\u0643\u0650 \u0644\u0628\u062F\u0621 \u0627\u0644\u0645\u062A\u0627\u0628\u0639\u0629',
+            style: TextStyle(fontSize: 13, color: _ink3), textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          GestureDetector(
+            onTap: _setBabyInfo,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                gradient: const LinearGradient(colors: [Color(0xFFFF6BA3), _pink, _pinkHot]),
+                boxShadow: [BoxShadow(color: _pink.withOpacity(0.3), blurRadius: 28, offset: const Offset(0, 12))],
+              ),
+              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('\u0623\u0636\u064A\u0641\u064A \u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0637\u0641\u0644', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+              ]),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  // \u2500\u2500 Section Header \u2500\u2500
+  Widget _sectionHeader(String eyebrow, String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 26, 20, 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(color: _lavender.withOpacity(0.5), borderRadius: BorderRadius.circular(8)),
+          child: Text(eyebrow, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _lavender2)),
+        ),
+        const SizedBox(height: 4),
+        Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _ink)),
+      ]),
+    );
+  }
+
+  // \u2500\u2500 Growth Card \u2500\u2500
+  Widget _growthCard(String title, String value, String unit, IconData icon, List<Color> colors, VoidCallback onTap) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            color: Colors.white.withOpacity(0.65),
+            border: Border.all(color: Colors.white.withOpacity(0.85), width: 0.5),
+            boxShadow: [BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+          ),
           child: Column(children: [
-            Icon(icon, color: color, size: 32), SizedBox(height: 8),
-            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-            Text(title, style: TextStyle(color: Colors.grey)),
-            SizedBox(height: 4),
-            Text('\u0627\u0636\u063A\u0637\u064A \u0644\u0644\u062A\u062D\u062F\u064A\u062B', style: TextStyle(fontSize: 10, color: Colors.grey)),
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: LinearGradient(colors: [colors.first.withOpacity(0.15), colors.last.withOpacity(0.1)]),
+              ),
+              child: Icon(icon, color: colors.first, size: 22),
+            ),
+            const SizedBox(height: 8),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: colors.first)),
+              const SizedBox(width: 4),
+              Text(unit, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.first.withOpacity(0.7))),
+            ]),
+            const SizedBox(height: 2),
+            Text(title, style: const TextStyle(fontSize: 11, color: _ink3, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), color: colors.first.withOpacity(0.08)),
+              child: Text('\u062A\u062D\u062F\u064A\u062B', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: colors.first)),
+            ),
           ]),
         ),
       ),
     );
   }
 
-  Widget _logItem(String title, String value, IconData icon, Color color, VoidCallback onTap) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6),
+  // \u2500\u2500 Log Card \u2500\u2500
+  Widget _logCard(String emoji, String title, String value, List<Color> colors, VoidCallback onTap) {
+    return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: EdgeInsets.all(14),
-          decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12)),
-          child: Row(children: [
-            CircleAvatar(backgroundColor: color.withOpacity(0.2), child: Icon(icon, color: color, size: 20)),
-            SizedBox(width: 14),
-            Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-            Spacer(),
-            Text(value, style: TextStyle(color: Colors.grey.shade700)),
-            SizedBox(width: 8),
-            Icon(Icons.add_circle, color: color, size: 24),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            color: Colors.white,
+            border: Border.all(color: _line),
+            boxShadow: [BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+          ),
+          child: Column(children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(colors: [colors.first.withOpacity(0.12), colors.last.withOpacity(0.08)]),
+              ),
+              child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22))),
+            ),
+            const SizedBox(height: 8),
+            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _ink)),
+            const SizedBox(height: 2),
+            Text(value, style: TextStyle(fontSize: 11, color: colors.first, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: LinearGradient(colors: colors),
+                boxShadow: [BoxShadow(color: colors.first.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 4))],
+              ),
+              child: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
+            ),
           ]),
         ),
       ),
     );
   }
 
-  Widget _vaccineItem(String name, String key) {
+  // \u2500\u2500 Vaccine Item \u2500\u2500
+  Widget _vaccineItem(String name, String key, String timing) {
     return StreamBuilder<DocumentSnapshot>(
       stream: DB.userDoc.collection('vaccines').doc(key).snapshots(),
       builder: (context, snap) {
@@ -3365,32 +3625,135 @@ class _BabyPageState extends State<BabyPage> {
         if (snap.hasData && snap.data!.exists) {
           done = (snap.data!.data() as Map<String, dynamic>?)?['done'] ?? false;
         }
-        return InkWell(
+        return GestureDetector(
           onTap: () {
             DB.userDoc.collection('vaccines').doc(key).set({
               'name': name, 'done': !done, 'updatedAt': FieldValue.serverTimestamp()
             });
           },
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
-            child: Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: done ? Colors.green.shade50 : Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(10)),
-              child: Row(children: [
-                Icon(done ? Icons.check_circle : Icons.schedule,
-                  color: done ? Colors.green : Colors.orange),
-                SizedBox(width: 10),
-                Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
-                Spacer(),
-                Text(done ? '\u0645\u0643\u062A\u0645\u0644' : '\u0642\u0627\u062F\u0645',
-                  style: TextStyle(fontSize: 12, color: done ? Colors.green : Colors.orange)),
-              ]),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              color: done ? _teal50 : Colors.white,
+              border: Border.all(color: done ? _teal.withOpacity(0.3) : _line, width: done ? 1.5 : 0.5),
+              boxShadow: done
+                ? [BoxShadow(color: _teal.withOpacity(0.12), blurRadius: 12, offset: const Offset(0, 4))]
+                : [BoxShadow(color: _ink.withOpacity(0.03), blurRadius: 4)],
             ),
+            child: Row(children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: done
+                    ? const LinearGradient(colors: [_teal, _tealDeep])
+                    : LinearGradient(colors: [_peach.withOpacity(0.2), _gold.withOpacity(0.15)]),
+                ),
+                child: Icon(done ? Icons.check_rounded : Icons.schedule_rounded, color: done ? Colors.white : _peach, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _ink)),
+                Text(timing, style: const TextStyle(fontSize: 11, color: _ink3, fontWeight: FontWeight.w500)),
+              ])),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: done ? _teal.withOpacity(0.1) : _peach.withOpacity(0.1),
+                ),
+                child: Text(done ? '\u0645\u0643\u062A\u0645\u0644 \u2713' : '\u0642\u0627\u062F\u0645',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: done ? _teal : _peach)),
+              ),
+            ]),
           ),
         );
       },
+    );
+  }
+
+  // \u2500\u2500 Insight Card \u2500\u2500
+  Widget _insightCard(String title, String desc, String prob, List<Color> colors) {
+    return Container(
+      width: 260, padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
+        boxShadow: [BoxShadow(color: colors.first.withOpacity(0.3), blurRadius: 28, offset: const Offset(0, 12))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(999)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 5, height: 5, decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [BoxShadow(color: Colors.white, blurRadius: 6)])),
+            const SizedBox(width: 6),
+            const Text('\u0646\u0635\u064A\u062D\u0629 \u0630\u0643\u064A\u0629', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white)),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
+        const SizedBox(height: 4),
+        Text(desc, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.82), height: 1.55)),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.only(top: 10),
+          decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.white.withOpacity(0.18), width: 0.5))),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(prob, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(999)),
+              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                Text('\u0627\u0644\u0645\u0632\u064A\u062F', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Colors.white)),
+                SizedBox(width: 4),
+                Icon(Icons.arrow_back_ios, size: 10, color: Colors.white),
+              ]),
+            ),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  // \u2500\u2500 Growth Input Dialog \u2500\u2500
+  void _showGrowthInput(String label, String field) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(label, style: const TextStyle(fontWeight: FontWeight.w800, color: _ink)),
+          content: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textDirection: TextDirection.ltr,
+            decoration: InputDecoration(
+              labelText: label,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _teal, width: 2)),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('\u0625\u0644\u063A\u0627\u0621', style: TextStyle(color: _ink3))),
+            GestureDetector(
+              onTap: () {
+                double? val = double.tryParse(controller.text);
+                if (val != null) { _updateGrowth(field, val); Navigator.pop(ctx); }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), gradient: const LinearGradient(colors: [_teal, _tealDeep])),
+                child: const Text('\u062D\u0641\u0638', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
