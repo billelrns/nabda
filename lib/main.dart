@@ -1,7 +1,10 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -1028,299 +1031,203 @@ class _MainNavState extends State<MainNav> {
               right: 16,
               child: GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage())),
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(colors: [const Color(0xFFE91E63), const Color(0xFF7E57C2)]),
-                    boxShadow: [
-                      BoxShadow(color: const Color(0x4DE91E63), blurRadius: 12, offset: const Offset(0, 4)),
-                    ],
-                  ),
-                  child: Center(
-                    child: Container(
-                      width: 36,
-                      height: 36,
+                child: StreamBuilder<DocumentSnapshot>(
+                  stream: DB.userDoc.snapshots(),
+                  builder: (context, snap) {
+                    final photoUrl = (snap.data?.data() as Map<String, dynamic>?)?['photoUrl'] as String?;
+                    return Container(
+                      width: 42,
+                      height: 42,
                       decoration: BoxDecoration(
-                        color: Colors.white,
                         shape: BoxShape.circle,
+                        gradient: const LinearGradient(colors: [Color(0xFFE91E63), Color(0xFF7E57C2)]),
+                        boxShadow: [
+                          BoxShadow(color: const Color(0x4DE91E63), blurRadius: 12, offset: const Offset(0, 4)),
+                        ],
                       ),
-                      child: const Icon(Icons.person, color: Color(0xFF00897B), size: 20),
-                    ),
-                  ),
+                      child: Center(
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: photoUrl != null
+                              ? ClipOval(
+                                  child: photoUrl.startsWith('data:')
+                                      ? Image.memory(base64Decode(photoUrl.split(',').last), width: 36, height: 36, fit: BoxFit.cover)
+                                      : Image.network(photoUrl, width: 36, height: 36, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Color(0xFF00897B), size: 20)),
+                                )
+                              : const Icon(Icons.person, color: Color(0xFF00897B), size: 20),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
           ],
         ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _index,
-          onDestinationSelected: (i) => setState(() => _index = i),
-          destinations: [
-            NavigationDestination(icon: Icon(Icons.home), label: AppLocalizations.t('home')),
-            NavigationDestination(icon: Icon(Icons.calendar_month), label: AppLocalizations.t('cycle')),
-            NavigationDestination(icon: Icon(Icons.pregnant_woman), label: AppLocalizations.t('pregnancy')),
-            NavigationDestination(icon: Icon(Icons.child_care), label: AppLocalizations.t('baby')),
-            NavigationDestination(icon: Icon(Icons.store), label: AppLocalizations.t('shop')),
-          ],
+        bottomNavigationBar: Container(
+          margin: const EdgeInsets.only(left: 14, right: 14, bottom: 16),
+          height: 68,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.92),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1B1320).withOpacity(0.10),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(5, (i) {
+              final isActive = _index == i;
+              final icons = [
+                Icons.home_outlined,
+                Icons.calendar_month_outlined,
+                Icons.pregnant_woman,
+                Icons.child_care_outlined,
+                Icons.store_outlined,
+              ];
+              final activeIcons = [
+                Icons.home,
+                Icons.calendar_month,
+                Icons.pregnant_woman,
+                Icons.child_care,
+                Icons.store,
+              ];
+              final labels = [
+                AppLocalizations.t('home'),
+                AppLocalizations.t('cycle'),
+                AppLocalizations.t('pregnancy'),
+                AppLocalizations.t('baby'),
+                AppLocalizations.t('shop'),
+              ];
+              return GestureDetector(
+                onTap: () => setState(() => _index = i),
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isActive ? 16 : 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: isActive
+                        ? const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFFFF6BA3),
+                              Color(0xFFFF4F93),
+                              Color(0xFFE53B7E),
+                            ],
+                          )
+                        : null,
+                    boxShadow: isActive
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFFFF4F93).withOpacity(0.40),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isActive ? activeIcons[i] : icons[i],
+                        color: isActive ? Colors.white : const Color(0xFF8E8295),
+                        size: 22,
+                      ),
+                      if (isActive) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          labels[i],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
         ),
       ),
     );
   }
 }
 
-// ==================== HOME PAGE ====================
-class HomePage extends StatelessWidget {
+// ==================== HOME PAGE (Claude Design Premium) ====================
+class HomePage extends StatefulWidget {
   final Function(int)? onCardTap;
   const HomePage({this.onCardTap});
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  // ── Design Tokens ──
+  static const _pink = Color(0xFFFF4F93);
+  static const _pinkSoft = Color(0xFFFFC8DC);
+  static const _pink50 = Color(0xFFFFF1F6);
+  static const _lavender = Color(0xFFEADCF8);
+  static const _lavender2 = Color(0xFFC7A8EB);
+  static const _teal = Color(0xFF15B8A6);
+  static const _tealDeep = Color(0xFF0F8B8D);
+  static const _teal50 = Color(0xFFE7F7F5);
+  static const _cream = Color(0xFFFFF8FA);
+  static const _peach = Color(0xFFFFB38A);
+  static const _peach50 = Color(0xFFFFF1E8);
+  static const _sky = Color(0xFFDDEEFF);
+  static const _gold = Color(0xFFFFD79A);
+  static const _goldDeep = Color(0xFFC9A84C);
+  static const _ink = Color(0xFF1B1320);
+  static const _ink2 = Color(0xFF4A3F4F);
+  static const _ink3 = Color(0xFF8E8295);
+  static const _line = Color(0xFFF0E6EE);
+
+  String _userName = '';
+  int _pregnancyWeek = 0;
+  Map<String, dynamic> _userData = {};
 
   @override
-  Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final tr = AppLocalizations.t;
-    return Directionality(
-      textDirection: AppLocalizations.textDir,
-      child: Scaffold(
-        appBar: AppBar(centerTitle: true,
-          title: Text(tr('app_name'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 24, letterSpacing: 0.5)),
-          backgroundColor: Colors.transparent,
-          foregroundColor: const Color(0xFF1F1A20),
-          elevation: 0,
-          flexibleSpace: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [const Color(0xFFFCE4EC), const Color(0xFFFFF8FB), const Color(0xFFE0F2F1)],
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
-                stops: const [0.0, 0.5, 1.0],
-              ),
-            ),
-          ),
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(left: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                icon: Icon(Icons.notifications_outlined, color: const Color(0xFF5E35B1)),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage())),
-                tooltip: tr('reminders'),
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: StreamBuilder<DocumentSnapshot>(
-          stream: DB.userDoc.snapshots(),
-          builder: (context, snapshot) {
-            Map<String, dynamic> data = {};
-            if (snapshot.hasData && snapshot.data!.exists) {
-              data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-            }
-            int cycleDay = _calcCycleDay(data);
-            int cycleLength = (data['cycleLength'] as int?) ?? 28;
+  void initState() {
+    super.initState();
+    _loadData();
+  }
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Welcome header with warm gradient (Claude Design)
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [const Color(0xFFFCE4EC), const Color(0xFFFFF8FB), const Color(0xFFE0F2F1)],
-                        begin: Alignment.topLeft, end: Alignment.bottomRight,
-                        stops: const [0.0, 0.5, 1.0],
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withOpacity(0.8)),
-                      boxShadow: [
-                        BoxShadow(color: const Color(0x14E91E63), blurRadius: 16, offset: const Offset(0, 6)),
-                      ],
-                    ),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${tr('hello')} ${user?.displayName ?? ""}!',
-                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20))),
-                      SizedBox(height: 4),
-                      Text(tr('how_are_you'), style: TextStyle(fontSize: 15, color: const Color(0xFF8B8190))),
-                    ]),
-                  ),
-                  SizedBox(height: 16),
-                  // Cycle status card
-                  if (data['lastPeriodStart'] != null)
-                    Container(
-                      width: double.infinity, padding: EdgeInsets.all(20),
-                      margin: EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: cycleDay <= 5
-                            ? [Colors.pink.shade400, Colors.pink.shade200]
-                            : cycleDay >= 10 && cycleDay <= 16
-                              ? [Colors.purple.shade400, Colors.purple.shade200]
-                              : [Colors.teal.shade400, Colors.teal.shade200],
-                          begin: Alignment.topLeft, end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [BoxShadow(color: const Color(0x40E91E63), blurRadius: 20, offset: Offset(0, 8))],
-                      ),
-                      child: Row(children: [
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(16)),
-                          child: Icon(Icons.calendar_today, color: Colors.white, size: 32),
-                        ),
-                        SizedBox(width: 16),
-                        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('${tr('day_of')} $cycleDay ${tr('of_days')} $cycleLength',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                          SizedBox(height: 4),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.25), borderRadius: BorderRadius.circular(999)),
-                            child: Text(cycleDay <= 5 ? tr('period_phase') :
-                                 cycleDay >= 10 && cycleDay <= 16 ? tr('fertile_phase') :
-                                 tr('regular_phase'),
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-                          ),
-                        ]),
-                      ]),
-                    ),
-                  // Feature cards
-                  Row(children: [
-                    _buildCard(tr('cycle_tracking'), Icons.calendar_month, Colors.pink.shade50, Colors.pink, () => onCardTap?.call(1)),
-                    SizedBox(width: 12),
-                    _buildCard(tr('pregnancy_tracking'), Icons.pregnant_woman, Colors.purple.shade50, Colors.purple, () => onCardTap?.call(2)),
-                  ]),
-                  SizedBox(height: 12),
-                  Row(children: [
-                    _buildCard(tr('baby_care'), Icons.child_care, Colors.blue.shade50, Colors.blue, () => onCardTap?.call(3)),
-                    SizedBox(width: 12),
-                    _buildCard(tr('ai_assistant'), Icons.smart_toy, Colors.teal.shade50, Colors.teal, () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => AIChatPage()));
-                    }),
-                  ]),
-                  SizedBox(height: 12),
-                  // Community & Baby Names cards
-                  Row(children: [
-                    _buildCard(tr('community'), Icons.people, Colors.pink.shade50, Color(0xFFE91E63), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityScreen()));
-                    }),
-                    SizedBox(width: 12),
-                    _buildCard('أسماء المواليد', Icons.child_care, Colors.purple.shade50, Color(0xFF7C4DFF), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => BabyNamesScreen()));
-                    }),
-                  ]),
-                  SizedBox(height: 12),
-                  // Weight tracker & health trackers
-                  Row(children: [
-                    _buildCard('تتبع الوزن', Icons.monitor_weight, Colors.indigo.shade50, Color(0xFF5C6BC0), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackerScreen()));
-                    }),
-                    SizedBox(width: 12),
-                    _buildCard('العدادات الصحية', Icons.monitor_heart, Colors.teal.shade50, Color(0xFF00897B), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => HealthTrackersScreen()));
-                    }),
-                  ]),
-                  SizedBox(height: 12),
-                  // Calendar & more
-                  Row(children: [
-                    _buildCard('تقويم الحمل', Icons.calendar_month, Colors.orange.shade50, Color(0xFFFF7043), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyCalendarScreen()));
-                    }),
-                    SizedBox(width: 12),
-                    _buildCard('حقيبة الولادة', Icons.card_travel, Colors.green.shade50, Color(0xFF66BB6A), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => HospitalBagScreen()));
-                    }),
-                  ]),
-                  SizedBox(height: 12),
-                  Row(children: [
-                    _buildCard('يوميات الحمل', Icons.auto_stories, Colors.pink.shade50, Color(0xFFE91E63), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyJournalScreen()));
-                    }),
-                    SizedBox(width: 12),
-                    _buildCard('حجم الجنين', Icons.child_friendly, Colors.amber.shade50, Color(0xFFFF8F00), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => FetusSizeScreen()));
-                    }),
-                  ]),
-                  SizedBox(height: 12),
-                  Row(children: [
-                    _buildCard('العد التنازلي', Icons.timer, Colors.red.shade50, Color(0xFFE91E63), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => DueDateCountdownScreen()));
-                    }),
-                    SizedBox(width: 12),
-                    _buildCard('التغذية', Icons.restaurant_menu, Colors.green.shade50, Color(0xFF43A047), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => NutritionScreen()));
-                    }),
-                  ]),
-                  SizedBox(height: 12),
-                  Row(children: [
-                    _buildCard('التمارين', Icons.fitness_center, Colors.purple.shade50, Color(0xFF7B1FA2), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => ExercisesScreen()));
-                    }),
-                    SizedBox(width: 12),
-                    _buildCard('مراحل الحمل', Icons.auto_awesome, Colors.cyan.shade50, Color(0xFF00ACC1), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyWeeksScreen()));
-                    }),
-                  ]),
-                  SizedBox(height: 12),
-                  Row(children: [
-                    _buildCard('الإنجازات', Icons.emoji_events, Colors.amber.shade50, Color(0xFFFF8F00), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsScreen()));
-                    }),
-                    SizedBox(width: 12),
-                    _buildCard('شاركي تقدمك', Icons.share, Colors.blue.shade50, Color(0xFF1565C0), () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => ShareProgressScreen()));
-                    }),
-                  ]),
-                  SizedBox(height: 12),
-                  // Reminders quick card
-                  GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage())),
-                    child: Container(
-                      width: double.infinity, padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [Colors.amber.shade100, Colors.orange.shade50]),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.amber.shade200),
-                      ),
-                      child: Row(children: [
-                        Container(
-                          padding: EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: Colors.amber.shade200, borderRadius: BorderRadius.circular(12)),
-                          child: Icon(Icons.notifications_active, color: Colors.orange.shade700, size: 28),
-                        ),
-                        SizedBox(width: 14),
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(tr('reminders'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange.shade800)),
-                          Text(tr('reminders_subtitle'), style: TextStyle(color: Colors.orange.shade600, fontSize: 13)),
-                        ])),
-                        Icon(Icons.arrow_forward_ios, color: Colors.orange.shade400, size: 18),
-                      ]),
-                    ),
-                  ),
-                  SizedBox(height: 24),
-                  Text(tr('quick_tips'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 12),
-                  _tipCard(tr('tip_water'), Icons.water_drop, Colors.blue),
-                  SizedBox(height: 8),
-                  _tipCard(tr('tip_sleep'), Icons.bedtime, Colors.indigo),
-                  SizedBox(height: 8),
-                  _tipCard(tr('tip_walk'), Icons.directions_walk, Colors.green),
-                  SizedBox(height: 28),
-                  // ─── Home Articles from Firestore ───
-                  _HomeArticlesSection(),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
+  Future<void> _loadData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final data = doc.data() ?? {};
+    int week = 0;
+    if (data['pregnancyStart'] != null) {
+      try {
+        final start = (data['pregnancyStart'] as Timestamp).toDate();
+        week = (DateTime.now().difference(start).inDays / 7).floor().clamp(1, 42);
+      } catch (_) {}
+    }
+    if (mounted) setState(() {
+      _userName = data['name'] as String? ?? user.displayName ?? '';
+      _pregnancyWeek = week;
+      _userData = data;
+    });
   }
 
   int _calcCycleDay(Map<String, dynamic> data) {
@@ -1333,57 +1240,1018 @@ class HomePage extends StatelessWidget {
     } catch (_) { return 1; }
   }
 
-  Widget _buildCard(String title, IconData icon, Color bg, Color fg, VoidCallback? onTap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.all(20),
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: AppLocalizations.textDir,
+      child: Scaffold(
+        backgroundColor: _cream,
+        body: Container(
           decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(color: fg.withOpacity(0.12), blurRadius: 12, offset: Offset(0, 6)),
-              BoxShadow(color: const Color(0x0AE91E63), blurRadius: 6, offset: Offset(0, 2)),
-            ],
-          ),
-          child: Column(children: [
-            Container(
-              padding: EdgeInsets.all(14),
-              decoration: BoxDecoration(color: fg.withOpacity(0.15), borderRadius: BorderRadius.circular(18)),
-              child: Icon(icon, size: 32, color: fg),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [_cream, Colors.white, _cream],
             ),
-            SizedBox(height: 10),
-            Text(title, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w800, color: fg, fontSize: 14)),
-          ]),
+          ),
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: DB.userDoc.snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data!.exists) {
+                _userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                if (_userData['name'] != null) _userName = _userData['name'] as String;
+                if (_userData['pregnancyStart'] != null) {
+                  try {
+                    final start = (_userData['pregnancyStart'] as Timestamp).toDate();
+                    _pregnancyWeek = (DateTime.now().difference(start).inDays / 7).floor().clamp(1, 42);
+                  } catch (_) {}
+                }
+              }
+              return CustomScrollView(
+                slivers: [
+                  // ── Floating Top Bar as SliverAppBar ──
+                  SliverAppBar(
+                    floating: true, snap: true,
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    toolbarHeight: 68,
+                    flexibleSpace: Container(
+                      margin: const EdgeInsets.only(top: 8, left: 12, right: 12),
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.75),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: Colors.white.withOpacity(0.85), width: 0.5),
+                        boxShadow: [
+                          BoxShadow(color: _ink.withOpacity(0.06), blurRadius: 24, offset: const Offset(0, 8)),
+                          BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 10),
+                          // Bell icon
+                          _topBarIconBtn(
+                            icon: Icons.notifications_outlined,
+                            color: _pink,
+                            showDot: true,
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage())),
+                          ),
+                          // Logo center
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 32, height: 32,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    gradient: const RadialGradient(
+                                      center: Alignment(-0.4, -0.5),
+                                      colors: [Color(0xFFFF8DB7), _pink, Color(0xFFD63A78)],
+                                      stops: [0, 0.55, 1],
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(color: _pink.withOpacity(0.35), blurRadius: 14, offset: const Offset(0, 6)),
+                                    ],
+                                  ),
+                                  child: const Center(child: Icon(Icons.favorite, color: Colors.white, size: 16)),
+                                ),
+                                const SizedBox(width: 8),
+                                ShaderMask(
+                                  shaderCallback: (bounds) => const LinearGradient(
+                                    colors: [_pink, _lavender2],
+                                  ).createShader(bounds),
+                                  child: const Text('نبضة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Avatar
+                          GestureDetector(
+                            onTap: () => widget.onCardTap?.call(4),
+                            child: Container(
+                              width: 40, height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const SweepGradient(
+                                  colors: [_pink, _lavender2, _teal, _peach, _pink],
+                                ),
+                              ),
+                              padding: const EdgeInsets.all(2),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(colors: [Color(0xFFFFD9E5), Color(0xFFFFB1CD)]),
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _userName.isNotEmpty ? _userName[0] : 'س',
+                                    style: const TextStyle(color: Color(0xFFB6195F), fontWeight: FontWeight.w800, fontSize: 15),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+
+                        // ════════════ HERO SECTION ════════════
+                        _buildHero(),
+
+                        // ════════════ PREGNANCY TRACKER ════════════
+                        if (_pregnancyWeek > 0) _buildTracker(),
+
+                        // ════════════ QUICK ACCESS GRID ════════════
+                        _buildSection(
+                          eyebrow: 'متابعتي اليومية',
+                          title: 'أرقامكِ في لمحة',
+                          child: _buildQuickGrid(),
+                        ),
+
+                        // ════════════ AI ASSISTANT CARD ════════════
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                          child: _buildAICard(),
+                        ),
+
+                        // ════════════ DAILY TIPS (horizontal scroll) ════════════
+                        _buildSection(
+                          eyebrow: 'نصائح اليوم',
+                          title: 'عادات صغيرة، أثر كبير',
+                          child: const SizedBox.shrink(),
+                        ),
+                        _buildTipsRow(),
+
+                        // ════════════ EXPLORE GRID ════════════
+                        _buildSection(
+                          eyebrow: 'استكشفي',
+                          title: 'مستكشف نبضة',
+                          child: _buildExploreGrid(),
+                        ),
+
+                        // ════════════ CHIP ROW ════════════
+                        _buildSection(
+                          eyebrow: 'المزيد من الأدوات',
+                          title: 'كل ما تحتاجينه',
+                          child: const SizedBox.shrink(),
+                        ),
+                        _buildChipRow(),
+
+                        // ════════════ SHOP BANNER ════════════
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                          child: _buildShopBanner(),
+                        ),
+
+                        // ════════════ ARTICLES ════════════
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: _HomeArticlesSection(),
+                        ),
+
+                        const SizedBox(height: 30),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
-  Widget _tipCard(String text, IconData icon, Color color) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: const Color(0x0AE91E63), blurRadius: 8, offset: Offset(0, 2)),
-          BoxShadow(color: color.withOpacity(0.08), blurRadius: 12, offset: Offset(0, 4)),
+  // ─────────── Top bar icon button ───────────
+  Widget _topBarIconBtn({required IconData icon, required Color color, bool showDot = false, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                colors: [Colors.white.withOpacity(0.9), Colors.white.withOpacity(0.6)],
+              ),
+              border: Border.all(color: _pink.withOpacity(0.1), width: 0.5),
+              boxShadow: [
+                BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 1)),
+              ],
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          if (showDot)
+            Positioned(
+              top: 9, right: 9,
+              child: Container(
+                width: 8, height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle, color: _pink,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [BoxShadow(color: _pink.withOpacity(0.6), blurRadius: 8)],
+                ),
+              ),
+            ),
         ],
-        border: Border.all(color: color.withOpacity(0.12)),
       ),
-      child: Row(children: [
-        Container(
-          padding: EdgeInsets.all(10),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
-          child: Icon(icon, color: color, size: 22),
-        ),
-        SizedBox(width: 14),
-        Expanded(child: Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF4A434B)))),
-      ]),
     );
   }
+
+  // ─────────── HERO ───────────
+  Widget _buildHero() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      padding: const EdgeInsets.fromLTRB(0, 22, 20, 22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [Color(0xFFFFE3EE), Color(0xFFFFD2E3), Color(0xFFF8C6E0)],
+        ),
+        boxShadow: [
+          BoxShadow(color: _pink.withOpacity(0.16), blurRadius: 40, offset: const Offset(0, 20)),
+          BoxShadow(color: _pink.withOpacity(0.08), blurRadius: 14, offset: const Offset(0, 6)),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Image side
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Image.network(
+              'https://images.unsplash.com/photo-1556760544-74068565f05c?w=600&q=85',
+              width: 130, height: 180,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 130, height: 180,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: const LinearGradient(colors: [Color(0xFFFFD9E5), Color(0xFFFFB1CD)]),
+                ),
+                child: const Icon(Icons.pregnant_woman, size: 60, color: Color(0xFFB6195F)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          // Text side
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Eyebrow pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.auto_awesome, size: 11, color: Color(0xFFB6195F)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'صباح الخير${_userName.isNotEmpty ? "، $_userName" : ""}',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFB6195F)),
+                    ),
+                  ]),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'كل يوم خطوة نحو\nحملٍ صحي وسعيد ✨',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF5A0F33), height: 1.3, letterSpacing: -0.4),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'تذكّري أن صحتكِ النفسية لا تقل أهمية عن الجسدية.',
+                  style: TextStyle(fontSize: 12, color: const Color(0xFF5A0F33).withOpacity(0.78), fontWeight: FontWeight.w500, height: 1.65),
+                ),
+                const SizedBox(height: 8),
+                // Mini pills
+                Row(children: [
+                  _heroPill(_pregnancyWeek > 0
+                      ? (_pregnancyWeek <= 13 ? 'الثلث الأول' : _pregnancyWeek <= 26 ? 'الثلث الثاني' : 'الثلث الثالث')
+                      : 'ابدئي رحلتكِ'),
+                  const SizedBox(width: 6),
+                  _heroPill('مزاج هادئ'),
+                ]),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroPill(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(text, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF7A1F4F))),
+    );
+  }
+
+  // ─────────── PREGNANCY TRACKER ───────────
+  Widget _buildTracker() {
+    final week = _pregnancyWeek;
+    const total = 40;
+    final pct = (week / total).clamp(0.0, 1.0);
+    final remaining = total - week;
+
+    // Fetus size data
+    final fetusSizes = {
+      4: '🫐 توت', 8: '🫒 زيتونة', 12: '🍋 ليمونة', 16: '🍎 تفاحة', 20: '🍌 موزة',
+      24: '🌽 ذرة', 26: '🥦 قرنبيط', 28: '🍆 باذنجانة', 30: '🥥 جوز هند', 32: '🍈 شمام',
+      34: '🍍 أناناس', 36: '🥬 خس', 38: '🍉 بطيخة', 40: '🎃 يقطينة',
+    };
+    String fetusSize = '🫘 بذرة';
+    for (final entry in fetusSizes.entries) {
+      if (week >= entry.key) fetusSize = entry.value;
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        color: Colors.white.withOpacity(0.75),
+        border: Border.all(color: Colors.white.withOpacity(0.9), width: 0.5),
+        boxShadow: [
+          BoxShadow(color: _ink.withOpacity(0.08), blurRadius: 48, offset: const Offset(0, 24)),
+          BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Row: Ring + Info
+          Row(
+            children: [
+              // Ring progress
+              SizedBox(
+                width: 130, height: 130,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CustomPaint(
+                      size: const Size(130, 130),
+                      painter: _TrackerRingPainter(pct),
+                    ),
+                    // Baby emoji center
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: 1),
+                      duration: const Duration(milliseconds: 3600),
+                      builder: (_, v, child) {
+                        final yOffset = 3 * (0.5 - (0.5 * (1 + (2 * 3.14159 * v).remainder(6.28) < 3.14159 ? (2 * 3.14159 * v).remainder(3.14159) / 3.14159 : 1 - ((2 * 3.14159 * v).remainder(3.14159) / 3.14159)))).abs();
+                        return Transform.translate(
+                          offset: Offset(0, -yOffset),
+                          child: child,
+                        );
+                      },
+                      child: Container(
+                        width: 70, height: 70,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const RadialGradient(
+                            center: Alignment(-0.3, -0.4),
+                            colors: [Color(0xFFFFE6EF), Color(0xFFFFC0D6), Color(0xFFFF8DB7)],
+                            stops: [0, 0.6, 1],
+                          ),
+                          boxShadow: [
+                            BoxShadow(color: _pink.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 6)),
+                          ],
+                        ),
+                        child: const Center(child: Text('👶', style: TextStyle(fontSize: 34))),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 18),
+              // Info text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Tag
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        gradient: LinearGradient(colors: [_pink.withOpacity(0.12), _lavender2.withOpacity(0.18)]),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Container(
+                          width: 6, height: 6,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle, color: _pink,
+                            boxShadow: [BoxShadow(color: _pink.withOpacity(0.6), blurRadius: 6)],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text('الأسبوع $week من $total', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _pink)),
+                      ]),
+                    ),
+                    const SizedBox(height: 8),
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: _ink, fontFamily: 'Almarai', height: 1.1),
+                        children: [
+                          const TextSpan(text: 'أنتِ في الأسبوع '),
+                          TextSpan(text: '$week', style: const TextStyle(color: _pink)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('باقي $remaining أسبوع للقاء صغيركِ 💕', style: const TextStyle(fontSize: 12.5, color: _ink2, fontWeight: FontWeight.w500, height: 1.5)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Metric strip
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: _pink.withOpacity(0.1),
+            ),
+            padding: const EdgeInsets.all(1),
+            child: Row(
+              children: [
+                _metricCell(fetusSize, 'حجم الجنين', true, false),
+                _metricCell('${(week * 1.3).toStringAsFixed(0)} سم', 'الطول', false, false),
+                _metricCell('${(week * 28).toStringAsFixed(0)} غ', 'الوزن', false, true),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          // CTA button
+          GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyWeeksScreen())),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                gradient: const LinearGradient(colors: [Color(0xFFFF6BA3), _pink, Color(0xFFE53B7E)]),
+                boxShadow: [
+                  BoxShadow(color: _pink.withOpacity(0.22), blurRadius: 28, offset: const Offset(0, 12)),
+                  BoxShadow(color: _pink.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('استكشفي تطوّر هذا الأسبوع', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                  SizedBox(width: 8),
+                  Icon(Icons.arrow_back_ios, color: Colors.white, size: 16),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metricCell(String value, String label, bool isFirst, bool isLast) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.85),
+          borderRadius: BorderRadius.horizontal(
+            right: isFirst ? const Radius.circular(14) : Radius.zero,
+            left: isLast ? const Radius.circular(14) : Radius.zero,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _ink), textAlign: TextAlign.center),
+            const SizedBox(height: 2),
+            Text(label, style: const TextStyle(fontSize: 10.5, color: _ink3, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────── SECTION HEADER ───────────
+  Widget _buildSection({required String eyebrow, required String title, required Widget child}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: _pink50, borderRadius: BorderRadius.circular(8)),
+                  child: Text(eyebrow, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _pink, letterSpacing: 0.3)),
+                ),
+                const SizedBox(height: 4),
+                Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _ink, letterSpacing: -0.3)),
+              ]),
+              Text('عرض الكل ←', style: TextStyle(color: _pink, fontSize: 13, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
+
+  // ─────────── QUICK ACCESS GRID ───────────
+  Widget _buildQuickGrid() {
+    final cards = [
+      _QAData(Icons.pregnant_woman, 'متابعة الحمل', 'الأسبوع $_pregnancyWeek', '✓ محدّث اليوم',
+        [const Color(0xFFFF6BA3), _pink], () => widget.onCardTap?.call(2)),
+      _QAData(Icons.water_drop, 'متابعة الدورة', 'آخر دورة قبل 28 يوم', 'إعدادي ملفّكِ',
+        [_lavender2, const Color(0xFF9B6FE1)], () => widget.onCardTap?.call(1)),
+      _QAData(Icons.monitor_weight, 'تتبّع الوزن', '68.4 كغ', '+ 2.1 كغ هذا الشهر',
+        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackerScreen()))),
+      _QAData(Icons.timer, 'العدّ التنازلي', '${(40 - _pregnancyWeek) * 7} يوم للولادة', '',
+        [_peach, const Color(0xFFFF8852)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => DueDateCountdownScreen()))),
+    ];
+
+    return Column(
+      children: [
+        Row(children: [
+          Expanded(child: _buildQACard(cards[0])),
+          const SizedBox(width: 10),
+          Expanded(child: _buildQACard(cards[1])),
+        ]),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(child: _buildQACard(cards[2])),
+          const SizedBox(width: 10),
+          Expanded(child: _buildQACard(cards[3])),
+        ]),
+      ],
+    );
+  }
+
+  Widget _buildQACard(_QAData d) {
+    return GestureDetector(
+      onTap: d.onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        constraints: const BoxConstraints(minHeight: 108),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.white.withOpacity(0.9), width: 0.5),
+          boxShadow: [
+            BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 2, offset: const Offset(0, 1)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: LinearGradient(colors: d.gradColors),
+              ),
+              child: Icon(d.icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(d.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _ink)),
+            const SizedBox(height: 2),
+            Text(d.subtitle, style: const TextStyle(fontSize: 11.5, color: _ink3, fontWeight: FontWeight.w500)),
+            if (d.meta.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(d.meta, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _tealDeep)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────── AI ASSISTANT CARD ───────────
+  Widget _buildAICard() {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AIChatPage())),
+      child: Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(32),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
+            colors: [Color(0xFF1A2238), Color(0xFF2D2851), Color(0xFF3E2A56)],
+          ),
+          boxShadow: [
+            BoxShadow(color: const Color(0xFF2D2851).withOpacity(0.32), blurRadius: 38, offset: const Offset(0, 18)),
+            BoxShadow(color: const Color(0xFF2D2851).withOpacity(0.18), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Row(
+          children: [
+            // AI Orb
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 1.0, end: 1.06),
+              duration: const Duration(milliseconds: 3000),
+              builder: (_, scale, child) => Transform.scale(scale: scale, child: child),
+              child: Container(
+                width: 64, height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const RadialGradient(
+                    center: Alignment(-0.4, -0.5),
+                    colors: [Colors.white, Color(0xFFC6F5EE), _teal, _tealDeep],
+                    stops: [0, 0.25, 0.6, 1],
+                  ),
+                  boxShadow: [
+                    BoxShadow(color: _teal.withOpacity(0.15), spreadRadius: 6),
+                    BoxShadow(color: _teal.withOpacity(0.45), blurRadius: 24),
+                  ],
+                ),
+                child: const Center(child: Icon(Icons.auto_awesome, color: Colors.white, size: 28)),
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Text
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _teal.withOpacity(0.22),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text('مساعدة ذكية', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF4DDFCB))),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text('اسألي مساعد نبضة الذكي', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.3)),
+                  const SizedBox(height: 4),
+                  Text('إجابات فورية مخصّصة لأسبوع حملكِ ✨', style: TextStyle(fontSize: 12.5, color: Colors.white.withOpacity(0.72), height: 1.5)),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: Colors.white.withOpacity(0.18), width: 0.5),
+                    ),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text('ابدئي محادثة', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                      SizedBox(width: 6),
+                      Icon(Icons.arrow_back_ios, color: Colors.white, size: 14),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────── DAILY TIPS ROW ───────────
+  Widget _buildTipsRow() {
+    final tips = [
+      _TipData('💧', 'اشربي ٨ أكواب ماء يوميًا', 'لتحسين الدورة الدموية', [_sky, const Color(0xFFB8DCFF)], 0.5, '4 / 8'),
+      _TipData('🚶‍♀️', 'امشي ٣٠ دقيقة يوميًا', 'مشي خفيف بعد العشاء', [_teal50, const Color(0xFFB8EBE3)], 0.7, '21 د'),
+      _TipData('🌙', 'احصلي على نوم كافٍ', 'النوم على الجانب الأيسر', [_lavender, const Color(0xFFD4BFEA)], 0.88, '7 س 30 د'),
+      _TipData('🥗', 'وجبة غنية بالحديد', 'سبانخ • عدس • كبد', [_peach50, const Color(0xFFFFD9C2)], 0.33, '1 / 3'),
+    ];
+
+    return SizedBox(
+      height: 195,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: tips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) {
+          final t = tips[i];
+          return Container(
+            width: 220,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.white.withOpacity(0.9), width: 0.5),
+              boxShadow: [
+                BoxShadow(color: _ink.withOpacity(0.06), blurRadius: 28, offset: const Offset(0, 12)),
+                BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 52, height: 52,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    gradient: LinearGradient(colors: t.bgColors),
+                  ),
+                  child: Center(child: Text(t.emoji, style: const TextStyle(fontSize: 26))),
+                ),
+                const SizedBox(height: 10),
+                Text(t.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _ink, height: 1.4), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(t.subtitle, style: const TextStyle(fontSize: 12, color: _ink3, fontWeight: FontWeight.w500, height: 1.5), maxLines: 1),
+                const Spacer(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 6,
+                        decoration: BoxDecoration(color: _line, borderRadius: BorderRadius.circular(999)),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerRight,
+                          widthFactor: t.progress,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              gradient: const LinearGradient(colors: [_teal, _tealDeep]),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(t.count, style: const TextStyle(fontSize: 11, color: _ink2, fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ─────────── EXPLORE GRID ───────────
+  Widget _buildExploreGrid() {
+    final items = [
+      _QAData(Icons.restaurant_menu, 'التغذية', 'وصفات للثلث الثاني', '',
+        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => NutritionScreen()))),
+      _QAData(Icons.favorite, 'التمارين', 'يوغا • مشي • كيغل', '',
+        [const Color(0xFFFF6BA3), const Color(0xFFE53B7E)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => ExercisesScreen()))),
+      _QAData(Icons.calendar_month, 'تقويم الحمل', '40 أسبوع كاملاً', '',
+        [_lavender2, const Color(0xFF9B6FE1)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyCalendarScreen()))),
+      _QAData(Icons.card_travel, 'حقيبة الولادة', '12 من 24 مكتمل', '',
+        [_peach, const Color(0xFFFF8852)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => HospitalBagScreen()))),
+      _QAData(Icons.auto_stories, 'يوميات الحمل', 'آخر مذكّرة قبل يومين', '',
+        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyJournalScreen()))),
+      _QAData(Icons.emoji_events, 'الإنجازات', '٧ شارات', '',
+        [_gold, _goldDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsScreen()))),
+    ];
+
+    return Column(
+      children: [
+        for (int i = 0; i < items.length; i += 2) ...[
+          Row(children: [
+            Expanded(child: _buildQACard(items[i])),
+            const SizedBox(width: 10),
+            Expanded(child: i + 1 < items.length ? _buildQACard(items[i + 1]) : const SizedBox()),
+          ]),
+          if (i + 2 < items.length) const SizedBox(height: 10),
+        ],
+      ],
+    );
+  }
+
+  // ─────────── CHIP ROW ───────────
+  Widget _buildChipRow() {
+    final chips = [
+      _ChipData('🤖', 'المساعد الذكي', _lavender, () => Navigator.push(context, MaterialPageRoute(builder: (_) => AIChatPage()))),
+      _ChipData('👶', 'رعاية الطفل', const Color(0xFFFFD9E5), () => widget.onCardTap?.call(3)),
+      _ChipData('👥', 'مجتمع الأمهات', _sky, () => Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityScreen()))),
+      _ChipData('💚', 'العادات الصحية', _teal50, () => Navigator.push(context, MaterialPageRoute(builder: (_) => HealthTrackersScreen()))),
+      _ChipData('📖', 'مراحل الحمل', _peach50, () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyWeeksScreen()))),
+      _ChipData('🍼', 'أسماء المواليد', const Color(0xFFFFF8E0), () => Navigator.push(context, MaterialPageRoute(builder: (_) => BabyNamesScreen()))),
+      _ChipData('↗️', 'شاركي تقدّمكِ', const Color(0xFFFFD9E5), () => Navigator.push(context, MaterialPageRoute(builder: (_) => ShareProgressScreen()))),
+      _ChipData('📏', 'حجم الجنين', _lavender, () => Navigator.push(context, MaterialPageRoute(builder: (_) => FetusSizeScreen()))),
+    ];
+
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: chips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final c = chips[i];
+          return GestureDetector(
+            onTap: c.onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _line, width: 0.5),
+                boxShadow: [
+                  BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 1)),
+                  BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 26, height: 26,
+                    decoration: BoxDecoration(color: c.bgColor, borderRadius: BorderRadius.circular(9)),
+                    child: Center(child: Text(c.emoji, style: const TextStyle(fontSize: 14))),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(c.label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ─────────── SHOP BANNER ───────────
+  Widget _buildShopBanner() {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [_lavender2, _pink],
+        ),
+        boxShadow: [
+          BoxShadow(color: _lavender2.withOpacity(0.4), blurRadius: 36, offset: const Offset(0, 18)),
+          BoxShadow(color: _pink.withOpacity(0.22), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text('عرض الأسبوع', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 0.3)),
+                ),
+                const SizedBox(height: 10),
+                const Text('خصومات على منتجات\nالأم والطفل', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white, height: 1.3, letterSpacing: -0.4)),
+                const SizedBox(height: 6),
+                Text('تشكيلة مختارة بعناية • شحن مجاني', style: TextStyle(fontSize: 12.5, color: Colors.white.withOpacity(0.92), height: 1.5)),
+                const SizedBox(height: 14),
+                GestureDetector(
+                  onTap: () => widget.onCardTap?.call(4),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(999),
+                      boxShadow: [BoxShadow(color: const Color(0xFF783050).withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 4))],
+                    ),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text('تسوّقي الآن', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: _pink)),
+                      SizedBox(width: 6),
+                      Icon(Icons.arrow_back_ios, color: _pink, size: 12),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+          // Products stack
+          SizedBox(
+            width: 100, height: 130,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 0, right: 20,
+                  child: _shopImg('https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 70, -8),
+                ),
+                Positioned(
+                  bottom: 0, left: 0,
+                  child: _shopImg('https://images.unsplash.com/photo-1515488825947-c69b40e07b9b?w=300&q=80', 62, 6),
+                ),
+                Positioned(
+                  top: 20, left: 0,
+                  child: _shopImg('https://images.unsplash.com/photo-1607000975327-deea3f6f04dd?w=300&q=80', 54, -3),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _shopImg(String url, double size, double rotation) {
+    return Transform.rotate(
+      angle: rotation * 3.14159 / 180,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.network(
+          url, width: size, height: size, fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            width: size, height: size,
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), borderRadius: BorderRadius.circular(16)),
+            child: const Icon(Icons.shopping_bag, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Data classes for HomePage ──
+class _QAData {
+  final IconData icon;
+  final String title, subtitle, meta;
+  final List<Color> gradColors;
+  final VoidCallback? onTap;
+  _QAData(this.icon, this.title, this.subtitle, this.meta, this.gradColors, this.onTap);
+}
+
+class _TipData {
+  final String emoji, title, subtitle, count;
+  final List<Color> bgColors;
+  final double progress;
+  _TipData(this.emoji, this.title, this.subtitle, this.bgColors, this.progress, this.count);
+}
+
+class _ChipData {
+  final String emoji, label;
+  final Color bgColor;
+  final VoidCallback? onTap;
+  _ChipData(this.emoji, this.label, this.bgColor, this.onTap);
+}
+
+// ── Tracker Ring Painter ──
+class _TrackerRingPainter extends CustomPainter {
+  final double progress;
+  _TrackerRingPainter(this.progress);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 6;
+    const strokeWidth = 9.0;
+
+    // Track
+    final trackPaint = Paint()
+      ..color = const Color(0xFFFF4F93).withOpacity(0.1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    canvas.drawCircle(center, radius, trackPaint);
+
+    // Progress arc
+    final progressPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..shader = const LinearGradient(
+        colors: [Color(0xFFFF6BA3), Color(0xFFFF4F93), Color(0xFFC7A8EB)],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -3.14159 / 2, // Start from top
+      2 * 3.14159 * progress,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TrackerRingPainter old) => old.progress != progress;
 }
 
 // ==================== CYCLE PAGE (FIRESTORE) ====================
@@ -1627,11 +2495,34 @@ class _PregnancyPageState extends State<PregnancyPage> {
     return StreamBuilder<DocumentSnapshot>(
       stream: DB.userDoc.snapshots(),
       builder: (context, snapshot) {
+        // Show loading indicator while waiting for Firestore data
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 50, height: 50,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00897B)),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text('\u062C\u0627\u0631\u064A \u062A\u062D\u0645\u064A\u0644 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062D\u0645\u0644...',
+                    style: TextStyle(fontSize: 16, color: Color(0xFF4A3F4F))),
+                ],
+              ),
+            ),
+          );
+        }
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return Scaffold(
             appBar: AppBar(centerTitle: true,
               title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644'),
-              backgroundColor: Colors.purple, foregroundColor: Colors.white,
+              backgroundColor: Color(0xFF00897B), foregroundColor: Colors.white,
               actions: [
                 IconButton(icon: Icon(Icons.date_range), onPressed: _setPregnancyStart,
                   tooltip: '\u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
@@ -1645,7 +2536,7 @@ class _PregnancyPageState extends State<PregnancyPage> {
           return Scaffold(
             appBar: AppBar(centerTitle: true,
               title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644'),
-              backgroundColor: Colors.purple, foregroundColor: Colors.white,
+              backgroundColor: Color(0xFF00897B), foregroundColor: Colors.white,
               actions: [
                 IconButton(icon: Icon(Icons.date_range), onPressed: _setPregnancyStart,
                   tooltip: '\u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
@@ -1671,18 +2562,45 @@ class _PregnancyPageState extends State<PregnancyPage> {
   Widget _noPregnancy() {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(40),
+        padding: const EdgeInsets.all(40),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.pregnant_woman, size: 80, color: Colors.purple.shade200),
-          SizedBox(height: 20),
+          Container(
+            width: 120, height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFF4F93).withOpacity(0.15), Color(0xFF00897B).withOpacity(0.15)],
+              ),
+            ),
+            child: Icon(Icons.pregnant_woman, size: 60, color: Color(0xFFFF4F93)),
+          ),
+          const SizedBox(height: 24),
           Text('\u0644\u0645 \u064A\u062A\u0645 \u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0627\u0644\u062D\u0645\u0644',
-            style: TextStyle(fontSize: 18, color: Colors.grey), textAlign: TextAlign.center),
-          SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: _setPregnancyStart,
-            icon: Icon(Icons.date_range),
-            label: Text('\u062D\u062F\u062F\u064A \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white)),
+            style: TextStyle(fontSize: 18, color: Color(0xFF4A3F4F), fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          Text('\u062D\u062F\u062F\u064A \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629 \u0644\u0645\u062A\u0627\u0628\u0639\u0629 \u062D\u0645\u0644\u0643 \u0623\u0633\u0628\u0648\u0639\u0627\u064B \u0628\u0623\u0633\u0628\u0648\u0639',
+            style: TextStyle(fontSize: 14, color: Color(0xFF8E8295)), textAlign: TextAlign.center),
+          const SizedBox(height: 28),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: const LinearGradient(colors: [Color(0xFF00897B), Color(0xFF15B8A6)]),
+              boxShadow: [BoxShadow(color: Color(0xFF00897B).withOpacity(0.3), blurRadius: 12, offset: Offset(0, 4))],
+            ),
+            child: ElevatedButton.icon(
+              onPressed: _setPregnancyStart,
+              icon: Icon(Icons.date_range),
+              label: Text('\u062D\u062F\u062F\u064A \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent, foregroundColor: Colors.white,
+                shadowColor: Colors.transparent,
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ),
         ]),
       ),
     );
@@ -2486,6 +3404,79 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
 
+  Future<void> _pickProfilePhoto(BuildContext context) async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+        child: SafeArea(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            const Text('تغيير الصورة الشخصية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: Container(width: 44, height: 44, decoration: BoxDecoration(color: const Color(0xFF00897B).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.camera_alt, color: Color(0xFF00897B))),
+              title: const Text('التقاط صورة'), onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: Container(width: 44, height: 44, decoration: BoxDecoration(color: const Color(0xFFFF4F93).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.photo_library, color: Color(0xFFFF4F93))),
+              title: const Text('اختيار من المعرض'), onTap: () => Navigator.pop(ctx, 'gallery'),
+            ),
+            const SizedBox(height: 16),
+          ]),
+        ),
+      ),
+    );
+    if (source == null) return;
+    final imgSource = source == 'camera' ? ImageSource.camera : ImageSource.gallery;
+    final picked = await picker.pickImage(source: imgSource, maxWidth: 512, maxHeight: 512, imageQuality: 80);
+    if (picked == null) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final bytes = await picked.readAsBytes();
+      debugPrint('Photo bytes size: ${bytes.length}');
+
+      String url;
+      try {
+        // Try Firebase Storage first
+        final ref = FirebaseStorage.instance.ref().child('profile_photos/${user.uid}.jpg');
+        await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+        url = await ref.getDownloadURL();
+        debugPrint('Storage upload success: $url');
+      } catch (storageError) {
+        debugPrint('Storage failed, falling back to base64: $storageError');
+        // Fallback: save as base64 data URI in Firestore
+        final base64Str = base64Encode(bytes);
+        url = 'data:image/jpeg;base64,$base64Str';
+      }
+
+      await DB.userDoc.set({'photoUrl': url}, SetOptions(merge: true));
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('تم تحديث الصورة بنجاح'),
+          backgroundColor: Color(0xFF00897B),
+        ));
+      }
+    } catch (e, stack) {
+      debugPrint('Profile photo upload error: $e');
+      debugPrint('Stack: $stack');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('فشل رفع الصورة: $e'),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 8),
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = AppLocalizations.t;
@@ -2497,11 +3488,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           stream: DB.userDoc.snapshots(),
           builder: (context, snapshot) {
             String name = user?.displayName ?? tr('anonymous');
+            String? photoUrl;
             if (snapshot.hasData && snapshot.data!.exists) {
               var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
               if (data['name'] != null && (data['name'] as String).isNotEmpty) {
                 name = data['name'];
               }
+              photoUrl = data['photoUrl'] as String?;
             }
 
             return SingleChildScrollView(
@@ -2541,16 +3534,41 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       const SizedBox(width: 36),
                     ]),
                     SizedBox(height: 20),
-                    // Avatar with gradient border
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(colors: [const Color(0xFFE91E63), const Color(0xFF7E57C2)]),
-                        boxShadow: [BoxShadow(color: const Color(0x40E91E63), blurRadius: 16, offset: const Offset(0, 6))],
+                    // Avatar with gradient border + photo support
+                    GestureDetector(
+                      onTap: () => _pickProfilePhoto(context),
+                      child: Stack(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(colors: [Color(0xFFE91E63), Color(0xFF7E57C2)]),
+                              boxShadow: [BoxShadow(color: const Color(0x40E91E63), blurRadius: 16, offset: const Offset(0, 6))],
+                            ),
+                            child: photoUrl != null
+                                ? CircleAvatar(radius: 48, backgroundColor: Colors.white,
+                                    backgroundImage: photoUrl.startsWith('data:')
+                                        ? MemoryImage(base64Decode(photoUrl.split(',').last))
+                                        : NetworkImage(photoUrl) as ImageProvider,
+                                  )
+                                : const CircleAvatar(radius: 48, backgroundColor: Colors.white,
+                                    child: Icon(Icons.person, size: 56, color: Color(0xFF00897B))),
+                          ),
+                          Positioned(
+                            bottom: 0, right: 0,
+                            child: Container(
+                              width: 30, height: 30,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(colors: [Color(0xFF00897B), Color(0xFF15B8A6)]),
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: CircleAvatar(radius: 48, backgroundColor: Colors.white,
-                        child: Icon(Icons.person, size: 56, color: const Color(0xFF00897B))),
                     ),
                     SizedBox(height: 14),
                     Text(name, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20))),
@@ -2965,551 +3983,4 @@ class _CommunityPageState extends State<CommunityPage> {
               SizedBox(
                 height: 36,
                 child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: _categoryKeys.where((k) => k != 'all').map((catKey) {
-                    bool sel = postCategory == catKey;
-                    return Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(tr(catKey), style: TextStyle(fontSize: 12)),
-                        selected: sel,
-                        selectedColor: _categoryColor(catKey).withOpacity(0.2),
-                        onSelected: (_) => setSheetState(() => postCategory = catKey),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              SizedBox(height: 8),
-              // Anonymous toggle
-              Row(children: [
-                Checkbox(
-                  value: isAnonymous,
-                  onChanged: (v) => setSheetState(() => isAnonymous = v ?? false),
-                  activeColor: Colors.teal,
-                ),
-                Text(tr('post_as_anonymous'), style: TextStyle(fontSize: 14)),
-              ]),
-              SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: Icon(Icons.send),
-                  label: Text(tr('post'), style: TextStyle(fontSize: 16)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal, foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () async {
-                    if (textController.text.trim().isEmpty) return;
-                    final user = FirebaseAuth.instance.currentUser;
-                    await DB.communityPosts.add({
-                      'text': textController.text.trim(),
-                      'category': postCategory,
-                      'authorId': user?.uid ?? '',
-                      'authorName': isAnonymous ? '' : (user?.displayName ?? ''),
-                      'isAnonymous': isAnonymous,
-                      'likes': [],
-                      'likesCount': 0,
-                      'createdAt': FieldValue.serverTimestamp(),
-                    });
-                    Navigator.pop(ctx);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(tr('post')), backgroundColor: Colors.teal));
-                    }
-                  },
-                ),
-              ),
-            ]),
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tr = AppLocalizations.t;
-    Query query = DB.communityPosts.orderBy('createdAt', descending: true);
-    if (_selectedCategory != 'all') {
-      query = query.where('category', isEqualTo: _selectedCategory);
-    }
-
-    return Directionality(
-      textDirection: AppLocalizations.textDir,
-      child: Scaffold(
-        appBar: AppBar(centerTitle: true,
-          title: Text(tr('community_title')),
-          backgroundColor: Color(0xFFE91E63),
-          foregroundColor: Colors.white,
-          flexibleSpace: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Color(0xFFE91E63), Colors.pink.shade300]),
-            ),
-          ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _showNewPostDialog,
-          backgroundColor: Color(0xFFE91E63),
-          child: Icon(Icons.add, color: Colors.white),
-        ),
-        body: Column(children: [
-          // Category filter
-          Container(
-            height: 50,
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              children: _categoryKeys.map((catKey) {
-                bool sel = _selectedCategory == (catKey == 'all' ? 'all' : catKey);
-                Color c = catKey == 'all' ? Colors.teal : _categoryColor(catKey);
-                return Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(tr(catKey), style: TextStyle(fontSize: 12, color: sel ? Colors.white : c)),
-                    selected: sel,
-                    selectedColor: c,
-                    backgroundColor: c.withOpacity(0.1),
-                    onSelected: (_) => setState(() => _selectedCategory = catKey == 'all' ? 'all' : catKey),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          // Posts feed
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: query.limit(50).snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(Icons.forum_outlined, size: 80, color: Colors.grey.shade300),
-                      SizedBox(height: 16),
-                      Text(tr('no_posts'), textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, color: Colors.grey)),
-                    ]),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: EdgeInsets.all(12),
-                  itemCount: snapshot.data!.docs.length,
-                  itemBuilder: (context, index) {
-                    final doc = snapshot.data!.docs[index];
-                    final post = doc.data() as Map<String, dynamic>;
-                    final isAnon = post['isAnonymous'] == true;
-                    final authorName = isAnon ? tr('anonymous') : (post['authorName'] ?? tr('anonymous'));
-                    final catKey = post['category'] ?? 'cat_general';
-                    final color = _categoryColor(catKey);
-                    final likes = List<String>.from(post['likes'] ?? []);
-                    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-                    final isLiked = likes.contains(uid);
-
-                    return Container(
-                      margin: EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: Offset(0, 4))],
-                      ),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        // Header
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
-                          child: Row(children: [
-                            CircleAvatar(
-                              radius: 18,
-                              backgroundColor: isAnon ? Colors.grey.shade200 : Colors.teal.shade100,
-                              child: Icon(isAnon ? Icons.person_off : Icons.person, size: 20,
-                                color: isAnon ? Colors.grey : Colors.teal),
-                            ),
-                            SizedBox(width: 10),
-                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(authorName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              Text(_timeAgo(post['createdAt'] as Timestamp?),
-                                style: TextStyle(fontSize: 11, color: Colors.grey)),
-                            ])),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: color.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                Icon(_categoryIcon(catKey), size: 14, color: color),
-                                SizedBox(width: 4),
-                                Text(tr(catKey), style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
-                              ]),
-                            ),
-                          ]),
-                        ),
-                        // Post text
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
-                          child: Text(post['text'] ?? '', style: TextStyle(fontSize: 15, height: 1.6)),
-                        ),
-                        // Actions
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
-                          child: Row(children: [
-                            TextButton.icon(
-                              onPressed: () async {
-                                if (isLiked) {
-                                  await doc.reference.update({
-                                    'likes': FieldValue.arrayRemove([uid]),
-                                    'likesCount': FieldValue.increment(-1),
-                                  });
-                                } else {
-                                  await doc.reference.update({
-                                    'likes': FieldValue.arrayUnion([uid]),
-                                    'likesCount': FieldValue.increment(1),
-                                  });
-                                }
-                              },
-                              icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border,
-                                color: isLiked ? Colors.red : Colors.grey, size: 20),
-                              label: Text('${likes.length}', style: TextStyle(color: Colors.grey)),
-                            ),
-                          ]),
-                        ),
-                      ]),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ]),
-      ),
-    );
-  }
-}
-
-// ==================== AI CHAT PAGE (GEMINI) ====================
-class AIChatPage extends StatefulWidget {
-  @override
-  State<AIChatPage> createState() => _AIChatPageState();
-}
-
-class _AIChatPageState extends State<AIChatPage> {
-  final _msgController = TextEditingController();
-  final _scrollController = ScrollController();
-  List<Map<String, String>> messages = [];
-  List<Map<String, dynamic>> _chatHistory = [];
-  bool _isLoading = false;
-  final String _apiKey = 'AIzaSyB09gZH8igVPtC0yfPA5Twfp3KU0dC-kTI';
-
-  // Quick suggestion buttons
-  final quickQuestions = [
-    '\u0645\u0627 \u0647\u064A \u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u062D\u0645\u0644 \u0627\u0644\u0645\u0628\u0643\u0631\u061F',
-    '\u0643\u064A\u0641 \u0623\u062E\u0641\u0641 \u0622\u0644\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629\u061F',
-    '\u0645\u0627 \u0647\u064A \u0627\u0644\u0623\u0637\u0639\u0645\u0629 \u0627\u0644\u0645\u0641\u064A\u062F\u0629 \u0644\u0644\u062D\u0627\u0645\u0644\u061F',
-    '\u0643\u064A\u0641 \u0623\u0639\u062A\u0646\u064A \u0628\u0637\u0641\u0644\u064A \u0627\u0644\u0631\u0636\u064A\u0639\u061F',
-    '\u0645\u062A\u0649 \u064A\u062C\u0628 \u0632\u064A\u0627\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0628\u061F',
-    '\u0646\u0635\u0627\u0626\u062D \u0644\u0644\u0631\u0636\u0627\u0639\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    // Welcome message
-    messages.add({
-      'role': 'assistant',
-      'text': '\u0645\u0631\u062D\u0628\u0627\u064B! \u0623\u0646\u0627 \u0627\u0644\u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0630\u0643\u064A \u0644\u062A\u0637\u0628\u064A\u0642 \u0646\u0628\u0636\u0629. \u064A\u0645\u0643\u0646\u0646\u064A \u0645\u0633\u0627\u0639\u062F\u062A\u0643 \u0641\u064A \u0623\u0633\u0626\u0644\u0629 \u0635\u062D\u0629 \u0627\u0644\u0645\u0631\u0623\u0629 \u0648\u0627\u0644\u062D\u0645\u0644 \u0648\u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0637\u0641\u0644.\n\n\u0627\u062E\u062A\u0627\u0631\u064A \u0633\u0624\u0627\u0644\u0627\u064B \u0623\u0648 \u0627\u0643\u062A\u0628\u064A \u0633\u0624\u0627\u0644\u0643 \u0628\u0627\u0644\u0623\u0633\u0641\u0644 \u{1F49C}',
-    });
-  }
-
-  // ===== Smart Health Knowledge Base =====
-  static final Map<String, String> _healthKB = {
-    // Period / Cycle
-    '\u0622\u0644\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629|\u062A\u0634\u0646\u062C\u0627\u062A|\u0623\u0644\u0645 \u0627\u0644\u062F\u0648\u0631\u0629|\u062A\u062E\u0641\u064A\u0641 \u0627\u0644\u062F\u0648\u0631\u0629':
-      '\u0644\u062A\u062E\u0641\u064A\u0641 \u0622\u0644\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0634\u0647\u0631\u064A\u0629:\n\n\u2022 \u0636\u0639\u064A \u0643\u0645\u0627\u062F\u0629 \u062F\u0627\u0641\u0626\u0629 \u0639\u0644\u0649 \u0623\u0633\u0641\u0644 \u0627\u0644\u0628\u0637\u0646 \u0644\u0645\u062F\u0629 15-20 \u062F\u0642\u064A\u0642\u0629\n\u2022 \u0645\u0627\u0631\u0633\u064A \u0631\u064A\u0627\u0636\u0629 \u062E\u0641\u064A\u0641\u0629 \u0643\u0627\u0644\u0645\u0634\u064A \u0623\u0648 \u0627\u0644\u064A\u0648\u063A\u0627\n\u2022 \u0627\u0634\u0631\u0628\u064A \u0645\u0634\u0631\u0648\u0628\u0627\u062A \u062F\u0627\u0641\u0626\u0629 \u0643\u0627\u0644\u0628\u0627\u0628\u0648\u0646\u062C \u0648\u0627\u0644\u0632\u0646\u062C\u0628\u064A\u0644 \u0648\u0627\u0644\u0642\u0631\u0641\u0629\n\u2022 \u062A\u062C\u0646\u0628\u064A \u0627\u0644\u0643\u0627\u0641\u064A\u064A\u0646 \u0648\u0627\u0644\u0623\u0637\u0639\u0645\u0629 \u0627\u0644\u0645\u0627\u0644\u062D\u0629\n\u2022 \u062F\u0644\u0643\u064A \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u0628\u0637\u0646 \u0628\u062D\u0631\u0643\u0627\u062A \u062F\u0627\u0626\u0631\u064A\u0629\n\u2022 \u064A\u0645\u0643\u0646 \u062A\u0646\u0627\u0648\u0644 \u0645\u0633\u0643\u0646 \u062E\u0641\u064A\u0641 \u0639\u0646\u062F \u0627\u0644\u062D\u0627\u062C\u0629\n\n\u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u0623\u0644\u0645 \u0634\u062F\u064A\u062F\u0627\u064B \u062C\u062F\u0627\u064B \u0623\u0648 \u064A\u0645\u0646\u0639\u0643 \u0645\u0646 \u0645\u0645\u0627\u0631\u0633\u0629 \u062D\u064A\u0627\u062A\u0643 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629\u060C \u0627\u0633\u062A\u0634\u064A\u0631\u064A \u0637\u0628\u064A\u0628\u062A\u0643.',
-    '\u0627\u0646\u062A\u0638\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629|\u062A\u0623\u062E\u0631 \u0627\u0644\u062F\u0648\u0631\u0629|\u0639\u062F\u0645 \u0627\u0646\u062A\u0638\u0627\u0645|\u062F\u0648\u0631\u0629 \u063A\u064A\u0631 \u0645\u0646\u062A\u0638\u0645\u0629':
-      '\u0639\u062F\u0645 \u0627\u0646\u062A\u0638\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629 \u0642\u062F \u064A\u0643\u0648\u0646 \u0628\u0633\u0628\u0628:\n\n\u2022 \u0627\u0644\u062A\u0648\u062A\u0631 \u0648\u0627\u0644\u0636\u063A\u0637 \u0627\u0644\u0646\u0641\u0633\u064A\n\u2022 \u062A\u063A\u064A\u0631 \u0627\u0644\u0648\u0632\u0646 \u0627\u0644\u0645\u0641\u0627\u062C\u0626\n\u2022 \u0627\u0636\u0637\u0631\u0627\u0628\u0627\u062A \u0647\u0631\u0645\u0648\u0646\u064A\u0629 \u0645\u062B\u0644 \u062A\u0643\u064A\u0633 \u0627\u0644\u0645\u0628\u0627\u064A\u0636\n\u2022 \u0645\u0634\u0627\u0643\u0644 \u0627\u0644\u063A\u062F\u0629 \u0627\u0644\u062F\u0631\u0642\u064A\u0629\n\u2022 \u0627\u0644\u0631\u064A\u0627\u0636\u0629 \u0627\u0644\u0645\u0641\u0631\u0637\u0629\n\n\u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629 \u0628\u064A\u0646 21-35 \u064A\u0648\u0645\u0627\u064B. \u0625\u0630\u0627 \u062A\u0623\u062E\u0631\u062A \u0623\u0643\u062B\u0631 \u0645\u0646 3 \u0623\u0634\u0647\u0631\u060C \u0631\u0627\u062C\u0639\u064A \u0627\u0644\u0637\u0628\u064A\u0628\u0629.',
-    '\u0627\u0644\u062A\u0628\u0648\u064A\u0636|\u0625\u0628\u0627\u0636\u0629|\u062E\u0635\u0648\u0628\u0629|\u0623\u064A\u0627\u0645 \u0627\u0644\u062A\u0628\u0648\u064A\u0636':
-      '\u0641\u062A\u0631\u0629 \u0627\u0644\u062A\u0628\u0648\u064A\u0636 \u0647\u064A \u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u062A\u064A \u062A\u0643\u0648\u0646 \u0641\u064A\u0647\u0627 \u0627\u0644\u062E\u0635\u0648\u0628\u0629 \u0641\u064A \u0623\u0639\u0644\u0649 \u0645\u0633\u062A\u0648\u064A\u0627\u062A\u0647\u0627:\n\n\u2022 \u062A\u062D\u062F\u062B \u0639\u0627\u062F\u0629 \u0641\u064A \u0627\u0644\u064A\u0648\u0645 14 \u0645\u0646 \u0627\u0644\u062F\u0648\u0631\u0629 (\u0644\u0644\u062F\u0648\u0631\u0629 28 \u064A\u0648\u0645\u0627\u064B)\n\u2022 \u0639\u0644\u0627\u0645\u0627\u062A\u0647\u0627: \u0625\u0641\u0631\u0627\u0632\u0627\u062A \u0634\u0641\u0627\u0641\u0629\u060C \u0627\u0631\u062A\u0641\u0627\u0639 \u0637\u0641\u064A\u0641 \u0641\u064A \u062F\u0631\u062C\u0629 \u0627\u0644\u062D\u0631\u0627\u0631\u0629\n\u2022 \u0623\u064A\u0627\u0645 \u0627\u0644\u062E\u0635\u0648\u0628\u0629: 5 \u0623\u064A\u0627\u0645 \u0642\u0628\u0644 \u0627\u0644\u062A\u0628\u0648\u064A\u0636 + \u064A\u0648\u0645 \u0627\u0644\u062A\u0628\u0648\u064A\u0636\n\u2022 \u062A\u0637\u0628\u064A\u0642 \u0646\u0628\u0636\u0629 \u064A\u0633\u0627\u0639\u062F\u0643 \u0641\u064A \u062A\u062A\u0628\u0639 \u0647\u0630\u0647 \u0627\u0644\u0623\u064A\u0627\u0645 \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B',
-    // Pregnancy
-    '\u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u062D\u0645\u0644|\u0639\u0644\u0627\u0645\u0627\u062A \u0627\u0644\u062D\u0645\u0644|\u062D\u0645\u0644 \u0645\u0628\u0643\u0631':
-      '\u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u062D\u0645\u0644 \u0627\u0644\u0645\u0628\u0643\u0631\u0629 \u062A\u0634\u0645\u0644:\n\n\u2022 \u062A\u0623\u062E\u0631 \u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0634\u0647\u0631\u064A\u0629 (\u0623\u0648\u0644 \u0639\u0644\u0627\u0645\u0629)\n\u2022 \u063A\u062B\u064A\u0627\u0646 \u0648\u062A\u0642\u064A\u0624 (\u062E\u0627\u0635\u0629 \u0635\u0628\u0627\u062D\u0627\u064B)\n\u2022 \u062A\u0639\u0628 \u0648\u0625\u0631\u0647\u0627\u0642 \u063A\u064A\u0631 \u0639\u0627\u062F\u064A\n\u2022 \u0627\u0646\u062A\u0641\u0627\u062E \u0648\u062D\u0633\u0627\u0633\u064A\u0629 \u0627\u0644\u062B\u062F\u064A\n\u2022 \u0643\u062B\u0631\u0629 \u0627\u0644\u062A\u0628\u0648\u0644\n\u2022 \u062A\u0642\u0644\u0628\u0627\u062A \u0645\u0632\u0627\u062C\u064A\u0629\n\u2022 \u0646\u0641\u0648\u0631 \u0645\u0646 \u0628\u0639\u0636 \u0627\u0644\u0623\u0637\u0639\u0645\u0629 \u0648\u0627\u0644\u0631\u0648\u0627\u0626\u062D\n\n\u0644\u0644\u062A\u0623\u0643\u062F\u060C \u0627\u0639\u0645\u0644\u064A \u0627\u062E\u062A\u0628\u0627\u0631 \u062D\u0645\u0644 \u0645\u0646\u0632\u0644\u064A \u0623\u0648 \u062A\u062D\u0644\u064A\u0644 \u062F\u0645.',
-    '\u063A\u0630\u0627\u0621 \u0627\u0644\u062D\u0627\u0645\u0644|\u0623\u0637\u0639\u0645\u0629 \u0627\u0644\u062D\u0627\u0645\u0644|\u062A\u063A\u0630\u064A\u0629 \u0627\u0644\u062D\u0627\u0645\u0644|\u0623\u0643\u0644 \u0627\u0644\u062D\u0627\u0645\u0644':
-      '\u0627\u0644\u062A\u063A\u0630\u064A\u0629 \u0627\u0644\u0633\u0644\u064A\u0645\u0629 \u0644\u0644\u062D\u0627\u0645\u0644:\n\n\u2714\uFE0F \u0623\u0637\u0639\u0645\u0629 \u0645\u0641\u064A\u062F\u0629:\n\u2022 \u0627\u0644\u062E\u0636\u0631\u0648\u0627\u062A \u0627\u0644\u0648\u0631\u0642\u064A\u0629 (\u0627\u0644\u0633\u0628\u0627\u0646\u062E\u060C \u0627\u0644\u0628\u0631\u0648\u0643\u0644\u064A)\n\u2022 \u0627\u0644\u0641\u0648\u0627\u0643\u0647 \u0627\u0644\u0637\u0627\u0632\u062C\u0629 \u0648\u0627\u0644\u0645\u0643\u0633\u0631\u0627\u062A\n\u2022 \u0627\u0644\u0628\u0631\u0648\u062A\u064A\u0646 (\u062F\u062C\u0627\u062C\u060C \u0633\u0645\u0643\u060C \u0628\u064A\u0636\u060C \u0628\u0642\u0648\u0644\u064A\u0627\u062A)\n\u2022 \u0627\u0644\u062D\u0644\u064A\u0628 \u0648\u0645\u0634\u062A\u0642\u0627\u062A\u0647\n\u2022 \u0627\u0644\u062D\u0628\u0648\u0628 \u0627\u0644\u0643\u0627\u0645\u0644\u0629\n\n\u274C \u062A\u062C\u0646\u0628\u064A:\n\u2022 \u0627\u0644\u0623\u0633\u0645\u0627\u0643 \u0627\u0644\u0639\u0627\u0644\u064A\u0629 \u0628\u0627\u0644\u0632\u0626\u0628\u0642\n\u2022 \u0627\u0644\u0644\u062D\u0648\u0645 \u0627\u0644\u0646\u064A\u0626\u0629\n\u2022 \u0627\u0644\u0643\u0627\u0641\u064A\u064A\u0646 \u0628\u0643\u0645\u064A\u0627\u062A \u0643\u0628\u064A\u0631\u0629\n\u2022 \u0627\u0644\u0623\u062C\u0628\u0627\u0646 \u0627\u0644\u0637\u0631\u064A\u0629 \u063A\u064A\u0631 \u0627\u0644\u0645\u0628\u0633\u062A\u0631\u0629\n\n\u0644\u0627 \u062A\u0646\u0633\u064A \u062A\u0646\u0627\u0648\u0644 \u062D\u0645\u0636 \u0627\u0644\u0641\u0648\u0644\u064A\u0643 \u0648\u0627\u0644\u062D\u062F\u064A\u062F \u062D\u0633\u0628 \u062A\u0648\u062C\u064A\u0647\u0627\u062A \u0637\u0628\u064A\u0628\u062A\u0643.',
-    '\u063A\u062B\u064A\u0627\u0646|\u0648\u062D\u0627\u0645|\u062A\u0642\u064A\u0624|\u063A\u062B\u064A\u0627\u0646 \u0627\u0644\u062D\u0645\u0644':
-      '\u0644\u062A\u062E\u0641\u064A\u0641 \u0627\u0644\u063A\u062B\u064A\u0627\u0646 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062D\u0645\u0644:\n\n\u2022 \u0643\u0644\u064A \u0648\u062C\u0628\u0627\u062A \u0635\u063A\u064A\u0631\u0629 \u0648\u0645\u062A\u0643\u0631\u0631\u0629 (5-6 \u0645\u0631\u0627\u062A \u064A\u0648\u0645\u064A\u0627\u064B)\n\u2022 \u062A\u062C\u0646\u0628\u064A \u0627\u0644\u0645\u0639\u062F\u0629 \u0627\u0644\u0641\u0627\u0631\u063A\u0629 - \u0643\u0644\u064A \u0628\u0633\u0643\u0648\u064A\u062A \u062C\u0627\u0641 \u0642\u0628\u0644 \u0627\u0644\u0642\u064A\u0627\u0645 \u0645\u0646 \u0627\u0644\u0633\u0631\u064A\u0631\n\u2022 \u0627\u0634\u0631\u0628\u064A \u0627\u0644\u0632\u0646\u062C\u0628\u064A\u0644 \u0623\u0648 \u0627\u0644\u0646\u0639\u0646\u0627\u0639\n\u2022 \u062A\u062C\u0646\u0628\u064A \u0627\u0644\u0631\u0648\u0627\u0626\u062D \u0627\u0644\u0642\u0648\u064A\u0629 \u0648\u0627\u0644\u0623\u0637\u0639\u0645\u0629 \u0627\u0644\u062F\u0633\u0645\u0629\n\u2022 \u0627\u0633\u062A\u0631\u064A\u062D\u064A \u0628\u0639\u062F \u0627\u0644\u0623\u0643\u0644\n\n\u0627\u0644\u063A\u062B\u064A\u0627\u0646 \u0637\u0628\u064A\u0639\u064A \u0641\u064A \u0627\u0644\u0623\u0634\u0647\u0631 \u0627\u0644\u062B\u0644\u0627\u062B\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u0648\u064A\u062E\u0641 \u062A\u062F\u0631\u064A\u062C\u064A\u0627\u064B. \u0625\u0630\u0627 \u0643\u0627\u0646 \u0634\u062F\u064A\u062F\u0627\u064B \u062C\u062F\u0627\u064B \u0631\u0627\u062C\u0639\u064A \u0627\u0644\u0637\u0628\u064A\u0628\u0629.',
-    // Baby Care
-    '\u0631\u0636\u064A\u0639|\u0631\u0636\u0627\u0639\u0629|\u062D\u0644\u064A\u0628 \u0627\u0644\u0623\u0645|\u0627\u0644\u0631\u0636\u0627\u0639\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629':
-      '\u0646\u0635\u0627\u0626\u062D \u0644\u0644\u0631\u0636\u0627\u0639\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629:\n\n\u2022 \u0627\u0628\u062F\u0626\u064A \u0627\u0644\u0631\u0636\u0627\u0639\u0629 \u062E\u0644\u0627\u0644 \u0627\u0644\u0633\u0627\u0639\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u0628\u0639\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629\n\u2022 \u0623\u0631\u0636\u0639\u064A 8-12 \u0645\u0631\u0629 \u064A\u0648\u0645\u064A\u0627\u064B (\u0643\u0644 2-3 \u0633\u0627\u0639\u0627\u062A)\n\u2022 \u062A\u0623\u0643\u062F\u064A \u0645\u0646 \u0627\u0644\u062A\u0642\u0627\u0645 \u0627\u0644\u0637\u0641\u0644 \u0627\u0644\u0635\u062D\u064A\u062D (\u0627\u0644\u0641\u0645 \u064A\u063A\u0637\u064A \u0627\u0644\u0647\u0627\u0644\u0629)\n\u2022 \u0627\u0644\u0631\u0636\u0627\u0639\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629 \u062D\u0635\u0631\u064A\u0627\u064B \u0644\u0645\u062F\u0629 6 \u0623\u0634\u0647\u0631\n\u2022 \u0627\u0634\u0631\u0628\u064A \u0645\u0627\u0621 \u0643\u062B\u064A\u0631 \u0648\u062A\u063A\u0630\u064A \u062C\u064A\u062F\u0627\u064B\n\u2022 \u0627\u0633\u062A\u0634\u064A\u0631\u064A \u0645\u062E\u062A\u0635\u0629 \u0631\u0636\u0627\u0639\u0629 \u0625\u0630\u0627 \u0648\u0627\u062C\u0647\u062A \u0635\u0639\u0648\u0628\u0627\u062A',
-    '\u0646\u0648\u0645 \u0627\u0644\u0637\u0641\u0644|\u0646\u0648\u0645 \u0627\u0644\u0631\u0636\u064A\u0639|\u0628\u0643\u0627\u0621 \u0627\u0644\u0637\u0641\u0644':
-      '\u0646\u0635\u0627\u0626\u062D \u0644\u0646\u0648\u0645 \u0627\u0644\u0637\u0641\u0644:\n\n\u2022 \u0646\u0648\u0645\u064A \u0627\u0644\u0637\u0641\u0644 \u0639\u0644\u0649 \u0638\u0647\u0631\u0647 (\u0627\u0644\u0623\u0643\u062B\u0631 \u0623\u0645\u0627\u0646\u0627\u064B)\n\u2022 \u0623\u0646\u0634\u0626\u064A \u0631\u0648\u062A\u064A\u0646 \u0646\u0648\u0645 \u062B\u0627\u0628\u062A (\u062D\u0645\u0627\u0645\u060C \u062A\u062F\u0644\u064A\u0643\u060C \u0631\u0636\u0627\u0639\u0629)\n\u2022 \u0627\u0644\u063A\u0631\u0641\u0629 \u0645\u0638\u0644\u0645\u0629 \u0648\u0647\u0627\u062F\u0626\u0629 \u0648\u062F\u0631\u062C\u0629 \u062D\u0631\u0627\u0631\u0629 \u0645\u0646\u0627\u0633\u0628\u0629\n\u2022 \u0627\u0644\u0645\u0648\u0644\u0648\u062F \u064A\u0646\u0627\u0645 16-17 \u0633\u0627\u0639\u0629 \u064A\u0648\u0645\u064A\u0627\u064B\n\u2022 \u0644\u0627 \u062A\u0636\u0639\u064A \u0648\u0633\u0627\u0626\u062F \u0623\u0648 \u0623\u0644\u0639\u0627\u0628 \u0641\u064A \u0627\u0644\u0633\u0631\u064A\u0631\n\n\u0627\u0644\u0628\u0643\u0627\u0621 \u0637\u0628\u064A\u0639\u064A - \u062A\u0623\u0643\u062F\u064A \u0645\u0646: \u0627\u0644\u062C\u0648\u0639\u060C \u0627\u0644\u062D\u0641\u0627\u0636\u060C \u0627\u0644\u062D\u0631\u0627\u0631\u0629\u060C \u0627\u0644\u062D\u0627\u062C\u0629 \u0644\u0644\u062D\u0636\u0646.',
-    '\u062A\u0637\u0639\u064A\u0645|\u0644\u0642\u0627\u062D|\u062A\u0637\u0639\u064A\u0645\u0627\u062A \u0627\u0644\u0637\u0641\u0644':
-      '\u062C\u062F\u0648\u0644 \u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629:\n\n\u2022 \u0639\u0646\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629: BCG + \u0627\u0644\u062A\u0647\u0627\u0628 \u0627\u0644\u0643\u0628\u062F B\n\u2022 \u0634\u0647\u0631\u064A\u0646: \u0627\u0644\u062B\u0644\u0627\u062B\u064A + \u0634\u0644\u0644 \u0627\u0644\u0623\u0637\u0641\u0627\u0644 + \u0627\u0644\u0631\u0648\u062A\u0627\n\u2022 4 \u0623\u0634\u0647\u0631: \u062C\u0631\u0639\u0629 \u062B\u0627\u0646\u064A\u0629\n\u2022 6 \u0623\u0634\u0647\u0631: \u062C\u0631\u0639\u0629 \u062B\u0627\u0644\u062B\u0629\n\u2022 9 \u0623\u0634\u0647\u0631: \u0627\u0644\u062D\u0635\u0628\u0629\n\u2022 12 \u0634\u0647\u0631: MMR\n\u2022 18 \u0634\u0647\u0631: \u062C\u0631\u0639\u0627\u062A \u062A\u0646\u0634\u064A\u0637\u064A\u0629\n\n\u0627\u0644\u062A\u0632\u0645\u064A \u0628\u062C\u062F\u0648\u0644 \u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A \u0644\u062D\u0645\u0627\u064A\u0629 \u0637\u0641\u0644\u0643. \u0631\u0627\u062C\u0639\u064A \u0637\u0628\u064A\u0628 \u0627\u0644\u0623\u0637\u0641\u0627\u0644 \u0644\u0644\u062C\u062F\u0648\u0644 \u0627\u0644\u0643\u0627\u0645\u0644.',
-    // General Health
-    '\u0632\u064A\u0627\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0628|\u0645\u062A\u0649 \u0623\u0632\u0648\u0631 \u0627\u0644\u0637\u0628\u064A\u0628|\u0627\u0633\u062A\u0634\u0627\u0631\u0629 \u0637\u0628\u064A\u0629':
-      '\u064A\u062C\u0628 \u0632\u064A\u0627\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0628\u0629 \u0641\u064A \u0647\u0630\u0647 \u0627\u0644\u062D\u0627\u0644\u0627\u062A:\n\n\u2022 \u0622\u0644\u0627\u0645 \u0634\u062F\u064A\u062F\u0629 \u063A\u064A\u0631 \u0637\u0628\u064A\u0639\u064A\u0629 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062F\u0648\u0631\u0629\n\u2022 \u0646\u0632\u064A\u0641 \u063A\u0632\u064A\u0631 \u0623\u0648 \u063A\u064A\u0631 \u0637\u0628\u064A\u0639\u064A\n\u2022 \u062A\u0623\u062E\u0631 \u0627\u0644\u062F\u0648\u0631\u0629 \u0623\u0643\u062B\u0631 \u0645\u0646 3 \u0623\u0634\u0647\u0631\n\u2022 \u0623\u0644\u0645 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062D\u0645\u0644 \u0623\u0648 \u0646\u0632\u064A\u0641\n\u2022 \u062D\u0631\u0627\u0631\u0629 \u0627\u0644\u0637\u0641\u0644 \u0623\u0643\u062B\u0631 \u0645\u0646 38.5\n\u2022 \u0627\u0644\u0641\u062D\u0635 \u0627\u0644\u062F\u0648\u0631\u064A \u0627\u0644\u0633\u0646\u0648\u064A \u0644\u0644\u0646\u0633\u0627\u0621\n\n\u0644\u0627 \u062A\u062A\u0631\u062F\u062F\u064A \u0641\u064A \u0627\u0633\u062A\u0634\u0627\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0628\u0629 \u0639\u0646\u062F \u0627\u0644\u0634\u0643.',
-    '\u0641\u064A\u062A\u0627\u0645\u064A\u0646|\u0645\u0643\u0645\u0644\u0627\u062A|\u062D\u062F\u064A\u062F|\u0641\u0648\u0644\u064A\u0643|\u0643\u0627\u0644\u0633\u064A\u0648\u0645':
-      '\u0627\u0644\u0641\u064A\u062A\u0627\u0645\u064A\u0646\u0627\u062A \u0627\u0644\u0645\u0647\u0645\u0629 \u0644\u0644\u0645\u0631\u0623\u0629:\n\n\u2022 \u062D\u0645\u0636 \u0627\u0644\u0641\u0648\u0644\u064A\u0643: \u0636\u0631\u0648\u0631\u064A \u0642\u0628\u0644 \u0648\u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062D\u0645\u0644\n\u2022 \u0627\u0644\u062D\u062F\u064A\u062F: \u0644\u0645\u0646\u0639 \u0641\u0642\u0631 \u0627\u0644\u062F\u0645 (\u062E\u0627\u0635\u0629 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062F\u0648\u0631\u0629 \u0648\u0627\u0644\u062D\u0645\u0644)\n\u2022 \u0627\u0644\u0643\u0627\u0644\u0633\u064A\u0648\u0645: \u0644\u0635\u062D\u0629 \u0627\u0644\u0639\u0638\u0627\u0645\n\u2022 \u0641\u064A\u062A\u0627\u0645\u064A\u0646 D: \u0644\u0627\u0645\u062A\u0635\u0627\u0635 \u0627\u0644\u0643\u0627\u0644\u0633\u064A\u0648\u0645\n\u2022 \u0623\u0648\u0645\u064A\u063A\u0627 3: \u0644\u0635\u062D\u0629 \u0627\u0644\u0642\u0644\u0628 \u0648\u0627\u0644\u062F\u0645\u0627\u063A\n\n\u0627\u0633\u062A\u0634\u064A\u0631\u064A \u0637\u0628\u064A\u0628\u062A\u0643 \u0642\u0628\u0644 \u062A\u0646\u0627\u0648\u0644 \u0623\u064A \u0645\u0643\u0645\u0644\u0627\u062A.',
-    '\u0631\u064A\u0627\u0636\u0629|\u062A\u0645\u0627\u0631\u064A\u0646|\u0631\u064A\u0627\u0636\u0629 \u0627\u0644\u062D\u0627\u0645\u0644|\u0645\u0634\u064A':
-      '\u0627\u0644\u0631\u064A\u0627\u0636\u0629 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062D\u0645\u0644:\n\n\u2714\uFE0F \u0622\u0645\u0646\u0629 \u0648\u0645\u0641\u064A\u062F\u0629:\n\u2022 \u0627\u0644\u0645\u0634\u064A 30 \u062F\u0642\u064A\u0642\u0629 \u064A\u0648\u0645\u064A\u0627\u064B\n\u2022 \u0627\u0644\u0633\u0628\u0627\u062D\u0629\n\u2022 \u064A\u0648\u063A\u0627 \u0627\u0644\u062D\u0648\u0627\u0645\u0644\n\u2022 \u062A\u0645\u0627\u0631\u064A\u0646 \u0643\u064A\u062C\u0644\n\n\u274C \u062A\u062C\u0646\u0628\u064A:\n\u2022 \u0627\u0644\u0631\u064A\u0627\u0636\u0627\u062A \u0627\u0644\u0639\u0646\u064A\u0641\u0629\n\u2022 \u0627\u0644\u0642\u0641\u0632 \u0648\u0627\u0644\u062C\u0631\u064A \u0627\u0644\u0633\u0631\u064A\u0639\n\u2022 \u062D\u0645\u0644 \u0627\u0644\u0623\u062B\u0642\u0627\u0644\n\n\u0627\u0633\u062A\u0634\u064A\u0631\u064A \u0637\u0628\u064A\u0628\u062A\u0643 \u0642\u0628\u0644 \u0627\u0644\u0628\u062F\u0621.',
-    '\u0646\u0641\u0633\u064A\u0629|\u0627\u0643\u062A\u0626\u0627\u0628|\u0642\u0644\u0642|\u0627\u0643\u062A\u0626\u0627\u0628 \u0645\u0627 \u0628\u0639\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629':
-      '\u0627\u0644\u0635\u062D\u0629 \u0627\u0644\u0646\u0641\u0633\u064A\u0629 \u0645\u0647\u0645\u0629 \u062C\u062F\u0627\u064B:\n\n\u0627\u0643\u062A\u0626\u0627\u0628 \u0645\u0627 \u0628\u0639\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629 \u0634\u0627\u0626\u0639 \u0648\u0639\u0644\u0627\u0645\u0627\u062A\u0647:\n\u2022 \u062D\u0632\u0646 \u0645\u0633\u062A\u0645\u0631 \u0648\u0628\u0643\u0627\u0621\n\u2022 \u0635\u0639\u0648\u0628\u0629 \u0627\u0644\u062A\u0631\u0627\u0628\u0637 \u0645\u0639 \u0627\u0644\u0637\u0641\u0644\n\u2022 \u0623\u0631\u0642 \u0623\u0648 \u0646\u0648\u0645 \u0645\u0641\u0631\u0637\n\u2022 \u0641\u0642\u062F\u0627\u0646 \u0627\u0644\u0634\u0647\u064A\u0629\n\n\u0644\u0644\u0639\u0646\u0627\u064A\u0629 \u0628\u0646\u0641\u0633\u0643:\n\u2022 \u0627\u0637\u0644\u0628\u064A \u0627\u0644\u0645\u0633\u0627\u0639\u062F\u0629 \u0645\u0646 \u0627\u0644\u0639\u0627\u0626\u0644\u0629\n\u2022 \u062E\u0630\u064A \u0648\u0642\u062A\u0627\u064B \u0644\u0646\u0641\u0633\u0643\n\u2022 \u062A\u062D\u062F\u062B\u064A \u0645\u0639 \u0635\u062F\u064A\u0642\u0629 \u0623\u0648 \u0645\u062E\u062A\u0635\u0629\n\n\u0644\u0627 \u062A\u062A\u0631\u062F\u062F\u064A \u0641\u064A \u0637\u0644\u0628 \u0627\u0644\u0645\u0633\u0627\u0639\u062F\u0629 \u0627\u0644\u0645\u062A\u062E\u0635\u0635\u0629. \u0635\u062D\u062A\u0643 \u0627\u0644\u0646\u0641\u0633\u064A\u0629 \u0623\u0648\u0644\u0648\u064A\u0629!',
-  };
-
-  String _getSmartReply(String question) {
-    final q = question.toLowerCase();
-    for (final entry in _healthKB.entries) {
-      final keywords = entry.key.split('|');
-      for (final kw in keywords) {
-        if (q.contains(kw)) return entry.value;
-      }
-    }
-    return '\u0634\u0643\u0631\u0627\u064B \u0639\u0644\u0649 \u0633\u0624\u0627\u0644\u0643! \u0647\u0630\u0627 \u0627\u0644\u0645\u0648\u0636\u0648\u0639 \u064A\u062D\u062A\u0627\u062C \u0627\u0633\u062A\u0634\u0627\u0631\u0629 \u0637\u0628\u064A\u0629 \u0645\u062A\u062E\u0635\u0635\u0629. \u0623\u0646\u0635\u062D\u0643 \u0628\u0645\u0631\u0627\u062C\u0639\u0629 \u0637\u0628\u064A\u0628\u062A\u0643 \u0644\u0644\u062D\u0635\u0648\u0644 \u0639\u0644\u0649 \u0625\u062C\u0627\u0628\u0629 \u062F\u0642\u064A\u0642\u0629 \u0648\u0645\u062E\u0635\u0635\u0629 \u0644\u062D\u0627\u0644\u062A\u0643.\n\n\u064A\u0645\u0643\u0646\u0643 \u0633\u0624\u0627\u0644\u064A \u0639\u0646:\n\u2022 \u0622\u0644\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629 \u0648\u0627\u0646\u062A\u0638\u0627\u0645\u0647\u0627\n\u2022 \u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u062D\u0645\u0644 \u0648\u0627\u0644\u062A\u063A\u0630\u064A\u0629\n\u2022 \u0627\u0644\u0631\u0636\u0627\u0639\u0629 \u0648\u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0637\u0641\u0644\n\u2022 \u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A \u0648\u0627\u0644\u0641\u064A\u062A\u0627\u0645\u064A\u0646\u0627\u062A';
-  }
-
-  Future<String> _callGemini(String userMessage) async {
-    _chatHistory.add({'role': 'user', 'parts': [{'text': userMessage}]});
-
-    final sysText = '\u0623\u0646\u062A \u0645\u0633\u0627\u0639\u062F \u0635\u062D\u064A \u0630\u0643\u064A \u0627\u0633\u0645\u0643 \u0646\u0628\u0636\u0629\u060C \u0645\u062A\u062E\u0635\u0635 \u0641\u064A \u0635\u062D\u0629 \u0627\u0644\u0645\u0631\u0623\u0629. \u0623\u062C\u0628 \u062F\u0627\u0626\u0645\u0627\u064B \u0628\u0627\u0644\u0639\u0631\u0628\u064A\u0629. \u062A\u062E\u0635\u0635\u0627\u062A\u0643: \u0627\u0644\u062F\u0648\u0631\u0629\u060C \u0627\u0644\u062D\u0645\u0644\u060C \u0627\u0644\u0648\u0644\u0627\u062F\u0629\u060C \u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0637\u0641\u0644\u060C \u0627\u0644\u062A\u063A\u0630\u064A\u0629. \u0623\u062C\u0628 \u0628\u0625\u064A\u062C\u0627\u0632. \u0625\u0630\u0627 \u062A\u0637\u0644\u0628 \u0627\u0644\u0633\u0624\u0627\u0644 \u062A\u0634\u062E\u064A\u0635\u0627\u064B \u0637\u0628\u064A\u0627\u064B \u0627\u0646\u0635\u062D\u064A \u0628\u0632\u064A\u0627\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0628.';
-
-    try {
-      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$_apiKey';
-      final body = jsonEncode({
-        'systemInstruction': {'parts': [{'text': sysText}]},
-        'contents': _chatHistory,
-      });
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: body,
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        String reply = data['candidates']?[0]?['content']?['parts']?[0]?['text'] ?? '\u0644\u0645 \u0623\u062A\u0645\u0643\u0646 \u0645\u0646 \u0627\u0644\u0625\u062C\u0627\u0628\u0629';
-        _chatHistory.add({'role': 'model', 'parts': [{'text': reply}]});
-        return reply;
-      }
-    } catch (_) {}
-
-    // Fallback: smart local replies
-    return _getSmartReply(userMessage);
-  }
-
-  Future<void> _sendMessage(String text) async {
-    if (text.trim().isEmpty) return;
-    _msgController.clear();
-
-    setState(() {
-      messages.add({'role': 'user', 'text': text});
-      _isLoading = true;
-    });
-    _scrollToBottom();
-
-    try {
-      String reply = await _callGemini(text);
-      setState(() {
-        messages.add({'role': 'assistant', 'text': reply});
-        _isLoading = false;
-      });
-      DB.userDoc.collection('chat_history').add({
-        'question': text,
-        'answer': reply,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      setState(() {
-        messages.add({
-          'role': 'assistant',
-          'text': _getSmartReply(text),
-        });
-        _isLoading = false;
-      });
-    }
-    _scrollToBottom();
-  }
-
-  void _scrollToBottom() {
-    Future.delayed(Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(centerTitle: true,
-          title: Text('\u0627\u0644\u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0630\u0643\u064A'),
-          backgroundColor: Colors.teal,
-          foregroundColor: Colors.white,
-          actions: [
-            IconButton(
-              icon: Icon(Icons.delete_outline),
-              onPressed: () {
-                setState(() {
-                  messages.clear();
-                  messages.add({
-                    'role': 'assistant',
-                    'text': '\u062A\u0645 \u0645\u0633\u062D \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629. \u0643\u064A\u0641 \u064A\u0645\u0643\u0646\u0646\u064A \u0645\u0633\u0627\u0639\u062F\u062A\u0643\u061F \u{1F49C}'
-                  });
-                });
-                _chatHistory.clear();
-              },
-              tooltip: '\u0645\u0633\u062D \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629',
-            ),
-          ],
-        ),
-        body: Column(children: [
-          // Messages
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: EdgeInsets.all(16),
-              itemCount: messages.length + (_isLoading ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == messages.length && _isLoading) {
-                  return _typingIndicator();
-                }
-                final msg = messages[index];
-                bool isUser = msg['role'] == 'user';
-                return _chatBubble(msg['text']!, isUser);
-              },
-            ),
-          ),
-          // Quick suggestions (show only at start)
-          if (messages.length <= 1)
-            Container(
-              height: 44,
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: quickQuestions.map((q) => Padding(
-                  padding: EdgeInsets.only(left: 8),
-                  child: ActionChip(
-                    label: Text(q, style: TextStyle(fontSize: 12)),
-                    backgroundColor: Colors.teal.shade50,
-                    onPressed: () => _sendMessage(q),
-                  ),
-                )).toList(),
-              ),
-            ),
-          if (messages.length <= 1) SizedBox(height: 8),
-          // Input bar
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -1))],
-            ),
-            child: SafeArea(
-              child: Row(children: [
-                Expanded(
-                  child: TextField(
-                    controller: _msgController,
-                    decoration: InputDecoration(
-                      hintText: '\u0627\u0643\u062A\u0628\u064A \u0633\u0624\u0627\u0644\u0643 \u0647\u0646\u0627...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    ),
-                    onSubmitted: _sendMessage,
-                    textInputAction: TextInputAction.send,
-                  ),
-                ),
-                SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: Colors.teal,
-                  child: IconButton(
-                    icon: Icon(Icons.send, color: Colors.white, size: 20),
-                    onPressed: () => _sendMessage(_msgController.text),
-                  ),
-                ),
-              ]),
-            ),
-          ),
-        ]),
-      ),
-    );
-  }
-
-  Widget _chatBubble(String text, bool isUser) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.start : MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.teal.shade100,
-              child: Icon(Icons.smart_toy, size: 18, color: Colors.teal),
-            ),
-            SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Container(
-              padding: EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: isUser ? Colors.teal.shade100 : Colors.grey.shade100,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                  bottomLeft: isUser ? Radius.circular(16) : Radius.circular(4),
-                  bottomRight: isUser ? Radius.circular(4) : Radius.circular(16),
-                ),
-              ),
-              child: Text(text, style: TextStyle(fontSize: 15, height: 1.5)),
-            ),
-          ),
-          if (isUser) ...[
-            SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.teal,
-              child: Icon(Icons.person, size: 18, color: Colors.white),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _typingIndicator() {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        CircleAvatar(radius: 16, backgroundColor: Colors.teal.shade100,
-          child: Icon(Icons.smart_toy, size: 18, color: Colors.teal)),
-        SizedBox(width: 8),
-        Container(
-          padding: EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
-            SizedBox(width: 10),
-            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))          ]),
-        ),
-      ]),
-    );
-  }
-}
+                  
