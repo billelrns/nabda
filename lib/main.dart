@@ -1389,6 +1389,7 @@ class _HomePageState extends State<HomePage> {
                         _buildSection(
                           eyebrow: 'نصائح اليوم',
                           title: 'عادات صغيرة، أثر كبير',
+                          onViewAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HealthTrackersScreen())),
                           child: const SizedBox.shrink(),
                         ),
                         _buildTipsRow(),
@@ -1397,6 +1398,7 @@ class _HomePageState extends State<HomePage> {
                         _buildSection(
                           eyebrow: 'استكشفي',
                           title: 'مستكشف نبضة',
+                          onViewAll: () {},
                           child: _buildExploreGrid(),
                         ),
 
@@ -1753,7 +1755,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ─────────── SECTION HEADER ───────────
-  Widget _buildSection({required String eyebrow, required String title, required Widget child}) {
+  Widget _buildSection({required String eyebrow, required String title, required Widget child, VoidCallback? onViewAll}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
       child: Column(
@@ -1762,16 +1764,33 @@ class _HomePageState extends State<HomePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: _pink50, borderRadius: BorderRadius.circular(8)),
-                  child: Text(eyebrow, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _pink, letterSpacing: 0.3)),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: _pink50, borderRadius: BorderRadius.circular(8)),
+                    child: Text(eyebrow, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _pink, letterSpacing: 0.3)),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _ink, letterSpacing: -0.3)),
+                ]),
+              ),
+              if (onViewAll != null)
+                GestureDetector(
+                  onTap: onViewAll,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _pink.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Text('عرض الكل', style: TextStyle(color: _pink, fontSize: 12, fontWeight: FontWeight.w700)),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_back_ios, color: _pink, size: 10),
+                    ]),
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _ink, letterSpacing: -0.3)),
-              ]),
-              Text('عرض الكل ←', style: TextStyle(color: _pink, fontSize: 13, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 14),
@@ -2254,16 +2273,29 @@ class _TrackerRingPainter extends CustomPainter {
   bool shouldRepaint(_TrackerRingPainter old) => old.progress != progress;
 }
 
-// ==================== CYCLE PAGE (FIRESTORE) ====================
+// ==================== CYCLE PAGE (Claude Design Premium) ====================
 class CyclePage extends StatefulWidget {
   @override
   State<CyclePage> createState() => _CyclePageState();
 }
 
 class _CyclePageState extends State<CyclePage> {
+  static const _pink = Color(0xFFFF4F93);
+  static const _pinkHot = Color(0xFFE53B7E);
+  static const _pink50 = Color(0xFFFFF1F6);
+  static const _lavender2 = Color(0xFFC7A8EB);
+  static const _teal = Color(0xFF15B8A6);
+  static const _tealDeep = Color(0xFF0F8B8D);
+  static const _teal50 = Color(0xFFE7F7F5);
+  static const _cream = Color(0xFFFFF8FA);
+  static const _peach = Color(0xFFFFB38A);
+  static const _ink = Color(0xFF1B1320);
+  static const _ink2 = Color(0xFF4A3F4F);
+  static const _ink3 = Color(0xFF8E8295);
+  static const _line = Color(0xFFF0E6EE);
+
   String mood = '';
-  List<String> symptoms = [];
-  final allSymptoms = ['\u062A\u0634\u0646\u062C\u0627\u062A', '\u0635\u062F\u0627\u0639', '\u0625\u0631\u0647\u0627\u0642', '\u0627\u0646\u062A\u0641\u0627\u062E', '\u0622\u0644\u0627\u0645 \u0627\u0644\u0638\u0647\u0631', '\u062A\u0642\u0644\u0628\u0627\u062A \u0645\u0632\u0627\u062C\u064A\u0629'];
+  Set<String> symptoms = {};
 
   @override
   void initState() {
@@ -2278,192 +2310,655 @@ class _CyclePageState extends State<CyclePage> {
         var d = doc.data() as Map<String, dynamic>;
         setState(() {
           mood = d['mood'] ?? '';
-          symptoms = List<String>.from(d['symptoms'] ?? []);
+          symptoms = Set<String>.from(d['symptoms'] ?? []);
         });
       }
     } catch (_) {}
-    // loaded
   }
 
   Future<void> _saveTodayLog() async {
     await DB.cycleLogs.doc(DB.dateKey()).set({
       'date': DB.dateKey(),
       'mood': mood,
-      'symptoms': symptoms,
+      'symptoms': symptoms.toList(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('\u062A\u0645 \u062D\u0641\u0638 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u064A\u0648\u0645 \u2713'), backgroundColor: _teal));
   }
 
   Future<void> _startPeriod() async {
     await DB.userDoc.set({'lastPeriodStart': Timestamp.now()}, SetOptions(merge: true));
     await DB.cycleLogs.doc(DB.dateKey()).set({
-      'date': DB.dateKey(),
-      'isPeriod': true,
-      'mood': mood,
-      'symptoms': symptoms,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'date': DB.dateKey(), 'isPeriod': true, 'mood': mood,
+      'symptoms': symptoms.toList(), 'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u062F\u0648\u0631\u0629'), backgroundColor: Colors.pink));
-    }
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u062F\u0648\u0631\u0629'), backgroundColor: _pink));
   }
 
   Future<void> _endPeriod() async {
     await DB.cycleLogs.doc(DB.dateKey()).set({
-      'date': DB.dateKey(),
-      'isPeriod': false,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'date': DB.dateKey(), 'isPeriod': false, 'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u062F\u0648\u0631\u0629'), backgroundColor: Colors.grey));
-    }
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: const Text('\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u062F\u0648\u0631\u0629'), backgroundColor: Colors.grey.shade600));
+  }
+
+  String _phaseName(int day, int len) {
+    if (day <= 5) return '\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u062D\u064A\u0636';
+    if (day <= (len * 0.46).round()) return '\u0627\u0644\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u062C\u0631\u064A\u0628\u064A\u0629';
+    if (day <= (len * 0.57).round()) return '\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u062A\u0628\u0648\u064A\u0636';
+    return '\u0627\u0644\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u0623\u0635\u0641\u0631\u064A\u0629';
+  }
+
+  Color _phaseColor(int day, int len) {
+    if (day <= 5) return _pink;
+    if (day <= (len * 0.46).round()) return _lavender2;
+    if (day <= (len * 0.57).round()) return _teal;
+    return _peach;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(centerTitle: true, title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062F\u0648\u0631\u0629'), backgroundColor: Colors.pink, foregroundColor: Colors.white),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: DB.userDoc.snapshots(),
-        builder: (context, snapshot) {
-          int cycleLength = 28;
-          int cycleDay = 1;
-          if (snapshot.hasData && snapshot.data!.exists) {
-            var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-            cycleLength = (data['cycleLength'] as int?) ?? 28;
-            if (data['lastPeriodStart'] != null) {
-              try {
-                Timestamp ts = data['lastPeriodStart'];
-                int diff = DateTime.now().difference(ts.toDate()).inDays + 1;
-                cycleDay = ((diff - 1) % cycleLength) + 1;
-              } catch (_) {}
-            }
-          }
-          double progress = cycleDay / cycleLength;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: _cream,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [_cream, Colors.white, _cream],
+            ),
+          ),
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: DB.userDoc.snapshots(),
+            builder: (context, snapshot) {
+              int cycleLength = 28, cycleDay = 1;
+              if (snapshot.hasData && snapshot.data!.exists) {
+                var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                cycleLength = (data['cycleLength'] as int?) ?? 28;
+                if (data['lastPeriodStart'] != null) {
+                  try {
+                    Timestamp ts = data['lastPeriodStart'];
+                    int diff = DateTime.now().difference(ts.toDate()).inDays + 1;
+                    cycleDay = ((diff - 1) % cycleLength) + 1;
+                  } catch (_) {}
+                }
+              }
 
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(20),
-            child: Column(children: [
-              // Circular progress
-              Container(
-                width: 200, height: 200,
-                child: Stack(alignment: Alignment.center, children: [
-                  SizedBox(width: 180, height: 180,
-                    child: CircularProgressIndicator(value: progress, strokeWidth: 12,
-                      backgroundColor: Colors.pink.shade50, color: Colors.pink)),
-                  Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text('\u0627\u0644\u064A\u0648\u0645 $cycleDay', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.pink)),
-                    Text('\u0645\u0646 $cycleLength \u064A\u0648\u0645', style: TextStyle(color: Colors.grey)),
-                  ]),
-                ]),
-              ),
-              SizedBox(height: 24),
-              // Action buttons
-              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                _cycleBtn('\u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u062F\u0648\u0631\u0629', Icons.play_arrow, Colors.red, _startPeriod),
-                _cycleBtn('\u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u062F\u0648\u0631\u0629', Icons.stop, Colors.grey, _endPeriod),
-                _cycleBtn('\u062D\u0641\u0638 \u0627\u0644\u064A\u0648\u0645', Icons.save, Colors.pink, () async {
-                  await _saveTodayLog();
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('\u062A\u0645 \u062D\u0641\u0638 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u064A\u0648\u0645'), backgroundColor: Colors.green));
-                }),
-              ]),
-              SizedBox(height: 24),
-              // Mood
-              Align(alignment: Alignment.centerRight,
-                child: Text('\u0627\u0644\u0645\u0632\u0627\u062C \u0627\u0644\u064A\u0648\u0645', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-              SizedBox(height: 8),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                _moodBtn('\u0645\u0645\u062A\u0627\u0632', '\u{1F60A}'), _moodBtn('\u062C\u064A\u062F', '\u{1F642}'),
-                _moodBtn('\u0639\u0627\u062F\u064A', '\u{1F610}'), _moodBtn('\u0633\u064A\u0626', '\u{1F622}'), _moodBtn('\u0633\u064A\u0626 \u062C\u062F\u0627\u064B', '\u{1F62B}'),
-              ]),
-              SizedBox(height: 24),
-              // Symptoms
-              Align(alignment: Alignment.centerRight,
-                child: Text('\u0627\u0644\u0623\u0639\u0631\u0627\u0636', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-              SizedBox(height: 8),
-              Wrap(spacing: 8, runSpacing: 8, children: allSymptoms.map((s) =>
-                FilterChip(
-                  label: Text(s),
-                  selected: symptoms.contains(s),
-                  onSelected: (v) => setState(() { v ? symptoms.add(s) : symptoms.remove(s); }),
-                  selectedColor: Colors.pink.shade100,
-                )).toList()),
-              SizedBox(height: 24),
-              // Cycle insights
-              Container(
-                width: double.infinity, padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.pink.shade50, borderRadius: BorderRadius.circular(12)),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u062F\u0648\u0631\u0629', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  SizedBox(height: 8),
-                  Text('\u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0642\u0627\u062F\u0645\u0629: \u0628\u0639\u062F ~${cycleLength - cycleDay} \u064A\u0648\u0645'),
-                  Text('\u0641\u062A\u0631\u0629 \u0627\u0644\u062E\u0635\u0648\u0628\u0629: \u0627\u0644\u064A\u0648\u0645 ${(cycleLength * 0.36).round()}-${(cycleLength * 0.57).round()}'),
-                  Text('\u0627\u0644\u0625\u0628\u0627\u0636\u0629: ~\u0627\u0644\u064A\u0648\u0645 ${(cycleLength * 0.5).round()}'),
-                ]),
-              ),
-              SizedBox(height: 16),
-              // Cycle length setting
-              Container(
-                width: double.infinity, padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
-                child: Row(children: [
-                  Text('\u0637\u0648\u0644 \u0627\u0644\u062F\u0648\u0631\u0629:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Spacer(),
-                  IconButton(icon: Icon(Icons.remove_circle_outline, color: Colors.pink),
-                    onPressed: () async {
-                      if (cycleLength > 20) {
-                        await DB.userDoc.set({'cycleLength': cycleLength - 1}, SetOptions(merge: true));
-                      }
-                    }),
-                  Text('$cycleLength \u064A\u0648\u0645', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(icon: Icon(Icons.add_circle_outline, color: Colors.pink),
-                    onPressed: () async {
-                      if (cycleLength < 45) {
-                        await DB.userDoc.set({'cycleLength': cycleLength + 1}, SetOptions(merge: true));
-                      }
-                    }),
-                ]),
-              ),
-              SizedBox(height: 24),
-              // \u2500\u2500\u2500 Articles & Tips (Firestore) \u2500\u2500\u2500
-              _CycleArticlesSection(),
-            ]),
-          );
-        },
+              final phase = _phaseName(cycleDay, cycleLength);
+              final phaseClr = _phaseColor(cycleDay, cycleLength);
+              final ovDay = (cycleLength * 0.5).round();
+              final fertileStart = (cycleLength * 0.36).round();
+              final fertileEnd = (cycleLength * 0.57).round();
+              final nextPeriod = cycleLength - cycleDay;
+
+              return CustomScrollView(
+                slivers: [
+                  // \u2500\u2500 Top Bar \u2500\u2500
+                  SliverAppBar(
+                    floating: true, snap: true,
+                    backgroundColor: Colors.transparent, elevation: 0,
+                    toolbarHeight: 68,
+                    flexibleSpace: Container(
+                      margin: const EdgeInsets.only(top: 8, left: 12, right: 12),
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.75),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: Colors.white.withOpacity(0.85), width: 0.5),
+                        boxShadow: [
+                          BoxShadow(color: _ink.withOpacity(0.06), blurRadius: 24, offset: const Offset(0, 8)),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 14),
+                          GestureDetector(
+                            onTap: () => Navigator.maybePop(context),
+                            child: Container(
+                              width: 40, height: 40,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                color: Colors.white.withOpacity(0.8),
+                              ),
+                              child: const Icon(Icons.arrow_forward_ios, size: 18, color: _ink),
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062F\u0648\u0631\u0629', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _ink)),
+                                Row(mainAxisSize: MainAxisSize.min, children: [
+                                  Container(width: 5, height: 5, decoration: BoxDecoration(shape: BoxShape.circle, color: _pink, boxShadow: [BoxShadow(color: _pink.withOpacity(0.6), blurRadius: 6)])),
+                                  const SizedBox(width: 5),
+                                  Text('\u0627\u0644\u064A\u0648\u0645 \u2022 ${_arabicDate()}', style: const TextStyle(fontSize: 10.5, color: _ink3, fontWeight: FontWeight.w600)),
+                                ]),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(14),
+                              color: Colors.white.withOpacity(0.8),
+                            ),
+                            child: const Icon(Icons.calendar_month, size: 18, color: _pink),
+                          ),
+                          const SizedBox(width: 14),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 HERO CYCLE CARD \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 20),
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(32),
+                            color: Colors.white.withOpacity(0.75),
+                            border: Border.all(color: Colors.white.withOpacity(0.9), width: 0.5),
+                            boxShadow: [
+                              BoxShadow(color: _ink.withOpacity(0.08), blurRadius: 48, offset: const Offset(0, 24)),
+                              BoxShadow(color: _pink.withOpacity(0.1), blurRadius: 60, offset: const Offset(0, 30)),
+                            ],
+                          ),
+                          child: Column(children: [
+                            // Eyebrow + title
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(999),
+                                gradient: LinearGradient(colors: [_pink.withOpacity(0.12), _lavender2.withOpacity(0.18)]),
+                              ),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                const Icon(Icons.auto_awesome, size: 11, color: _pinkHot),
+                                const SizedBox(width: 6),
+                                Text(cycleDay >= fertileStart && cycleDay <= fertileEnd ? '\u0630\u0631\u0648\u0629 \u0627\u0644\u062E\u0635\u0648\u0628\u0629 \u0627\u0644\u064A\u0648\u0645' : phase,
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _pinkHot)),
+                              ]),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              cycleDay >= fertileStart && cycleDay <= fertileEnd
+                                ? '\u0623\u0639\u0644\u0649 \u0627\u062D\u062A\u0645\u0627\u0644\u064A\u0629 \u0644\u0644\u062D\u0645\u0644 \u2728'
+                                : cycleDay <= 5 ? '\u0627\u0639\u062A\u0646\u064A \u0628\u0646\u0641\u0633\u0643\u0650 \u0641\u064A \u0647\u0630\u0647 \u0627\u0644\u0623\u064A\u0627\u0645 \uD83D\uDC95' : '\u062F\u0648\u0631\u062A\u0643\u0650 \u062A\u0633\u064A\u0631 \u0628\u0634\u0643\u0644 \u0637\u0628\u064A\u0639\u064A \u2728',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _ink),
+                            ),
+                            const SizedBox(height: 4),
+                            Text('\u062C\u0633\u0645\u0643\u0650 \u0641\u064A $phase \u2014 ${nextPeriod > 0 ? "\u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0642\u0627\u062F\u0645\u0629 \u0628\u0639\u062F $nextPeriod \u064A\u0648\u0645" : "\u0628\u062F\u0627\u064A\u0629 \u062F\u0648\u0631\u0629 \u062C\u062F\u064A\u062F\u0629"}',
+                              style: const TextStyle(fontSize: 12.5, color: _ink2, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+
+                            const SizedBox(height: 18),
+
+                            // \u2500\u2500 Cycle Ring \u2500\u2500
+                            SizedBox(
+                              width: 240, height: 240,
+                              child: Stack(alignment: Alignment.center, children: [
+                                CustomPaint(
+                                  size: const Size(240, 240),
+                                  painter: _CycleRingPainter(cycleDay, cycleLength),
+                                ),
+                                Column(mainAxisSize: MainAxisSize.min, children: [
+                                  const Text('\u064A\u0648\u0645', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _ink3)),
+                                  ShaderMask(
+                                    shaderCallback: (b) => const LinearGradient(colors: [Color(0xFFFF6BA3), _pink, _lavender2]).createShader(b),
+                                    child: Text('$cycleDay', style: const TextStyle(fontSize: 52, fontWeight: FontWeight.w900, color: Colors.white, height: 1)),
+                                  ),
+                                  Text('\u0645\u0646 $cycleLength', style: const TextStyle(fontSize: 12.5, color: _ink2, fontWeight: FontWeight.w600)),
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(999),
+                                      gradient: LinearGradient(colors: [phaseClr.withOpacity(0.16), _lavender2.withOpacity(0.18)]),
+                                    ),
+                                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                      Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: phaseClr, boxShadow: [BoxShadow(color: phaseClr.withOpacity(0.6), blurRadius: 8)])),
+                                      const SizedBox(width: 6),
+                                      Text(phase, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: phaseClr)),
+                                    ]),
+                                  ),
+                                ]),
+                              ]),
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            // \u2500\u2500 Phase Legend \u2500\u2500
+                            Row(children: [
+                              _legendItem('\u0627\u0644\u062D\u064A\u0636', '\u0661\u2013\u0665', _pink, cycleDay <= 5),
+                              const SizedBox(width: 8),
+                              _legendItem('\u0627\u0644\u062C\u0631\u064A\u0628\u064A\u0629', '\u0666\u2013${(cycleLength * 0.46).round()}', _lavender2, cycleDay > 5 && cycleDay <= (cycleLength * 0.46).round()),
+                              const SizedBox(width: 8),
+                              _legendItem('\u0627\u0644\u062A\u0628\u0648\u064A\u0636', '${fertileStart}\u2013${fertileEnd}', _teal, cycleDay >= fertileStart && cycleDay <= fertileEnd),
+                              const SizedBox(width: 8),
+                              _legendItem('\u0627\u0644\u0623\u0635\u0641\u0631\u064A\u0629', '${fertileEnd + 1}\u2013$cycleLength', _peach, cycleDay > fertileEnd),
+                            ]),
+
+                            const SizedBox(height: 18),
+
+                            // \u2500\u2500 Quick Stats \u2500\u2500
+                            Row(children: [
+                              _quickStat('$cycleLength', '\u0637\u0648\u0644 \u0627\u0644\u062F\u0648\u0631\u0629'),
+                              const SizedBox(width: 12),
+                              _quickStat('\u0665 \u0623\u064A\u0627\u0645', '\u0645\u062F\u0629 \u0627\u0644\u062D\u064A\u0636'),
+                              const SizedBox(width: 12),
+                              _quickStat('\u0628\u0639\u062F $nextPeriod \u064A\u0648\u0645', '\u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u062A\u0627\u0644\u064A\u0629'),
+                            ]),
+
+                            const SizedBox(height: 18),
+
+                            // \u2500\u2500 Action Buttons \u2500\u2500
+                            Row(children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: _startPeriod,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 13),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(18),
+                                      gradient: const LinearGradient(colors: [Color(0xFFFF6BA3), _pink, _pinkHot]),
+                                      boxShadow: [BoxShadow(color: _pink.withOpacity(0.22), blurRadius: 28, offset: const Offset(0, 12))],
+                                    ),
+                                    child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                      Icon(Icons.play_arrow_rounded, color: Colors.white, size: 18),
+                                      SizedBox(width: 6),
+                                      Text('\u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u062F\u0648\u0631\u0629', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                                    ]),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: _endPeriod,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 13),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(18),
+                                      color: Colors.white,
+                                      border: Border.all(color: _line),
+                                      boxShadow: [BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                                    ),
+                                    child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                      Icon(Icons.stop_rounded, color: _ink3, size: 18),
+                                      SizedBox(width: 6),
+                                      Text('\u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u062F\u0648\u0631\u0629', style: TextStyle(color: _ink2, fontWeight: FontWeight.w700, fontSize: 13)),
+                                    ]),
+                                  ),
+                                ),
+                              ),
+                            ]),
+                          ]),
+                        ),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 MOOD SECTION \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        _sectionHeader('\u0645\u0632\u0627\u062C\u064A \u0627\u0644\u064A\u0648\u0645', '\u0643\u064A\u0641 \u062A\u0634\u0639\u0631\u064A\u0646\u061F'),
+                        SizedBox(
+                          height: 100,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            children: [
+                              _moodChip('\uD83D\uDE0A', '\u0633\u0639\u064A\u062F\u0629'), _moodChip('\uD83D\uDE0C', '\u0647\u0627\u062F\u0626\u0629'), _moodChip('\u2728', '\u0645\u0646\u062A\u0639\u0634\u0629'),
+                              _moodChip('\uD83D\uDE34', '\u0645\u062A\u0639\u0628\u0629'), _moodChip('\uD83E\uDD7A', '\u062D\u0633\u0651\u0627\u0633\u0629'), _moodChip('\uD83D\uDE23', '\u0645\u062A\u0648\u062A\u0631\u0629'),
+                              _moodChip('\uD83D\uDE14', '\u062D\u0632\u064A\u0646\u0629'), _moodChip('\uD83D\uDE24', '\u063A\u0627\u0636\u0628\u0629'),
+                            ],
+                          ),
+                        ),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 SYMPTOMS SECTION \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        _sectionHeader('\u0633\u062C\u0651\u0644\u064A \u0623\u0639\u0631\u0627\u0636\u0643\u0650', '\u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u064A\u0648\u0645'),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Wrap(spacing: 8, runSpacing: 8, children: [
+                            _symptomPill('\uD83C\uDF38', '\u062A\u0642\u0644\u0635\u0627\u062A', 'cramps', null),
+                            _symptomPill('\uD83E\uDD15', '\u0635\u062F\u0627\u0639', 'head', 'lav'),
+                            _symptomPill('\uD83D\uDCA8', '\u0627\u0646\u062A\u0641\u0627\u062E', 'bloat', 'peach'),
+                            _symptomPill('\uD83D\uDE34', '\u062A\u0639\u0628', 'fatigue', 'lav'),
+                            _symptomPill('\uD83D\uDC97', '\u0623\u0644\u0645 \u0641\u064A \u0627\u0644\u0635\u062F\u0631', 'breast', null),
+                            _symptomPill('\u2728', '\u062D\u0628\u0651 \u0634\u0628\u0627\u0628', 'acne', 'peach'),
+                            _symptomPill('\uD83C\uDF6B', '\u0634\u0647\u064A\u0651\u0629 \u0639\u0627\u0644\u064A\u0629', 'craving', 'teal'),
+                            _symptomPill('\uD83E\uDD22', '\u063A\u062B\u064A\u0627\u0646', 'nausea', 'teal'),
+                            _symptomPill('\uD83C\uDF00', '\u0622\u0644\u0627\u0645 \u0638\u0647\u0631', 'back', null),
+                            _symptomPill('\uD83C\uDFAD', '\u062A\u0642\u0644\u0651\u0628\u0627\u062A \u0645\u0632\u0627\u062C', 'mood_s', 'lav'),
+                            _symptomPill('\uD83D\uDCA7', '\u062A\u062F\u0641\u0651\u0642 \u062E\u0641\u064A\u0641', 'flow', 'peach'),
+                            _symptomPill('\uD83C\uDF19', '\u0646\u0648\u0645 \u0645\u062A\u0642\u0637\u0651\u0639', 'sleep', 'teal'),
+                          ]),
+                        ),
+
+                        // \u2500\u2500 Save Button \u2500\u2500
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+                          child: GestureDetector(
+                            onTap: _saveTodayLog,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(18),
+                                gradient: const LinearGradient(colors: [_teal, _tealDeep]),
+                                boxShadow: [BoxShadow(color: _teal.withOpacity(0.22), blurRadius: 28, offset: const Offset(0, 12))],
+                              ),
+                              child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                Icon(Icons.save_rounded, color: Colors.white, size: 18),
+                                SizedBox(width: 8),
+                                Text('\u062D\u0641\u0638 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u064A\u0648\u0645', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                              ]),
+                            ),
+                          ),
+                        ),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 AI INSIGHTS \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        _sectionHeader('\u0631\u0624\u0649 \u0646\u0628\u0636\u0629 \u0627\u0644\u0630\u0643\u064A\u0629', '\u062A\u062D\u0644\u064A\u0644 \u062F\u0648\u0631\u062A\u0643\u0650'),
+                        SizedBox(
+                          height: 200,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            children: [
+                              _insightCard('\u0630\u0631\u0648\u0629 \u0627\u0644\u062E\u0635\u0648\u0628\u0629', '\u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u062F\u0648\u0631\u062A\u0643\u0650\u060C \u0627\u0644\u064A\u0648\u0645 $ovDay \u0647\u0648 \u0630\u0631\u0648\u0629 \u0627\u062D\u062A\u0645\u0627\u0644 \u0627\u0644\u0625\u062E\u0635\u0627\u0628.',
+                                '\u0668\u0666\u066A \u0627\u062D\u062A\u0645\u0627\u0644', [_teal, _tealDeep, const Color(0xFF0A5F60)]),
+                              const SizedBox(width: 12),
+                              _insightCard('\u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0642\u0627\u062F\u0645\u0629', '\u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0642\u0627\u062F\u0645\u0629 \u0628\u0639\u062F $nextPeriod \u064A\u0648\u0645 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0622\u062E\u0631 \u0663 \u0623\u0634\u0647\u0631.',
+                                '$nextPeriod \u064A\u0648\u0645 \u0645\u062A\u0628\u0642\u064A\u0629', [const Color(0xFFFF6BA3), _pink, _lavender2]),
+                              const SizedBox(width: 12),
+                              _insightCard('\u062F\u0648\u0631\u062A\u0643\u0650 \u0645\u0646\u062A\u0638\u0645\u0629 \uD83D\uDC9A', '\u0637\u0648\u0644 \u062F\u0648\u0631\u062A\u0643\u0650 \u062B\u0627\u0628\u062A \u0636\u0645\u0646 ${cycleLength - 1}\u2013${cycleLength + 1} \u064A\u0648\u0645.',
+                                '\u0627\u0646\u062A\u0638\u0627\u0645 \u0645\u0645\u062A\u0627\u0632', [const Color(0xFF1A2238), const Color(0xFF2D2851), const Color(0xFF3E2A56)]),
+                            ],
+                          ),
+                        ),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 CYCLE LENGTH SETTING \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.75),
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(color: Colors.white.withOpacity(0.9), width: 0.5),
+                              boxShadow: [BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                            ),
+                            child: Row(children: [
+                              Container(
+                                width: 42, height: 42,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  gradient: LinearGradient(colors: [_pink.withOpacity(0.12), _lavender2.withOpacity(0.18)]),
+                                ),
+                                child: const Icon(Icons.settings, size: 20, color: _pink),
+                              ),
+                              const SizedBox(width: 14),
+                              const Expanded(child: Text('\u0637\u0648\u0644 \u0627\u0644\u062F\u0648\u0631\u0629', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: _ink))),
+                              IconButton(icon: const Icon(Icons.remove_circle_outline, color: _pink), onPressed: () async {
+                                if (cycleLength > 20) await DB.userDoc.set({'cycleLength': cycleLength - 1}, SetOptions(merge: true));
+                              }),
+                              Text('$cycleLength \u064A\u0648\u0645', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _ink)),
+                              IconButton(icon: const Icon(Icons.add_circle_outline, color: _pink), onPressed: () async {
+                                if (cycleLength < 45) await DB.userDoc.set({'cycleLength': cycleLength + 1}, SetOptions(merge: true));
+                              }),
+                            ]),
+                          ),
+                        ),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 ARTICLES \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: _CycleArticlesSection(),
+                        ),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
       ),
     );
   }
 
-  Widget _cycleBtn(String label, IconData icon, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(children: [
-        CircleAvatar(radius: 24, backgroundColor: color.withOpacity(0.2),
-          child: Icon(icon, color: color)),
-        SizedBox(height: 4), Text(label, style: TextStyle(fontSize: 11)),
+  String _arabicDate() {
+    final now = DateTime.now();
+    final days = ['\u0627\u0644\u0623\u062D\u062F', '\u0627\u0644\u0625\u062B\u0646\u064A\u0646', '\u0627\u0644\u062B\u0644\u0627\u062B\u0627\u0621', '\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621', '\u0627\u0644\u062E\u0645\u064A\u0633', '\u0627\u0644\u062C\u0645\u0639\u0629', '\u0627\u0644\u0633\u0628\u062A'];
+    final months = ['\u064A\u0646\u0627\u064A\u0631', '\u0641\u0628\u0631\u0627\u064A\u0631', '\u0645\u0627\u0631\u0633', '\u0623\u0628\u0631\u064A\u0644', '\u0645\u0627\u064A\u0648', '\u064A\u0648\u0646\u064A\u0648', '\u064A\u0648\u0644\u064A\u0648', '\u0623\u063A\u0633\u0637\u0633', '\u0633\u0628\u062A\u0645\u0628\u0631', '\u0623\u0643\u062A\u0648\u0628\u0631', '\u0646\u0648\u0641\u0645\u0628\u0631', '\u062F\u064A\u0633\u0645\u0628\u0631'];
+    return '${days[now.weekday % 7]} ${now.day} ${months[now.month - 1]}';
+  }
+
+  Widget _legendItem(String label, String days, Color clr, bool active) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: active ? Colors.white : Colors.white.withOpacity(0.55),
+          border: Border.all(color: active ? clr.withOpacity(0.3) : Colors.white.withOpacity(0.9), width: 0.5),
+          boxShadow: active ? [BoxShadow(color: clr.withOpacity(0.15), blurRadius: 8, offset: const Offset(0, 2))] : [],
+        ),
+        child: Column(children: [
+          Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: clr)),
+          const SizedBox(height: 5),
+          Text(label, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: _ink2)),
+          Text(days, style: const TextStyle(fontSize: 10, color: _ink3, fontWeight: FontWeight.w600)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _quickStat(String value, String label) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.65),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.85), width: 0.5),
+        ),
+        child: Column(children: [
+          Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _ink), textAlign: TextAlign.center),
+          const SizedBox(height: 2),
+          Text(label, style: const TextStyle(fontSize: 10.5, color: _ink3, fontWeight: FontWeight.w600)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _sectionHeader(String eyebrow, String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 26, 20, 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(color: _pink50, borderRadius: BorderRadius.circular(8)),
+          child: Text(eyebrow, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _pink)),
+        ),
+        const SizedBox(height: 4),
+        Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _ink)),
       ]),
     );
   }
 
-  Widget _moodBtn(String label, String emoji) {
-    bool sel = mood == label;
+  Widget _moodChip(String emoji, String label) {
+    final sel = mood == label;
     return GestureDetector(
       onTap: () => setState(() => mood = label),
-      child: Column(children: [
+      child: Container(
+        width: 78, margin: const EdgeInsets.only(left: 10),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          color: sel ? null : Colors.white,
+          gradient: sel ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [_pink50, Color(0xFFFFD6E7)]) : null,
+          border: Border.all(color: sel ? _pink : _line, width: sel ? 1.5 : 0.5),
+          boxShadow: sel ? [BoxShadow(color: _pink.withOpacity(0.18), blurRadius: 24, offset: const Offset(0, 10))] : [BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 4)],
+        ),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: sel ? Colors.white : _cream),
+            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22))),
+          ),
+          const SizedBox(height: 6),
+          Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: _ink)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _symptomPill(String emoji, String label, String id, String? variant) {
+    final isOn = symptoms.contains(id);
+    List<Color> gradColors;
+    if (!isOn) {
+      gradColors = [];
+    } else if (variant == 'teal') {
+      gradColors = [const Color(0xFF36D2C0), _teal, _tealDeep];
+    } else if (variant == 'lav') {
+      gradColors = [_lavender2, const Color(0xFF9B6FE1), const Color(0xFF7A4FC9)];
+    } else if (variant == 'peach') {
+      gradColors = [const Color(0xFFFFCEB2), _peach, const Color(0xFFFF8852)];
+    } else {
+      gradColors = [const Color(0xFFFF6BA3), _pink, _pinkHot];
+    }
+
+    return GestureDetector(
+      onTap: () => setState(() {
+        symptoms.contains(id) ? symptoms.remove(id) : symptoms.add(id);
+      }),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(999),
+          color: isOn ? null : Colors.white,
+          gradient: isOn ? LinearGradient(colors: gradColors) : null,
+          border: Border.all(color: isOn ? Colors.transparent : _line),
+          boxShadow: isOn
+            ? [BoxShadow(color: gradColors.first.withOpacity(0.28), blurRadius: 24, offset: const Offset(0, 10))]
+            : [BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 4)],
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 22, height: 22,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: isOn ? Colors.white.withOpacity(0.22) : const Color(0xFFFBF1ED)),
+            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 13))),
+          ),
+          const SizedBox(width: 7),
+          Text(label, style: TextStyle(fontSize: 12.5, fontWeight: isOn ? FontWeight.w700 : FontWeight.w600, color: isOn ? Colors.white : _ink2)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _insightCard(String title, String desc, String prob, List<Color> colors) {
+    return Container(
+      width: 270, padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
+        boxShadow: [BoxShadow(color: colors.first.withOpacity(0.3), blurRadius: 28, offset: const Offset(0, 12))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: sel ? Colors.pink.shade100 : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-            border: sel ? Border.all(color: Colors.pink, width: 2) : null),
-          child: Text(emoji, style: TextStyle(fontSize: 28))),
-        SizedBox(height: 4), Text(label, style: TextStyle(fontSize: 11)),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(999)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 5, height: 5, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white, boxShadow: [const BoxShadow(color: Colors.white, blurRadius: 6)])),
+            const SizedBox(width: 6),
+            const Text('\u062A\u0648\u0642\u0651\u0639 \u0630\u0643\u064A', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white)),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
+        const SizedBox(height: 4),
+        Text(desc, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.82), height: 1.55)),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.only(top: 10),
+          decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.white.withOpacity(0.18), width: 0.5))),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(prob, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(999)),
+              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                Text('\u0627\u0644\u0645\u0632\u064A\u062F', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Colors.white)),
+                SizedBox(width: 4),
+                Icon(Icons.arrow_back_ios, size: 10, color: Colors.white),
+              ]),
+            ),
+          ]),
+        ),
       ]),
     );
   }
+}
+
+// \u2500\u2500 Cycle Ring Painter \u2500\u2500
+class _CycleRingPainter extends CustomPainter {
+  final int day, total;
+  _CycleRingPainter(this.day, this.total);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2, cy = size.height / 2;
+    final R = size.width / 2 - 14;
+    const pi = 3.14159265;
+
+    // Phase arcs
+    final phases = [
+      [1, 5, const Color(0xFFFF4F93)],
+      [6, (total * 0.46).round(), const Color(0xFFC7A8EB)],
+      [(total * 0.36).round(), (total * 0.57).round(), const Color(0xFF15B8A6)],
+      [(total * 0.57).round() + 1, total, const Color(0xFFFFB38A)],
+    ];
+
+    // Outer faint track
+    canvas.drawCircle(Offset(cx, cy), R, Paint()..color = const Color(0x0F1B1320)..style = PaintingStyle.stroke..strokeWidth = 2);
+
+    for (final p in phases) {
+      final from = (p[0] as int), to = (p[1] as int);
+      final color = p[2] as Color;
+      final startAngle = ((from - 1) / total) * 2 * pi - pi / 2;
+      final sweepAngle = ((to - from + 1) / total) * 2 * pi;
+      final inPhase = day >= from && day <= to;
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset(cx, cy), radius: R),
+        startAngle + 0.02, sweepAngle - 0.04, false,
+        Paint()..color = color.withOpacity(inPhase ? 1 : 0.35)..style = PaintingStyle.stroke..strokeWidth = 9..strokeCap = StrokeCap.round,
+      );
+    }
+
+    // Day dots
+    for (int d = 1; d <= total; d++) {
+      final angle = ((d - 0.5) / total) * 2 * pi - pi / 2;
+      final x = cx + R * cos(angle), y = cy + R * sin(angle);
+      if (d == day) {
+        canvas.drawCircle(Offset(x, y), 6, Paint()..color = Colors.white);
+        canvas.drawCircle(Offset(x, y), 6, Paint()..color = const Color(0xFFFF4F93)..style = PaintingStyle.stroke..strokeWidth = 2.5);
+        // Indicator line
+        final xo = cx + (R + 14) * cos(angle), yo = cy + (R + 14) * sin(angle);
+        final xi = cx + (R + 4) * cos(angle), yi = cy + (R + 4) * sin(angle);
+        canvas.drawLine(Offset(xi, yi), Offset(xo, yo), Paint()..color = const Color(0xFFFF4F93)..strokeWidth = 2.5..strokeCap = StrokeCap.round);
+      } else {
+        canvas.drawCircle(Offset(x, y), 2.4, Paint()..color = const Color(0x2E1B1320));
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CycleRingPainter old) => old.day != day || old.total != total;
 }
 
 // ==================== PREGNANCY PAGE (FIRESTORE) ====================
@@ -3983,4 +4478,551 @@ class _CommunityPageState extends State<CommunityPage> {
               SizedBox(
                 height: 36,
                 child: ListView(
-                  
+                  scrollDirection: Axis.horizontal,
+                  children: _categoryKeys.where((k) => k != 'all').map((catKey) {
+                    bool sel = postCategory == catKey;
+                    return Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(tr(catKey), style: TextStyle(fontSize: 12)),
+                        selected: sel,
+                        selectedColor: _categoryColor(catKey).withOpacity(0.2),
+                        onSelected: (_) => setSheetState(() => postCategory = catKey),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              SizedBox(height: 8),
+              // Anonymous toggle
+              Row(children: [
+                Checkbox(
+                  value: isAnonymous,
+                  onChanged: (v) => setSheetState(() => isAnonymous = v ?? false),
+                  activeColor: Colors.teal,
+                ),
+                Text(tr('post_as_anonymous'), style: TextStyle(fontSize: 14)),
+              ]),
+              SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.send),
+                  label: Text(tr('post'), style: TextStyle(fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal, foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () async {
+                    if (textController.text.trim().isEmpty) return;
+                    final user = FirebaseAuth.instance.currentUser;
+                    await DB.communityPosts.add({
+                      'text': textController.text.trim(),
+                      'category': postCategory,
+                      'authorId': user?.uid ?? '',
+                      'authorName': isAnonymous ? '' : (user?.displayName ?? ''),
+                      'isAnonymous': isAnonymous,
+                      'likes': [],
+                      'likesCount': 0,
+                      'createdAt': FieldValue.serverTimestamp(),
+                    });
+                    Navigator.pop(ctx);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(tr('post')), backgroundColor: Colors.teal));
+                    }
+                  },
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = AppLocalizations.t;
+    Query query = DB.communityPosts.orderBy('createdAt', descending: true);
+    if (_selectedCategory != 'all') {
+      query = query.where('category', isEqualTo: _selectedCategory);
+    }
+
+    return Directionality(
+      textDirection: AppLocalizations.textDir,
+      child: Scaffold(
+        appBar: AppBar(centerTitle: true,
+          title: Text(tr('community_title')),
+          backgroundColor: Color(0xFFE91E63),
+          foregroundColor: Colors.white,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Color(0xFFE91E63), Colors.pink.shade300]),
+            ),
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _showNewPostDialog,
+          backgroundColor: Color(0xFFE91E63),
+          child: Icon(Icons.add, color: Colors.white),
+        ),
+        body: Column(children: [
+          // Category filter
+          Container(
+            height: 50,
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              children: _categoryKeys.map((catKey) {
+                bool sel = _selectedCategory == (catKey == 'all' ? 'all' : catKey);
+                Color c = catKey == 'all' ? Colors.teal : _categoryColor(catKey);
+                return Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(tr(catKey), style: TextStyle(fontSize: 12, color: sel ? Colors.white : c)),
+                    selected: sel,
+                    selectedColor: c,
+                    backgroundColor: c.withOpacity(0.1),
+                    onSelected: (_) => setState(() => _selectedCategory = catKey == 'all' ? 'all' : catKey),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          // Posts feed
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: query.limit(50).snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.forum_outlined, size: 80, color: Colors.grey.shade300),
+                      SizedBox(height: 16),
+                      Text(tr('no_posts'), textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    ]),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: EdgeInsets.all(12),
+                  itemCount: snapshot.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = snapshot.data!.docs[index];
+                    final post = doc.data() as Map<String, dynamic>;
+                    final isAnon = post['isAnonymous'] == true;
+                    final authorName = isAnon ? tr('anonymous') : (post['authorName'] ?? tr('anonymous'));
+                    final catKey = post['category'] ?? 'cat_general';
+                    final color = _categoryColor(catKey);
+                    final likes = List<String>.from(post['likes'] ?? []);
+                    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+                    final isLiked = likes.contains(uid);
+
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: Offset(0, 4))],
+                      ),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        // Header
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
+                          child: Row(children: [
+                            CircleAvatar(
+                              radius: 18,
+                              backgroundColor: isAnon ? Colors.grey.shade200 : Colors.teal.shade100,
+                              child: Icon(isAnon ? Icons.person_off : Icons.person, size: 20,
+                                color: isAnon ? Colors.grey : Colors.teal),
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(authorName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              Text(_timeAgo(post['createdAt'] as Timestamp?),
+                                style: TextStyle(fontSize: 11, color: Colors.grey)),
+                            ])),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                Icon(_categoryIcon(catKey), size: 14, color: color),
+                                SizedBox(width: 4),
+                                Text(tr(catKey), style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+                              ]),
+                            ),
+                          ]),
+                        ),
+                        // Post text
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
+                          child: Text(post['text'] ?? '', style: TextStyle(fontSize: 15, height: 1.6)),
+                        ),
+                        // Actions
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+                          child: Row(children: [
+                            TextButton.icon(
+                              onPressed: () async {
+                                if (isLiked) {
+                                  await doc.reference.update({
+                                    'likes': FieldValue.arrayRemove([uid]),
+                                    'likesCount': FieldValue.increment(-1),
+                                  });
+                                } else {
+                                  await doc.reference.update({
+                                    'likes': FieldValue.arrayUnion([uid]),
+                                    'likesCount': FieldValue.increment(1),
+                                  });
+                                }
+                              },
+                              icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border,
+                                color: isLiked ? Colors.red : Colors.grey, size: 20),
+                              label: Text('${likes.length}', style: TextStyle(color: Colors.grey)),
+                            ),
+                          ]),
+                        ),
+                      ]),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+// ==================== AI CHAT PAGE (GEMINI) ====================
+class AIChatPage extends StatefulWidget {
+  @override
+  State<AIChatPage> createState() => _AIChatPageState();
+}
+
+class _AIChatPageState extends State<AIChatPage> {
+  final _msgController = TextEditingController();
+  final _scrollController = ScrollController();
+  List<Map<String, String>> messages = [];
+  List<Map<String, dynamic>> _chatHistory = [];
+  bool _isLoading = false;
+  final String _apiKey = 'AIzaSyB09gZH8igVPtC0yfPA5Twfp3KU0dC-kTI';
+
+  // Quick suggestion buttons
+  final quickQuestions = [
+    '\u0645\u0627 \u0647\u064A \u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u062D\u0645\u0644 \u0627\u0644\u0645\u0628\u0643\u0631\u061F',
+    '\u0643\u064A\u0641 \u0623\u062E\u0641\u0641 \u0622\u0644\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629\u061F',
+    '\u0645\u0627 \u0647\u064A \u0627\u0644\u0623\u0637\u0639\u0645\u0629 \u0627\u0644\u0645\u0641\u064A\u062F\u0629 \u0644\u0644\u062D\u0627\u0645\u0644\u061F',
+    '\u0643\u064A\u0641 \u0623\u0639\u062A\u0646\u064A \u0628\u0637\u0641\u0644\u064A \u0627\u0644\u0631\u0636\u064A\u0639\u061F',
+    '\u0645\u062A\u0649 \u064A\u062C\u0628 \u0632\u064A\u0627\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0628\u061F',
+    '\u0646\u0635\u0627\u0626\u062D \u0644\u0644\u0631\u0636\u0627\u0639\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Welcome message
+    messages.add({
+      'role': 'assistant',
+      'text': '\u0645\u0631\u062D\u0628\u0627\u064B! \u0623\u0646\u0627 \u0627\u0644\u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0630\u0643\u064A \u0644\u062A\u0637\u0628\u064A\u0642 \u0646\u0628\u0636\u0629. \u064A\u0645\u0643\u0646\u0646\u064A \u0645\u0633\u0627\u0639\u062F\u062A\u0643 \u0641\u064A \u0623\u0633\u0626\u0644\u0629 \u0635\u062D\u0629 \u0627\u0644\u0645\u0631\u0623\u0629 \u0648\u0627\u0644\u062D\u0645\u0644 \u0648\u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0637\u0641\u0644.\n\n\u0627\u062E\u062A\u0627\u0631\u064A \u0633\u0624\u0627\u0644\u0627\u064B \u0623\u0648 \u0627\u0643\u062A\u0628\u064A \u0633\u0624\u0627\u0644\u0643 \u0628\u0627\u0644\u0623\u0633\u0641\u0644 \u{1F49C}',
+    });
+  }
+
+  // ===== Smart Health Knowledge Base =====
+  static final Map<String, String> _healthKB = {
+    // Period / Cycle
+    '\u0622\u0644\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629|\u062A\u0634\u0646\u062C\u0627\u062A|\u0623\u0644\u0645 \u0627\u0644\u062F\u0648\u0631\u0629|\u062A\u062E\u0641\u064A\u0641 \u0627\u0644\u062F\u0648\u0631\u0629':
+      '\u0644\u062A\u062E\u0641\u064A\u0641 \u0622\u0644\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0634\u0647\u0631\u064A\u0629:\n\n\u2022 \u0636\u0639\u064A \u0643\u0645\u0627\u062F\u0629 \u062F\u0627\u0641\u0626\u0629 \u0639\u0644\u0649 \u0623\u0633\u0641\u0644 \u0627\u0644\u0628\u0637\u0646 \u0644\u0645\u062F\u0629 15-20 \u062F\u0642\u064A\u0642\u0629\n\u2022 \u0645\u0627\u0631\u0633\u064A \u0631\u064A\u0627\u0636\u0629 \u062E\u0641\u064A\u0641\u0629 \u0643\u0627\u0644\u0645\u0634\u064A \u0623\u0648 \u0627\u0644\u064A\u0648\u063A\u0627\n\u2022 \u0627\u0634\u0631\u0628\u064A \u0645\u0634\u0631\u0648\u0628\u0627\u062A \u062F\u0627\u0641\u0626\u0629 \u0643\u0627\u0644\u0628\u0627\u0628\u0648\u0646\u062C \u0648\u0627\u0644\u0632\u0646\u062C\u0628\u064A\u0644 \u0648\u0627\u0644\u0642\u0631\u0641\u0629\n\u2022 \u062A\u062C\u0646\u0628\u064A \u0627\u0644\u0643\u0627\u0641\u064A\u064A\u0646 \u0648\u0627\u0644\u0623\u0637\u0639\u0645\u0629 \u0627\u0644\u0645\u0627\u0644\u062D\u0629\n\u2022 \u062F\u0644\u0643\u064A \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u0628\u0637\u0646 \u0628\u062D\u0631\u0643\u0627\u062A \u062F\u0627\u0626\u0631\u064A\u0629\n\u2022 \u064A\u0645\u0643\u0646 \u062A\u0646\u0627\u0648\u0644 \u0645\u0633\u0643\u0646 \u062E\u0641\u064A\u0641 \u0639\u0646\u062F \u0627\u0644\u062D\u0627\u062C\u0629\n\n\u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u0623\u0644\u0645 \u0634\u062F\u064A\u062F\u0627\u064B \u062C\u062F\u0627\u064B \u0623\u0648 \u064A\u0645\u0646\u0639\u0643 \u0645\u0646 \u0645\u0645\u0627\u0631\u0633\u0629 \u062D\u064A\u0627\u062A\u0643 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629\u060C \u0627\u0633\u062A\u0634\u064A\u0631\u064A \u0637\u0628\u064A\u0628\u062A\u0643.',
+    '\u0627\u0646\u062A\u0638\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629|\u062A\u0623\u062E\u0631 \u0627\u0644\u062F\u0648\u0631\u0629|\u0639\u062F\u0645 \u0627\u0646\u062A\u0638\u0627\u0645|\u062F\u0648\u0631\u0629 \u063A\u064A\u0631 \u0645\u0646\u062A\u0638\u0645\u0629':
+      '\u0639\u062F\u0645 \u0627\u0646\u062A\u0638\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629 \u0642\u062F \u064A\u0643\u0648\u0646 \u0628\u0633\u0628\u0628:\n\n\u2022 \u0627\u0644\u062A\u0648\u062A\u0631 \u0648\u0627\u0644\u0636\u063A\u0637 \u0627\u0644\u0646\u0641\u0633\u064A\n\u2022 \u062A\u063A\u064A\u0631 \u0627\u0644\u0648\u0632\u0646 \u0627\u0644\u0645\u0641\u0627\u062C\u0626\n\u2022 \u0627\u0636\u0637\u0631\u0627\u0628\u0627\u062A \u0647\u0631\u0645\u0648\u0646\u064A\u0629 \u0645\u062B\u0644 \u062A\u0643\u064A\u0633 \u0627\u0644\u0645\u0628\u0627\u064A\u0636\n\u2022 \u0645\u0634\u0627\u0643\u0644 \u0627\u0644\u063A\u062F\u0629 \u0627\u0644\u062F\u0631\u0642\u064A\u0629\n\u2022 \u0627\u0644\u0631\u064A\u0627\u0636\u0629 \u0627\u0644\u0645\u0641\u0631\u0637\u0629\n\n\u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629 \u0628\u064A\u0646 21-35 \u064A\u0648\u0645\u0627\u064B. \u0625\u0630\u0627 \u062A\u0623\u062E\u0631\u062A \u0623\u0643\u062B\u0631 \u0645\u0646 3 \u0623\u0634\u0647\u0631\u060C \u0631\u0627\u062C\u0639\u064A \u0627\u0644\u0637\u0628\u064A\u0628\u0629.',
+    '\u0627\u0644\u062A\u0628\u0648\u064A\u0636|\u0625\u0628\u0627\u0636\u0629|\u062E\u0635\u0648\u0628\u0629|\u0623\u064A\u0627\u0645 \u0627\u0644\u062A\u0628\u0648\u064A\u0636':
+      '\u0641\u062A\u0631\u0629 \u0627\u0644\u062A\u0628\u0648\u064A\u0636 \u0647\u064A \u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u062A\u064A \u062A\u0643\u0648\u0646 \u0641\u064A\u0647\u0627 \u0627\u0644\u062E\u0635\u0648\u0628\u0629 \u0641\u064A \u0623\u0639\u0644\u0649 \u0645\u0633\u062A\u0648\u064A\u0627\u062A\u0647\u0627:\n\n\u2022 \u062A\u062D\u062F\u062B \u0639\u0627\u062F\u0629 \u0641\u064A \u0627\u0644\u064A\u0648\u0645 14 \u0645\u0646 \u0627\u0644\u062F\u0648\u0631\u0629 (\u0644\u0644\u062F\u0648\u0631\u0629 28 \u064A\u0648\u0645\u0627\u064B)\n\u2022 \u0639\u0644\u0627\u0645\u0627\u062A\u0647\u0627: \u0625\u0641\u0631\u0627\u0632\u0627\u062A \u0634\u0641\u0627\u0641\u0629\u060C \u0627\u0631\u062A\u0641\u0627\u0639 \u0637\u0641\u064A\u0641 \u0641\u064A \u062F\u0631\u062C\u0629 \u0627\u0644\u062D\u0631\u0627\u0631\u0629\n\u2022 \u0623\u064A\u0627\u0645 \u0627\u0644\u062E\u0635\u0648\u0628\u0629: 5 \u0623\u064A\u0627\u0645 \u0642\u0628\u0644 \u0627\u0644\u062A\u0628\u0648\u064A\u0636 + \u064A\u0648\u0645 \u0627\u0644\u062A\u0628\u0648\u064A\u0636\n\u2022 \u062A\u0637\u0628\u064A\u0642 \u0646\u0628\u0636\u0629 \u064A\u0633\u0627\u0639\u062F\u0643 \u0641\u064A \u062A\u062A\u0628\u0639 \u0647\u0630\u0647 \u0627\u0644\u0623\u064A\u0627\u0645 \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B',
+    // Pregnancy
+    '\u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u062D\u0645\u0644|\u0639\u0644\u0627\u0645\u0627\u062A \u0627\u0644\u062D\u0645\u0644|\u062D\u0645\u0644 \u0645\u0628\u0643\u0631':
+      '\u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u062D\u0645\u0644 \u0627\u0644\u0645\u0628\u0643\u0631\u0629 \u062A\u0634\u0645\u0644:\n\n\u2022 \u062A\u0623\u062E\u0631 \u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0634\u0647\u0631\u064A\u0629 (\u0623\u0648\u0644 \u0639\u0644\u0627\u0645\u0629)\n\u2022 \u063A\u062B\u064A\u0627\u0646 \u0648\u062A\u0642\u064A\u0624 (\u062E\u0627\u0635\u0629 \u0635\u0628\u0627\u062D\u0627\u064B)\n\u2022 \u062A\u0639\u0628 \u0648\u0625\u0631\u0647\u0627\u0642 \u063A\u064A\u0631 \u0639\u0627\u062F\u064A\n\u2022 \u0627\u0646\u062A\u0641\u0627\u062E \u0648\u062D\u0633\u0627\u0633\u064A\u0629 \u0627\u0644\u062B\u062F\u064A\n\u2022 \u0643\u062B\u0631\u0629 \u0627\u0644\u062A\u0628\u0648\u0644\n\u2022 \u062A\u0642\u0644\u0628\u0627\u062A \u0645\u0632\u0627\u062C\u064A\u0629\n\u2022 \u0646\u0641\u0648\u0631 \u0645\u0646 \u0628\u0639\u0636 \u0627\u0644\u0623\u0637\u0639\u0645\u0629 \u0648\u0627\u0644\u0631\u0648\u0627\u0626\u062D\n\n\u0644\u0644\u062A\u0623\u0643\u062F\u060C \u0627\u0639\u0645\u0644\u064A \u0627\u062E\u062A\u0628\u0627\u0631 \u062D\u0645\u0644 \u0645\u0646\u0632\u0644\u064A \u0623\u0648 \u062A\u062D\u0644\u064A\u0644 \u062F\u0645.',
+    '\u063A\u0630\u0627\u0621 \u0627\u0644\u062D\u0627\u0645\u0644|\u0623\u0637\u0639\u0645\u0629 \u0627\u0644\u062D\u0627\u0645\u0644|\u062A\u063A\u0630\u064A\u0629 \u0627\u0644\u062D\u0627\u0645\u0644|\u0623\u0643\u0644 \u0627\u0644\u062D\u0627\u0645\u0644':
+      '\u0627\u0644\u062A\u063A\u0630\u064A\u0629 \u0627\u0644\u0633\u0644\u064A\u0645\u0629 \u0644\u0644\u062D\u0627\u0645\u0644:\n\n\u2714\uFE0F \u0623\u0637\u0639\u0645\u0629 \u0645\u0641\u064A\u062F\u0629:\n\u2022 \u0627\u0644\u062E\u0636\u0631\u0648\u0627\u062A \u0627\u0644\u0648\u0631\u0642\u064A\u0629 (\u0627\u0644\u0633\u0628\u0627\u0646\u062E\u060C \u0627\u0644\u0628\u0631\u0648\u0643\u0644\u064A)\n\u2022 \u0627\u0644\u0641\u0648\u0627\u0643\u0647 \u0627\u0644\u0637\u0627\u0632\u062C\u0629 \u0648\u0627\u0644\u0645\u0643\u0633\u0631\u0627\u062A\n\u2022 \u0627\u0644\u0628\u0631\u0648\u062A\u064A\u0646 (\u062F\u062C\u0627\u062C\u060C \u0633\u0645\u0643\u060C \u0628\u064A\u0636\u060C \u0628\u0642\u0648\u0644\u064A\u0627\u062A)\n\u2022 \u0627\u0644\u062D\u0644\u064A\u0628 \u0648\u0645\u0634\u062A\u0642\u0627\u062A\u0647\n\u2022 \u0627\u0644\u062D\u0628\u0648\u0628 \u0627\u0644\u0643\u0627\u0645\u0644\u0629\n\n\u274C \u062A\u062C\u0646\u0628\u064A:\n\u2022 \u0627\u0644\u0623\u0633\u0645\u0627\u0643 \u0627\u0644\u0639\u0627\u0644\u064A\u0629 \u0628\u0627\u0644\u0632\u0626\u0628\u0642\n\u2022 \u0627\u0644\u0644\u062D\u0648\u0645 \u0627\u0644\u0646\u064A\u0626\u0629\n\u2022 \u0627\u0644\u0643\u0627\u0641\u064A\u064A\u0646 \u0628\u0643\u0645\u064A\u0627\u062A \u0643\u0628\u064A\u0631\u0629\n\u2022 \u0627\u0644\u0623\u062C\u0628\u0627\u0646 \u0627\u0644\u0637\u0631\u064A\u0629 \u063A\u064A\u0631 \u0627\u0644\u0645\u0628\u0633\u062A\u0631\u0629\n\n\u0644\u0627 \u062A\u0646\u0633\u064A \u062A\u0646\u0627\u0648\u0644 \u062D\u0645\u0636 \u0627\u0644\u0641\u0648\u0644\u064A\u0643 \u0648\u0627\u0644\u062D\u062F\u064A\u062F \u062D\u0633\u0628 \u062A\u0648\u062C\u064A\u0647\u0627\u062A \u0637\u0628\u064A\u0628\u062A\u0643.',
+    '\u063A\u062B\u064A\u0627\u0646|\u0648\u062D\u0627\u0645|\u062A\u0642\u064A\u0624|\u063A\u062B\u064A\u0627\u0646 \u0627\u0644\u062D\u0645\u0644':
+      '\u0644\u062A\u062E\u0641\u064A\u0641 \u0627\u0644\u063A\u062B\u064A\u0627\u0646 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062D\u0645\u0644:\n\n\u2022 \u0643\u0644\u064A \u0648\u062C\u0628\u0627\u062A \u0635\u063A\u064A\u0631\u0629 \u0648\u0645\u062A\u0643\u0631\u0631\u0629 (5-6 \u0645\u0631\u0627\u062A \u064A\u0648\u0645\u064A\u0627\u064B)\n\u2022 \u062A\u062C\u0646\u0628\u064A \u0627\u0644\u0645\u0639\u062F\u0629 \u0627\u0644\u0641\u0627\u0631\u063A\u0629 - \u0643\u0644\u064A \u0628\u0633\u0643\u0648\u064A\u062A \u062C\u0627\u0641 \u0642\u0628\u0644 \u0627\u0644\u0642\u064A\u0627\u0645 \u0645\u0646 \u0627\u0644\u0633\u0631\u064A\u0631\n\u2022 \u0627\u0634\u0631\u0628\u064A \u0627\u0644\u0632\u0646\u062C\u0628\u064A\u0644 \u0623\u0648 \u0627\u0644\u0646\u0639\u0646\u0627\u0639\n\u2022 \u062A\u062C\u0646\u0628\u064A \u0627\u0644\u0631\u0648\u0627\u0626\u062D \u0627\u0644\u0642\u0648\u064A\u0629 \u0648\u0627\u0644\u0623\u0637\u0639\u0645\u0629 \u0627\u0644\u062F\u0633\u0645\u0629\n\u2022 \u0627\u0633\u062A\u0631\u064A\u062D\u064A \u0628\u0639\u062F \u0627\u0644\u0623\u0643\u0644\n\n\u0627\u0644\u063A\u062B\u064A\u0627\u0646 \u0637\u0628\u064A\u0639\u064A \u0641\u064A \u0627\u0644\u0623\u0634\u0647\u0631 \u0627\u0644\u062B\u0644\u0627\u062B\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u0648\u064A\u062E\u0641 \u062A\u062F\u0631\u064A\u062C\u064A\u0627\u064B. \u0625\u0630\u0627 \u0643\u0627\u0646 \u0634\u062F\u064A\u062F\u0627\u064B \u062C\u062F\u0627\u064B \u0631\u0627\u062C\u0639\u064A \u0627\u0644\u0637\u0628\u064A\u0628\u0629.',
+    // Baby Care
+    '\u0631\u0636\u064A\u0639|\u0631\u0636\u0627\u0639\u0629|\u062D\u0644\u064A\u0628 \u0627\u0644\u0623\u0645|\u0627\u0644\u0631\u0636\u0627\u0639\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629':
+      '\u0646\u0635\u0627\u0626\u062D \u0644\u0644\u0631\u0636\u0627\u0639\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629:\n\n\u2022 \u0627\u0628\u062F\u0626\u064A \u0627\u0644\u0631\u0636\u0627\u0639\u0629 \u062E\u0644\u0627\u0644 \u0627\u0644\u0633\u0627\u0639\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u0628\u0639\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629\n\u2022 \u0623\u0631\u0636\u0639\u064A 8-12 \u0645\u0631\u0629 \u064A\u0648\u0645\u064A\u0627\u064B (\u0643\u0644 2-3 \u0633\u0627\u0639\u0627\u062A)\n\u2022 \u062A\u0623\u0643\u062F\u064A \u0645\u0646 \u0627\u0644\u062A\u0642\u0627\u0645 \u0627\u0644\u0637\u0641\u0644 \u0627\u0644\u0635\u062D\u064A\u062D (\u0627\u0644\u0641\u0645 \u064A\u063A\u0637\u064A \u0627\u0644\u0647\u0627\u0644\u0629)\n\u2022 \u0627\u0644\u0631\u0636\u0627\u0639\u0629 \u0627\u0644\u0637\u0628\u064A\u0639\u064A\u0629 \u062D\u0635\u0631\u064A\u0627\u064B \u0644\u0645\u062F\u0629 6 \u0623\u0634\u0647\u0631\n\u2022 \u0627\u0634\u0631\u0628\u064A \u0645\u0627\u0621 \u0643\u062B\u064A\u0631 \u0648\u062A\u063A\u0630\u064A \u062C\u064A\u062F\u0627\u064B\n\u2022 \u0627\u0633\u062A\u0634\u064A\u0631\u064A \u0645\u062E\u062A\u0635\u0629 \u0631\u0636\u0627\u0639\u0629 \u0625\u0630\u0627 \u0648\u0627\u062C\u0647\u062A \u0635\u0639\u0648\u0628\u0627\u062A',
+    '\u0646\u0648\u0645 \u0627\u0644\u0637\u0641\u0644|\u0646\u0648\u0645 \u0627\u0644\u0631\u0636\u064A\u0639|\u0628\u0643\u0627\u0621 \u0627\u0644\u0637\u0641\u0644':
+      '\u0646\u0635\u0627\u0626\u062D \u0644\u0646\u0648\u0645 \u0627\u0644\u0637\u0641\u0644:\n\n\u2022 \u0646\u0648\u0645\u064A \u0627\u0644\u0637\u0641\u0644 \u0639\u0644\u0649 \u0638\u0647\u0631\u0647 (\u0627\u0644\u0623\u0643\u062B\u0631 \u0623\u0645\u0627\u0646\u0627\u064B)\n\u2022 \u0623\u0646\u0634\u0626\u064A \u0631\u0648\u062A\u064A\u0646 \u0646\u0648\u0645 \u062B\u0627\u0628\u062A (\u062D\u0645\u0627\u0645\u060C \u062A\u062F\u0644\u064A\u0643\u060C \u0631\u0636\u0627\u0639\u0629)\n\u2022 \u0627\u0644\u063A\u0631\u0641\u0629 \u0645\u0638\u0644\u0645\u0629 \u0648\u0647\u0627\u062F\u0626\u0629 \u0648\u062F\u0631\u062C\u0629 \u062D\u0631\u0627\u0631\u0629 \u0645\u0646\u0627\u0633\u0628\u0629\n\u2022 \u0627\u0644\u0645\u0648\u0644\u0648\u062F \u064A\u0646\u0627\u0645 16-17 \u0633\u0627\u0639\u0629 \u064A\u0648\u0645\u064A\u0627\u064B\n\u2022 \u0644\u0627 \u062A\u0636\u0639\u064A \u0648\u0633\u0627\u0626\u062F \u0623\u0648 \u0623\u0644\u0639\u0627\u0628 \u0641\u064A \u0627\u0644\u0633\u0631\u064A\u0631\n\n\u0627\u0644\u0628\u0643\u0627\u0621 \u0637\u0628\u064A\u0639\u064A - \u062A\u0623\u0643\u062F\u064A \u0645\u0646: \u0627\u0644\u062C\u0648\u0639\u060C \u0627\u0644\u062D\u0641\u0627\u0636\u060C \u0627\u0644\u062D\u0631\u0627\u0631\u0629\u060C \u0627\u0644\u062D\u0627\u062C\u0629 \u0644\u0644\u062D\u0636\u0646.',
+    '\u062A\u0637\u0639\u064A\u0645|\u0644\u0642\u0627\u062D|\u062A\u0637\u0639\u064A\u0645\u0627\u062A \u0627\u0644\u0637\u0641\u0644':
+      '\u062C\u062F\u0648\u0644 \u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629:\n\n\u2022 \u0639\u0646\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629: BCG + \u0627\u0644\u062A\u0647\u0627\u0628 \u0627\u0644\u0643\u0628\u062F B\n\u2022 \u0634\u0647\u0631\u064A\u0646: \u0627\u0644\u062B\u0644\u0627\u062B\u064A + \u0634\u0644\u0644 \u0627\u0644\u0623\u0637\u0641\u0627\u0644 + \u0627\u0644\u0631\u0648\u062A\u0627\n\u2022 4 \u0623\u0634\u0647\u0631: \u062C\u0631\u0639\u0629 \u062B\u0627\u0646\u064A\u0629\n\u2022 6 \u0623\u0634\u0647\u0631: \u062C\u0631\u0639\u0629 \u062B\u0627\u0644\u062B\u0629\n\u2022 9 \u0623\u0634\u0647\u0631: \u0627\u0644\u062D\u0635\u0628\u0629\n\u2022 12 \u0634\u0647\u0631: MMR\n\u2022 18 \u0634\u0647\u0631: \u062C\u0631\u0639\u0627\u062A \u062A\u0646\u0634\u064A\u0637\u064A\u0629\n\n\u0627\u0644\u062A\u0632\u0645\u064A \u0628\u062C\u062F\u0648\u0644 \u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A \u0644\u062D\u0645\u0627\u064A\u0629 \u0637\u0641\u0644\u0643. \u0631\u0627\u062C\u0639\u064A \u0637\u0628\u064A\u0628 \u0627\u0644\u0623\u0637\u0641\u0627\u0644 \u0644\u0644\u062C\u062F\u0648\u0644 \u0627\u0644\u0643\u0627\u0645\u0644.',
+    // General Health
+    '\u0632\u064A\u0627\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0628|\u0645\u062A\u0649 \u0623\u0632\u0648\u0631 \u0627\u0644\u0637\u0628\u064A\u0628|\u0627\u0633\u062A\u0634\u0627\u0631\u0629 \u0637\u0628\u064A\u0629':
+      '\u064A\u062C\u0628 \u0632\u064A\u0627\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0628\u0629 \u0641\u064A \u0647\u0630\u0647 \u0627\u0644\u062D\u0627\u0644\u0627\u062A:\n\n\u2022 \u0622\u0644\u0627\u0645 \u0634\u062F\u064A\u062F\u0629 \u063A\u064A\u0631 \u0637\u0628\u064A\u0639\u064A\u0629 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062F\u0648\u0631\u0629\n\u2022 \u0646\u0632\u064A\u0641 \u063A\u0632\u064A\u0631 \u0623\u0648 \u063A\u064A\u0631 \u0637\u0628\u064A\u0639\u064A\n\u2022 \u062A\u0623\u062E\u0631 \u0627\u0644\u062F\u0648\u0631\u0629 \u0623\u0643\u062B\u0631 \u0645\u0646 3 \u0623\u0634\u0647\u0631\n\u2022 \u0623\u0644\u0645 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062D\u0645\u0644 \u0623\u0648 \u0646\u0632\u064A\u0641\n\u2022 \u062D\u0631\u0627\u0631\u0629 \u0627\u0644\u0637\u0641\u0644 \u0623\u0643\u062B\u0631 \u0645\u0646 38.5\n\u2022 \u0627\u0644\u0641\u062D\u0635 \u0627\u0644\u062F\u0648\u0631\u064A \u0627\u0644\u0633\u0646\u0648\u064A \u0644\u0644\u0646\u0633\u0627\u0621\n\n\u0644\u0627 \u062A\u062A\u0631\u062F\u062F\u064A \u0641\u064A \u0627\u0633\u062A\u0634\u0627\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0628\u0629 \u0639\u0646\u062F \u0627\u0644\u0634\u0643.',
+    '\u0641\u064A\u062A\u0627\u0645\u064A\u0646|\u0645\u0643\u0645\u0644\u0627\u062A|\u062D\u062F\u064A\u062F|\u0641\u0648\u0644\u064A\u0643|\u0643\u0627\u0644\u0633\u064A\u0648\u0645':
+      '\u0627\u0644\u0641\u064A\u062A\u0627\u0645\u064A\u0646\u0627\u062A \u0627\u0644\u0645\u0647\u0645\u0629 \u0644\u0644\u0645\u0631\u0623\u0629:\n\n\u2022 \u062D\u0645\u0636 \u0627\u0644\u0641\u0648\u0644\u064A\u0643: \u0636\u0631\u0648\u0631\u064A \u0642\u0628\u0644 \u0648\u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062D\u0645\u0644\n\u2022 \u0627\u0644\u062D\u062F\u064A\u062F: \u0644\u0645\u0646\u0639 \u0641\u0642\u0631 \u0627\u0644\u062F\u0645 (\u062E\u0627\u0635\u0629 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062F\u0648\u0631\u0629 \u0648\u0627\u0644\u062D\u0645\u0644)\n\u2022 \u0627\u0644\u0643\u0627\u0644\u0633\u064A\u0648\u0645: \u0644\u0635\u062D\u0629 \u0627\u0644\u0639\u0638\u0627\u0645\n\u2022 \u0641\u064A\u062A\u0627\u0645\u064A\u0646 D: \u0644\u0627\u0645\u062A\u0635\u0627\u0635 \u0627\u0644\u0643\u0627\u0644\u0633\u064A\u0648\u0645\n\u2022 \u0623\u0648\u0645\u064A\u063A\u0627 3: \u0644\u0635\u062D\u0629 \u0627\u0644\u0642\u0644\u0628 \u0648\u0627\u0644\u062F\u0645\u0627\u063A\n\n\u0627\u0633\u062A\u0634\u064A\u0631\u064A \u0637\u0628\u064A\u0628\u062A\u0643 \u0642\u0628\u0644 \u062A\u0646\u0627\u0648\u0644 \u0623\u064A \u0645\u0643\u0645\u0644\u0627\u062A.',
+    '\u0631\u064A\u0627\u0636\u0629|\u062A\u0645\u0627\u0631\u064A\u0646|\u0631\u064A\u0627\u0636\u0629 \u0627\u0644\u062D\u0627\u0645\u0644|\u0645\u0634\u064A':
+      '\u0627\u0644\u0631\u064A\u0627\u0636\u0629 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062D\u0645\u0644:\n\n\u2714\uFE0F \u0622\u0645\u0646\u0629 \u0648\u0645\u0641\u064A\u062F\u0629:\n\u2022 \u0627\u0644\u0645\u0634\u064A 30 \u062F\u0642\u064A\u0642\u0629 \u064A\u0648\u0645\u064A\u0627\u064B\n\u2022 \u0627\u0644\u0633\u0628\u0627\u062D\u0629\n\u2022 \u064A\u0648\u063A\u0627 \u0627\u0644\u062D\u0648\u0627\u0645\u0644\n\u2022 \u062A\u0645\u0627\u0631\u064A\u0646 \u0643\u064A\u062C\u0644\n\n\u274C \u062A\u062C\u0646\u0628\u064A:\n\u2022 \u0627\u0644\u0631\u064A\u0627\u0636\u0627\u062A \u0627\u0644\u0639\u0646\u064A\u0641\u0629\n\u2022 \u0627\u0644\u0642\u0641\u0632 \u0648\u0627\u0644\u062C\u0631\u064A \u0627\u0644\u0633\u0631\u064A\u0639\n\u2022 \u062D\u0645\u0644 \u0627\u0644\u0623\u062B\u0642\u0627\u0644\n\n\u0627\u0633\u062A\u0634\u064A\u0631\u064A \u0637\u0628\u064A\u0628\u062A\u0643 \u0642\u0628\u0644 \u0627\u0644\u0628\u062F\u0621.',
+    '\u0646\u0641\u0633\u064A\u0629|\u0627\u0643\u062A\u0626\u0627\u0628|\u0642\u0644\u0642|\u0627\u0643\u062A\u0626\u0627\u0628 \u0645\u0627 \u0628\u0639\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629':
+      '\u0627\u0644\u0635\u062D\u0629 \u0627\u0644\u0646\u0641\u0633\u064A\u0629 \u0645\u0647\u0645\u0629 \u062C\u062F\u0627\u064B:\n\n\u0627\u0643\u062A\u0626\u0627\u0628 \u0645\u0627 \u0628\u0639\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629 \u0634\u0627\u0626\u0639 \u0648\u0639\u0644\u0627\u0645\u0627\u062A\u0647:\n\u2022 \u062D\u0632\u0646 \u0645\u0633\u062A\u0645\u0631 \u0648\u0628\u0643\u0627\u0621\n\u2022 \u0635\u0639\u0648\u0628\u0629 \u0627\u0644\u062A\u0631\u0627\u0628\u0637 \u0645\u0639 \u0627\u0644\u0637\u0641\u0644\n\u2022 \u0623\u0631\u0642 \u0623\u0648 \u0646\u0648\u0645 \u0645\u0641\u0631\u0637\n\u2022 \u0641\u0642\u062F\u0627\u0646 \u0627\u0644\u0634\u0647\u064A\u0629\n\n\u0644\u0644\u0639\u0646\u0627\u064A\u0629 \u0628\u0646\u0641\u0633\u0643:\n\u2022 \u0627\u0637\u0644\u0628\u064A \u0627\u0644\u0645\u0633\u0627\u0639\u062F\u0629 \u0645\u0646 \u0627\u0644\u0639\u0627\u0626\u0644\u0629\n\u2022 \u062E\u0630\u064A \u0648\u0642\u062A\u0627\u064B \u0644\u0646\u0641\u0633\u0643\n\u2022 \u062A\u062D\u062F\u062B\u064A \u0645\u0639 \u0635\u062F\u064A\u0642\u0629 \u0623\u0648 \u0645\u062E\u062A\u0635\u0629\n\n\u0644\u0627 \u062A\u062A\u0631\u062F\u062F\u064A \u0641\u064A \u0637\u0644\u0628 \u0627\u0644\u0645\u0633\u0627\u0639\u062F\u0629 \u0627\u0644\u0645\u062A\u062E\u0635\u0635\u0629. \u0635\u062D\u062A\u0643 \u0627\u0644\u0646\u0641\u0633\u064A\u0629 \u0623\u0648\u0644\u0648\u064A\u0629!',
+  };
+
+  String _getSmartReply(String question) {
+    final q = question.toLowerCase();
+    for (final entry in _healthKB.entries) {
+      final keywords = entry.key.split('|');
+      for (final kw in keywords) {
+        if (q.contains(kw)) return entry.value;
+      }
+    }
+    return '\u0634\u0643\u0631\u0627\u064B \u0639\u0644\u0649 \u0633\u0624\u0627\u0644\u0643! \u0647\u0630\u0627 \u0627\u0644\u0645\u0648\u0636\u0648\u0639 \u064A\u062D\u062A\u0627\u062C \u0627\u0633\u062A\u0634\u0627\u0631\u0629 \u0637\u0628\u064A\u0629 \u0645\u062A\u062E\u0635\u0635\u0629. \u0623\u0646\u0635\u062D\u0643 \u0628\u0645\u0631\u0627\u062C\u0639\u0629 \u0637\u0628\u064A\u0628\u062A\u0643 \u0644\u0644\u062D\u0635\u0648\u0644 \u0639\u0644\u0649 \u0625\u062C\u0627\u0628\u0629 \u062F\u0642\u064A\u0642\u0629 \u0648\u0645\u062E\u0635\u0635\u0629 \u0644\u062D\u0627\u0644\u062A\u0643.\n\n\u064A\u0645\u0643\u0646\u0643 \u0633\u0624\u0627\u0644\u064A \u0639\u0646:\n\u2022 \u0622\u0644\u0627\u0645 \u0627\u0644\u062F\u0648\u0631\u0629 \u0648\u0627\u0646\u062A\u0638\u0627\u0645\u0647\u0627\n\u2022 \u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u062D\u0645\u0644 \u0648\u0627\u0644\u062A\u063A\u0630\u064A\u0629\n\u2022 \u0627\u0644\u0631\u0636\u0627\u0639\u0629 \u0648\u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0637\u0641\u0644\n\u2022 \u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A \u0648\u0627\u0644\u0641\u064A\u062A\u0627\u0645\u064A\u0646\u0627\u062A';
+  }
+
+  Future<String> _callGemini(String userMessage) async {
+    _chatHistory.add({'role': 'user', 'parts': [{'text': userMessage}]});
+
+    final sysText = '\u0623\u0646\u062A \u0645\u0633\u0627\u0639\u062F \u0635\u062D\u064A \u0630\u0643\u064A \u0627\u0633\u0645\u0643 \u0646\u0628\u0636\u0629\u060C \u0645\u062A\u062E\u0635\u0635 \u0641\u064A \u0635\u062D\u0629 \u0627\u0644\u0645\u0631\u0623\u0629. \u0623\u062C\u0628 \u062F\u0627\u0626\u0645\u0627\u064B \u0628\u0627\u0644\u0639\u0631\u0628\u064A\u0629. \u062A\u062E\u0635\u0635\u0627\u062A\u0643: \u0627\u0644\u062F\u0648\u0631\u0629\u060C \u0627\u0644\u062D\u0645\u0644\u060C \u0627\u0644\u0648\u0644\u0627\u062F\u0629\u060C \u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0637\u0641\u0644\u060C \u0627\u0644\u062A\u063A\u0630\u064A\u0629. \u0623\u062C\u0628 \u0628\u0625\u064A\u062C\u0627\u0632. \u0625\u0630\u0627 \u062A\u0637\u0644\u0628 \u0627\u0644\u0633\u0624\u0627\u0644 \u062A\u0634\u062E\u064A\u0635\u0627\u064B \u0637\u0628\u064A\u0627\u064B \u0627\u0646\u0635\u062D\u064A \u0628\u0632\u064A\u0627\u0631\u0629 \u0627\u0644\u0637\u0628\u064A\u0628.';
+
+    try {
+      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$_apiKey';
+      final body = jsonEncode({
+        'systemInstruction': {'parts': [{'text': sysText}]},
+        'contents': _chatHistory,
+      });
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String reply = data['candidates']?[0]?['content']?['parts']?[0]?['text'] ?? '\u0644\u0645 \u0623\u062A\u0645\u0643\u0646 \u0645\u0646 \u0627\u0644\u0625\u062C\u0627\u0628\u0629';
+        _chatHistory.add({'role': 'model', 'parts': [{'text': reply}]});
+        return reply;
+      }
+    } catch (_) {}
+
+    // Fallback: smart local replies
+    return _getSmartReply(userMessage);
+  }
+
+  Future<void> _sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
+    _msgController.clear();
+
+    setState(() {
+      messages.add({'role': 'user', 'text': text});
+      _isLoading = true;
+    });
+    _scrollToBottom();
+
+    try {
+      String reply = await _callGemini(text);
+      setState(() {
+        messages.add({'role': 'assistant', 'text': reply});
+        _isLoading = false;
+      });
+      DB.userDoc.collection('chat_history').add({
+        'question': text,
+        'answer': reply,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      setState(() {
+        messages.add({
+          'role': 'assistant',
+          'text': _getSmartReply(text),
+        });
+        _isLoading = false;
+      });
+    }
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    Future.delayed(Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(centerTitle: true,
+          title: Text('\u0627\u0644\u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0630\u0643\u064A'),
+          backgroundColor: Colors.teal,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: Icon(Icons.delete_outline),
+              onPressed: () {
+                setState(() {
+                  messages.clear();
+                  messages.add({
+                    'role': 'assistant',
+                    'text': '\u062A\u0645 \u0645\u0633\u062D \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629. \u0643\u064A\u0641 \u064A\u0645\u0643\u0646\u0646\u064A \u0645\u0633\u0627\u0639\u062F\u062A\u0643\u061F \u{1F49C}'
+                  });
+                });
+                _chatHistory.clear();
+              },
+              tooltip: '\u0645\u0633\u062D \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629',
+            ),
+          ],
+        ),
+        body: Column(children: [
+          // Messages
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: EdgeInsets.all(16),
+              itemCount: messages.length + (_isLoading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == messages.length && _isLoading) {
+                  return _typingIndicator();
+                }
+                final msg = messages[index];
+                bool isUser = msg['role'] == 'user';
+                return _chatBubble(msg['text']!, isUser);
+              },
+            ),
+          ),
+          // Quick suggestions (show only at start)
+          if (messages.length <= 1)
+            Container(
+              height: 44,
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: quickQuestions.map((q) => Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: ActionChip(
+                    label: Text(q, style: TextStyle(fontSize: 12)),
+                    backgroundColor: Colors.teal.shade50,
+                    onPressed: () => _sendMessage(q),
+                  ),
+                )).toList(),
+              ),
+            ),
+          if (messages.length <= 1) SizedBox(height: 8),
+          // Input bar
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -1))],
+            ),
+            child: SafeArea(
+              child: Row(children: [
+                Expanded(
+                  child: TextField(
+                    controller: _msgController,
+                    decoration: InputDecoration(
+                      hintText: '\u0627\u0643\u062A\u0628\u064A \u0633\u0624\u0627\u0644\u0643 \u0647\u0646\u0627...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    ),
+                    onSubmitted: _sendMessage,
+                    textInputAction: TextInputAction.send,
+                  ),
+                ),
+                SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: Colors.teal,
+                  child: IconButton(
+                    icon: Icon(Icons.send, color: Colors.white, size: 20),
+                    onPressed: () => _sendMessage(_msgController.text),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _chatBubble(String text, bool isUser) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: isUser ? MainAxisAlignment.start : MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isUser) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.teal.shade100,
+              child: Icon(Icons.smart_toy, size: 18, color: Colors.teal),
+            ),
+            SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Container(
+              padding: EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isUser ? Colors.teal.shade100 : Colors.grey.shade100,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                  bottomLeft: isUser ? Radius.circular(16) : Radius.circular(4),
+                  bottomRight: isUser ? Radius.circular(4) : Radius.circular(16),
+                ),
+              ),
+              child: Text(text, style: TextStyle(fontSize: 15, height: 1.5)),
+            ),
+          ),
+          if (isUser) ...[
+            SizedBox(width: 8),
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.teal,
+              child: Icon(Icons.person, size: 18, color: Colors.white),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _typingIndicator() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CircleAvatar(radius: 16, backgroundColor: Colors.teal.shade100,
+          child: Icon(Icons.smart_toy, size: 18, color: Colors.teal)),
+        SizedBox(width: 8),
+        Container(
+          padding: EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
+            SizedBox(width: 10),
+            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))          ]),
+        ),
+      ]),
+    );
+  }
+}
