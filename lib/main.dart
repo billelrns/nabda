@@ -3890,11 +3890,72 @@ class _FirestoreArticlesSection extends StatelessWidget {
     );
   }
 
+  // === Smart fallback images from Unsplash ===
+  static final Map<String, String> _articleImageMap = {
+    // Pregnancy
+    'حمل': 'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=600&q=80',
+    'حامل': 'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=600&q=80',
+    'جنين': 'https://images.unsplash.com/photo-1584582397869-3e903bfe9985?w=600&q=80',
+    'ولادة': 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80',
+    'مخاض': 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80',
+    // Baby & Child
+    'طفل': 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&q=80',
+    'رضيع': 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=600&q=80',
+    'رضاعة': 'https://images.unsplash.com/photo-1584582397869-3e903bfe9985?w=600&q=80',
+    'نوم': 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=600&q=80',
+    'تطعيم': 'https://images.unsplash.com/photo-1632053002928-1919605ee6f7?w=600&q=80',
+    'لقاح': 'https://images.unsplash.com/photo-1632053002928-1919605ee6f7?w=600&q=80',
+    // Nutrition
+    'تغذية': 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&q=80',
+    'غذاء': 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&q=80',
+    'فيتامين': 'https://images.unsplash.com/photo-1505576399279-0d754c0fdc67?w=600&q=80',
+    'حديد': 'https://images.unsplash.com/photo-1505576399279-0d754c0fdc67?w=600&q=80',
+    'كالسيوم': 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600&q=80',
+    'فوليك': 'https://images.unsplash.com/photo-1505576399279-0d754c0fdc67?w=600&q=80',
+    // Cycle & Period
+    'دورة': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80',
+    'حيض': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80',
+    'تبويض': 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80',
+    'خصوبة': 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80',
+    // Exercise & Wellness
+    'رياضة': 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80',
+    'تمارين': 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80',
+    'يوغا': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80',
+    'استرخاء': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80',
+    'نفسية': 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=600&q=80',
+    'اكتئاب': 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=600&q=80',
+    // Medical
+    'طبيب': 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=600&q=80',
+    'فحص': 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=600&q=80',
+    'سونار': 'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=600&q=80',
+    'أشعة': 'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=600&q=80',
+    // Skin & Beauty
+    'بشرة': 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=600&q=80',
+    'جلد': 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=600&q=80',
+    'شعر': 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80',
+    // Weight
+    'وزن': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80',
+    // General health
+    'صحة': 'https://images.unsplash.com/photo-1505576399279-0d754c0fdc67?w=600&q=80',
+    'علاج': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&q=80',
+    'ألم': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&q=80',
+    'غثيان': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&q=80',
+  };
+
+  static String _getSmartImage(String title) {
+    for (final entry in _articleImageMap.entries) {
+      if (title.contains(entry.key)) return entry.value;
+    }
+    // Default fallback
+    return 'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=600&q=80';
+  }
+
   Widget _firestoreArticleCard(BuildContext context, String title, String content, String imageUrl, List<String> contentImages, Color cardColor) {
-    final hasImage = imageUrl.isNotEmpty;
+    final resolvedImage = imageUrl.isNotEmpty ? imageUrl : _getSmartImage(title);
+    final hasImage = resolvedImage.isNotEmpty;
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(
-        builder: (_) => _ArticleDetailPage(title: title, body: content, color: cardColor, imageUrl: imageUrl, contentImages: contentImages))),
+        builder: (_) => _ArticleDetailPage(title: title, body: content, color: cardColor, imageUrl: resolvedImage, contentImages: contentImages))),
       child: Container(
         width: 260,
         margin: EdgeInsets.only(left: 12),
@@ -3909,7 +3970,7 @@ class _FirestoreArticlesSection extends StatelessWidget {
           if (hasImage)
             ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              child: Image.network(imageUrl, height: 100, width: 260, fit: BoxFit.cover,
+              child: Image.network(resolvedImage, height: 100, width: 260, fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(height: 100, color: cardColor.withOpacity(0.08),
                   child: Center(child: Icon(Icons.image, color: cardColor.withOpacity(0.3), size: 36)))),
             )
@@ -4027,10 +4088,11 @@ class _HomeArticlesSection extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 4),
             itemBuilder: (context, i) {
               final data = docs[i].data() as Map<String, dynamic>;
-              final imgUrl = data['imageUrl'] ?? '';
+              final rawImgUrl = data['imageUrl'] ?? '';
               final articleTitle = data['title'] ?? '';
               final content = data['content'] ?? '';
               final contentImages = List<String>.from(data['contentImages'] ?? []);
+              final imgUrl = rawImgUrl.isNotEmpty ? rawImgUrl : _FirestoreArticlesSection._getSmartImage(articleTitle);
               return GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(
                   builder: (_) => _ArticleDetailPage(
@@ -4103,6 +4165,84 @@ class _ArticleDetailPage extends StatelessWidget {
   final List<String> contentImages;
   const _ArticleDetailPage({required this.title, required this.body, required this.color, this.imageUrl = '', this.contentImages = const []});
 
+  // Inline images matched to article content keywords
+  static final Map<String, List<String>> _inlineImageSets = {
+    'حمل': [
+      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
+      'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=700&q=80',
+    ],
+    'حامل': [
+      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
+      'https://images.unsplash.com/photo-1509822929063-6b6cfc9b42f2?w=700&q=80',
+    ],
+    'طفل': [
+      'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=700&q=80',
+      'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=700&q=80',
+    ],
+    'رضاعة': [
+      'https://images.unsplash.com/photo-1584582397869-3e903bfe9985?w=700&q=80',
+      'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=700&q=80',
+    ],
+    'تغذية': [
+      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=700&q=80',
+      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=700&q=80',
+    ],
+    'غذاء': [
+      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=700&q=80',
+      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=700&q=80',
+    ],
+    'دورة': [
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=700&q=80',
+      'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=700&q=80',
+    ],
+    'رياضة': [
+      'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=700&q=80',
+      'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=700&q=80',
+    ],
+    'تمارين': [
+      'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=700&q=80',
+      'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=700&q=80',
+    ],
+    'نوم': [
+      'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=700&q=80',
+      'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=700&q=80',
+    ],
+    'فيتامين': [
+      'https://images.unsplash.com/photo-1505576399279-0d754c0fdc67?w=700&q=80',
+      'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=700&q=80',
+    ],
+    'نفسية': [
+      'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=700&q=80',
+      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=700&q=80',
+    ],
+    'طبيب': [
+      'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=700&q=80',
+      'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=700&q=80',
+    ],
+    'تطعيم': [
+      'https://images.unsplash.com/photo-1632053002928-1919605ee6f7?w=700&q=80',
+      'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=700&q=80',
+    ],
+    'بشرة': [
+      'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=700&q=80',
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=700&q=80',
+    ],
+    'ولادة': [
+      'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=700&q=80',
+      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
+    ],
+  };
+
+  List<String> _getInlineImages() {
+    if (contentImages.isNotEmpty) return contentImages;
+    for (final entry in _inlineImageSets.entries) {
+      if (title.contains(entry.key)) return entry.value;
+    }
+    return [
+      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasHeaderImage = imageUrl.isNotEmpty;
@@ -4149,23 +4289,46 @@ class _ArticleDetailPage extends StatelessWidget {
                     Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1F1A20))),
                     SizedBox(height: 20),
                   ],
-                  ...body.split('\n\n').map((para) => Padding(
-                    padding: EdgeInsets.only(bottom: 16),
-                    child: Text(para.trim(),
-                      style: TextStyle(fontSize: 16, height: 1.8, color: Color(0xFF4A434B))),
-                  )),
-                  // Content images
-                  if (contentImages.isNotEmpty) ...[
-                    SizedBox(height: 10),
-                    ...contentImages.map((url) => Padding(
-                      padding: EdgeInsets.only(bottom: 16),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(url, width: double.infinity, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => SizedBox.shrink()),
-                      ),
-                    )),
-                  ],
+                  // Paragraphs with smart inline images
+                  ...() {
+                    final paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+                    final inlineImgs = _getInlineImages();
+                    final widgets = <Widget>[];
+                    // Insert first image after 2nd paragraph, second after 5th
+                    final insertPoints = [2, 5];
+                    int imgIdx = 0;
+                    for (int i = 0; i < paragraphs.length; i++) {
+                      widgets.add(Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: Text(paragraphs[i].trim(),
+                          style: TextStyle(fontSize: 16, height: 1.8, color: Color(0xFF4A434B))),
+                      ));
+                      if (insertPoints.contains(i) && imgIdx < inlineImgs.length) {
+                        widgets.add(Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.network(inlineImgs[imgIdx], width: double.infinity, height: 200, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => SizedBox.shrink()),
+                          ),
+                        ));
+                        imgIdx++;
+                      }
+                    }
+                    // Remaining images at the end
+                    while (imgIdx < inlineImgs.length) {
+                      widgets.add(Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.network(inlineImgs[imgIdx], width: double.infinity, height: 200, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => SizedBox.shrink()),
+                        ),
+                      ));
+                      imgIdx++;
+                    }
+                    return widgets;
+                  }(),
                   SizedBox(height: 20),
                   Container(
                     width: double.infinity,
@@ -5463,4 +5626,8 @@ class _AIChatPageState extends State<AIChatPage> {
             SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
             SizedBox(width: 10),
             Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))          ]),
-   
+        ),
+      ]),
+    );
+  }
+}
