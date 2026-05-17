@@ -4015,58 +4015,67 @@ class _BabyArticlesSection extends StatelessWidget {
 }
 
 class _HomeArticlesSection extends StatelessWidget {
+  static const _articles = <Map<String, String>>[
+    {'title': 'الأطعمة المفيدة للحامل', 'category': 'تغذية وجمال', 'image': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
+     'content': 'تعتبر التغذية السليمة من أهم الركائز التي تضمن صحة الأم والجنين طوال فترة الحمل. يحتاج جسم المرأة الحامل إلى عناصر غذائية متنوعة تشمل البروتينات والفيتامينات والمعادن الأساسية مثل الحديد والكالسيوم وحمض الفوليك. احرصي على تناول الخضروات الورقية الداكنة والفواكه الطازجة والحبوب الكاملة والبقوليات يومياً. تجنبي الأطعمة المصنعة والمشروبات الغازية واستبدليها بالعصائر الطبيعية والماء.'},
+    {'title': 'المشي أثناء الحمل', 'category': 'رياضة ولياقة', 'image': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80',
+     'content': 'يُعد المشي من أفضل التمارين وأكثرها أماناً خلال فترة الحمل. فهو يساعد على تحسين الدورة الدموية وتقوية عضلات الحوض والساقين وتخفيف آلام الظهر والتورم. ابدئي بالمشي لمدة عشر دقائق يومياً ثم زيدي تدريجياً حتى ثلاثين دقيقة. اختاري أحذية مريحة وأماكن مسطحة وآمنة وتجنبي الحرارة الشديدة.'},
+    {'title': 'يوغا الحوامل', 'category': 'رياضة ولياقة', 'image': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80',
+     'content': 'تساعد يوغا الحوامل على تحسين المرونة والتوازن وتخفيف التوتر والقلق. تركز تمارين اليوغا المخصصة للحوامل على التنفس العميق وتقوية عضلات الحوض والظهر. مارسي اليوغا في بيئة هادئة ومريحة واستخدمي الوسائد الداعمة. تجنبي الوضعيات التي تتطلب الاستلقاء على البطن أو التوازن الصعب.'},
+    {'title': 'القلق من الولادة', 'category': 'صحة نفسية', 'image': 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&q=80',
+     'content': 'من الطبيعي أن تشعري ببعض القلق مع اقتراب موعد الولادة لكن المهم ألا يسيطر هذا القلق على حياتك اليومية. تحدثي مع طبيبتك بصراحة عن مخاوفك واطلبي المعلومات الكافية عن مراحل الولادة. مارسي تقنيات الاسترخاء والتنفس العميق يومياً واحاطي نفسك بأشخاص إيجابيين يدعمونك.'},
+    {'title': 'العناية بالبشرة', 'category': 'تغذية وجمال', 'image': 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&q=80',
+     'content': 'تتعرض بشرة المرأة الحامل لتغيرات كثيرة بسبب التقلبات الهرمونية مثل ظهور الكلف والبقع الداكنة وحب الشباب. استخدمي واقي شمس آمن يومياً ورطبي بشرتك بكريمات خالية من المواد الكيميائية الضارة. اشربي كمية كافية من الماء وتناولي الأطعمة الغنية بفيتامين سي وأحماض أوميغا 3.'},
+    {'title': 'تحضير حقيبة المولود', 'category': 'أمومة وطفولة', 'image': 'https://images.unsplash.com/photo-1522771930-78848d9293e8?w=400&q=80',
+     'content': 'يُنصح بتجهيز حقيبة الولادة في الشهر الثامن تحسباً لأي طارئ. جهزي ملابس مريحة لك وللمولود وأغراض النظافة الشخصية والمستندات الطبية اللازمة. لا تنسي ملابس قطنية ناعمة للطفل وحفاضات وبطانية دافئة. احتفظي بالحقيبة في مكان يسهل الوصول إليه.'},
+    {'title': 'دور الأب أثناء الحمل', 'category': 'علاقات أسرية', 'image': 'https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=400&q=80',
+     'content': 'دور الأب لا يبدأ بعد الولادة بل يبدأ من اللحظة الأولى للحمل. يمكن للأب المشاركة في مواعيد الطبيب والتعرف على مراحل نمو الجنين وتقديم الدعم العاطفي والعملي لزوجته. ساعد في الأعمال المنزلية ورافقها في المشي وكن صبوراً مع تقلبات مزاجها الطبيعية.'},
+    {'title': 'فحوصات الثلث الأول', 'category': 'نصائح طبية', 'image': 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400&q=80',
+     'content': 'يشمل الثلث الأول من الحمل فحوصات أساسية مثل تحليل الدم الشامل وفصيلة الدم وفحص السكري ووظائف الغدة الدرقية. يُجرى أول سونار عادة بين الأسبوع السادس والثامن لتأكيد الحمل وسماع نبض الجنين. التزمي بمواعيد الفحوصات واسألي طبيبتك عن أي شيء يقلقك.'},
+    {'title': 'السباحة للحامل', 'category': 'رياضة ولياقة', 'image': 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=400&q=80',
+     'content': 'السباحة من أفضل الرياضات للحامل لأن الماء يدعم وزن الجسم ويخفف الضغط على المفاصل والعمود الفقري. تساعد السباحة على تحسين اللياقة القلبية والتنفسية وتقليل التورم في الساقين. اختاري حمام سباحة نظيفاً ومارسي السباحة بوتيرة معتدلة لمدة عشرين إلى ثلاثين دقيقة.'},
+    {'title': 'فحص السونار التفصيلي', 'category': 'نصائح طبية', 'image': 'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=400&q=80',
+     'content': 'يُجرى السونار التفصيلي عادة بين الأسبوع الثامن عشر والعشرين ويُعد من أهم فحوصات الحمل. يفحص الطبيب أعضاء الجنين ونموه وحركته ووضع المشيمة وكمية السائل الأمنيوسي. هذا الفحص فرصة جميلة لرؤية طفلك ومعرفة جنسه إن رغبت في ذلك.'},
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final categories = [
-      {'name': 'صحة المرأة', 'icon': Icons.favorite, 'color': Colors.pink},
+    final categories = <Map<String, dynamic>>[
       {'name': 'تغذية وجمال', 'icon': Icons.spa, 'color': Colors.purple},
+      {'name': 'رياضة ولياقة', 'icon': Icons.fitness_center, 'color': Colors.orange},
       {'name': 'صحة نفسية', 'icon': Icons.psychology, 'color': Colors.teal},
       {'name': 'أمومة وطفولة', 'icon': Icons.child_care, 'color': Colors.blue},
-      {'name': 'رياضة ولياقة', 'icon': Icons.fitness_center, 'color': Colors.orange},
-      {'name': 'وصفات صحية', 'icon': Icons.restaurant, 'color': Colors.green},
       {'name': 'علاقات أسرية', 'icon': Icons.people, 'color': Colors.indigo},
       {'name': 'نصائح طبية', 'icon': Icons.medical_services, 'color': Colors.red},
     ];
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('articles')
-        .where('type', isEqualTo: 'home')
-        .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return SizedBox.shrink();
-        }
-        final allDocs = snapshot.data!.docs;
-        // Group by category
-        final grouped = <String, List<QueryDocumentSnapshot>>{};
-        for (final doc in allDocs) {
-          final cat = (doc.data() as Map<String, dynamic>)['category'] ?? '';
-          grouped.putIfAbsent(cat, () => []).add(doc);
-        }
+    // Group articles by category
+    final grouped = <String, List<Map<String, String>>>{};
+    for (final art in _articles) {
+      grouped.putIfAbsent(art['category']!, () => []).add(art);
+    }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('مقالات ونصائح', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20))),
-            SizedBox(height: 4),
-            Text('آخر المقالات في مختلف المجالات', style: TextStyle(fontSize: 14, color: const Color(0xFF8B8190))),
-            SizedBox(height: 16),
-            for (final catInfo in categories)
-              if (grouped.containsKey(catInfo['name']))
-                _buildHomeSection(
-                  context,
-                  catInfo['name'] as String,
-                  catInfo['icon'] as IconData,
-                  catInfo['color'] as Color,
-                  grouped[catInfo['name']]!,
-                ),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('مقالات ونصائح', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20))),
+        SizedBox(height: 4),
+        Text('آخر المقالات في مختلف المجالات', style: TextStyle(fontSize: 14, color: const Color(0xFF8B8190))),
+        SizedBox(height: 16),
+        for (final catInfo in categories)
+          if (grouped.containsKey(catInfo['name']))
+            _buildHomeSection(
+              context,
+              catInfo['name'] as String,
+              catInfo['icon'] as IconData,
+              catInfo['color'] as Color,
+              grouped[catInfo['name']]!,
+            ),
+      ],
     );
   }
 
-  Widget _buildHomeSection(BuildContext context, String title, IconData icon, Color color, List<QueryDocumentSnapshot> docs) {
+  Widget _buildHomeSection(BuildContext context, String title, IconData icon, Color color, List<Map<String, String>> articles) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -4084,20 +4093,18 @@ class _HomeArticlesSection extends StatelessWidget {
           height: 240,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: docs.length,
+            itemCount: articles.length,
             padding: EdgeInsets.symmetric(horizontal: 4),
             itemBuilder: (context, i) {
-              final data = docs[i].data() as Map<String, dynamic>;
-              final rawImgUrl = data['imageUrl'] ?? '';
-              final articleTitle = data['title'] ?? '';
-              final content = data['content'] ?? '';
-              final contentImages = List<String>.from(data['contentImages'] ?? []);
-              final imgUrl = rawImgUrl.isNotEmpty ? rawImgUrl : _FirestoreArticlesSection._getSmartImage(articleTitle);
+              final art = articles[i];
+              final imgUrl = art['image'] ?? '';
+              final articleTitle = art['title'] ?? '';
+              final content = art['content'] ?? '';
               return GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(
                   builder: (_) => _ArticleDetailPage(
                     title: articleTitle, body: content, color: color,
-                    imageUrl: imgUrl, contentImages: contentImages,
+                    imageUrl: imgUrl, contentImages: const [],
                   ),
                 )),
                 child: Container(
@@ -4109,29 +4116,20 @@ class _HomeArticlesSection extends StatelessWidget {
                     boxShadow: [BoxShadow(color: color.withOpacity(0.08), blurRadius: 12, offset: Offset(0, 4))],
                   ),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    // Image
                     ClipRRect(
                       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                      child: imgUrl.isNotEmpty
-                        ? Image.network(imgUrl, height: 120, width: 200, fit: BoxFit.cover,
-                            loadingBuilder: (c, child, progress) => progress == null ? child
-                              : Container(height: 120, width: 200, color: color.withOpacity(0.05),
-                                  child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: color))),
-                            errorBuilder: (c, e, s) => Container(height: 120, width: 200,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]),
-                              ),
-                              child: Icon(icon, size: 40, color: color.withOpacity(0.4)),
-                            ),
-                          )
-                        : Container(height: 120, width: 200,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]),
-                            ),
-                            child: Icon(icon, size: 40, color: color.withOpacity(0.4)),
+                      child: Image.network(imgUrl, height: 120, width: 200, fit: BoxFit.cover,
+                        loadingBuilder: (c, child, progress) => progress == null ? child
+                          : Container(height: 120, width: 200, color: color.withOpacity(0.05),
+                              child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: color))),
+                        errorBuilder: (c, e, s) => Container(height: 120, width: 200,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]),
                           ),
+                          child: Icon(icon, size: 40, color: color.withOpacity(0.4)),
+                        ),
+                      ),
                     ),
-                    // Title & preview
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.all(12),

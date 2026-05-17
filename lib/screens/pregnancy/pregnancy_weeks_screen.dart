@@ -855,75 +855,8 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       ),
                     ),
 
-                    // ── Firestore Articles Section ──
-                    StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance.collection('articles').orderBy('createdAt', descending: true).limit(10).snapshots(),
-                      builder: (context, snap) {
-                        if (!snap.hasData || snap.data!.docs.isEmpty) return const SizedBox.shrink();
-                        final docs = snap.data!.docs;
-                        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const SizedBox(height: 20),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(children: [
-                              Container(width: 4, height: 22, decoration: BoxDecoration(color: _teal, borderRadius: BorderRadius.circular(2))),
-                              const SizedBox(width: 8),
-                              const Text('📰', style: TextStyle(fontSize: 20)),
-                              const SizedBox(width: 6),
-                              const Text('مقالات جديدة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
-                            ]),
-                          ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            height: 200,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              itemCount: docs.length,
-                              itemBuilder: (_, i) {
-                                final d = docs[i].data() as Map<String, dynamic>;
-                                final hasImg = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
-                                return GestureDetector(
-                                  onTap: () => _showFirestoreArticle(context, d),
-                                  child: Container(
-                                    width: 160, margin: const EdgeInsets.symmetric(horizontal: 4),
-                                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)]),
-                                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                      Container(
-                                        height: 100,
-                                        decoration: BoxDecoration(
-                                          color: _teal.withOpacity(0.08),
-                                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                                        ),
-                                        child: hasImg
-                                          ? ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                                              child: Image.network(d['imageUrl'], width: 160, height: 100, fit: BoxFit.cover,
-                                                errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.article, size: 40, color: _teal))))
-                                          : const Center(child: Icon(Icons.article, size: 40, color: _teal)),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(10),
-                                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                          Text(d['title'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _textPrimary),
-                                            maxLines: 2, overflow: TextOverflow.ellipsis),
-                                          const SizedBox(height: 4),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                                            child: Text(d['category'] ?? '', style: TextStyle(fontSize: 9, color: _teal, fontWeight: FontWeight.bold)),
-                                          ),
-                                        ]),
-                                      ),
-                                    ]),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ]);
-                      },
-                    ),
+                    // ── Featured Articles Section (hardcoded) ──
+                    ..._buildFeaturedArticles(context),
 
                     // ── All Discover Sections ──
                     ..._buildAllDiscoverSections(),
@@ -1286,6 +1219,86 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
         ])),
       ),
     )));
+  }
+
+  List<Widget> _buildFeaturedArticles(BuildContext context) {
+    final featured = <Map<String, dynamic>>[
+      {'title': 'التغيرات في جسمك أسبوعياً', 'category': 'أسبوع بأسبوع', 'image': 'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=400&q=80'},
+      {'title': 'الأطعمة المفيدة للحامل', 'category': 'التغذية', 'image': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80'},
+      {'title': 'المشي أثناء الحمل', 'category': 'الرياضة', 'image': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80'},
+      {'title': 'تحضير حقيبة المولود', 'category': 'التحضير للولادة', 'image': 'https://images.unsplash.com/photo-1522771930-78848d9293e8?w=400&q=80'},
+      {'title': 'القلق من الولادة', 'category': 'الصحة النفسية', 'image': 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&q=80'},
+      {'title': 'دور الأب أثناء الحمل', 'category': 'العلاقة الزوجية', 'image': 'https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=400&q=80'},
+      {'title': 'فحوصات الثلث الأول', 'category': 'الفحوصات', 'image': 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400&q=80'},
+      {'title': 'العناية بالبشرة', 'category': 'الجمال والعناية', 'image': 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&q=80'},
+    ];
+
+    return [
+      const SizedBox(height: 20),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(children: [
+          Container(width: 4, height: 22, decoration: BoxDecoration(color: _teal, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(width: 8),
+          const Text('\u{1F4F0}', style: TextStyle(fontSize: 20)),
+          const SizedBox(width: 6),
+          const Text('مقالات جديدة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+        ]),
+      ),
+      const SizedBox(height: 10),
+      SizedBox(
+        height: 200,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          itemCount: featured.length,
+          itemBuilder: (_, i) {
+            final item = featured[i];
+            return GestureDetector(
+              onTap: () {
+                // Find matching article in discover categories
+                for (final cat in _discoverCategories) {
+                  for (final art in cat.articles) {
+                    if (art.title == item['title']) {
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => _DiscoverDetailScreen(article: art, categoryName: cat.name),
+                      ));
+                      return;
+                    }
+                  }
+                }
+              },
+              child: Container(
+                width: 160, margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)]),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: Image.network(item['image']!, width: 160, height: 100, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(height: 100, color: _teal.withOpacity(0.08),
+                        child: const Center(child: Icon(Icons.article, size: 40, color: _teal)))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(item['title']!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _textPrimary),
+                        maxLines: 2, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                        child: Text(item['category']!, style: TextStyle(fontSize: 9, color: _teal, fontWeight: FontWeight.bold)),
+                      ),
+                    ]),
+                  ),
+                ]),
+              ),
+            );
+          },
+        ),
+      ),
+    ];
   }
 
   List<Widget> _buildAllDiscoverSections() {
@@ -2956,3 +2969,4 @@ class RealisticFetusIllustration extends CustomPainter {
   @override
   bool shouldRepaint(covariant RealisticFetusIllustration old) => old.week != week;
 }
+                                           
