@@ -4005,14 +4005,122 @@ class _FirestoreArticlesSection extends StatelessWidget {
 }
 
 class _CycleArticlesSection extends StatelessWidget {
+  static const _cycleArticles = <String, List<Map<String, String>>>{
+    'صحة الدورة الشهرية': [
+      {'title': 'فهم دورتك الشهرية', 'image': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80',
+       'content': 'الدورة الشهرية هي عملية طبيعية يمر بها جسم المرأة كل شهر تقريباً وتتراوح مدتها بين واحد وعشرين يوماً وخمسة وثلاثين يوماً بمتوسط ثمانية وعشرين يوماً. تبدأ الدورة من أول يوم للحيض وتنتهي قبل اليوم الأول للحيض التالي. خلال هذه الفترة يمر جسمك بأربع مراحل رئيسية هي مرحلة الحيض التي يتخلص فيها الرحم من بطانته ثم المرحلة الجريبية التي تنضج فيها البويضة ثم مرحلة التبويض حين تنطلق البويضة من المبيض وأخيراً المرحلة الأصفرية التي يستعد فيها الرحم لاستقبال حمل محتمل. تتبعي دورتك بانتظام لفهم نمطك الشخصي ومعرفة أيام الخصوبة العالية. استخدمي تطبيقاً موثوقاً أو مذكرة لتسجيل تواريخ الحيض والأعراض المصاحبة. الدورة المنتظمة مؤشر مهم على صحتك الهرمونية فإذا لاحظتِ عدم انتظام مستمر استشيري طبيبتك.'},
+      {'title': 'تخفيف آلام الدورة', 'image': 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&q=80',
+       'content': 'آلام الدورة الشهرية من أكثر الشكاوى شيوعاً بين النساء وتتراوح من تقلصات خفيفة إلى آلام شديدة تؤثر على النشاط اليومي. تحدث هذه الآلام بسبب انقباضات الرحم لطرد بطانته وإفراز مادة البروستاغلاندين. لتخفيف الألم جربي وضع كمادة دافئة على أسفل البطن أو أسفل الظهر فالحرارة تساعد على استرخاء العضلات. مارسي رياضة خفيفة كالمشي أو اليوغا اللطيفة فالحركة تحسن الدورة الدموية وتخفف التقلصات. تناولي أطعمة غنية بالمغنيسيوم كالموز والشوكولاتة الداكنة والمكسرات وأحماض أوميغا ثلاثة كالسلمون وبذور الكتان. اشربي شاي الزنجبيل أو البابونج فلهما خصائص مضادة للالتهاب ومهدئة. تجنبي الكافيين والملح الزائد لأنهما يزيدان الانتفاخ والتقلصات. إذا كان الألم شديداً يمكنك تناول مسكن آمن لكن استشيري طبيبتك إذا استمر الألم رغم المسكنات.'},
+    ],
+    'التبويض والخصوبة': [
+      {'title': 'حساب أيام التبويض', 'image': 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80',
+       'content': 'التبويض هو المرحلة التي تنطلق فيها البويضة الناضجة من أحد المبيضين لتنتقل عبر قناة فالوب استعداداً للإخصاب. يحدث التبويض عادة في منتصف الدورة الشهرية أي حوالي اليوم الرابع عشر في دورة مدتها ثمانية وعشرون يوماً لكنه يختلف من امرأة لأخرى ومن شهر لآخر. لتحديد يوم التبويض بدقة أكبر يمكنك استخدام عدة طرق مثل قياس درجة حرارة الجسم الأساسية كل صباح قبل النهوض من السرير فارتفاعها الطفيف يشير لحدوث التبويض. راقبي إفرازات عنق الرحم فعندما تصبح شفافة ومطاطة كبياض البيض يكون التبويض قريباً. استخدمي اختبارات التبويض المنزلية المتوفرة في الصيدليات لكشف ارتفاع هرمون التبويض. تتراوح فترة الخصوبة بين خمسة أيام قبل التبويض ويوم بعده لأن البويضة تعيش اثنتي عشرة إلى أربعاً وعشرين ساعة فقط بينما يعيش الحيوان المنوي حتى خمسة أيام. سجلي ملاحظاتك يومياً لفهم نمطك الشخصي.'},
+    ],
+  };
+
   @override
-  Widget build(BuildContext context) => _FirestoreArticlesSection(type: 'cycle', color: Colors.pink);
+  Widget build(BuildContext context) {
+    final color = Colors.pink;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _cycleArticles.entries.map((entry) {
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(Icons.auto_stories, color: color, size: 22),
+            SizedBox(width: 8),
+            Text(entry.key, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color.withOpacity(0.85))),
+          ]),
+          SizedBox(height: 10),
+          SizedBox(
+            height: 220,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: entry.value.length,
+              itemBuilder: (_, i) {
+                final d = entry.value[i];
+                return GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(title: d['title']!, body: d['content']!, color: color, imageUrl: d['image']!))),
+                  child: Container(
+                    width: 200, margin: EdgeInsets.only(left: 12),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white, boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))]),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      ClipRRect(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(d['image']!, height: 110, width: 200, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(height: 110, color: color.withOpacity(0.1), child: Icon(Icons.article, color: color, size: 40)))),
+                      Padding(padding: EdgeInsets.all(10), child: Text(d['title']!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis, textDirection: TextDirection.rtl)),
+                    ]),
+                  ),
+                );
+              },
+            ),
+          ),
+          SizedBox(height: 20),
+        ]);
+      }).toList(),
+    );
+  }
 }
 
 class _BabyArticlesSection extends StatelessWidget {
+  static const _babyArticles = <String, List<Map<String, String>>>{
+    'صحة الطفل العامة': [
+      {'title': 'الحمى عند الرضع: متى تقلقين', 'image': 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&q=80',
+       'content': 'الحمى هي استجابة طبيعية من جسم الرضيع لمكافحة العدوى وتُعتبر درجة حرارة ثمانية وثلاثين درجة مئوية أو أكثر حمى عند الرضيع. استخدمي ميزان حرارة رقمي دقيق لقياس الحرارة من تحت الإبط أو من الأذن. ألبسي طفلك ملابس خفيفة واحرصي على تقديم السوائل بكثرة سواء حليب الأم أو الماء للأطفال فوق ستة أشهر. استخدمي كمادات فاترة وليست باردة على الجبهة والجسم. استشيري الطبيب فوراً إذا كان عمر الطفل أقل من ثلاثة أشهر أو إذا استمرت الحمى أكثر من ثلاثة أيام أو تجاوزت تسعة وثلاثين ونصف درجة أو إذا رافقتها أعراض مقلقة كالطفح الجلدي أو صعوبة التنفس أو الخمول الشديد. لا تستخدمي الأسبرين للأطفال واستعيضي عنه بالباراسيتامول حسب وزن الطفل وتوجيهات الطبيب. سجلي قراءات الحرارة والأعراض لمشاركتها مع الطبيب.'},
+      {'title': 'العناية ببشرة الطفل الحساسة', 'image': 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=600&q=80',
+       'content': 'بشرة الرضيع رقيقة وحساسة وتحتاج عناية خاصة ولطيفة. استخدمي منتجات خالية من العطور والمواد الكيميائية القاسية المخصصة للأطفال. حممي طفلك مرتين إلى ثلاث مرات أسبوعياً بماء فاتر ولمدة قصيرة لتجنب جفاف البشرة. استخدمي مرطباً لطيفاً بعد كل حمام خاصة في فصل الشتاء. الإكزيما شائعة عند الرضع وتظهر كبقع حمراء متقشرة استشيري طبيب الأطفال لوصف كريم مناسب. تجنبي تعريض بشرة الطفل لأشعة الشمس المباشرة في الأشهر الستة الأولى واستخدمي ملابس واقية وقبعة واسعة الحواف. اختاري حفاضات ناعمة وغيريها بانتظام لمنع التسلخات واستخدمي كريم حاجز يحتوي على أكسيد الزنك. اغسلي ملابس الطفل بمنظف خاص للأطفال واشطفيها جيداً لإزالة أي بقايا. لاحظي أي تغيرات في بشرة طفلك وراجعي الطبيب عند ظهور طفح غير معتاد.'},
+    ],
+    'تغذية الطفل': [
+      {'title': 'الرضاعة الطبيعية: أساس صحة طفلك', 'image': 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=600&q=80',
+       'content': 'تُعد الرضاعة الطبيعية الغذاء الأمثل للرضيع في الأشهر الستة الأولى من حياته. يحتوي حليب الأم على جميع العناصر الغذائية والأجسام المضادة التي يحتاجها الطفل للنمو والحماية من الأمراض. ابدئي الرضاعة في الساعة الأولى بعد الولادة لتحصلي على اللبأ الغني بالمناعة. أرضعي طفلك عند الطلب دون تحديد جدول صارم في الأسابيع الأولى فهذا يساعد على تثبيت إنتاج الحليب. تأكدي من أن الطفل يمسك بالثدي بشكل صحيح بحيث يشمل الحلمة والهالة كاملة لتجنب الألم والتشقق. كل رضعة تستغرق عادة من عشر إلى عشرين دقيقة من كل ثدي. اشربي كميات كافية من الماء وتناولي غذاءً متوازناً لدعم إنتاج الحليب. لا تقلقي إذا شعرتِ بصعوبة في البداية فالرضاعة مهارة تتعلمينها أنتِ وطفلك معاً. استشيري استشارية رضاعة معتمدة عند الحاجة.'},
+      {'title': 'متى وكيف تبدئين بالأطعمة الصلبة', 'image': 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=600&q=80',
+       'content': 'يمكن البدء بإدخال الأطعمة التكميلية عند بلوغ الطفل ستة أشهر مع الاستمرار بالرضاعة الطبيعية. ابدئي بالأطعمة المهروسة الناعمة مثل الأرز المسلوق والبطاطا الحلوة والجزر والكوسا والموز والتفاح المسلوق. قدمي طعاماً واحداً جديداً كل ثلاثة أيام لمراقبة أي حساسية محتملة. ابدئي بملعقة صغيرة وزيدي الكمية تدريجياً حسب شهية الطفل. في الشهر السابع أضيفي البروتينات كالدجاج المهروس والعدس والبيض المسلوق جيداً. في الشهر الثامن يمكنك تقديم أطعمة مقطعة قطعاً صغيرة ليبدأ الطفل بالمضغ. تجنبي العسل قبل عمر السنة والمكسرات الكاملة والأطعمة الصلبة التي قد تسبب الاختناق. لا تضيفي ملحاً أو سكراً للطعام. اجعلي وقت الطعام ممتعاً ولا تجبري الطفل على الأكل. التحلي بالصبر مهم لأن الطفل يحتاج لتذوق الطعام عدة مرات قبل تقبله.'},
+    ],
+    'النمو والتطور': [
+      {'title': 'مراحل نمو الطفل في السنة الأولى', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&q=80',
+       'content': 'السنة الأولى من حياة طفلك مليئة بالتطورات المذهلة التي تستحق المتابعة والتوثيق. في الشهر الأول يبدأ الطفل بتتبع الأشياء بعينيه والاستجابة للأصوات. بحلول الشهر الثالث يبتسم اجتماعياً ويرفع رأسه أثناء الاستلقاء على بطنه. في الشهر الخامس يبدأ بالتقلب ويمسك الأشياء بيديه. في الشهر السابع يجلس بمفرده ويبدأ بالحبو. بين الشهر التاسع والثاني عشر يحاول الوقوف والمشي مستنداً ثم مشيه الأول المستقل. لغوياً يبدأ بالمناغاة في الشهر الثالث ثم يقول مقاطع مثل ماما وبابا حول الشهر الثامن. تذكري أن كل طفل يتطور بسرعته الخاصة ولا داعي للمقارنة. وفري بيئة آمنة ومحفزة للاستكشاف وتحدثي مع طفلك كثيراً واقرئي له يومياً فهذا يعزز نموه اللغوي والعقلي بشكل كبير. إذا لاحظتِ تأخراً ملحوظاً استشيري طبيب الأطفال.'},
+    ],
+  };
+
   @override
-  Widget build(BuildContext context) => _FirestoreArticlesSection(type: 'baby', color: Colors.blue);
+  Widget build(BuildContext context) {
+    final color = Colors.blue;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _babyArticles.entries.map((entry) {
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(Icons.auto_stories, color: color, size: 22),
+            SizedBox(width: 8),
+            Text(entry.key, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color.withOpacity(0.85))),
+          ]),
+          SizedBox(height: 10),
+          SizedBox(
+            height: 220,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: entry.value.length,
+              itemBuilder: (_, i) {
+                final d = entry.value[i];
+                return GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(title: d['title']!, body: d['content']!, color: color, imageUrl: d['image']!))),
+                  child: Container(
+                    width: 200, margin: EdgeInsets.only(left: 12),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white, boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))]),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      ClipRRect(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(d['image']!, height: 110, width: 200, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(height: 110, color: color.withOpacity(0.1), child: Icon(Icons.article, color: color, size: 40)))),
+                      Padding(padding: EdgeInsets.all(10), child: Text(d['title']!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis, textDirection: TextDirection.rtl)),
+                    ]),
+                  ),
+                );
+              },
+            ),
+          ),
+          SizedBox(height: 20),
+        ]);
+      }).toList(),
+    );
+  }
 }
+
+
 
 class _HomeArticlesSection extends StatelessWidget {
   static const _articles = <Map<String, String>>[
