@@ -2862,7 +2862,40 @@ class _CyclePageState extends State<CyclePage> {
   }
 
   Widget _insightCard(String title, String desc, String prob, List<Color> colors) {
-    return Container(
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => Container(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
+            ),
+            padding: const EdgeInsets.all(24),
+            child: Directionality(textDirection: TextDirection.rtl, child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Center(child: Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 20), decoration: BoxDecoration(color: Colors.white.withOpacity(0.4), borderRadius: BorderRadius.circular(2)))),
+              Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
+              const SizedBox(height: 12),
+              Text(desc, style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9), height: 1.8)),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity, padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(16)),
+                child: Center(child: Text(prob, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white))),
+              ),
+              const SizedBox(height: 16),
+              Center(child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('إغلاق', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+              )),
+            ])),
+          ),
+        );
+      },
+      child: Container(
       width: 270, padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
@@ -2901,7 +2934,7 @@ class _CyclePageState extends State<CyclePage> {
           ]),
         ),
       ]),
-    );
+    ));
   }
 }
 
@@ -4395,39 +4428,94 @@ class _ArticleDetailPage extends StatelessWidget {
                     Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1F1A20))),
                     SizedBox(height: 20),
                   ],
-                  // Paragraphs with smart inline images
+                  // Paragraphs with smart inline images + ad space
                   ...() {
-                    final paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+                    // Smart paragraph splitting: by \n\n or by sentences (~120 chars each)
+                    List<String> paragraphs;
+                    if (body.contains('\n\n')) {
+                      paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+                    } else {
+                      // Split long text into paragraphs by sentence endings
+                      final allText = body.trim();
+                      paragraphs = [];
+                      String current = '';
+                      final sentences = allText.split(RegExp(r'(?<=[\.\!\?\:])\s+'));
+                      int sentCount = 0;
+                      for (final s in sentences) {
+                        current += (current.isEmpty ? '' : ' ') + s;
+                        sentCount++;
+                        if (sentCount >= 3 && current.length > 100) {
+                          paragraphs.add(current.trim());
+                          current = '';
+                          sentCount = 0;
+                        }
+                      }
+                      if (current.trim().isNotEmpty) paragraphs.add(current.trim());
+                    }
                     final inlineImgs = _getInlineImages();
                     final widgets = <Widget>[];
-                    // Insert first image after 2nd paragraph, second after 5th
-                    final insertPoints = [2, 5];
+                    final midPoint = (paragraphs.length / 2).floor();
                     int imgIdx = 0;
                     for (int i = 0; i < paragraphs.length; i++) {
-                      widgets.add(Padding(
-                        padding: EdgeInsets.only(bottom: 16),
+                      // Paragraph with subtle separator
+                      widgets.add(Container(
+                        margin: EdgeInsets.only(bottom: 20),
                         child: Text(paragraphs[i].trim(),
-                          style: TextStyle(fontSize: 16, height: 1.8, color: Color(0xFF4A434B))),
+                          textAlign: TextAlign.justify,
+                          style: TextStyle(fontSize: 16.5, height: 1.9, color: Color(0xFF3A343B), letterSpacing: 0.1)),
                       ));
-                      if (insertPoints.contains(i) && imgIdx < inlineImgs.length) {
+                      // First image after paragraph 2
+                      if (i == 1 && imgIdx < inlineImgs.length) {
                         widgets.add(Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.only(bottom: 20),
                           child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(inlineImgs[imgIdx], width: double.infinity, height: 220, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => SizedBox.shrink()),
+                          ),
+                        ));
+                        imgIdx++;
+                      }
+                      // Google Ads placeholder at midpoint
+                      if (i == midPoint && paragraphs.length > 3) {
+                        widgets.add(Container(
+                          width: double.infinity,
+                          margin: EdgeInsets.symmetric(vertical: 16),
+                          padding: EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF5F0F7),
                             borderRadius: BorderRadius.circular(14),
-                            child: Image.network(inlineImgs[imgIdx], width: double.infinity, height: 200, fit: BoxFit.cover,
+                            border: Border.all(color: Color(0xFFE8E0EC), width: 0.8),
+                          ),
+                          child: Column(children: [
+                            Icon(Icons.campaign_outlined, color: Color(0xFFBBA8C4), size: 28),
+                            SizedBox(height: 8),
+                            Text('\u0645\u0633\u0627\u062D\u0629 \u0625\u0639\u0644\u0627\u0646\u064A\u0629', style: TextStyle(fontSize: 12, color: Color(0xFFBBA8C4), fontWeight: FontWeight.w600)),
+                            SizedBox(height: 2),
+                            Text('Google AdMob', style: TextStyle(fontSize: 10, color: Color(0xFFD0C4D6))),
+                          ]),
+                        ));
+                      }
+                      // Second image after midpoint+2
+                      if (i == midPoint + 2 && imgIdx < inlineImgs.length) {
+                        widgets.add(Padding(
+                          padding: EdgeInsets.only(bottom: 20),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(inlineImgs[imgIdx], width: double.infinity, height: 220, fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => SizedBox.shrink()),
                           ),
                         ));
                         imgIdx++;
                       }
                     }
-                    // Remaining images at the end
+                    // Remaining images at end
                     while (imgIdx < inlineImgs.length) {
                       widgets.add(Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding: EdgeInsets.only(bottom: 20),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.network(inlineImgs[imgIdx], width: double.infinity, height: 200, fit: BoxFit.cover,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(inlineImgs[imgIdx], width: double.infinity, height: 220, fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => SizedBox.shrink()),
                         ),
                       ));
@@ -5683,57 +5771,4 @@ class _AIChatPageState extends State<AIChatPage> {
           if (!isUser) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.teal.shade100,
-              child: Icon(Icons.smart_toy, size: 18, color: Colors.teal),
-            ),
-            SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Container(
-              padding: EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: isUser ? Colors.teal.shade100 : Colors.grey.shade100,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                  bottomLeft: isUser ? Radius.circular(16) : Radius.circular(4),
-                  bottomRight: isUser ? Radius.circular(4) : Radius.circular(16),
-                ),
-              ),
-              child: Text(text, style: TextStyle(fontSize: 15, height: 1.5)),
-            ),
-          ),
-          if (isUser) ...[
-            SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.teal,
-              child: Icon(Icons.person, size: 18, color: Colors.white),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _typingIndicator() {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        CircleAvatar(radius: 16, backgroundColor: Colors.teal.shade100,
-          child: Icon(Icons.smart_toy, size: 18, color: Colors.teal)),
-        SizedBox(width: 8),
-        Container(
-          padding: EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
-            SizedBox(width: 10),
-            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))          ]),
-        ),
-      ]),
-    );
-  }
-}
+              backgroundColor: Colors.te
