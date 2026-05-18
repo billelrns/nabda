@@ -2102,26 +2102,8 @@ class _ArticleDetailScreen extends StatelessWidget {
                     // Divider
                     Container(height: 1, color: _divider),
                     const SizedBox(height: 20),
-                    // Content
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _cardColor,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2)),
-                        ],
-                      ),
-                      child: Text(
-                        article.content,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          height: 2.0,
-                          color: _textPrimary,
-                        ),
-                      ),
-                    ),
+                    // Content with paragraphs + ad space
+                    ..._buildArticleParagraphs(article.content, article.color),
                     const SizedBox(height: 20),
                     // Tip box
                     Container(
@@ -2172,6 +2154,64 @@ class _ArticleDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static List<Widget> _buildArticleParagraphs(String body, Color accentColor) {
+    List<String> paragraphs;
+    if (body.contains('\n\n')) {
+      paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    } else {
+      paragraphs = [];
+      String current = '';
+      final sentences = body.trim().split(RegExp(r'(?<=[\.!\?:])\s+'));
+      int sentCount = 0;
+      for (final s in sentences) {
+        current += (current.isEmpty ? '' : ' ') + s;
+        sentCount++;
+        if (sentCount >= 3 && current.length > 100) {
+          paragraphs.add(current.trim());
+          current = '';
+          sentCount = 0;
+        }
+      }
+      if (current.trim().isNotEmpty) paragraphs.add(current.trim());
+    }
+    final widgets = <Widget>[];
+    final midPoint = (paragraphs.length / 2).floor();
+    for (int i = 0; i < paragraphs.length; i++) {
+      widgets.add(Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        margin: EdgeInsets.only(bottom: i < paragraphs.length - 1 ? 12 : 0),
+        decoration: BoxDecoration(
+          color: _cardColor,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
+        ),
+        child: Text(paragraphs[i].trim(), textAlign: TextAlign.justify,
+          style: const TextStyle(fontSize: 16.5, height: 1.9, color: _textPrimary)),
+      ));
+      if (i == midPoint && paragraphs.length > 3) {
+        widgets.add(Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F0F7),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE8E0EC), width: 0.8),
+          ),
+          child: const Column(children: [
+            Icon(Icons.campaign_outlined, color: Color(0xFFBBA8C4), size: 28),
+            SizedBox(height: 8),
+            Text('مساحة إعلانية', style: TextStyle(fontSize: 12, color: Color(0xFFBBA8C4), fontWeight: FontWeight.w600)),
+            SizedBox(height: 2),
+            Text('Google AdMob', style: TextStyle(fontSize: 10, color: Color(0xFFD0C4D6))),
+          ]),
+        ));
+      }
+    }
+    return widgets;
   }
 }
 
@@ -2925,57 +2965,4 @@ class RealisticFetusIllustration extends CustomPainter {
     nosePath.cubicTo(s * 0.24, -s * 0.42, s * 0.24, -s * 0.38, s * 0.2, -s * 0.37);
     canvas.drawPath(nosePath, Paint()..color = _skinDark.withOpacity(0.5)..style = PaintingStyle.stroke..strokeWidth = 1.2);
     canvas.drawArc(Rect.fromCenter(center: Offset(s * 0.16, -s * 0.33), width: s * 0.08, height: s * 0.04),
-        0.2, 2.2, false, Paint()..color = const Color(0xFFBF7E7E).withOpacity(0.6)..style = PaintingStyle.stroke..strokeWidth = 1.2);
-    final earPath = Path();
-    earPath.moveTo(-s * 0.05, -s * 0.42);
-    earPath.cubicTo(-s * 0.12, -s * 0.48, -s * 0.14, -s * 0.38, -s * 0.08, -s * 0.35);
-    canvas.drawPath(earPath, Paint()..color = _skinDark.withOpacity(0.5)..style = PaintingStyle.stroke..strokeWidth = 1.8);
-    if (week >= 32) {
-      final hairP = Paint()..color = const Color(0xFF5D4037).withOpacity(0.3)..strokeWidth = 1.0..strokeCap = StrokeCap.round;
-      for (int i = 0; i < 8; i++) {
-        final a = -1.8 + i * 0.3;
-        canvas.drawLine(
-            Offset(s * 0.05 + cos(a) * s * 0.33, -s * 0.42 + sin(a) * s * 0.33),
-            Offset(s * 0.05 + cos(a) * s * 0.4, -s * 0.42 + sin(a) * s * 0.4),
-            hairP);
-      }
-    }
-    _cord(canvas, Offset(s * 0.05, s * 0.52), s);
-    canvas.restore();
-  }
-
-  void _head(Canvas canvas, Offset center, double radius, Color light) {
-    final hp = Paint()
-      ..shader = ui.Gradient.radial(
-          Offset(center.dx - radius * 0.15, center.dy - radius * 0.15), radius,
-          [light, _skinBase, _skinDark],
-          [0.0, 0.6, 1.0]);
-    canvas.drawOval(
-        Rect.fromCenter(center: center, width: radius * 2, height: radius * 2.15), hp);
-    final hl = Paint()
-      ..shader = ui.Gradient.radial(
-          Offset(center.dx - radius * 0.2, center.dy - radius * 0.3), radius * 0.5,
-          [light.withOpacity(0.6), Colors.transparent],
-          [0.0, 1.0]);
-    canvas.drawCircle(Offset(center.dx - radius * 0.15, center.dy - radius * 0.2), radius * 0.5, hl);
-  }
-
-  void _cord(Canvas canvas, Offset start, double s) {
-    final cordPath = Path();
-    cordPath.moveTo(start.dx, start.dy);
-    cordPath.cubicTo(start.dx + s * 0.15, start.dy + s * 0.15, start.dx - s * 0.1, start.dy + s * 0.3,
-        start.dx + s * 0.2, start.dy + s * 0.35);
-    final cordPaint = Paint()
-      ..shader = ui.Gradient.linear(
-          start, Offset(start.dx + s * 0.2, start.dy + s * 0.35),
-          [_skinDark.withOpacity(0.6), const Color(0xFF8B6F6F).withOpacity(0.3)],
-          [0.0, 1.0])
-      ..strokeWidth = s * 0.04
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawPath(cordPath, cordPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant RealisticFetusIllustration old) => old.week != week;
-}
+  
