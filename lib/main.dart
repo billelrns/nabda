@@ -5777,4 +5777,228 @@ class _AIChatPageState extends State<AIChatPage> {
         body: body,
       );
 
-      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String reply = data['candidates']?[0]?['content']?['parts']?[0]?['text'] ?? '\u0644\u0645 \u0623\u062A\u0645\u0643\u0646 \u0645\u0646 \u0627\u0644\u0625\u062C\u0627\u0628\u0629';
+        _chatHistory.add({'role': 'model', 'parts': [{'text': reply}]});
+        return reply;
+      }
+    } catch (_) {}
+
+    // Fallback: smart local replies
+    return _getSmartReply(userMessage);
+  }
+
+  Future<void> _sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
+    _msgController.clear();
+
+    setState(() {
+      messages.add({'role': 'user', 'text': text});
+      _isLoading = true;
+    });
+    _scrollToBottom();
+
+    try {
+      String reply = await _callGemini(text);
+      setState(() {
+        messages.add({'role': 'assistant', 'text': reply});
+        _isLoading = false;
+      });
+      DB.userDoc.collection('chat_history').add({
+        'question': text,
+        'answer': reply,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      setState(() {
+        messages.add({
+          'role': 'assistant',
+          'text': _getSmartReply(text),
+        });
+        _isLoading = false;
+      });
+    }
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    Future.delayed(Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(centerTitle: true,
+          title: Text('\u0627\u0644\u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0630\u0643\u064A'),
+          backgroundColor: Colors.teal,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: Icon(Icons.delete_outline),
+              onPressed: () {
+                setState(() {
+                  messages.clear();
+                  messages.add({
+                    'role': 'assistant',
+                    'text': '\u062A\u0645 \u0645\u0633\u062D \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629. \u0643\u064A\u0641 \u064A\u0645\u0643\u0646\u0646\u064A \u0645\u0633\u0627\u0639\u062F\u062A\u0643\u061F \u{1F49C}'
+                  });
+                });
+                _chatHistory.clear();
+              },
+              tooltip: '\u0645\u0633\u062D \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629',
+            ),
+          ],
+        ),
+        body: Column(children: [
+          // Messages
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: EdgeInsets.all(16),
+              itemCount: messages.length + (_isLoading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == messages.length && _isLoading) {
+                  return _typingIndicator();
+                }
+                final msg = messages[index];
+                bool isUser = msg['role'] == 'user';
+                return _chatBubble(msg['text']!, isUser);
+              },
+            ),
+          ),
+          // Quick suggestions (show only at start)
+          if (messages.length <= 1)
+            Container(
+              height: 44,
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: quickQuestions.map((q) => Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: ActionChip(
+                    label: Text(q, style: TextStyle(fontSize: 12)),
+                    backgroundColor: Colors.teal.shade50,
+                    onPressed: () => _sendMessage(q),
+                  ),
+                )).toList(),
+              ),
+            ),
+          if (messages.length <= 1) SizedBox(height: 8),
+          // Input bar
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -1))],
+            ),
+            child: SafeArea(
+              child: Row(children: [
+                Expanded(
+                  child: TextField(
+                    controller: _msgController,
+                    decoration: InputDecoration(
+                      hintText: '\u0627\u0643\u062A\u0628\u064A \u0633\u0624\u0627\u0644\u0643 \u0647\u0646\u0627...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    ),
+                    onSubmitted: _sendMessage,
+                    textInputAction: TextInputAction.send,
+                  ),
+                ),
+                SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: Colors.teal,
+                  child: IconButton(
+                    icon: Icon(Icons.send, color: Colors.white, size: 20),
+                    onPressed: () => _sendMessage(_msgController.text),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _chatBubble(String text, bool isUser) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: isUser ? MainAxisAlignment.start : MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isUser) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.teal.shade100,
+              child: Icon(Icons.smart_toy, size: 18, color: Colors.teal),
+            ),
+            SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Container(
+              padding: EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isUser ? Colors.teal.shade100 : Colors.grey.shade100,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                  bottomLeft: isUser ? Radius.circular(16) : Radius.circular(4),
+                  bottomRight: isUser ? Radius.circular(4) : Radius.circular(16),
+                ),
+              ),
+              child: Text(text, style: TextStyle(fontSize: 15, height: 1.5)),
+            ),
+          ),
+          if (isUser) ...[
+            SizedBox(width: 8),
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.teal,
+              child: Icon(Icons.person, size: 18, color: Colors.white),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _typingIndicator() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CircleAvatar(radius: 16, backgroundColor: Colors.teal.shade100,
+          child: Icon(Icons.smart_toy, size: 18, color: Colors.teal)),
+        SizedBox(width: 8),
+        Container(
+          padding: EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
+            SizedBox(width: 10),
+            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))          ]),
+        ),
+      ]),
+    );
+  }
+}
+
