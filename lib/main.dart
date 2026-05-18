@@ -236,6 +236,10 @@ class DB {
       userDoc.collection('cycle_logs');
   static CollectionReference get babyLogs =>
       userDoc.collection('baby_logs');
+  static CollectionReference get babies =>
+      userDoc.collection('babies');
+  static CollectionReference babyLogsFor(String babyId) =>
+      userDoc.collection('babies').doc(babyId).collection('logs');
   static CollectionReference get communityPosts =>
       FirebaseFirestore.instance.collection('community_posts');
 
@@ -3161,68 +3165,87 @@ class _BabyPageState extends State<BabyPage> {
   static const _ink3 = Color(0xFF8E8295);
   static const _line = Color(0xFFF0E6EE);
 
-  // \u2500\u2500 Data Methods (preserved) \u2500\u2500
-  Future<void> _setBabyInfo() async {
+  String? _selectedBabyId;
+
+  // ── Data Methods (multi-baby) ──
+  Future<void> _addBaby() async {
     final nameC = TextEditingController();
+    DateTime? pickedDate;
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          backgroundColor: Colors.white,
-          title: const Text('\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0637\u0641\u0644', style: TextStyle(fontWeight: FontWeight.w800, color: _ink)),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            TextField(controller: nameC,
-              decoration: InputDecoration(
-                labelText: '\u0627\u0633\u0645 \u0627\u0644\u0637\u0641\u0644',
-                prefixIcon: const Icon(Icons.child_care, color: _pink),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _pink, width: 2)),
-              )),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: ctx,
-                  initialDate: DateTime.now().subtract(const Duration(days: 90)),
-                  firstDate: DateTime.now().subtract(const Duration(days: 365 * 3)),
-                  lastDate: DateTime.now(),
-                  helpText: '\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F',
-                );
-                if (date != null) {
-                  Navigator.pop(ctx, {'name': nameC.text, 'birthDate': date});
-                }
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  gradient: const LinearGradient(colors: [Color(0xFFFF6BA3), _pink, _pinkHot]),
-                  boxShadow: [BoxShadow(color: _pink.withOpacity(0.22), blurRadius: 28, offset: const Offset(0, 12))],
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx2, setDState) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            backgroundColor: Colors.white,
+            title: Text('\u0625\u0636\u0627\u0641\u0629 \u0637\u0641\u0644 \u062C\u062F\u064A\u062F', style: TextStyle(fontWeight: FontWeight.w800, color: _ink)),
+            content: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(controller: nameC,
+                decoration: InputDecoration(
+                  labelText: '\u0627\u0633\u0645 \u0627\u0644\u0637\u0641\u0644',
+                  prefixIcon: const Icon(Icons.child_care, color: _pink),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _pink, width: 2)),
+                )),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: () async {
+                  final date = await showDatePicker(context: ctx2,
+                    initialDate: DateTime.now().subtract(const Duration(days: 90)),
+                    firstDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
+                    lastDate: DateTime.now(), helpText: '\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F');
+                  if (date != null) setDState(() => pickedDate = date);
+                },
+                child: Container(
+                  width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(18),
+                    color: pickedDate != null ? _teal50 : _pink50,
+                    border: Border.all(color: pickedDate != null ? _teal : _pink.withOpacity(0.3))),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.calendar_month, color: pickedDate != null ? _teal : _pink, size: 18),
+                    const SizedBox(width: 8),
+                    Text(pickedDate != null ? '${pickedDate!.year}/${pickedDate!.month}/${pickedDate!.day}' : '\u0627\u062E\u062A\u0627\u0631\u064A \u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F',
+                      style: TextStyle(color: pickedDate != null ? _teal : _pink, fontWeight: FontWeight.w700, fontSize: 14)),
+                  ]),
                 ),
-                child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.calendar_month, color: Colors.white, size: 18),
-                  SizedBox(width: 8),
-                  Text('\u0627\u062E\u062A\u0627\u0631\u064A \u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
-                ]),
               ),
-            ),
-          ]),
-        ),
-      ),
+              if (pickedDate != null) ...[
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () { if (nameC.text.trim().isNotEmpty) Navigator.pop(ctx, {'name': nameC.text.trim(), 'birthDate': pickedDate}); },
+                  child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(18),
+                      gradient: const LinearGradient(colors: [Color(0xFFFF6BA3), _pink, _pinkHot]),
+                      boxShadow: [BoxShadow(color: _pink.withOpacity(0.22), blurRadius: 28, offset: const Offset(0, 12))]),
+                    child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.check_circle, color: Colors.white, size: 18), SizedBox(width: 8),
+                      Text('\u062D\u0641\u0638', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                    ])),
+                ),
+              ],
+            ]),
+          ),
+        ));
+      },
     );
-    if (result != null) {
-      await DB.userDoc.set({
-        'babyName': result['name'],
-        'babyBirthDate': Timestamp.fromDate(result['birthDate']),
-      }, SetOptions(merge: true));
+    if (result != null && result['birthDate'] != null) {
+      final doc = await DB.babies.add({
+        'name': result['name'], 'birthDate': Timestamp.fromDate(result['birthDate']),
+        'weight': 0.0, 'height': 0.0, 'createdAt': FieldValue.serverTimestamp(),
+      });
+      await DB.userDoc.set({'babyName': result['name'], 'babyBirthDate': Timestamp.fromDate(result['birthDate']),
+        'selectedBabyId': doc.id}, SetOptions(merge: true));
+      if (mounted) setState(() => _selectedBabyId = doc.id);
     }
   }
 
-  Future<void> _addLog(String type) async {
-    final doc = DB.babyLogs.doc(DB.dateKey());
+  Future<void> _setBabyInfo() async => _addBaby();
+
+  Future<void> _addLog(String type, [String? babyId]) async {
+    final id = babyId ?? _selectedBabyId;
+    final col = id != null ? DB.babyLogsFor(id) : DB.babyLogs;
+    final doc = col.doc(DB.dateKey());
     final snap = await doc.get();
     Map<String, dynamic> data = {};
     if (snap.exists) data = snap.data() as Map<String, dynamic>? ?? {};
@@ -3235,11 +3258,12 @@ class _BabyPageState extends State<BabyPage> {
       SnackBar(content: Text('\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 $type \u2713'), backgroundColor: _teal, duration: const Duration(seconds: 1)));
   }
 
-  Future<void> _updateGrowth(String field, double value) async {
-    await DB.userDoc.set({
-      'baby_$field': value,
-      'baby_${field}_date': DB.dateKey(),
-    }, SetOptions(merge: true));
+  Future<void> _updateGrowth(String field, double value, [String? babyId]) async {
+    final id = babyId ?? _selectedBabyId;
+    if (id != null) {
+      await DB.babies.doc(id).set({field: value, '${field}_date': DB.dateKey()}, SetOptions(merge: true));
+    }
+    await DB.userDoc.set({'baby_$field': value, 'baby_${field}_date': DB.dateKey()}, SetOptions(merge: true));
   }
 
   String _arabicDate() {
@@ -3280,34 +3304,81 @@ class _BabyPageState extends State<BabyPage> {
               colors: [_cream, Colors.white, _cream],
             ),
           ),
-          child: StreamBuilder<DocumentSnapshot>(
-            stream: DB.userDoc.snapshots(),
-            builder: (context, userSnap) {
+          child: StreamBuilder<QuerySnapshot>(
+            stream: DB.babies.orderBy('createdAt').snapshots(),
+            builder: (context, babiesSnap) {
+              final babyDocs = babiesSnap.hasData ? babiesSnap.data!.docs : <QueryDocumentSnapshot>[];
+              
+              return StreamBuilder<DocumentSnapshot>(
+              stream: DB.userDoc.snapshots(),
+              builder: (context, userSnap) {
               Map<String, dynamic> userData = {};
               if (userSnap.hasData && userSnap.data!.exists) {
                 userData = userSnap.data!.data() as Map<String, dynamic>? ?? {};
               }
-              String babyName = userData['babyName'] ?? '';
+              
+              // Determine selected baby
+              if (_selectedBabyId == null && userData['selectedBabyId'] != null) {
+                _selectedBabyId = userData['selectedBabyId'];
+              }
+              
+              // Get baby data from subcollection or fallback to user doc
+              String babyName = '';
               int ageDays = 0;
               String ageText = '';
-              if (userData['babyBirthDate'] != null) {
-                try {
-                  Timestamp ts = userData['babyBirthDate'];
-                  ageDays = DateTime.now().difference(ts.toDate()).inDays;
-                  if (ageDays < 30) ageText = '$ageDays \u064A\u0648\u0645';
-                  else if (ageDays < 365) ageText = '${(ageDays / 30).floor()} \u0623\u0634\u0647\u0631';
-                  else ageText = '${(ageDays / 365).floor()} \u0633\u0646\u0629 \u0648 ${((ageDays % 365) / 30).floor()} \u0623\u0634\u0647\u0631';
-                } catch (_) {}
+              double weight = 0;
+              double babyHeight = 0;
+              String? activeBabyId = _selectedBabyId;
+              
+              if (babyDocs.isNotEmpty) {
+                // Find selected baby or use first
+                QueryDocumentSnapshot? selectedDoc;
+                for (final d in babyDocs) {
+                  if (d.id == activeBabyId) { selectedDoc = d; break; }
+                }
+                selectedDoc ??= babyDocs.first;
+                activeBabyId = selectedDoc.id;
+                if (_selectedBabyId != activeBabyId) _selectedBabyId = activeBabyId;
+                
+                final bd = selectedDoc.data() as Map<String, dynamic>;
+                babyName = bd['name'] ?? '';
+                weight = (bd['weight'] as num?)?.toDouble() ?? (userData['baby_weight'] as num?)?.toDouble() ?? 0;
+                babyHeight = (bd['height'] as num?)?.toDouble() ?? (userData['baby_height'] as num?)?.toDouble() ?? 0;
+                if (bd['birthDate'] != null) {
+                  try {
+                    Timestamp ts = bd['birthDate'];
+                    ageDays = DateTime.now().difference(ts.toDate()).inDays;
+                    if (ageDays < 30) ageText = '$ageDays \u064A\u0648\u0645';
+                    else if (ageDays < 365) ageText = '${(ageDays / 30).floor()} \u0623\u0634\u0647\u0631';
+                    else ageText = '${(ageDays / 365).floor()} \u0633\u0646\u0629 \u0648 ${((ageDays % 365) / 30).floor()} \u0623\u0634\u0647\u0631';
+                  } catch (_) {}
+                }
+              } else {
+                // Fallback to old single-baby data
+                babyName = userData['babyName'] ?? '';
+                weight = (userData['baby_weight'] as num?)?.toDouble() ?? 0;
+                babyHeight = (userData['baby_height'] as num?)?.toDouble() ?? 0;
+                if (userData['babyBirthDate'] != null) {
+                  try {
+                    Timestamp ts = userData['babyBirthDate'];
+                    ageDays = DateTime.now().difference(ts.toDate()).inDays;
+                    if (ageDays < 30) ageText = '$ageDays \u064A\u0648\u0645';
+                    else if (ageDays < 365) ageText = '${(ageDays / 30).floor()} \u0623\u0634\u0647\u0631';
+                    else ageText = '${(ageDays / 365).floor()} \u0633\u0646\u0629 \u0648 ${((ageDays % 365) / 30).floor()} \u0623\u0634\u0647\u0631';
+                  } catch (_) {}
+                }
               }
-              double weight = (userData['baby_weight'] as num?)?.toDouble() ?? 0;
-              double babyHeight = (userData['baby_height'] as num?)?.toDouble() ?? 0;
 
-              if (babyName.isEmpty && userData['babyBirthDate'] == null) {
+              if (babyName.isEmpty && userData['babyBirthDate'] == null && babyDocs.isEmpty) {
                 return _buildEmptyState();
               }
 
+              final logStream = activeBabyId != null
+                ? DB.babyLogsFor(activeBabyId).doc(DB.dateKey()).snapshots()
+                : DB.babyLogs.doc(DB.dateKey()).snapshots();
+
               return StreamBuilder<DocumentSnapshot>(
-                stream: DB.babyLogs.doc(DB.dateKey()).snapshots(),
+                stream: logStream,
                 builder: (context, logSnap) {
                   Map<String, dynamic> log = {};
                   if (logSnap.hasData && logSnap.data!.exists) {
@@ -3366,6 +3437,81 @@ class _BabyPageState extends State<BabyPage> {
 
                       SliverToBoxAdapter(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         const SizedBox(height: 8),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 BABY SELECTOR \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        if (babyDocs.isNotEmpty)
+                          Container(
+                            height: 52,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              children: [
+                                ...babyDocs.map((doc) {
+                                  final bd = doc.data() as Map<String, dynamic>;
+                                  final isSelected = doc.id == activeBabyId;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(left: 8),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() => _selectedBabyId = doc.id);
+                                        DB.userDoc.update({'selectedBabyId': doc.id});
+                                      },
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 250),
+                                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(20),
+                                          color: isSelected ? _pink : Colors.white.withOpacity(0.7),
+                                          border: Border.all(
+                                            color: isSelected ? _pink : _ink.withOpacity(0.1),
+                                            width: isSelected ? 1.5 : 0.5,
+                                          ),
+                                          boxShadow: isSelected
+                                            ? [BoxShadow(color: _pink.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4))]
+                                            : [],
+                                        ),
+                                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                          Text(
+                                            bd['name'] ?? '\u0637\u0641\u0644',
+                                            style: TextStyle(
+                                              fontSize: 13.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: isSelected ? Colors.white : _ink,
+                                            ),
+                                          ),
+                                          if (isSelected) ...[
+                                            const SizedBox(width: 6),
+                                            const Icon(Icons.check_circle, size: 16, color: Colors.white),
+                                          ],
+                                        ]),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                                // Add baby button
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: GestureDetector(
+                                    onTap: _addBaby,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: _teal.withOpacity(0.4), width: 1.5, style: BorderStyle.solid),
+                                        color: _teal.withOpacity(0.06),
+                                      ),
+                                      child: Row(mainAxisSize: MainAxisSize.min, children: const [
+                                        Icon(Icons.add_circle_outline, size: 18, color: _teal),
+                                        SizedBox(width: 6),
+                                        Text('\u0625\u0636\u0627\u0641\u0629 \u0637\u0641\u0644', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _teal)),
+                                      ]),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
 
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 HERO BABY CARD \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
                         Container(
@@ -3494,7 +3640,7 @@ class _BabyPageState extends State<BabyPage> {
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 ARTICLES \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
                         Padding(
                           padding: const EdgeInsets.all(20),
-                          child: _BabyArticlesSection(),
+                          child: _BabyArticlesSection(ageDays: ageDays),
                         ),
                         const SizedBox(height: 30),
                       ])),
@@ -3502,6 +3648,8 @@ class _BabyPageState extends State<BabyPage> {
                   );
                 },
               );
+            },
+          );
             },
           ),
         ),
@@ -4093,6 +4241,16 @@ class _CycleArticlesSection extends StatelessWidget {
 }
 
 class _BabyArticlesSection extends StatelessWidget {
+  final int ageDays;
+  const _BabyArticlesSection({this.ageDays = 0});
+
+  String get _ageLabel {
+    if (ageDays < 30) return 'حديث الولادة';
+    if (ageDays < 180) return '${(ageDays / 30).floor()} أشهر';
+    if (ageDays < 365) return '${(ageDays / 30).floor()} أشهر';
+    return '${(ageDays / 365).floor()} سنة';
+  }
+
   static const _babyArticles = <String, List<Map<String, String>>>{
     'صحة الطفل العامة': [
       {'title': 'الحمى عند الرضع: متى تقلقين', 'image': 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&q=80',
@@ -4114,10 +4272,27 @@ class _BabyArticlesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Colors.blue;
+    final color = const Color(0xFFE91E63);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: _babyArticles.entries.map((entry) {
+      children: [
+        // Age-specific header
+        if (ageDays > 0) ...[
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(colors: [color.withOpacity(0.08), const Color(0xFF00897B).withOpacity(0.06)]),
+            ),
+            child: Row(children: [
+              const Icon(Icons.child_care, color: Color(0xFFE91E63), size: 20),
+              const SizedBox(width: 8),
+              Text('مقالات مناسبة لعمر $_ageLabel', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+            ]),
+          ),
+        ],
+        ..._babyArticles.entries.map((entry) {
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(Icons.auto_stories, color: color, size: 22),
@@ -4148,7 +4323,8 @@ class _BabyArticlesSection extends StatelessWidget {
           ),
           SizedBox(height: 20),
         ]);
-      }).toList(),
+      }),
+      ],
     );
   }
 }
@@ -5601,174 +5777,4 @@ class _AIChatPageState extends State<AIChatPage> {
         body: body,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        String reply = data['candidates']?[0]?['content']?['parts']?[0]?['text'] ?? '\u0644\u0645 \u0623\u062A\u0645\u0643\u0646 \u0645\u0646 \u0627\u0644\u0625\u062C\u0627\u0628\u0629';
-        _chatHistory.add({'role': 'model', 'parts': [{'text': reply}]});
-        return reply;
-      }
-    } catch (_) {}
-
-    // Fallback: smart local replies
-    return _getSmartReply(userMessage);
-  }
-
-  Future<void> _sendMessage(String text) async {
-    if (text.trim().isEmpty) return;
-    _msgController.clear();
-
-    setState(() {
-      messages.add({'role': 'user', 'text': text});
-      _isLoading = true;
-    });
-    _scrollToBottom();
-
-    try {
-      String reply = await _callGemini(text);
-      setState(() {
-        messages.add({'role': 'assistant', 'text': reply});
-        _isLoading = false;
-      });
-      DB.userDoc.collection('chat_history').add({
-        'question': text,
-        'answer': reply,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      setState(() {
-        messages.add({
-          'role': 'assistant',
-          'text': _getSmartReply(text),
-        });
-        _isLoading = false;
-      });
-    }
-    _scrollToBottom();
-  }
-
-  void _scrollToBottom() {
-    Future.delayed(Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(centerTitle: true,
-          title: Text('\u0627\u0644\u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0630\u0643\u064A'),
-          backgroundColor: Colors.teal,
-          foregroundColor: Colors.white,
-          actions: [
-            IconButton(
-              icon: Icon(Icons.delete_outline),
-              onPressed: () {
-                setState(() {
-                  messages.clear();
-                  messages.add({
-                    'role': 'assistant',
-                    'text': '\u062A\u0645 \u0645\u0633\u062D \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629. \u0643\u064A\u0641 \u064A\u0645\u0643\u0646\u0646\u064A \u0645\u0633\u0627\u0639\u062F\u062A\u0643\u061F \u{1F49C}'
-                  });
-                });
-                _chatHistory.clear();
-              },
-              tooltip: '\u0645\u0633\u062D \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629',
-            ),
-          ],
-        ),
-        body: Column(children: [
-          // Messages
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: EdgeInsets.all(16),
-              itemCount: messages.length + (_isLoading ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == messages.length && _isLoading) {
-                  return _typingIndicator();
-                }
-                final msg = messages[index];
-                bool isUser = msg['role'] == 'user';
-                return _chatBubble(msg['text']!, isUser);
-              },
-            ),
-          ),
-          // Quick suggestions (show only at start)
-          if (messages.length <= 1)
-            Container(
-              height: 44,
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: quickQuestions.map((q) => Padding(
-                  padding: EdgeInsets.only(left: 8),
-                  child: ActionChip(
-                    label: Text(q, style: TextStyle(fontSize: 12)),
-                    backgroundColor: Colors.teal.shade50,
-                    onPressed: () => _sendMessage(q),
-                  ),
-                )).toList(),
-              ),
-            ),
-          if (messages.length <= 1) SizedBox(height: 8),
-          // Input bar
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -1))],
-            ),
-            child: SafeArea(
-              child: Row(children: [
-                Expanded(
-                  child: TextField(
-                    controller: _msgController,
-                    decoration: InputDecoration(
-                      hintText: '\u0627\u0643\u062A\u0628\u064A \u0633\u0624\u0627\u0644\u0643 \u0647\u0646\u0627...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    ),
-                    onSubmitted: _sendMessage,
-                    textInputAction: TextInputAction.send,
-                  ),
-                ),
-                SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: Colors.teal,
-                  child: IconButton(
-                    icon: Icon(Icons.send, color: Colors.white, size: 20),
-                    onPressed: () => _sendMessage(_msgController.text),
-                  ),
-                ),
-              ]),
-            ),
-          ),
-        ]),
-      ),
-    );
-  }
-
-  Widget _chatBubble(String text, bool isUser) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.start : MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.te
+      
