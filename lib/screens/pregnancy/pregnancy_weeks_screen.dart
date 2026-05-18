@@ -2979,4 +2979,3 @@ class RealisticFetusIllustration extends CustomPainter {
   @override
   bool shouldRepaint(covariant RealisticFetusIllustration old) => old.week != week;
 }
-                                           
