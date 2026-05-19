@@ -517,11 +517,8 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
     final color = _trimesterColor;
     final trimester = a.week <= 12 ? 1 : a.week <= 27 ? 2 : 3;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _bgColor,
-        body: CustomScrollView(
+    final bool isEmbedded = widget.currentWeek != null;
+    final content = CustomScrollView(
           slivers: [
             // ─── Header with fetus illustration ───
             SliverAppBar(
@@ -530,7 +527,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
               backgroundColor: Colors.white,
               foregroundColor: _teal,
               surfaceTintColor: Colors.transparent,
-              automaticallyImplyLeading: widget.currentWeek == null,
+              automaticallyImplyLeading: !isEmbedded,
               actions: [
                 IconButton(
                   icon: Container(
@@ -1190,6 +1187,14 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
           ),
         ),
       ],
+    );
+
+    if (isEmbedded) {
+      return Directionality(textDirection: TextDirection.rtl, child: content);
+    }
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(backgroundColor: _bgColor, body: content),
     );
   }
 
@@ -3337,10 +3342,4 @@ class RealisticFetusIllustration extends CustomPainter {
           [0.0, 1.0])
       ..strokeWidth = s * 0.04
       ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawPath(cordPath, cordPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant RealisticFetusIllustration old) => old.week != week;
-}
+      ..style 

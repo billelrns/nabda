@@ -1248,9 +1248,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: AppLocalizations.textDir,
-      child: Scaffold(
-        backgroundColor: _cream,
-        body: Container(
+      child: Container(
+        color: _cream,
+        child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
@@ -2367,9 +2367,9 @@ class _CyclePageState extends State<CyclePage> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _cream,
-        body: Container(
+      child: Container(
+        color: _cream,
+        child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter, end: Alignment.bottomCenter,
@@ -3029,9 +3029,9 @@ class _PregnancyPageState extends State<PregnancyPage> {
       builder: (context, snapshot) {
         // Show loading indicator while waiting for Firestore data
         if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-          return Scaffold(
-            backgroundColor: Colors.white,
-            body: Center(
+          return Container(
+            color: Colors.white,
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -3051,31 +3051,31 @@ class _PregnancyPageState extends State<PregnancyPage> {
           );
         }
         if (!snapshot.hasData || !snapshot.data!.exists) {
-          return Scaffold(
-            appBar: AppBar(centerTitle: true,
-              title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644'),
-              backgroundColor: Color(0xFF00897B), foregroundColor: Colors.white,
-              actions: [
-                IconButton(icon: Icon(Icons.date_range), onPressed: _setPregnancyStart,
-                  tooltip: '\u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
-              ],
+          return Column(children: [
+            Container(
+              color: Color(0xFF00897B),
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Expanded(child: Center(child: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)))),
+                IconButton(icon: Icon(Icons.date_range, color: Colors.white), onPressed: _setPregnancyStart, tooltip: '\u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
+              ]),
             ),
-            body: _noPregnancy(),
-          );
+            Expanded(child: _noPregnancy()),
+          ]);
         }
         var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
         if (data['pregnancyStartDate'] == null) {
-          return Scaffold(
-            appBar: AppBar(centerTitle: true,
-              title: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644'),
-              backgroundColor: Color(0xFF00897B), foregroundColor: Colors.white,
-              actions: [
-                IconButton(icon: Icon(Icons.date_range), onPressed: _setPregnancyStart,
-                  tooltip: '\u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
-              ],
+          return Column(children: [
+            Container(
+              color: Color(0xFF00897B),
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Expanded(child: Center(child: Text('\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)))),
+                IconButton(icon: Icon(Icons.date_range, color: Colors.white), onPressed: _setPregnancyStart, tooltip: '\u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
+              ]),
             ),
-            body: _noPregnancy(),
-          );
+            Expanded(child: _noPregnancy()),
+          ]);
         }
 
         Timestamp ts = data['pregnancyStartDate'];
@@ -3295,9 +3295,9 @@ class _BabyPageState extends State<BabyPage> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _cream,
-        body: Container(
+      child: Container(
+        color: _cream,
+        child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter, end: Alignment.bottomCenter,
@@ -6202,15 +6202,4 @@ class _AIChatPageState extends State<AIChatPage> {
           padding: EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
-            SizedBox(width: 10),
-            Text('جاري التفكير...', style: TextStyle(color: Colors.grey)),
-          ]),
-        ),
-      ]),
-    );
-  }
-}
- 
+            border
