@@ -463,6 +463,40 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
     }
   }
 
+  /// Splits long text into styled paragraphs with spacing
+  Widget _buildParagraphedText(String text) {
+    List<String> paragraphs;
+    if (text.contains('\n\n')) {
+      paragraphs = text.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    } else {
+      paragraphs = [];
+      String current = '';
+      final sentences = text.trim().split(RegExp(r'(?<=[\.!\?:،])\s+'));
+      int sentCount = 0;
+      for (final s in sentences) {
+        current += (current.isEmpty ? '' : ' ') + s;
+        sentCount++;
+        if (sentCount >= 3 && current.length > 80) {
+          paragraphs.add(current.trim());
+          current = '';
+          sentCount = 0;
+        }
+      }
+      if (current.trim().isNotEmpty) paragraphs.add(current.trim());
+    }
+    if (paragraphs.length <= 1) {
+      return Text(text, style: const TextStyle(fontSize: 14, height: 1.8, color: _textSecondary));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: paragraphs.map((p) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Text(p.trim(), textAlign: TextAlign.justify,
+          style: const TextStyle(fontSize: 14, height: 1.8, color: _textSecondary)),
+      )).toList(),
+    );
+  }
+
   Color get _trimesterColor {
     final w = widget.article.week;
     if (w <= 12) return _teal;
@@ -731,10 +765,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       'عن البيبي',
                       _teal,
                       _lightTeal,
-                      child: Text(
-                        a.fetalDevAr,
-                        style: const TextStyle(fontSize: 14, height: 1.8, color: _textSecondary),
-                      ),
+                      child: _buildParagraphedText(a.fetalDevAr),
                     ),
                     const SizedBox(height: 14),
 
@@ -744,10 +775,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       'عن الأم',
                       _pink,
                       _softPink,
-                      child: Text(
-                        a.symptomsAr,
-                        style: const TextStyle(fontSize: 14, height: 1.8, color: _textSecondary),
-                      ),
+                      child: _buildParagraphedText(a.symptomsAr),
                     ),
                     const SizedBox(height: 14),
 
@@ -757,10 +785,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       'التغذية',
                       const Color(0xFF43A047),
                       const Color(0xFFE8F5E9),
-                      child: Text(
-                        a.nutritionAr,
-                        style: const TextStyle(fontSize: 14, height: 1.8, color: _textSecondary),
-                      ),
+                      child: _buildParagraphedText(a.nutritionAr),
                     ),
                     const SizedBox(height: 14),
 
@@ -770,10 +795,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       'نصائح نفسية',
                       const Color(0xFF5C6BC0),
                       const Color(0xFFE8EAF6),
-                      child: Text(
-                        a.tipsAr,
-                        style: const TextStyle(fontSize: 14, height: 1.8, color: _textSecondary),
-                      ),
+                      child: _buildParagraphedText(a.tipsAr),
                     ),
                     const SizedBox(height: 14),
 
@@ -2517,16 +2539,8 @@ class _DiscoverDetailScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                     Container(height: 1, color: const Color(0xFFEEEEEE)),
                     const SizedBox(height: 20),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _cardColor,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
-                      ),
-                      child: Text(article.content, style: const TextStyle(fontSize: 16, height: 2.0, color: _textPrimary)),
-                    ),
+                    // Content with paragraphs + ad space
+                    ..._buildDiscoverParagraphs(article.content, article.color1),
                     const SizedBox(height: 20),
                     Container(
                       width: double.infinity,
@@ -2568,6 +2582,63 @@ class _DiscoverDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+  static List<Widget> _buildDiscoverParagraphs(String body, Color accentColor) {
+    List<String> paragraphs;
+    if (body.contains('\n\n')) {
+      paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    } else {
+      paragraphs = [];
+      String current = '';
+      final sentences = body.trim().split(RegExp(r'(?<=[\.!\?:،])\s+'));
+      int sentCount = 0;
+      for (final s in sentences) {
+        current += (current.isEmpty ? '' : ' ') + s;
+        sentCount++;
+        if (sentCount >= 3 && current.length > 100) {
+          paragraphs.add(current.trim());
+          current = '';
+          sentCount = 0;
+        }
+      }
+      if (current.trim().isNotEmpty) paragraphs.add(current.trim());
+    }
+    final widgets = <Widget>[];
+    final midPoint = (paragraphs.length / 2).floor();
+    for (int i = 0; i < paragraphs.length; i++) {
+      widgets.add(Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        margin: EdgeInsets.only(bottom: i < paragraphs.length - 1 ? 12 : 0),
+        decoration: BoxDecoration(
+          color: _cardColor,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
+        ),
+        child: Text(paragraphs[i].trim(), textAlign: TextAlign.justify,
+          style: const TextStyle(fontSize: 16.5, height: 1.9, color: _textPrimary)),
+      ));
+      if (i == midPoint && paragraphs.length > 3) {
+        widgets.add(Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F0F7),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE8E0EC), width: 0.8),
+          ),
+          child: const Column(children: [
+            Icon(Icons.campaign_outlined, color: Color(0xFFBBA8C4), size: 28),
+            SizedBox(height: 8),
+            Text('مساحة إعلانية', style: TextStyle(fontSize: 12, color: Color(0xFFBBA8C4), fontWeight: FontWeight.w600)),
+            SizedBox(height: 2),
+            Text('Google AdMob', style: TextStyle(fontSize: 10, color: Color(0xFFD0C4D6))),
+          ]),
+        ));
+      }
+    }
+    return widgets;
   }
 }
 
@@ -2914,55 +2985,4 @@ class RealisticFetusIllustration extends CustomPainter {
     canvas.drawPath(body, bp);
     final bellyGlow = Paint()
       ..shader = ui.Gradient.radial(
-          Offset(s * 0.05, s * 0.2), s * 0.2,
-          [light.withOpacity(0.5), Colors.transparent],
-          [0.0, 1.0]);
-    canvas.drawCircle(Offset(s * 0.05, s * 0.2), s * 0.2, bellyGlow);
-    final armP = Paint()
-      ..shader = ui.Gradient.linear(
-          Offset(-s * 0.2, s * 0.05), Offset(s * 0.1, s * 0.15),
-          [_skinBase, _skinDark],
-          [0.0, 1.0])
-      ..strokeWidth = s * 0.08
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    final arm1 = Path();
-    arm1.moveTo(-s * 0.2, s * 0.05);
-    arm1.cubicTo(-s * 0.15, s * 0.15, -s * 0.05, s * 0.18, s * 0.05, s * 0.1);
-    canvas.drawPath(arm1, armP);
-    canvas.drawCircle(Offset(s * 0.06, s * 0.09), s * 0.05, Paint()..color = _skinBase);
-    for (int i = 0; i < 4; i++) {
-      final fa = -0.4 + i * 0.25;
-      canvas.drawLine(
-          Offset(s * 0.06 + cos(fa) * s * 0.05, s * 0.09 + sin(fa) * s * 0.05),
-          Offset(s * 0.06 + cos(fa) * s * 0.08, s * 0.09 + sin(fa) * s * 0.08),
-          Paint()..color = _skinDark.withOpacity(0.3)..strokeWidth = 1.0..strokeCap = StrokeCap.round);
-    }
-    final legP = Paint()
-      ..shader = ui.Gradient.linear(
-          Offset(-s * 0.05, s * 0.45), Offset(-s * 0.25, s * 0.2),
-          [_skinBase, _skinDark],
-          [0.0, 1.0])
-      ..strokeWidth = s * 0.1
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    final leg1 = Path();
-    leg1.moveTo(-s * 0.05, s * 0.48);
-    leg1.cubicTo(-s * 0.2, s * 0.55, -s * 0.35, s * 0.45, -s * 0.3, s * 0.3);
-    canvas.drawPath(leg1, legP);
-    final leg2 = Path();
-    leg2.moveTo(s * 0.1, s * 0.48);
-    leg2.cubicTo(-s * 0.05, s * 0.6, -s * 0.2, s * 0.55, -s * 0.2, s * 0.4);
-    canvas.drawPath(leg2, legP);
-    canvas.drawOval(Rect.fromCenter(center: Offset(-s * 0.3, s * 0.29), width: s * 0.11, height: s * 0.07),
-        Paint()..color = _skinBase);
-    canvas.drawOval(Rect.fromCenter(center: Offset(-s * 0.2, s * 0.39), width: s * 0.11, height: s * 0.07),
-        Paint()..color = _skinBase);
-    final eyeP = Paint()..color = const Color(0xFF3A2520).withOpacity(0.7)..strokeWidth = 1.5..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
-    canvas.drawArc(Rect.fromCenter(center: Offset(s * 0.14, -s * 0.47), width: s * 0.08, height: s * 0.04), 0, pi, false, eyeP);
-    final nosePath = Path();
-    nosePath.moveTo(s * 0.2, -s * 0.44);
-    nosePath.cubicTo(s * 0.24, -s * 0.42, s * 0.24, -s * 0.38, s * 0.2, -s * 0.37);
-    canvas.drawPath(nosePath, Paint()..color = _skinDark.withOpacity(0.5)..style = PaintingStyle.stroke..strokeWidth = 1.2);
-    canvas.drawArc(Rect.fromCenter(center: Offset(s * 0.16, -s * 0.33), width: s * 0.08, height: s * 0.04),
-  
+          Offset(s *
