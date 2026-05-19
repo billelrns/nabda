@@ -789,30 +789,8 @@ class _DiscoverArticleDetailScreen extends StatelessWidget {
                     Container(height: 1, color: const Color(0xFFEEEEEE)),
                     const SizedBox(height: 20),
 
-                    // Content card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _cardColor,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        article.content,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          height: 2.0,
-                          color: _textPrimary,
-                        ),
-                      ),
-                    ),
+                    // Content with paragraphs + ad space
+                    ..._buildParagraphs(article.content),
                     const SizedBox(height: 20),
 
                     // Tip box
@@ -873,4 +851,28 @@ class _DiscoverArticleDetailScreen extends StatelessWidget {
       ),
     );
   }
-}
+
+  static List<Widget> _buildParagraphs(String body) {
+    List<String> paragraphs;
+    if (body.contains('\n\n')) {
+      paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    } else {
+      paragraphs = [];
+      String current = '';
+      final sentences = body.trim().split(RegExp(r'(?<=[\.!\?:])\s+'));
+      int sentCount = 0;
+      for (final s in sentences) {
+        current += (current.isEmpty ? '' : ' ') + s;
+        sentCount++;
+        if (sentCount >= 3 && current.length > 100) {
+          paragraphs.add(current.trim());
+          current = '';
+          sentCount = 0;
+        }
+      }
+      if (current.trim().isNotEmpty) paragraphs.add(current.trim());
+    }
+    final widgets = <Widget>[];
+    final midPoint = (paragraphs.length / 2).floor();
+    for (int i = 0; i < paragraphs.length; i++) {
+      widgets.add(
