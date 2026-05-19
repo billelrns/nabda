@@ -3606,11 +3606,11 @@ class _BabyPageState extends State<BabyPage> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Column(children: [
-                            _vaccineItem('\u0644\u0642\u0627\u062D \u0627\u0644\u062A\u0647\u0627\u0628 \u0627\u0644\u0643\u0628\u062F \u0628', 'hepb', '\u0639\u0646\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629'),
-                            _vaccineItem('\u0644\u0642\u0627\u062D BCG', 'bcg', '\u0627\u0644\u0623\u0633\u0628\u0648\u0639 \u0627\u0644\u0623\u0648\u0644'),
-                            _vaccineItem('\u0627\u0644\u0644\u0642\u0627\u062D \u0627\u0644\u062B\u0644\u0627\u062B\u064A', 'dtap', '\u0634\u0647\u0631\u064A\u0646'),
-                            _vaccineItem('\u0644\u0642\u0627\u062D \u0634\u0644\u0644 \u0627\u0644\u0623\u0637\u0641\u0627\u0644', 'polio', '\u0634\u0647\u0631\u064A\u0646'),
-                            _vaccineItem('\u0644\u0642\u0627\u062D \u0627\u0644\u062D\u0635\u0628\u0629', 'mmr', '9 \u0623\u0634\u0647\u0631'),
+                            _vaccineItem('\u0644\u0642\u0627\u062D \u0627\u0644\u062A\u0647\u0627\u0628 \u0627\u0644\u0643\u0628\u062F \u0628', 'hepb', '\u0639\u0646\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629', activeBabyId),
+                            _vaccineItem('\u0644\u0642\u0627\u062D BCG', 'bcg', '\u0627\u0644\u0623\u0633\u0628\u0648\u0639 \u0627\u0644\u0623\u0648\u0644', activeBabyId),
+                            _vaccineItem('\u0627\u0644\u0644\u0642\u0627\u062D \u0627\u0644\u062B\u0644\u0627\u062B\u064A', 'dtap', '\u0634\u0647\u0631\u064A\u0646', activeBabyId),
+                            _vaccineItem('\u0644\u0642\u0627\u062D \u0634\u0644\u0644 \u0627\u0644\u0623\u0637\u0641\u0627\u0644', 'polio', '\u0634\u0647\u0631\u064A\u0646', activeBabyId),
+                            _vaccineItem('\u0644\u0642\u0627\u062D \u0627\u0644\u062D\u0635\u0628\u0629', 'mmr', '9 \u0623\u0634\u0647\u0631', activeBabyId),
                           ]),
                         ),
 
@@ -3801,9 +3801,15 @@ class _BabyPageState extends State<BabyPage> {
   }
 
   // \u2500\u2500 Vaccine Item \u2500\u2500
-  Widget _vaccineItem(String name, String key, String timing) {
+  CollectionReference _vaccinesCol([String? babyId]) {
+    final id = babyId ?? _selectedBabyId;
+    if (id != null) return DB.babies.doc(id).collection('vaccines');
+    return DB.userDoc.collection('vaccines');
+  }
+
+  Widget _vaccineItem(String name, String key, String timing, [String? babyId]) {
     return StreamBuilder<DocumentSnapshot>(
-      stream: DB.userDoc.collection('vaccines').doc(key).snapshots(),
+      stream: _vaccinesCol(babyId).doc(key).snapshots(),
       builder: (context, snap) {
         bool done = false;
         if (snap.hasData && snap.data!.exists) {
@@ -3811,7 +3817,7 @@ class _BabyPageState extends State<BabyPage> {
         }
         return GestureDetector(
           onTap: () {
-            DB.userDoc.collection('vaccines').doc(key).set({
+            _vaccinesCol(babyId).doc(key).set({
               'name': name, 'done': !done, 'updatedAt': FieldValue.serverTimestamp()
             });
           },
@@ -5993,12 +5999,4 @@ class _AIChatPageState extends State<AIChatPage> {
             color: Colors.grey.shade100,
             borderRadius: BorderRadius.circular(16)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
-            SizedBox(width: 10),
-            Text('\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631...', style: TextStyle(color: Colors.grey))          ]),
-        ),
-      ]),
-    );
-  }
-}
-
+            SizedBox(width: 20, height: 20, ch
