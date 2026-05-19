@@ -5849,7 +5849,6 @@ class _CommunityPageState extends State<CommunityPage> {
                           ]),
                         ),
                         // Post text
-                        Padding(
                           padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
                           child: Text(post['text'] ?? '', style: TextStyle(fontSize: 15, height: 1.6)),
                         ),
@@ -6213,4 +6212,3 @@ class _AIChatPageState extends State<AIChatPage> {
     );
   }
 }
- 
