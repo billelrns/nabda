@@ -957,8 +957,14 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
               ),
             ),
           ],
-        ),
-      ),
+        );
+
+    if (isEmbedded) {
+      return Directionality(textDirection: TextDirection.rtl, child: content);
+    }
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(backgroundColor: _bgColor, body: content),
     );
   }
 
@@ -1187,14 +1193,6 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
           ),
         ),
       ],
-    );
-
-    if (isEmbedded) {
-      return Directionality(textDirection: TextDirection.rtl, child: content);
-    }
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(backgroundColor: _bgColor, body: content),
     );
   }
 
@@ -3300,4 +3298,5 @@ class RealisticFetusIllustration extends CustomPainter {
     final bp = Paint()
       ..shader = ui.Gradient.radial(
           Offset(0, s * 0.1), s * 0.6,
-          [light, _skinBase, _skinDark]
+          [light, _skinBase, _skinDark],
+          [0.0

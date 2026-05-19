@@ -6202,7 +6202,7 @@ class _AIChatPageState extends State<AIChatPage> {
           padding: EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.grey.shade100,
-            borderRadius.circular(16)),
+            borderRadius: BorderRadius.circular(16)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
             SizedBox(width: 10),
