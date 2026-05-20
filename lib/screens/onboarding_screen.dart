@@ -689,12 +689,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         const Spacer(),
         SizedBox(
           height: 220,
-          child: CupertinoDatePicker(
-            mode: CupertinoDatePickerMode.date,
-            initialDateTime: initial,
-            minimumDate: minDate,
-            maximumDate: maxDate,
-            onDateTimeChanged: (d) => setState(() => _selectedDate = d),
+          child: Localizations.override(
+            context: context,
+            locale: const Locale('en'),
+            child: CupertinoDatePicker(
+              mode: CupertinoDatePickerMode.date,
+              initialDateTime: initial,
+              minimumDate: minDate,
+              maximumDate: maxDate,
+              onDateTimeChanged: (d) => setState(() => _selectedDate = d),
+            ),
           ),
         ),
         const Spacer(),
@@ -1252,12 +1256,4 @@ class _SectionBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 15,
-        height: 1.8,
-        color: Color(0xFF4A434B),
-      ),
-    );
-  }
-}
+   

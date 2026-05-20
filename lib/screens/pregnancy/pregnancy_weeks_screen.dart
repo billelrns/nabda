@@ -561,11 +561,15 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       firstDate: DateTime.now().subtract(const Duration(days: 280)),
                       lastDate: DateTime.now(),
                       builder: (context, child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: const ColorScheme.light(primary: _teal, secondary: _pink),
+                        return Localizations.override(
+                          context: context,
+                          locale: const Locale('en'),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.light(primary: _teal, secondary: _pink),
+                            ),
+                            child: child!,
                           ),
-                          child: child!,
                         );
                       },
                     );
@@ -3293,10 +3297,4 @@ class RealisticFetusIllustration extends CustomPainter {
     final body = Path();
     body.moveTo(-s * 0.15, -s * 0.15);
     body.cubicTo(-s * 0.3, s * 0.15, -s * 0.25, s * 0.55, 0, s * 0.5);
-    body.cubicTo(s * 0.2, s * 0.45, s * 0.3, s * 0.1, s * 0.15, -s * 0.15);
-    body.close();
-    final bp = Paint()
-      ..shader = ui.Gradient.radial(
-          Offset(0, s * 0.1), s * 0.6,
-          [light, _skinBase, _skinDark],
-          [0.0
+    body.cubicTo(s * 0.2, s * 0.45, s * 0.3, s * 0.1, s 

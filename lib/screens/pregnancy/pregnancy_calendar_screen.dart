@@ -252,6 +252,7 @@ class _PregnancyCalendarScreenState extends State<PregnancyCalendarScreen> {
                         initialDate: selectedDate,
                         firstDate: DateTime.now().subtract(const Duration(days: 300)),
                         lastDate: DateTime.now().add(const Duration(days: 300)),
+                        builder: (context, child) => Localizations.override(context: context, locale: const Locale('en'), child: child!),
                       );
                       if (picked != null) setBS(() => selectedDate = picked);
                     },
@@ -380,6 +381,7 @@ class _PregnancyCalendarScreenState extends State<PregnancyCalendarScreen> {
                     firstDate: DateTime.now().subtract(const Duration(days: 300)),
                     lastDate: DateTime.now(),
                     helpText: 'اختاري تاريخ آخر دورة شهرية',
+                    builder: (context, child) => Localizations.override(context: context, locale: const Locale('en'), child: child!),
                   );
                   if (picked != null) {
                     final due = picked.add(const Duration(days: 280));
@@ -977,6 +979,4 @@ const List<_MedicalMilestone> _medicalMilestones = [
   _MedicalMilestone(36, 'فحص أسبوعي', 'بدء الفحوصات الأسبوعية — وضعية الجنين، عنق الرحم', _EventType.medical),
   _MedicalMilestone(37, 'تطعيم السعال الديكي', 'لقاح Tdap لحماية الطفل في أسابيعه الأولى', _EventType.vaccine),
   _MedicalMilestone(38, 'فحص + تخطيط NST', 'تخطيط قلب الجنين Non-Stress Test', _EventType.medical),
-  _MedicalMilestone(39, 'فحص ما قبل الولادة', 'تقييم جاهزية الولادة — عنق الرحم، وضعية الرأس', _EventType.medical),
-  _MedicalMilestone(40, 'موعد الولادة المتوقع', 'اليوم المنتظر! مناقشة خطة الولادة مع الطبيب', _EventType.milestone),
-];
+  _MedicalMilestone(39, 'فحص ما قبل الولادة', 'تقييم 

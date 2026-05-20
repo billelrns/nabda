@@ -3016,6 +3016,7 @@ class _PregnancyPageState extends State<PregnancyPage> {
       firstDate: DateTime.now().subtract(Duration(days: 280)),
       lastDate: DateTime.now(),
       helpText: '\u0627\u062E\u062A\u0627\u0631\u064A \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629',
+      builder: (context, child) => Localizations.override(context: context, locale: const Locale('en'), child: child!),
     );
     if (date != null) {
       await DB.userDoc.set({'pregnancyStartDate': Timestamp.fromDate(date)}, SetOptions(merge: true));
@@ -3193,8 +3194,9 @@ class _BabyPageState extends State<BabyPage> {
                 onTap: () async {
                   final date = await showDatePicker(context: ctx2,
                     initialDate: DateTime.now().subtract(const Duration(days: 90)),
-                    firstDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
-                    lastDate: DateTime.now(), helpText: '\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F');
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime.now(), helpText: '\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F',
+                    builder: (context, child) => Localizations.override(context: context, locale: const Locale('en'), child: child!));
                   if (date != null) setDState(() => pickedDate = date);
                 },
                 child: Container(
@@ -6250,12 +6252,4 @@ class _AIChatPageState extends State<AIChatPage> {
             color: Colors.grey.shade100,
             borderRadius: BorderRadius.circular(16)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
-            SizedBox(width: 10),
-            Text('جاري التفكير...', style: TextStyle(color: Colors.grey)),
-          ]),
-        ),
-      ]),
-    );
-  }
-}
+            SizedBox(width: 20, height: 20, child: CircularProgressI
