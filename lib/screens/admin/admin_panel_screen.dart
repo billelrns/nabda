@@ -920,15 +920,24 @@ class _ArticlesManagementScreen extends StatefulWidget {
 }
 
 class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
-  String _filterType = 'all'; // all, pregnancy, cycle, baby, home
-  static const _typeColors = {'pregnancy': Color(0xFF9C27B0), 'cycle': Color(0xFFE91E63), 'baby': Color(0xFF2196F3), 'home': Color(0xFFFF9800)};
-  static const _typeNames = {'pregnancy': 'الحمل', 'cycle': 'الدورة', 'baby': 'الطفل', 'home': 'الرئيسية'};
+  String _filterType = 'all';
+  String _searchQuery = '';
+  final _searchCtrl = TextEditingController();
+  static const _typeColors = {'pregnancy': Color(0xFF9C27B0), 'cycle': Color(0xFFE91E63), 'baby': Color(0xFF2196F3), 'home': Color(0xFFFF9800), 'news': Color(0xFFFF5722)};
+  static const _typeNames = {'pregnancy': 'الحمل', 'cycle': 'الدورة', 'baby': 'الطفل', 'home': 'الرئيسية', 'news': 'أخبار'};
+
+  // Collect ALL hardcoded articles from the app
+  List<Map<String, String>> _getAllHardcodedArticles() {
+    final all = <Map<String, String>>[];
+    // We'll use article_overrides from Firestore + show hardcoded count
+    return all;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
       backgroundColor: _bg,
-      appBar: AppBar(centerTitle: true, title: const Text('📝 إدارة المقالات', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
+      appBar: AppBar(centerTitle: true, title: const Text('\u{1F4DD} إدارة المقالات', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
         backgroundColor: _card, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent,
         actions: [
           if (AdminService().hasPermission(Permission.addArticles))
@@ -938,11 +947,29 @@ class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
         ],
       ),
       body: Column(children: [
+        // Search bar
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          color: _card,
+          child: TextField(
+            controller: _searchCtrl,
+            onChanged: (v) => setState(() => _searchQuery = v.trim()),
+            decoration: InputDecoration(
+              hintText: 'البحث عن مقال...',
+              hintStyle: TextStyle(color: _text2, fontSize: 14),
+              prefixIcon: const Icon(Icons.search, color: _teal),
+              suffixIcon: _searchQuery.isNotEmpty ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () { _searchCtrl.clear(); setState(() => _searchQuery = ''); }) : null,
+              filled: true, fillColor: _bg,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+          ),
+        ),
         // Type filter chips
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           color: _card,
-          child: Row(children: [
+          child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
             _filterChip('all', 'الكل', _teal),
             const SizedBox(width: 8),
             _filterChip('pregnancy', 'الحمل', const Color(0xFF9C27B0)),
@@ -952,7 +979,9 @@ class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
             _filterChip('baby', 'الطفل', const Color(0xFF2196F3)),
             const SizedBox(width: 8),
             _filterChip('home', 'الرئيسية', const Color(0xFFFF9800)),
-          ]),
+            const SizedBox(width: 8),
+            _filterChip('news', 'أخبار', const Color(0xFFFF5722)),
+          ])),
         ),
         // Seed button
         if (AdminService().hasPermission(Permission.addArticles))
@@ -965,84 +994,135 @@ class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
               style: OutlinedButton.styleFrom(foregroundColor: _teal, side: BorderSide(color: _teal.withOpacity(0.3))),
             )),
           ),
-        // Articles list
+        // Articles list — combines Firestore 'articles' + 'article_overrides'
         Expanded(child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance.collection('articles').orderBy('createdAt', descending: true).snapshots(),
           builder: (context, snap) {
-            if (!snap.hasData || snap.data!.docs.isEmpty) {
-              return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Text('📝', style: TextStyle(fontSize: 60)),
-                const SizedBox(height: 16),
-                Text('لا توجد مقالات في قاعدة البيانات', style: TextStyle(fontSize: 14, color: _text2)),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddArticleScreen())),
-                  icon: const Icon(Icons.add), label: const Text('إضافة مقال'),
-                  style: ElevatedButton.styleFrom(backgroundColor: _teal, foregroundColor: Colors.white),
-                ),
-              ]));
-            }
-            var docs = snap.data!.docs;
-            if (_filterType != 'all') {
-              docs = docs.where((doc) {
-                final d = doc.data() as Map<String, dynamic>;
-                return (d['type'] ?? 'pregnancy') == _filterType;
-              }).toList();
-            }
-            if (docs.isEmpty) {
-              return Center(child: Text('لا توجد مقالات من نوع "${_typeNames[_filterType] ?? _filterType}"', style: TextStyle(color: _text2)));
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: docs.length,
-              itemBuilder: (_, i) {
-                final doc = docs[i];
-                final d = doc.data() as Map<String, dynamic>;
-                final hasImage = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
-                final type = d['type'] ?? 'pregnancy';
-                final typeColor = _typeColors[type] ?? _teal;
-                return GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddArticleScreen(docId: doc.id, existingData: d))),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14)),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      if (hasImage)
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                          child: Image.network(d['imageUrl'], height: 140, width: double.infinity, fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(height: 80, color: typeColor.withOpacity(0.1),
-                              child: Center(child: Icon(Icons.broken_image, color: typeColor)))),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Row(children: [
-                          if (!hasImage)
-                            Container(width: 50, height: 50, margin: const EdgeInsets.only(left: 12),
-                              decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                              child: Center(child: Icon(Icons.article, color: typeColor))),
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(d['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: _text1), maxLines: 1, overflow: TextOverflow.ellipsis),
-                            const SizedBox(height: 4),
-                            Row(children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                                child: Text(_typeNames[type] ?? type, style: TextStyle(fontSize: 11, color: typeColor, fontWeight: FontWeight.bold)),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(d['category'] ?? '', style: TextStyle(fontSize: 12, color: _text2)),
-                            ]),
-                          ])),
-                          IconButton(icon: const Icon(Icons.edit_outlined, color: _teal, size: 20),
-                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddArticleScreen(docId: doc.id, existingData: d)))),
-                          if (AdminService().hasPermission(Permission.deleteArticles))
-                            IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 20), onPressed: () => doc.reference.delete()),
-                        ]),
+            return StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('article_overrides').snapshots(),
+              builder: (context, overrideSnap) {
+                // Build unified list
+                final allItems = <Map<String, dynamic>>[];
+
+                // 1. Firestore articles
+                if (snap.hasData) {
+                  for (final doc in snap.data!.docs) {
+                    final d = doc.data() as Map<String, dynamic>;
+                    allItems.add({...d, '_docId': doc.id, '_source': 'firestore'});
+                  }
+                }
+
+                // 2. Article overrides (admin edits of hardcoded articles)
+                if (overrideSnap.hasData) {
+                  for (final doc in overrideSnap.data!.docs) {
+                    final d = doc.data() as Map<String, dynamic>;
+                    if (d['deleted'] == true) continue;
+                    // Don't add if already in firestore articles
+                    final existsInArticles = allItems.any((a) => a['title'] == d['title'] || a['_docId'] == doc.id);
+                    if (!existsInArticles) {
+                      allItems.add({...d, '_docId': doc.id, '_source': 'override', 'type': d['section'] ?? 'news'});
+                    }
+                  }
+                }
+
+                // Apply filters
+                var filtered = allItems;
+                if (_filterType != 'all') {
+                  filtered = filtered.where((d) => (d['type'] ?? d['section'] ?? 'pregnancy') == _filterType).toList();
+                }
+                if (_searchQuery.isNotEmpty) {
+                  filtered = filtered.where((d) {
+                    final title = (d['title'] ?? '').toString().toLowerCase();
+                    final body = (d['body'] ?? d['content'] ?? '').toString().toLowerCase();
+                    final category = (d['category'] ?? '').toString().toLowerCase();
+                    final q = _searchQuery.toLowerCase();
+                    return title.contains(q) || body.contains(q) || category.contains(q);
+                  }).toList();
+                }
+
+                if (filtered.isEmpty) {
+                  return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    const Text('\u{1F4DD}', style: TextStyle(fontSize: 60)),
+                    const SizedBox(height: 16),
+                    Text(_searchQuery.isNotEmpty ? 'لا توجد نتائج لـ "$_searchQuery"' : 'لا توجد مقالات',
+                      style: TextStyle(fontSize: 14, color: _text2)),
+                    const SizedBox(height: 16),
+                    if (AdminService().hasPermission(Permission.addArticles))
+                      ElevatedButton.icon(
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddArticleScreen())),
+                        icon: const Icon(Icons.add), label: const Text('إضافة مقال'),
+                        style: ElevatedButton.styleFrom(backgroundColor: _teal, foregroundColor: Colors.white),
                       ),
+                  ]));
+                }
+
+                return Column(children: [
+                  // Count indicator
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Row(children: [
+                      Text('${filtered.length} مقال', style: TextStyle(fontSize: 12, color: _text2, fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      if (_searchQuery.isNotEmpty) Text('نتائج البحث', style: TextStyle(fontSize: 12, color: _teal)),
                     ]),
                   ),
-                );
+                  Expanded(child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: filtered.length,
+                    itemBuilder: (_, i) {
+                      final d = filtered[i];
+                      final hasImage = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
+                      final type = d['type'] ?? d['section'] ?? 'pregnancy';
+                      final typeColor = _typeColors[type] ?? _teal;
+                      final isOverride = d['_source'] == 'override';
+                      return GestureDetector(
+                        onTap: () {
+                          if (isOverride) return; // Overrides are edited from article view
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => _AddArticleScreen(docId: d['_docId'], existingData: d)));
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14),
+                            border: isOverride ? Border.all(color: Colors.orange.withOpacity(0.3), width: 1) : null),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Row(children: [
+                              Container(width: 50, height: 50, margin: const EdgeInsets.only(left: 12),
+                                decoration: BoxDecoration(
+                                  color: hasImage ? null : typeColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  image: hasImage ? DecorationImage(image: NetworkImage(d['imageUrl']), fit: BoxFit.cover) : null,
+                                ),
+                                child: hasImage ? null : Center(child: Icon(Icons.article, color: typeColor))),
+                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(d['title'] ?? d['originalTitle'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: _text1), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 4),
+                                Row(children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                    child: Text(_typeNames[type] ?? type, style: TextStyle(fontSize: 11, color: typeColor, fontWeight: FontWeight.bold)),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(d['category'] ?? '', style: TextStyle(fontSize: 12, color: _text2)),
+                                  if (isOverride) ...[
+                                    const SizedBox(width: 6),
+                                    Icon(Icons.edit_note, size: 14, color: Colors.orange.shade400),
+                                  ],
+                                ]),
+                              ])),
+                              if (!isOverride) IconButton(icon: const Icon(Icons.edit_outlined, color: _teal, size: 20),
+                                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddArticleScreen(docId: d['_docId'], existingData: d)))),
+                              if (AdminService().hasPermission(Permission.deleteArticles) && !isOverride)
+                                IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 20),
+                                  onPressed: () => FirebaseFirestore.instance.collection('articles').doc(d['_docId']).delete()),
+                            ]),
+                          ),
+                        ),
+                      );
+                    },
+                  )),
+                ]);
               },
             );
           },
@@ -2045,78 +2125,4 @@ class _DeliveryPricingScreen extends StatelessWidget {
     _CountryDeliveryInfo(name: 'البحرين', flag: '\u{1f1e7}\u{1f1ed}', currency: 'د.ب', code: 'BH'),
     _CountryDeliveryInfo(name: 'عُمان', flag: '\u{1f1f4}\u{1f1f2}', currency: 'ر.ع', code: 'OM'),
     _CountryDeliveryInfo(name: 'العراق', flag: '\u{1f1ee}\u{1f1f6}', currency: 'د.ع', code: 'IQ'),
-    _CountryDeliveryInfo(name: 'ليبيا', flag: '\u{1f1f1}\u{1f1fe}', currency: 'د.ل', code: 'LY'),
-    _CountryDeliveryInfo(name: 'السودان', flag: '\u{1f1f8}\u{1f1e9}', currency: 'ج.س', code: 'SD'),
-    _CountryDeliveryInfo(name: 'فرنسا', flag: '\u{1f1eb}\u{1f1f7}', currency: '\u{20ac}', code: 'FR'),
-    _CountryDeliveryInfo(name: 'تركيا', flag: '\u{1f1f9}\u{1f1f7}', currency: '\u{20ba}', code: 'TR'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
-      backgroundColor: _bg,
-      appBar: AppBar(centerTitle: true, title: const Text('\u{1f69a} أسعار التوصيل', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
-        backgroundColor: _card, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('settings').doc('delivery_pricing').snapshots(),
-        builder: (context, snap) {
-          final data = snap.data?.data() as Map<String, dynamic>? ?? {};
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _countries.length,
-            itemBuilder: (_, i) {
-              final country = _countries[i];
-              final pricing = data[country.code] as Map<String, dynamic>? ?? {};
-              final price = pricing['price'] ?? '';
-              final enabled = pricing['enabled'] == true;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14)),
-                child: Row(children: [
-                  Text(country.flag, style: const TextStyle(fontSize: 28)),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(country.name, style: const TextStyle(fontWeight: FontWeight.bold, color: _text1)),
-                    Text(price.toString().isNotEmpty ? '$price ${country.currency}' : 'غير محدد',
-                      style: TextStyle(fontSize: 12, color: price.toString().isNotEmpty ? _teal : _text2, fontWeight: FontWeight.bold)),
-                  ])),
-                  Switch(value: enabled, activeColor: _teal, onChanged: (v) {
-                    FirebaseFirestore.instance.collection('settings').doc('delivery_pricing').set(
-                      {country.code: {'enabled': v, 'price': price, 'currency': country.currency}},
-                      SetOptions(merge: true));
-                  }),
-                  IconButton(icon: const Icon(Icons.edit, color: _teal, size: 20), onPressed: () {
-                    final priceC = TextEditingController(text: price.toString());
-                    showDialog(context: context, builder: (ctx) => Directionality(
-                      textDirection: TextDirection.rtl,
-                      child: AlertDialog(
-                        title: Text('${country.flag} ${country.name}'),
-                        content: TextField(controller: priceC, keyboardType: TextInputType.number,
-                          decoration: InputDecoration(labelText: 'سعر التوصيل (${country.currency})',
-                            filled: true, fillColor: _bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-                          ElevatedButton(
-                            onPressed: () {
-                              FirebaseFirestore.instance.collection('settings').doc('delivery_pricing').set(
-                                {country.code: {'price': priceC.text.trim(), 'currency': country.currency, 'enabled': true}},
-                                SetOptions(merge: true));
-                              Navigator.pop(ctx);
-                            },
-                            style: ElevatedButton.styleFrom(backgroundColor: _teal, foregroundColor: Colors.white),
-                            child: const Text('حفظ'),
-                          ),
-                        ],
-                      ),
-                    ));
-                  }),
-                ]),
-              );
-            },
-          );
-        },
-      ),
-    ));
-  }
-}
+    _CountryDeliveryInfo(name: 'ليبيا',

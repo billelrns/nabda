@@ -4744,13 +4744,108 @@ class _HomeArticlesSection extends StatelessWidget {
 }
 
 // ==================== ARTICLE DETAIL PAGE ====================
-class _ArticleDetailPage extends StatelessWidget {
+class _ArticleDetailPage extends StatefulWidget {
   final String title;
   final String body;
   final Color color;
   final String imageUrl;
   final List<String> contentImages;
-  const _ArticleDetailPage({required this.title, required this.body, required this.color, this.imageUrl = '', this.contentImages = const []});
+  final String? articleId; // Firestore override key
+  final String section; // e.g. 'home', 'cycle', 'baby', 'pregnancy', 'news'
+  const _ArticleDetailPage({required this.title, required this.body, required this.color, this.imageUrl = '', this.contentImages = const [], this.articleId, this.section = ''});
+
+  @override
+  State<_ArticleDetailPage> createState() => _ArticleDetailPageState();
+}
+
+class _ArticleDetailPageState extends State<_ArticleDetailPage> {
+  final AdminService _admin = AdminService();
+  late String _title;
+  late String _body;
+  late String _imageUrl;
+  bool _isEditing = false;
+  bool _hasOverride = false;
+  late TextEditingController _titleCtrl;
+  late TextEditingController _bodyCtrl;
+  late TextEditingController _imageCtrl;
+
+  String get _docId => widget.articleId ?? widget.title.hashCode.toString();
+
+  @override
+  void initState() {
+    super.initState();
+    _title = widget.title;
+    _body = widget.body;
+    _imageUrl = widget.imageUrl;
+    _titleCtrl = TextEditingController(text: _title);
+    _bodyCtrl = TextEditingController(text: _body);
+    _imageCtrl = TextEditingController(text: _imageUrl);
+    _loadOverride();
+  }
+
+  Future<void> _loadOverride() async {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('article_overrides').doc(_docId).get();
+      if (doc.exists && mounted) {
+        final d = doc.data()!;
+        setState(() {
+          _title = d['title'] ?? _title;
+          _body = d['body'] ?? _body;
+          _imageUrl = d['imageUrl'] ?? _imageUrl;
+          _hasOverride = true;
+          _titleCtrl.text = _title;
+          _bodyCtrl.text = _body;
+          _imageCtrl.text = _imageUrl;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveOverride() async {
+    try {
+      await FirebaseFirestore.instance.collection('article_overrides').doc(_docId).set({
+        'title': _titleCtrl.text.trim(),
+        'body': _bodyCtrl.text.trim(),
+        'imageUrl': _imageCtrl.text.trim(),
+        'section': widget.section,
+        'originalTitle': widget.title,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      setState(() {
+        _title = _titleCtrl.text.trim();
+        _body = _bodyCtrl.text.trim();
+        _imageUrl = _imageCtrl.text.trim();
+        _isEditing = false;
+        _hasOverride = true;
+      });
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u062A\u0639\u062F\u064A\u0644\u0627\u062A \u0628\u0646\u062C\u0627\u062D'), backgroundColor: Colors.teal));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('\u062E\u0637\u0623 \u0641\u064A \u0627\u0644\u062D\u0641\u0638: $e'), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<void> _deleteArticle() async {
+    final confirm = await showDialog<bool>(context: context, builder: (ctx) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(
+        title: const Text('\u062D\u0630\u0641 \u0627\u0644\u0645\u0642\u0627\u0644'),
+        content: const Text('\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0627 \u0627\u0644\u0645\u0642\u0627\u0644\u061F'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('\u0625\u0644\u063A\u0627\u0621')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('\u062D\u0630\u0641', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    ));
+    if (confirm == true) {
+      await FirebaseFirestore.instance.collection('article_overrides').doc(_docId).set({
+        'deleted': true, 'originalTitle': widget.title, 'section': widget.section,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) { Navigator.pop(context); }
+    }
+  }
 
   // Inline images matched to article content keywords
   static final Map<String, List<String>> _inlineImageSets = {
@@ -4821,9 +4916,9 @@ class _ArticleDetailPage extends StatelessWidget {
   };
 
   List<String> _getInlineImages() {
-    if (contentImages.isNotEmpty) return contentImages;
+    if (widget.contentImages.isNotEmpty) return widget.contentImages;
     for (final entry in _inlineImageSets.entries) {
-      if (title.contains(entry.key)) return entry.value;
+      if (_title.contains(entry.key)) return entry.value;
     }
     return [
       'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
@@ -4832,13 +4927,13 @@ class _ArticleDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasHeaderImage = imageUrl.isNotEmpty;
+    final hasHeaderImage = _imageUrl.isNotEmpty;
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(title, style: TextStyle(fontSize: 18)),
-          backgroundColor: color,
+          title: Text(_title, style: TextStyle(fontSize: 18)),
+          backgroundColor: widget.color,
           foregroundColor: Colors.white,
           elevation: 0,
         ),
@@ -4847,12 +4942,30 @@ class _ArticleDetailPage extends StatelessWidget {
           child: SingleChildScrollView(
             padding: EdgeInsets.all(0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // ── Admin Edit Mode ──
+              if (_isEditing && _admin.isAdmin) Container(
+                color: Colors.amber.shade50,
+                padding: const EdgeInsets.all(16),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0645\u0642\u0627\u0644', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  TextField(controller: _titleCtrl, decoration: InputDecoration(labelText: '\u0627\u0644\u0639\u0646\u0648\u0627\u0646', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 10),
+                  TextField(controller: _imageCtrl, decoration: InputDecoration(labelText: '\u0631\u0627\u0628\u0637 \u0627\u0644\u0635\u0648\u0631\u0629', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), style: const TextStyle(fontSize: 14)),
+                  const SizedBox(height: 10),
+                  TextField(controller: _bodyCtrl, maxLines: 10, decoration: InputDecoration(labelText: '\u0627\u0644\u0645\u062D\u062A\u0648\u0649', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), alignLabelWithHint: true), style: const TextStyle(fontSize: 14, height: 1.6)),
+                  if (_hasOverride) Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text('\u2705 \u064A\u0648\u062C\u062F \u062A\u0639\u062F\u064A\u0644 \u0645\u062D\u0641\u0648\u0638 \u0641\u064A Firestore', style: TextStyle(fontSize: 12, color: Colors.green.shade700)),
+                  ),
+                ]),
+              ),
               // Header image
               if (hasHeaderImage)
-                Image.network(imageUrl, height: 220, width: double.infinity, fit: BoxFit.cover,
+                Image.network(_imageUrl, height: 220, width: double.infinity, fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(height: 220,
-                    decoration: BoxDecoration(gradient: LinearGradient(colors: [color.withOpacity(0.2), color.withOpacity(0.05)])),
-                    child: Center(child: Icon(Icons.image, color: color.withOpacity(0.3), size: 60)))),
+                    decoration: BoxDecoration(gradient: LinearGradient(colors: [widget.color.withOpacity(0.2), color.withOpacity(0.05)])),
+                    child: Center(child: Icon(Icons.image, color: widget.color.withOpacity(0.3), size: 60)))),
               Padding(
                 padding: EdgeInsets.all(20),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -4862,29 +4975,29 @@ class _ArticleDetailPage extends StatelessWidget {
                       padding: EdgeInsets.all(20),
                       margin: EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]),
+                        gradient: LinearGradient(colors: [widget.color.withOpacity(0.15), color.withOpacity(0.05)]),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(children: [
-                        Icon(Icons.article_outlined, color: color, size: 40),
+                        Icon(Icons.article_outlined, color: widget.color, size: 40),
                         SizedBox(width: 14),
-                        Expanded(child: Text(title,
+                        Expanded(child: Text(_title,
                           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F1A20)))),
                       ]),
                     )
                   else ...[
-                    Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1F1A20))),
+                    Text(_title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1F1A20))),
                     SizedBox(height: 20),
                   ],
                   // Paragraphs with smart inline images + ad space
                   ...() {
                     // Smart paragraph splitting: by \n\n or by sentences (~120 chars each)
                     List<String> paragraphs;
-                    if (body.contains('\n\n')) {
-                      paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+                    if (_body.contains('\n\n')) {
+                      paragraphs = _body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
                     } else {
                       // Split long text into paragraphs by sentence endings
-                      final allText = body.trim();
+                      final allText = _body.trim();
                       paragraphs = [];
                       String current = '';
                       final sentences = allText.split(RegExp(r'(?<=[\.\!\?\:])\s+'));
@@ -4976,15 +5089,15 @@ class _ArticleDetailPage extends StatelessWidget {
                     width: double.infinity,
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.08),
+                      color: widget.color.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: color.withOpacity(0.2)),
+                      border: Border.all(color: widget.color.withOpacity(0.2)),
                     ),
                     child: Row(children: [
-                      Icon(Icons.info_outline, color: color, size: 20),
+                      Icon(Icons.info_outline, color: widget.color, size: 20),
                       SizedBox(width: 10),
                       Expanded(child: Text('هذا المقال للأغراض التثقيفية فقط. استشيري طبيبتك للحصول على نصيحة طبية شخصية.',
-                        style: TextStyle(fontSize: 13, color: color.withOpacity(0.8), fontStyle: FontStyle.italic))),
+                        style: TextStyle(fontSize: 13, color: widget.color.withOpacity(0.8), fontStyle: FontStyle.italic))),
                     ]),
                   ),
                 ]),
@@ -4993,6 +5106,33 @@ class _ArticleDetailPage extends StatelessWidget {
           ),
         ),
       ),
+      floatingActionButton: _admin.isAdmin ? Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_isEditing) ...[
+            FloatingActionButton.small(
+              heroTag: 'delete',
+              backgroundColor: Colors.red,
+              onPressed: _deleteArticle,
+              child: const Icon(Icons.delete, color: Colors.white, size: 20),
+            ),
+            const SizedBox(height: 8),
+            FloatingActionButton.small(
+              heroTag: 'save',
+              backgroundColor: Colors.teal,
+              onPressed: _saveOverride,
+              child: const Icon(Icons.save, color: Colors.white, size: 20),
+            ),
+            const SizedBox(height: 8),
+          ],
+          FloatingActionButton(
+            heroTag: 'edit',
+            backgroundColor: _isEditing ? Colors.orange : widget.color,
+            onPressed: () => setState(() => _isEditing = !_isEditing),
+            child: Icon(_isEditing ? Icons.close : Icons.edit, color: Colors.white),
+          ),
+        ],
+      ) : null,
     );
   }
 }
