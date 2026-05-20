@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/pregnancy_week_articles.dart';
 import '../trackers/health_trackers_screen.dart';
+import '../../widgets/news_section.dart';
 
 
 // ─── Fetus Image Helper ───
@@ -893,6 +894,11 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
 
                     // ── All Discover Sections ──
                     ..._buildAllDiscoverSections(),
+
+                    // ════════════ LATEST NEWS ════════════
+                    const SizedBox(height: 16),
+                    const NewsSection(accentColor: Color(0xFF00897B), sectionTitle: 'آخر أخبار الحمل والأمومة'),
+                    const SizedBox(height: 16),
 
                     // Navigation buttons
                     Row(
@@ -3289,12 +3295,4 @@ class RealisticFetusIllustration extends CustomPainter {
     _cord(canvas, Offset(s * 0.05, s * 0.55), s);
   }
 
-  void _drawMidFetus(Canvas canvas, double r, Color light) {
-    final s = r * 0.8;
-    canvas.save();
-    canvas.rotate(-0.3);
-    _head(canvas, Offset(s * 0.05, -s * 0.45), s * 0.32, light);
-    final body = Path();
-    body.moveTo(-s * 0.15, -s * 0.15);
-    body.cubicTo(-s * 0.3, s * 0.15, -s * 0.25, s * 0.55, 0, s * 0.5);
-    body.cubicTo(s * 0.2, s * 0.45, s * 0.3, s * 0.1, s 
+  
