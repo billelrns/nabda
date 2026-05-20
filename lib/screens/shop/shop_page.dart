@@ -1654,4 +1654,3 @@ class _ProductDetailPageState extends State<_ProductDetailPage> {
     );
   }
 }
-        

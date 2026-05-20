@@ -3295,4 +3295,174 @@ class RealisticFetusIllustration extends CustomPainter {
     _cord(canvas, Offset(s * 0.05, s * 0.55), s);
   }
 
-  
+  void _drawMidFetus(Canvas canvas, double r, Color light) {
+    final s = r * 0.8;
+    canvas.save();
+    canvas.rotate(-0.3);
+    _head(canvas, Offset(s * 0.05, -s * 0.45), s * 0.32, light);
+    final body = Path();
+    body.moveTo(-s * 0.15, -s * 0.15);
+    body.cubicTo(-s * 0.3, s * 0.15, -s * 0.25, s * 0.55, 0, s * 0.5);
+    body.cubicTo(s * 0.2, s * 0.45, s * 0.3, s * 0.1, s * 0.15, -s * 0.15);
+    body.close();
+    final bp = Paint()
+      ..shader = ui.Gradient.radial(
+          Offset(0, s * 0.1), s * 0.6,
+          [light, _skinBase, _skinDark],
+          [0.0, 0.5, 1.0]);
+    canvas.drawPath(body, bp);
+    final armP = Paint()
+      ..shader = ui.Gradient.linear(
+          Offset(-s * 0.3, 0), Offset(-s * 0.5, s * 0.2),
+          [_skinBase, _skinDark],
+          [0.0, 1.0])
+      ..strokeWidth = s * 0.08
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(-s * 0.2, s * 0.0), Offset(-s * 0.35, s * 0.25), armP);
+    canvas.drawCircle(Offset(-s * 0.36, s * 0.26), s * 0.05, Paint()..color = _skinBase);
+    final legP = Paint()
+      ..shader = ui.Gradient.linear(
+          Offset(0, s * 0.4), Offset(-s * 0.15, s * 0.65),
+          [_skinBase, _skinDark],
+          [0.0, 1.0])
+      ..strokeWidth = s * 0.09
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final leg = Path();
+    leg.moveTo(-s * 0.05, s * 0.45);
+    leg.cubicTo(-s * 0.2, s * 0.6, -s * 0.3, s * 0.5, -s * 0.25, s * 0.35);
+    canvas.drawPath(leg, legP);
+    canvas.drawOval(Rect.fromCenter(center: Offset(-s * 0.25, s * 0.34), width: s * 0.1, height: s * 0.06),
+        Paint()..color = _skinBase);
+    canvas.drawCircle(Offset(s * 0.15, -s * 0.5), s * 0.03, Paint()..color = const Color(0xFF3A2520).withOpacity(0.8));
+    canvas.drawArc(Rect.fromCenter(center: Offset(-s * 0.08, -s * 0.42), width: s * 0.1, height: s * 0.12),
+        0.5, 2.5, false, Paint()..color = _skinDark.withOpacity(0.4)..style = PaintingStyle.stroke..strokeWidth = 1.5);
+    canvas.drawCircle(Offset(s * 0.2, -s * 0.43), s * 0.025, Paint()..color = _skinDark.withOpacity(0.5));
+    _cord(canvas, Offset(s * 0.05, s * 0.5), s);
+    canvas.restore();
+  }
+
+  void _drawLateFetus(Canvas canvas, double r, Color light) {
+    final s = r * 0.85;
+    canvas.save();
+    canvas.rotate(-0.25);
+    _head(canvas, Offset(s * 0.05, -s * 0.42), s * 0.35, light);
+    final body = Path();
+    body.moveTo(-s * 0.18, -s * 0.1);
+    body.cubicTo(-s * 0.35, s * 0.2, -s * 0.3, s * 0.55, 0, s * 0.52);
+    body.cubicTo(s * 0.25, s * 0.48, s * 0.35, s * 0.15, s * 0.18, -s * 0.1);
+    body.close();
+    final bp = Paint()
+      ..shader = ui.Gradient.radial(
+          Offset(0, s * 0.15), s * 0.6,
+          [light, _skinBase, _skinDark],
+          [0.0, 0.45, 1.0]);
+    canvas.drawPath(body, bp);
+    final bellyGlow = Paint()
+      ..shader = ui.Gradient.radial(
+          Offset(s * 0.05, s * 0.2), s * 0.2,
+          [light.withOpacity(0.5), Colors.transparent],
+          [0.0, 1.0]);
+    canvas.drawCircle(Offset(s * 0.05, s * 0.2), s * 0.2, bellyGlow);
+    final armP = Paint()
+      ..shader = ui.Gradient.linear(
+          Offset(-s * 0.2, s * 0.05), Offset(s * 0.1, s * 0.15),
+          [_skinBase, _skinDark],
+          [0.0, 1.0])
+      ..strokeWidth = s * 0.08
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final arm1 = Path();
+    arm1.moveTo(-s * 0.2, s * 0.05);
+    arm1.cubicTo(-s * 0.15, s * 0.15, -s * 0.05, s * 0.18, s * 0.05, s * 0.1);
+    canvas.drawPath(arm1, armP);
+    canvas.drawCircle(Offset(s * 0.06, s * 0.09), s * 0.05, Paint()..color = _skinBase);
+    for (int i = 0; i < 4; i++) {
+      final fa = -0.4 + i * 0.25;
+      canvas.drawLine(
+          Offset(s * 0.06 + cos(fa) * s * 0.05, s * 0.09 + sin(fa) * s * 0.05),
+          Offset(s * 0.06 + cos(fa) * s * 0.08, s * 0.09 + sin(fa) * s * 0.08),
+          Paint()..color = _skinDark.withOpacity(0.3)..strokeWidth = 1.0..strokeCap = StrokeCap.round);
+    }
+    final legP = Paint()
+      ..shader = ui.Gradient.linear(
+          Offset(-s * 0.05, s * 0.45), Offset(-s * 0.25, s * 0.2),
+          [_skinBase, _skinDark],
+          [0.0, 1.0])
+      ..strokeWidth = s * 0.1
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final leg1 = Path();
+    leg1.moveTo(-s * 0.05, s * 0.48);
+    leg1.cubicTo(-s * 0.2, s * 0.55, -s * 0.35, s * 0.45, -s * 0.3, s * 0.3);
+    canvas.drawPath(leg1, legP);
+    final leg2 = Path();
+    leg2.moveTo(s * 0.1, s * 0.48);
+    leg2.cubicTo(-s * 0.05, s * 0.6, -s * 0.2, s * 0.55, -s * 0.2, s * 0.4);
+    canvas.drawPath(leg2, legP);
+    canvas.drawOval(Rect.fromCenter(center: Offset(-s * 0.3, s * 0.29), width: s * 0.11, height: s * 0.07),
+        Paint()..color = _skinBase);
+    canvas.drawOval(Rect.fromCenter(center: Offset(-s * 0.2, s * 0.39), width: s * 0.11, height: s * 0.07),
+        Paint()..color = _skinBase);
+    final eyeP = Paint()..color = const Color(0xFF3A2520).withOpacity(0.7)..strokeWidth = 1.5..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
+    canvas.drawArc(Rect.fromCenter(center: Offset(s * 0.14, -s * 0.47), width: s * 0.08, height: s * 0.04), 0, pi, false, eyeP);
+    final nosePath = Path();
+    nosePath.moveTo(s * 0.2, -s * 0.44);
+    nosePath.cubicTo(s * 0.24, -s * 0.42, s * 0.24, -s * 0.38, s * 0.2, -s * 0.37);
+    canvas.drawPath(nosePath, Paint()..color = _skinDark.withOpacity(0.5)..style = PaintingStyle.stroke..strokeWidth = 1.2);
+    canvas.drawArc(Rect.fromCenter(center: Offset(s * 0.16, -s * 0.33), width: s * 0.08, height: s * 0.04),
+        0.2, 2.2, false, Paint()..color = const Color(0xFFBF7E7E).withOpacity(0.6)..style = PaintingStyle.stroke..strokeWidth = 1.2);
+    final earPath = Path();
+    earPath.moveTo(-s * 0.05, -s * 0.42);
+    earPath.cubicTo(-s * 0.12, -s * 0.48, -s * 0.14, -s * 0.38, -s * 0.08, -s * 0.35);
+    canvas.drawPath(earPath, Paint()..color = _skinDark.withOpacity(0.5)..style = PaintingStyle.stroke..strokeWidth = 1.8);
+    if (week >= 32) {
+      final hairP = Paint()..color = const Color(0xFF5D4037).withOpacity(0.3)..strokeWidth = 1.0..strokeCap = StrokeCap.round;
+      for (int i = 0; i < 8; i++) {
+        final a = -1.8 + i * 0.3;
+        canvas.drawLine(
+            Offset(s * 0.05 + cos(a) * s * 0.33, -s * 0.42 + sin(a) * s * 0.33),
+            Offset(s * 0.05 + cos(a) * s * 0.4, -s * 0.42 + sin(a) * s * 0.4),
+            hairP);
+      }
+    }
+    _cord(canvas, Offset(s * 0.05, s * 0.52), s);
+    canvas.restore();
+  }
+
+  void _head(Canvas canvas, Offset center, double radius, Color light) {
+    final hp = Paint()
+      ..shader = ui.Gradient.radial(
+          Offset(center.dx - radius * 0.15, center.dy - radius * 0.15), radius,
+          [light, _skinBase, _skinDark],
+          [0.0, 0.6, 1.0]);
+    canvas.drawOval(
+        Rect.fromCenter(center: center, width: radius * 2, height: radius * 2.15), hp);
+    final hl = Paint()
+      ..shader = ui.Gradient.radial(
+          Offset(center.dx - radius * 0.2, center.dy - radius * 0.3), radius * 0.5,
+          [light.withOpacity(0.6), Colors.transparent],
+          [0.0, 1.0]);
+    canvas.drawCircle(Offset(center.dx - radius * 0.15, center.dy - radius * 0.2), radius * 0.5, hl);
+  }
+
+  void _cord(Canvas canvas, Offset start, double s) {
+    final cordPath = Path();
+    cordPath.moveTo(start.dx, start.dy);
+    cordPath.cubicTo(start.dx + s * 0.15, start.dy + s * 0.15, start.dx - s * 0.1, start.dy + s * 0.3,
+        start.dx + s * 0.2, start.dy + s * 0.35);
+    final cordPaint = Paint()
+      ..shader = ui.Gradient.linear(
+          start, Offset(start.dx + s * 0.2, start.dy + s * 0.35),
+          [_skinDark.withOpacity(0.6), const Color(0xFF8B6F6F).withOpacity(0.3)],
+          [0.0, 1.0])
+      ..strokeWidth = s * 0.04
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    canvas.drawPath(cordPath, cordPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant RealisticFetusIllustration old) => old.week != week;
+}

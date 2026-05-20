@@ -1256,4 +1256,12 @@ class _SectionBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-   
+      text,
+      style: const TextStyle(
+        fontSize: 15,
+        height: 1.8,
+        color: Color(0xFF4A434B),
+      ),
+    );
+  }
+}

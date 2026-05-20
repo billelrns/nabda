@@ -4157,7 +4157,7 @@ class _FirestoreArticlesSection extends StatelessWidget {
     final hasImage = resolvedImage.isNotEmpty;
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(
-        builder: (_) => _ArticleDetailPage(title: title, body: content, color: cardColor, imageUrl: resolvedImage, contentImages: contentImages))),
+        builder: (_) => _ArticleDetailPage(title: title, body: content, color: cardColor, imageUrl: resolvedImage, contentImages: contentImages, section: type))),
       child: Container(
         width: 260,
         margin: EdgeInsets.only(left: 12),
@@ -4269,7 +4269,7 @@ class _CycleArticlesSection extends StatelessWidget {
               itemBuilder: (_, i) {
                 final d = entry.value[i];
                 return GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(title: d['title']!, body: d['content']!, color: color, imageUrl: d['image']!))),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(title: d['title']!, body: d['content']!, color: color, imageUrl: d['image']!, section: 'cycle'))),
                   child: Container(
                     width: 200, margin: EdgeInsets.only(left: 12),
                     decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white, boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))]),
@@ -4562,7 +4562,7 @@ class _BabyArticlesSection extends StatelessWidget {
               itemBuilder: (_, i) {
                 final d = entry.value[i];
                 return GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(title: d['title']!, body: d['content']!, color: color, imageUrl: d['image']!))),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(title: d['title']!, body: d['content']!, color: color, imageUrl: d['image']!, section: 'baby'))),
                   child: Container(
                     width: 200, margin: EdgeInsets.only(left: 12),
                     decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white, boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))]),
@@ -4693,7 +4693,7 @@ class _HomeArticlesSection extends StatelessWidget {
                 onTap: () => Navigator.push(context, MaterialPageRoute(
                   builder: (_) => _ArticleDetailPage(
                     title: articleTitle, body: content, color: color,
-                    imageUrl: imgUrl, contentImages: const [],
+                    imageUrl: imgUrl, contentImages: const [], section: 'home',
                   ),
                 )),
                 child: Container(
@@ -4760,11 +4760,15 @@ class _ArticleDetailPage extends StatefulWidget {
 
 class _ArticleDetailPageState extends State<_ArticleDetailPage> {
   final AdminService _admin = AdminService();
+  final ImagePicker _picker = ImagePicker();
   late String _title;
   late String _body;
   late String _imageUrl;
   bool _isEditing = false;
   bool _hasOverride = false;
+  bool _isUploading = false;
+  Uint8List? _pickedImageBytes; // preview for picked image
+  XFile? _pickedImageFile;
   late TextEditingController _titleCtrl;
   late TextEditingController _bodyCtrl;
   late TextEditingController _imageCtrl;
@@ -4801,12 +4805,54 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
     } catch (_) {}
   }
 
-  Future<void> _saveOverride() async {
+  Future<void> _pickHeaderImage() async {
     try {
+      final file = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+      if (file != null) {
+        final bytes = await file.readAsBytes();
+        setState(() {
+          _pickedImageFile = file;
+          _pickedImageBytes = bytes;
+        });
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('\u062E\u0637\u0623 \u0641\u064A \u0627\u062E\u062A\u064A\u0627\u0631 \u0627\u0644\u0635\u0648\u0631\u0629: $e'), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<String?> _uploadPickedImage() async {
+    if (_pickedImageFile == null) return null;
+    try {
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final ref = FirebaseStorage.instance.ref().child('articles/headers/article_${_docId}_$ts.jpg');
+      final bytes = await _pickedImageFile!.readAsBytes();
+      await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+      return await ref.getDownloadURL();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('\u062E\u0637\u0623 \u0641\u064A \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629: $e'), backgroundColor: Colors.red));
+      return null;
+    }
+  }
+
+  Future<void> _saveOverride() async {
+    setState(() => _isUploading = true);
+    try {
+      // Upload picked image if any
+      String finalImageUrl = _imageCtrl.text.trim();
+      if (_pickedImageFile != null) {
+        final uploadedUrl = await _uploadPickedImage();
+        if (uploadedUrl != null) {
+          finalImageUrl = uploadedUrl;
+          _imageCtrl.text = finalImageUrl;
+        }
+      }
+
       await FirebaseFirestore.instance.collection('article_overrides').doc(_docId).set({
         'title': _titleCtrl.text.trim(),
         'body': _bodyCtrl.text.trim(),
-        'imageUrl': _imageCtrl.text.trim(),
+        'imageUrl': finalImageUrl,
         'section': widget.section,
         'originalTitle': widget.title,
         'updatedAt': FieldValue.serverTimestamp(),
@@ -4814,13 +4860,17 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
       setState(() {
         _title = _titleCtrl.text.trim();
         _body = _bodyCtrl.text.trim();
-        _imageUrl = _imageCtrl.text.trim();
+        _imageUrl = finalImageUrl;
         _isEditing = false;
         _hasOverride = true;
+        _pickedImageFile = null;
+        _pickedImageBytes = null;
+        _isUploading = false;
       });
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u062A\u0639\u062F\u064A\u0644\u0627\u062A \u0628\u0646\u062C\u0627\u062D'), backgroundColor: Colors.teal));
     } catch (e) {
+      setState(() => _isUploading = false);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('\u062E\u0637\u0623 \u0641\u064A \u0627\u0644\u062D\u0641\u0638: $e'), backgroundColor: Colors.red));
     }
@@ -4947,11 +4997,64 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                 color: Colors.amber.shade50,
                 padding: const EdgeInsets.all(16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0645\u0642\u0627\u0644', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Row(children: [
+                    const Text('\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0645\u0642\u0627\u0644', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    if (_isUploading) const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.teal)),
+                  ]),
                   const SizedBox(height: 12),
                   TextField(controller: _titleCtrl, decoration: InputDecoration(labelText: '\u0627\u0644\u0639\u0646\u0648\u0627\u0646', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), style: const TextStyle(fontSize: 16)),
                   const SizedBox(height: 10),
-                  TextField(controller: _imageCtrl, decoration: InputDecoration(labelText: '\u0631\u0627\u0628\u0637 \u0627\u0644\u0635\u0648\u0631\u0629', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), style: const TextStyle(fontSize: 14)),
+                  // ── Image picker section ──
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Icon(Icons.image, color: widget.color, size: 20),
+                        const SizedBox(width: 8),
+                        const Text('\u0635\u0648\u0631\u0629 \u0627\u0644\u0645\u0642\u0627\u0644', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: _pickHeaderImage,
+                          icon: const Icon(Icons.upload, size: 18),
+                          label: const Text('\u0631\u0641\u0639 \u0645\u0646 \u0627\u0644\u062C\u0647\u0627\u0632', style: TextStyle(fontSize: 12)),
+                          style: TextButton.styleFrom(foregroundColor: Colors.teal),
+                        ),
+                      ]),
+                      const SizedBox(height: 8),
+                      if (_pickedImageBytes != null)
+                        Stack(children: [
+                          ClipRRect(borderRadius: BorderRadius.circular(10),
+                            child: Image.memory(_pickedImageBytes!, height: 140, width: double.infinity, fit: BoxFit.cover)),
+                          Positioned(top: 4, left: 4, child: GestureDetector(
+                            onTap: () => setState(() { _pickedImageFile = null; _pickedImageBytes = null; }),
+                            child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: const Icon(Icons.close, color: Colors.white, size: 16)))),
+                          Positioned(bottom: 4, right: 4, child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(8)),
+                            child: const Text('\u0635\u0648\u0631\u0629 \u062C\u062F\u064A\u062F\u0629', style: TextStyle(color: Colors.white, fontSize: 10)))),
+                        ])
+                      else if (_imageCtrl.text.isNotEmpty)
+                        ClipRRect(borderRadius: BorderRadius.circular(10),
+                          child: Image.network(_imageCtrl.text, height: 140, width: double.infinity, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(height: 60, decoration: BoxDecoration(
+                              color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+                              child: const Center(child: Icon(Icons.broken_image, color: Colors.grey))))),
+                      const SizedBox(height: 8),
+                      TextField(controller: _imageCtrl, decoration: InputDecoration(
+                        labelText: '\u0623\u0648 \u0631\u0627\u0628\u0637 \u0627\u0644\u0635\u0648\u0631\u0629 (URL)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        isDense: true,
+                      ), style: const TextStyle(fontSize: 13)),
+                    ]),
+                  ),
                   const SizedBox(height: 10),
                   TextField(controller: _bodyCtrl, maxLines: 10, decoration: InputDecoration(labelText: '\u0627\u0644\u0645\u062D\u062A\u0648\u0649', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), alignLabelWithHint: true), style: const TextStyle(fontSize: 14, height: 1.6)),
                   if (_hasOverride) Padding(
@@ -4964,7 +5067,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
               if (hasHeaderImage)
                 Image.network(_imageUrl, height: 220, width: double.infinity, fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(height: 220,
-                    decoration: BoxDecoration(gradient: LinearGradient(colors: [widget.color.withOpacity(0.2), color.withOpacity(0.05)])),
+                    decoration: BoxDecoration(gradient: LinearGradient(colors: [widget.color.withOpacity(0.2), widget.color.withOpacity(0.05)])),
                     child: Center(child: Icon(Icons.image, color: widget.color.withOpacity(0.3), size: 60)))),
               Padding(
                 padding: EdgeInsets.all(20),
@@ -4975,7 +5078,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                       padding: EdgeInsets.all(20),
                       margin: EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [widget.color.withOpacity(0.15), color.withOpacity(0.05)]),
+                        gradient: LinearGradient(colors: [widget.color.withOpacity(0.15), widget.color.withOpacity(0.05)]),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(children: [
@@ -5105,7 +5208,6 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
             ]),
           ),
         ),
-      ),
       floatingActionButton: _admin.isAdmin ? Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -5133,6 +5235,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
           ),
         ],
       ) : null,
+      ),
     );
   }
 }
@@ -6242,7 +6345,7 @@ class _NewsSection extends StatelessWidget {
   Widget _newsCard(BuildContext context, Map<String, String> n, int i) {
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(
-        builder: (_) => _ArticleDetailPage(title: n['title']!, body: n['content']!, color: accentColor, imageUrl: n['image']!),
+        builder: (_) => _ArticleDetailPage(title: n['title']!, body: n['content']!, color: accentColor, imageUrl: n['image']!, section: 'news'),
       )),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -6295,7 +6398,7 @@ class _AllNewsScreen extends StatelessWidget {
             final n = _NewsSection._news[i];
             return GestureDetector(
               onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => _ArticleDetailPage(title: n['title']!, body: n['content']!, color: accentColor, imageUrl: n['image']!),
+                builder: (_) => _ArticleDetailPage(title: n['title']!, body: n['content']!, color: accentColor, imageUrl: n['image']!, section: 'news'),
               )),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 14),
@@ -6636,4 +6739,33 @@ class _AIChatPageState extends State<AIChatPage> {
       padding: EdgeInsets.only(bottom: 12),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         CircleAvatar(radius: 16, backgroundColor: Colors.teal.shade100,
-          child: Icon(Icons.smart_toy, size: 18, color: Colors
+          child: Icon(Icons.smart_toy, size: 18, color: Colors.teal)),
+        SizedBox(width: 8),
+        Container(
+          padding: EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+              bottomRight: Radius.circular(16),
+              bottomLeft: Radius.circular(4),
+            ),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            _dot(0), SizedBox(width: 4),
+            _dot(150), SizedBox(width: 4),
+            _dot(300),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _dot(int delayMs) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.3, end: 1.0),
+      duration: Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
+      builder: (_, val, child) => Opacity(opacity: val, child: child),
+      child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.teal.shade300, shape: BoxShape.circle)

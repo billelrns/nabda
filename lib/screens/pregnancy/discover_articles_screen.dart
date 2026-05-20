@@ -875,4 +875,38 @@ class _DiscoverArticleDetailScreen extends StatelessWidget {
     final widgets = <Widget>[];
     final midPoint = (paragraphs.length / 2).floor();
     for (int i = 0; i < paragraphs.length; i++) {
-      widgets.add(
+      widgets.add(Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        margin: EdgeInsets.only(bottom: i < paragraphs.length - 1 ? 12 : 0),
+        decoration: BoxDecoration(
+          color: _cardColor,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
+        ),
+        child: Text(paragraphs[i].trim(), textAlign: TextAlign.justify,
+          style: const TextStyle(fontSize: 16.5, height: 1.9, color: _textPrimary)),
+      ));
+      if (i == midPoint && paragraphs.length > 3) {
+        widgets.add(Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F0F7),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE8E0EC), width: 0.8),
+          ),
+          child: const Column(children: [
+            Icon(Icons.campaign_outlined, color: Color(0xFFBBA8C4), size: 28),
+            SizedBox(height: 8),
+            Text('مساحة إعلانية', style: TextStyle(fontSize: 12, color: Color(0xFFBBA8C4), fontWeight: FontWeight.w600)),
+            SizedBox(height: 2),
+            Text('Google AdMob', style: TextStyle(fontSize: 10, color: Color(0xFFD0C4D6))),
+          ]),
+        ));
+      }
+    }
+    return widgets;
+  }
+}

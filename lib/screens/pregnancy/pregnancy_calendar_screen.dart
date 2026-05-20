@@ -979,4 +979,6 @@ const List<_MedicalMilestone> _medicalMilestones = [
   _MedicalMilestone(36, 'فحص أسبوعي', 'بدء الفحوصات الأسبوعية — وضعية الجنين، عنق الرحم', _EventType.medical),
   _MedicalMilestone(37, 'تطعيم السعال الديكي', 'لقاح Tdap لحماية الطفل في أسابيعه الأولى', _EventType.vaccine),
   _MedicalMilestone(38, 'فحص + تخطيط NST', 'تخطيط قلب الجنين Non-Stress Test', _EventType.medical),
-  _MedicalMilestone(39, 'فحص ما قبل الولادة', 'تقييم 
+  _MedicalMilestone(39, 'فحص ما قبل الولادة', 'تقييم جاهزية الولادة — عنق الرحم، وضعية الرأس', _EventType.medical),
+  _MedicalMilestone(40, 'موعد الولادة المتوقع', 'اليوم المنتظر! مناقشة خطة الولادة مع الطبيب', _EventType.milestone),
+];

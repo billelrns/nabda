@@ -926,12 +926,82 @@ class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
   static const _typeColors = {'pregnancy': Color(0xFF9C27B0), 'cycle': Color(0xFFE91E63), 'baby': Color(0xFF2196F3), 'home': Color(0xFFFF9800), 'news': Color(0xFFFF5722)};
   static const _typeNames = {'pregnancy': 'الحمل', 'cycle': 'الدورة', 'baby': 'الطفل', 'home': 'الرئيسية', 'news': 'أخبار'};
 
-  // Collect ALL hardcoded articles from the app
-  List<Map<String, String>> _getAllHardcodedArticles() {
-    final all = <Map<String, String>>[];
-    // We'll use article_overrides from Firestore + show hardcoded count
-    return all;
-  }
+  // ═══ ALL hardcoded articles from the app ═══
+  static final _hardcodedArticles = <Map<String, dynamic>>[
+    // ── News articles (30) ──
+    {'title': 'أم رباعية التوائم تنجب 5 توائم دفعة واحدة', 'category': 'أرقام قياسية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&q=80'},
+    {'title': 'أصغر توائم رباعية خدّج في التاريخ ينجون', 'category': 'معجزة طبية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=400&q=80'},
+    {'title': 'امرأة ألمانية تنجب طفلها العاشر في سن 66 عاماً', 'category': 'حول العالم', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1492725764893-90b379c2b6e7?w=400&q=80'},
+    {'title': 'طفل ينمو خارج الرحم وينجو بأعجوبة', 'category': 'معجزة طبية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=400&q=80'},
+    {'title': 'تسعة توائم من مالي يحتفلون بعيد ميلادهم الأول', 'category': 'أرقام قياسية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=400&q=80'},
+    {'title': 'أم تلد في مطعم بعد أن أعادها المستشفى للمنزل', 'category': 'قصص مدهشة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=80'},
+    {'title': 'أول طفل في بريطانيا من رحم مزروع بعد عقد من الانتظار', 'category': 'معجزة طبية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=400&q=80'},
+    {'title': 'توأمان يولدان في سنتين مختلفتين بفارق 15 دقيقة', 'category': 'قصص مدهشة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1578922746465-3a80a228f223?w=400&q=80'},
+    {'title': 'سيدة أفريقية تنجب 10 توائم في ولادة واحدة', 'category': 'أرقام قياسية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&q=80'},
+    {'title': 'طفل يولد بسنّين كاملتين يثير دهشة الأطباء', 'category': 'حالات نادرة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?w=400&q=80'},
+    {'title': 'أم تكتشف حملها قبل الولادة بساعات فقط', 'category': 'قصص مدهشة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1457342813143-a1ae27a5e890?w=400&q=80'},
+    {'title': 'توأمان متطابقان يولدان بلونَي بشرة مختلفين تماماً', 'category': 'حالات نادرة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&q=80'},
+    {'title': 'أصغر طفل خديج في العالم يحتفل بعيده الخامس', 'category': 'معجزة طبية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1566004100631-35d015d6a491?w=400&q=80'},
+    {'title': 'امرأة تنجب طفلاً أثناء غيبوبة استمرت 3 أشهر', 'category': 'حالات نادرة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&q=80'},
+    {'title': 'دراسة: أطفال يتعرفون على أصوات أمهاتهم من الرحم', 'category': 'اكتشافات علمية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1491013516836-7db643ee125a?w=400&q=80'},
+    {'title': 'طفلة تولد بخصلة شعر بيضاء وراثية نادرة', 'category': 'حالات نادرة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1519689373023-dd07c7988603?w=400&q=80'},
+    {'title': 'دراسة: الرضاعة الطبيعية تحمي من 800 ألف وفاة سنوياً', 'category': 'اكتشافات علمية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&q=80'},
+    {'title': 'أب يحضر ولادة ابنته عبر الفيديو من الفضاء', 'category': 'قصص مدهشة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1522771930-78848d9293e8?w=400&q=80'},
+    {'title': 'اكتشاف أن حليب الأم يتغير تركيبه حسب جنس المولود', 'category': 'اكتشافات علمية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&q=80'},
+    {'title': 'مستشفى يعزف الموسيقى للأجنة ويحسن نموهم', 'category': 'اكتشافات علمية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1485546246426-74dc88dec4d9?w=400&q=80'},
+    {'title': 'أم تنجب طفلتها في سيارة إسعاف على الطريق السريع', 'category': 'قصص مدهشة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=400&q=80'},
+    {'title': 'تقنية جديدة تتيح للأجنة التنفس خارج الرحم', 'category': 'اكتشافات علمية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&q=80'},
+    {'title': 'ممرضة تكتشف أنها أنجبت التوأم الذي تعتني به في الحضانة', 'category': 'قصص مدهشة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1578307985320-34b61a66c195?w=400&q=80'},
+    {'title': 'دراسة: الأطفال الذين يسمعون لغتين يتطور دماغهم أسرع', 'category': 'اكتشافات علمية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&q=80'},
+    {'title': 'توأمان ملتصقان يُفصلان بنجاح بعد عملية 36 ساعة', 'category': 'معجزة طبية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=400&q=80'},
+    {'title': 'أصغر أم تتبرع بحليبها لإنقاذ مائة طفل خديج', 'category': 'قصص مدهشة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=400&q=80'},
+    {'title': 'طفل يولد في طائرة على ارتفاع 10 آلاف متر', 'category': 'حول العالم', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1436491865332-7a61a109db05?w=400&q=80'},
+    {'title': 'علماء يطورون حفاضاً ذكياً ينبه الوالدين صحياً', 'category': 'اكتشافات علمية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1587616211892-f743fcca64f9?w=400&q=80'},
+    {'title': 'سيدة مصرية تنجب بعد 25 سنة من العقم', 'category': 'معجزة طبية', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1492725764893-90b379c2b6e7?w=400&q=80'},
+    {'title': 'مولود يبتسم ابتسامة عريضة لحظة ولادته', 'category': 'قصص مدهشة', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?w=400&q=80'},
+    {'title': 'مدينة يابانية تقدم مكافأة مليون ين لكل مولود جديد', 'category': 'حول العالم', 'type': 'news', 'imageUrl': 'https://images.unsplash.com/photo-1480796927426-f609979314bd?w=400&q=80'},
+    // ── Cycle hardcoded (10) ──
+    {'title': 'أطعمة تخفف آلام الدورة', 'category': 'تغذية أثناء الدورة', 'type': 'cycle', 'imageUrl': ''},
+    {'title': 'مشروبات دافئة لتقليل التقلصات', 'category': 'تغذية أثناء الدورة', 'type': 'cycle', 'imageUrl': ''},
+    {'title': 'فيتامينات ضرورية لصحة الدورة', 'category': 'تغذية أثناء الدورة', 'type': 'cycle', 'imageUrl': ''},
+    {'title': 'تمارين لتخفيف آلام الدورة', 'category': 'رياضة وحركة', 'type': 'cycle', 'imageUrl': ''},
+    {'title': 'يوغا لأيام الدورة', 'category': 'رياضة وحركة', 'type': 'cycle', 'imageUrl': ''},
+    {'title': 'التعامل مع تقلبات المزاج', 'category': 'صحة نفسية', 'type': 'cycle', 'imageUrl': ''},
+    {'title': 'نصائح للنوم الجيد أثناء الدورة', 'category': 'صحة نفسية', 'type': 'cycle', 'imageUrl': ''},
+    {'title': 'متى تستشيرين الطبيبة؟', 'category': 'صحة نفسية', 'type': 'cycle', 'imageUrl': ''},
+    {'title': 'تتبع الدورة: لماذا هو مهم؟', 'category': 'نصائح عامة', 'type': 'cycle', 'imageUrl': ''},
+    {'title': 'خرافات شائعة عن الدورة الشهرية', 'category': 'نصائح عامة', 'type': 'cycle', 'imageUrl': ''},
+    {'title': 'منتجات صحية بديلة', 'category': 'نصائح عامة', 'type': 'cycle', 'imageUrl': ''},
+    // ── Baby hardcoded (10) ──
+    {'title': 'الرضاعة الطبيعية: أساس صحة طفلك', 'category': 'تغذية الطفل', 'type': 'baby', 'imageUrl': ''},
+    {'title': 'متى وكيف تبدئين بالأطعمة الصلبة', 'category': 'تغذية الطفل', 'type': 'baby', 'imageUrl': ''},
+    {'title': 'أطعمة يجب تجنبها في السنة الأولى', 'category': 'تغذية الطفل', 'type': 'baby', 'imageUrl': ''},
+    {'title': 'تنظيم نوم الرضيع: دليل شامل', 'category': 'نوم الطفل', 'type': 'baby', 'imageUrl': ''},
+    {'title': 'بيئة النوم الآمنة للرضيع', 'category': 'نوم الطفل', 'type': 'baby', 'imageUrl': ''},
+    {'title': 'مراحل نمو الطفل في السنة الأولى', 'category': 'النمو والتطور', 'type': 'baby', 'imageUrl': ''},
+    {'title': 'تحفيز ذكاء طفلك باللعب', 'category': 'النمو والتطور', 'type': 'baby', 'imageUrl': ''},
+    {'title': 'الحمى عند الرضع: متى تقلقين', 'category': 'صحة الطفل العامة', 'type': 'baby', 'imageUrl': ''},
+    {'title': 'العناية ببشرة الطفل الحساسة', 'category': 'صحة الطفل العامة', 'type': 'baby', 'imageUrl': ''},
+    // ── Home hardcoded (14) ──
+    {'title': 'فحوصات طبية لا غنى عنها لكل امرأة بعد سن الثلاثين', 'category': 'صحة المرأة', 'type': 'home', 'imageUrl': ''},
+    {'title': 'اضطرابات الغدة الدرقية: العدو الخفي لصحة المرأة', 'category': 'صحة المرأة', 'type': 'home', 'imageUrl': ''},
+    {'title': 'فقر الدم عند النساء: الأسباب والعلاج الفعال', 'category': 'صحة المرأة', 'type': 'home', 'imageUrl': ''},
+    {'title': '10 أطعمة خارقة لبشرة نضرة وشعر قوي', 'category': 'تغذية وجمال', 'type': 'home', 'imageUrl': ''},
+    {'title': 'روتين العناية بالبشرة المثالي: صباحاً ومساءً', 'category': 'تغذية وجمال', 'type': 'home', 'imageUrl': ''},
+    {'title': 'أسرار الشعر الصحي: من الجذور إلى الأطراف', 'category': 'تغذية وجمال', 'type': 'home', 'imageUrl': ''},
+    {'title': 'إدارة التوتر والقلق: تقنيات فعالة للحياة اليومية', 'category': 'صحة نفسية', 'type': 'home', 'imageUrl': ''},
+    {'title': 'النوم الصحي: مفتاح الصحة النفسية والجسدية', 'category': 'صحة نفسية', 'type': 'home', 'imageUrl': ''},
+    {'title': 'التربية الإيجابية: كيف تربين طفلاً واثقاً وسعيداً', 'category': 'أمومة وطفولة', 'type': 'home', 'imageUrl': ''},
+    {'title': 'تعزيز المناعة الطبيعية عند الأطفال', 'category': 'أمومة وطفولة', 'type': 'home', 'imageUrl': ''},
+    {'title': 'تمارين منزلية فعالة في 15 دقيقة يومياً', 'category': 'رياضة ولياقة', 'type': 'home', 'imageUrl': ''},
+    {'title': 'المشي: الرياضة المثالية للمرأة العصرية', 'category': 'رياضة ولياقة', 'type': 'home', 'imageUrl': ''},
+    {'title': 'وجبات فطور صحية وسريعة للمرأة العاملة', 'category': 'وصفات صحية', 'type': 'home', 'imageUrl': ''},
+    {'title': 'مشروبات ديتوكس طبيعية لتنقية الجسم', 'category': 'وصفات صحية', 'type': 'home', 'imageUrl': ''},
+    {'title': 'التوازن بين العمل والحياة الأسرية: دليل عملي', 'category': 'علاقات أسرية', 'type': 'home', 'imageUrl': ''},
+    {'title': 'التواصل الفعال مع الشريك: أساس العلاقة الصحية', 'category': 'علاقات أسرية', 'type': 'home', 'imageUrl': ''},
+    {'title': 'الصداع النصفي عند النساء: فهم وعلاج', 'category': 'نصائح طبية', 'type': 'home', 'imageUrl': ''},
+    {'title': 'التهابات المسالك البولية: وقاية وعلاج', 'category': 'نصائح طبية', 'type': 'home', 'imageUrl': ''},
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -994,7 +1064,7 @@ class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
               style: OutlinedButton.styleFrom(foregroundColor: _teal, side: BorderSide(color: _teal.withOpacity(0.3))),
             )),
           ),
-        // Articles list — combines Firestore 'articles' + 'article_overrides'
+        // Articles list — combines Firestore + hardcoded + overrides
         Expanded(child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance.collection('articles').orderBy('createdAt', descending: true).snapshots(),
           builder: (context, snap) {
@@ -1004,11 +1074,15 @@ class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
                 // Build unified list
                 final allItems = <Map<String, dynamic>>[];
 
+                // Track titles already added (to avoid duplicates)
+                final addedTitles = <String>{};
+
                 // 1. Firestore articles
                 if (snap.hasData) {
                   for (final doc in snap.data!.docs) {
                     final d = doc.data() as Map<String, dynamic>;
                     allItems.add({...d, '_docId': doc.id, '_source': 'firestore'});
+                    addedTitles.add((d['title'] ?? '').toString());
                   }
                 }
 
@@ -1017,11 +1091,20 @@ class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
                   for (final doc in overrideSnap.data!.docs) {
                     final d = doc.data() as Map<String, dynamic>;
                     if (d['deleted'] == true) continue;
-                    // Don't add if already in firestore articles
+                    addedTitles.add((d['title'] ?? d['originalTitle'] ?? '').toString());
+                    addedTitles.add((d['originalTitle'] ?? '').toString());
                     final existsInArticles = allItems.any((a) => a['title'] == d['title'] || a['_docId'] == doc.id);
                     if (!existsInArticles) {
-                      allItems.add({...d, '_docId': doc.id, '_source': 'override', 'type': d['section'] ?? 'news'});
+                      allItems.add({...d, '_docId': doc.id, '_source': 'override', 'type': d['section'] ?? d['type'] ?? 'news'});
                     }
+                  }
+                }
+
+                // 3. Hardcoded articles (not yet in Firestore or overrides)
+                for (final hc in _hardcodedArticles) {
+                  final title = hc['title'] as String;
+                  if (!addedTitles.contains(title)) {
+                    allItems.add({...hc, '_docId': 'hc_${title.hashCode}', '_source': 'hardcoded'});
                   }
                 }
 
@@ -1071,19 +1154,30 @@ class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
                     itemCount: filtered.length,
                     itemBuilder: (_, i) {
                       final d = filtered[i];
-                      final hasImage = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
+                      final imgUrl = (d['imageUrl'] ?? d['image'] ?? '').toString();
+                      final hasImage = imgUrl.isNotEmpty;
                       final type = d['type'] ?? d['section'] ?? 'pregnancy';
                       final typeColor = _typeColors[type] ?? _teal;
-                      final isOverride = d['_source'] == 'override';
+                      final source = d['_source'] as String;
+                      final isHardcoded = source == 'hardcoded';
+                      final isOverride = source == 'override';
                       return GestureDetector(
                         onTap: () {
-                          if (isOverride) return; // Overrides are edited from article view
+                          if (isHardcoded || isOverride) {
+                            // Edit hardcoded/override articles via _AddArticleScreen with override support
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => _AddArticleScreen(
+                              docId: isOverride ? d['_docId'] : null,
+                              existingData: {...d, 'content': d['content'] ?? d['body'] ?? '', 'type': type},
+                            )));
+                            return;
+                          }
                           Navigator.push(context, MaterialPageRoute(builder: (_) => _AddArticleScreen(docId: d['_docId'], existingData: d)));
                         },
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 10),
                           decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14),
-                            border: isOverride ? Border.all(color: Colors.orange.withOpacity(0.3), width: 1) : null),
+                            border: isOverride ? Border.all(color: Colors.orange.withOpacity(0.3), width: 1)
+                              : isHardcoded ? Border.all(color: typeColor.withOpacity(0.2), width: 1) : null),
                           child: Padding(
                             padding: const EdgeInsets.all(14),
                             child: Row(children: [
@@ -1091,7 +1185,7 @@ class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
                                 decoration: BoxDecoration(
                                   color: hasImage ? null : typeColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
-                                  image: hasImage ? DecorationImage(image: NetworkImage(d['imageUrl']), fit: BoxFit.cover) : null,
+                                  image: hasImage ? DecorationImage(image: NetworkImage(imgUrl), fit: BoxFit.cover) : null,
                                 ),
                                 child: hasImage ? null : Center(child: Icon(Icons.article, color: typeColor))),
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1104,16 +1198,25 @@ class _ArticlesManagementScreenState extends State<_ArticlesManagementScreen> {
                                     child: Text(_typeNames[type] ?? type, style: TextStyle(fontSize: 11, color: typeColor, fontWeight: FontWeight.bold)),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(d['category'] ?? '', style: TextStyle(fontSize: 12, color: _text2)),
+                                  Flexible(child: Text(d['category'] ?? '', style: TextStyle(fontSize: 12, color: _text2), overflow: TextOverflow.ellipsis)),
                                   if (isOverride) ...[
                                     const SizedBox(width: 6),
                                     Icon(Icons.edit_note, size: 14, color: Colors.orange.shade400),
                                   ],
+                                  if (isHardcoded) ...[
+                                    const SizedBox(width: 6),
+                                    Icon(Icons.code, size: 14, color: typeColor.withOpacity(0.5)),
+                                  ],
                                 ]),
                               ])),
-                              if (!isOverride) IconButton(icon: const Icon(Icons.edit_outlined, color: _teal, size: 20),
-                                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddArticleScreen(docId: d['_docId'], existingData: d)))),
-                              if (AdminService().hasPermission(Permission.deleteArticles) && !isOverride)
+                              IconButton(icon: const Icon(Icons.edit_outlined, color: _teal, size: 20),
+                                onPressed: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => _AddArticleScreen(
+                                    docId: (source == 'firestore') ? d['_docId'] : (isOverride ? d['_docId'] : null),
+                                    existingData: {...d, 'content': d['content'] ?? d['body'] ?? '', 'type': type},
+                                  )));
+                                }),
+                              if (AdminService().hasPermission(Permission.deleteArticles) && source == 'firestore')
                                 IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 20),
                                   onPressed: () => FirebaseFirestore.instance.collection('articles').doc(d['_docId']).delete()),
                             ]),
@@ -1316,13 +1419,14 @@ class _AddArticleScreenState extends State<_AddArticleScreen> {
   final _titleC = TextEditingController();
   final _contentC = TextEditingController();
   String _category = 'تغذية';
-  String _articleType = 'pregnancy'; // pregnancy, cycle, baby, home
-  final _typeLabels = {'pregnancy': 'الحمل', 'cycle': 'الدورة الشهرية', 'baby': 'الطفل', 'home': 'الرئيسية'};
+  String _articleType = 'pregnancy'; // pregnancy, cycle, baby, home, news
+  final _typeLabels = {'pregnancy': 'الحمل', 'cycle': 'الدورة الشهرية', 'baby': 'الطفل', 'home': 'الرئيسية', 'news': 'أخبار'};
   final _catsByType = <String, List<String>>{
     'pregnancy': ['تغذية', 'رياضة', 'صحة نفسية', 'نوم', 'جمال', 'نصائح عامة', 'صحة الجنين', 'ما بعد الولادة'],
     'cycle': ['تغذية أثناء الدورة', 'رياضة وحركة', 'صحة نفسية', 'نصائح عامة'],
     'baby': ['تغذية الطفل', 'نوم الطفل', 'النمو والتطور', 'صحة الطفل العامة'],
     'home': ['صحة المرأة', 'تغذية وجمال', 'صحة نفسية', 'أمومة وطفولة', 'رياضة ولياقة', 'وصفات صحية', 'علاقات أسرية', 'نصائح طبية'],
+    'news': ['أرقام قياسية', 'معجزة طبية', 'حول العالم', 'قصص مدهشة', 'حالات نادرة', 'اكتشافات علمية'],
   };
   List<String> get _cats => _catsByType[_articleType] ?? _catsByType['pregnancy']!;
   bool get _isEditing => widget.docId != null;
@@ -2125,4 +2229,78 @@ class _DeliveryPricingScreen extends StatelessWidget {
     _CountryDeliveryInfo(name: 'البحرين', flag: '\u{1f1e7}\u{1f1ed}', currency: 'د.ب', code: 'BH'),
     _CountryDeliveryInfo(name: 'عُمان', flag: '\u{1f1f4}\u{1f1f2}', currency: 'ر.ع', code: 'OM'),
     _CountryDeliveryInfo(name: 'العراق', flag: '\u{1f1ee}\u{1f1f6}', currency: 'د.ع', code: 'IQ'),
-    _CountryDeliveryInfo(name: 'ليبيا',
+    _CountryDeliveryInfo(name: 'ليبيا', flag: '\u{1f1f1}\u{1f1fe}', currency: 'د.ل', code: 'LY'),
+    _CountryDeliveryInfo(name: 'السودان', flag: '\u{1f1f8}\u{1f1e9}', currency: 'ج.س', code: 'SD'),
+    _CountryDeliveryInfo(name: 'فرنسا', flag: '\u{1f1eb}\u{1f1f7}', currency: '\u{20ac}', code: 'FR'),
+    _CountryDeliveryInfo(name: 'تركيا', flag: '\u{1f1f9}\u{1f1f7}', currency: '\u{20ba}', code: 'TR'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(centerTitle: true, title: const Text('\u{1f69a} أسعار التوصيل', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
+        backgroundColor: _card, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('settings').doc('delivery_pricing').snapshots(),
+        builder: (context, snap) {
+          final data = snap.data?.data() as Map<String, dynamic>? ?? {};
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _countries.length,
+            itemBuilder: (_, i) {
+              final country = _countries[i];
+              final pricing = data[country.code] as Map<String, dynamic>? ?? {};
+              final price = pricing['price'] ?? '';
+              final enabled = pricing['enabled'] == true;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14)),
+                child: Row(children: [
+                  Text(country.flag, style: const TextStyle(fontSize: 28)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(country.name, style: const TextStyle(fontWeight: FontWeight.bold, color: _text1)),
+                    Text(price.toString().isNotEmpty ? '$price ${country.currency}' : 'غير محدد',
+                      style: TextStyle(fontSize: 12, color: price.toString().isNotEmpty ? _teal : _text2, fontWeight: FontWeight.bold)),
+                  ])),
+                  Switch(value: enabled, activeColor: _teal, onChanged: (v) {
+                    FirebaseFirestore.instance.collection('settings').doc('delivery_pricing').set(
+                      {country.code: {'enabled': v, 'price': price, 'currency': country.currency}},
+                      SetOptions(merge: true));
+                  }),
+                  IconButton(icon: const Icon(Icons.edit, color: _teal, size: 20), onPressed: () {
+                    final priceC = TextEditingController(text: price.toString());
+                    showDialog(context: context, builder: (ctx) => Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: AlertDialog(
+                        title: Text('${country.flag} ${country.name}'),
+                        content: TextField(controller: priceC, keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: 'سعر التوصيل (${country.currency})',
+                            filled: true, fillColor: _bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+                          ElevatedButton(
+                            onPressed: () {
+                              FirebaseFirestore.instance.collection('settings').doc('delivery_pricing').set(
+                                {country.code: {'price': priceC.text.trim(), 'currency': country.currency, 'enabled': true}},
+                                SetOptions(merge: true));
+                              Navigator.pop(ctx);
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: _teal, foregroundColor: Colors.white),
+                            child: const Text('حفظ'),
+                          ),
+                        ],
+                      ),
+                    ));
+                  }),
+                ]),
+              );
+            },
+          );
+        },
+      ),
+    ));
+  }
+}
