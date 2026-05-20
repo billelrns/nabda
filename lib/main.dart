@@ -4769,9 +4769,13 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
   bool _isUploading = false;
   Uint8List? _pickedImageBytes; // preview for picked image
   XFile? _pickedImageFile;
+  Uint8List? _pickedContentImageBytes;
+  XFile? _pickedContentImageFile;
+  String _contentImageUrl = '';
   late TextEditingController _titleCtrl;
   late TextEditingController _bodyCtrl;
   late TextEditingController _imageCtrl;
+  late TextEditingController _contentImageCtrl;
 
   String get _docId => widget.articleId ?? widget.title.hashCode.toString();
 
@@ -4784,6 +4788,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
     _titleCtrl = TextEditingController(text: _title);
     _bodyCtrl = TextEditingController(text: _body);
     _imageCtrl = TextEditingController(text: _imageUrl);
+    _contentImageCtrl = TextEditingController();
     _loadOverride();
   }
 
@@ -4796,10 +4801,12 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
           _title = d['title'] ?? _title;
           _body = d['body'] ?? _body;
           _imageUrl = d['imageUrl'] ?? _imageUrl;
+          _contentImageUrl = d['contentImageUrl'] ?? '';
           _hasOverride = true;
           _titleCtrl.text = _title;
           _bodyCtrl.text = _body;
           _imageCtrl.text = _imageUrl;
+          _contentImageCtrl.text = _contentImageUrl;
         });
       }
     } catch (_) {}
@@ -4818,6 +4825,22 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('\u062E\u0637\u0623 \u0641\u064A \u0627\u062E\u062A\u064A\u0627\u0631 \u0627\u0644\u0635\u0648\u0631\u0629: $e'), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<void> _pickContentImage() async {
+    try {
+      final file = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+      if (file != null) {
+        final bytes = await file.readAsBytes();
+        setState(() {
+          _pickedContentImageFile = file;
+          _pickedContentImageBytes = bytes;
+        });
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('\u062E\u0637\u0623 \u0641\u064A \u0627\u062E\u062A\u064A\u0627\u0631 \u0627\u0644\u0635\u0648\u0631\u0629: \$e'), backgroundColor: Colors.red));
     }
   }
 
@@ -4849,10 +4872,24 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
         }
       }
 
+      // Upload content image if picked
+      String finalContentImageUrl = _contentImageCtrl.text.trim();
+      if (_pickedContentImageFile != null) {
+        try {
+          final ts = DateTime.now().millisecondsSinceEpoch;
+          final ref = FirebaseStorage.instance.ref().child('articles/content/article_content_\${_docId}_\$ts.jpg');
+          final bytes = await _pickedContentImageFile!.readAsBytes();
+          await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+          finalContentImageUrl = await ref.getDownloadURL();
+          _contentImageCtrl.text = finalContentImageUrl;
+        } catch (_) {}
+      }
+
       await FirebaseFirestore.instance.collection('article_overrides').doc(_docId).set({
         'title': _titleCtrl.text.trim(),
         'body': _bodyCtrl.text.trim(),
         'imageUrl': finalImageUrl,
+        'contentImageUrl': finalContentImageUrl,
         'section': widget.section,
         'originalTitle': widget.title,
         'updatedAt': FieldValue.serverTimestamp(),
@@ -4861,10 +4898,13 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
         _title = _titleCtrl.text.trim();
         _body = _bodyCtrl.text.trim();
         _imageUrl = finalImageUrl;
+        _contentImageUrl = finalContentImageUrl;
         _isEditing = false;
         _hasOverride = true;
         _pickedImageFile = null;
         _pickedImageBytes = null;
+        _pickedContentImageFile = null;
+        _pickedContentImageBytes = null;
         _isUploading = false;
       });
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
@@ -4966,6 +5006,8 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
   };
 
   List<String> _getInlineImages() {
+    // Use override content image if available
+    if (_contentImageUrl.isNotEmpty) return [_contentImageUrl];
     if (widget.contentImages.isNotEmpty) return widget.contentImages;
     for (final entry in _inlineImageSets.entries) {
       if (_title.contains(entry.key)) return entry.value;
@@ -5049,6 +5091,57 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                       const SizedBox(height: 8),
                       TextField(controller: _imageCtrl, decoration: InputDecoration(
                         labelText: '\u0623\u0648 \u0631\u0627\u0628\u0637 \u0627\u0644\u0635\u0648\u0631\u0629 (URL)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        isDense: true,
+                      ), style: const TextStyle(fontSize: 13)),
+                    ]),
+                  ),
+                  const SizedBox(height: 10),
+                  // ── Content image picker section ──
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Icon(Icons.photo_library, color: Colors.orange, size: 20),
+                        const SizedBox(width: 8),
+                        const Text('صورة داخل المقال', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: _pickContentImage,
+                          icon: const Icon(Icons.upload, size: 18),
+                          label: const Text('رفع من الجهاز', style: TextStyle(fontSize: 12)),
+                          style: TextButton.styleFrom(foregroundColor: Colors.orange),
+                        ),
+                      ]),
+                      const SizedBox(height: 8),
+                      if (_pickedContentImageBytes != null)
+                        Stack(children: [
+                          ClipRRect(borderRadius: BorderRadius.circular(10),
+                            child: Image.memory(_pickedContentImageBytes!, height: 140, width: double.infinity, fit: BoxFit.cover)),
+                          Positioned(top: 4, left: 4, child: GestureDetector(
+                            onTap: () => setState(() { _pickedContentImageFile = null; _pickedContentImageBytes = null; }),
+                            child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: const Icon(Icons.close, color: Colors.white, size: 16)))),
+                          Positioned(bottom: 4, right: 4, child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(8)),
+                            child: const Text('صورة جديدة', style: TextStyle(color: Colors.white, fontSize: 10)))),
+                        ])
+                      else if (_contentImageCtrl.text.isNotEmpty)
+                        ClipRRect(borderRadius: BorderRadius.circular(10),
+                          child: Image.network(_contentImageCtrl.text, height: 140, width: double.infinity, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(height: 60, decoration: BoxDecoration(
+                              color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+                              child: const Center(child: Icon(Icons.broken_image, color: Colors.grey))))),
+                      const SizedBox(height: 8),
+                      TextField(controller: _contentImageCtrl, decoration: InputDecoration(
+                        labelText: 'أو رابط الصورة (URL)',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         isDense: true,
