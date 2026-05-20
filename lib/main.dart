@@ -4938,6 +4938,50 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
   }
 
   // Inline images matched to article content keywords
+  // ── Products by section ──
+  static const _productsBySection = <String, List<Map<String, String>>>{
+    'pregnancy': [
+      {'name': 'وسادة الحمل المريحة', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '3500 د.ج', 'category': 'راحة الحامل'},
+      {'name': 'كريم علامات التمدد', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1800 د.ج', 'category': 'العناية بالبشرة'},
+      {'name': 'حمض الفوليك 400mcg', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '950 د.ج', 'category': 'مكملات غذائية'},
+      {'name': 'حزام دعم البطن', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '2200 د.ج', 'category': 'راحة الحامل'},
+      {'name': 'زيت اللوز للتدليك', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1200 د.ج', 'category': 'العناية بالبشرة'},
+      {'name': 'فيتامينات ما قبل الولادة', 'image': 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80', 'price': '2800 د.ج', 'category': 'مكملات غذائية'},
+    ],
+    'cycle': [
+      {'name': 'قربة ماء ساخن', 'image': 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=300&q=80', 'price': '800 د.ج', 'category': 'تخفيف الألم'},
+      {'name': 'شاي البابونج العضوي', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '650 د.ج', 'category': 'مشروبات صحية'},
+      {'name': 'مكمل المغنيسيوم', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1500 د.ج', 'category': 'مكملات غذائية'},
+      {'name': 'فوط صحية قطنية', 'image': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=300&q=80', 'price': '450 د.ج', 'category': 'نظافة شخصية'},
+      {'name': 'زيت زهرة الربيع', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1100 د.ج', 'category': 'مكملات طبيعية'},
+      {'name': 'كمادة حرارية كهربائية', 'image': 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=300&q=80', 'price': '2500 د.ج', 'category': 'تخفيف الألم'},
+    ],
+    'baby': [
+      {'name': 'كريم حماية الحفاض', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '750 د.ج', 'category': 'العناية بالطفل'},
+      {'name': 'زيت تدليك الأطفال', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '900 د.ج', 'category': 'العناية بالطفل'},
+      {'name': 'ميزان حرارة رقمي', 'image': 'https://images.unsplash.com/photo-1584308666544-27e30e01c6c6?w=300&q=80', 'price': '1200 د.ج', 'category': 'صحة الطفل'},
+      {'name': 'رضاعة مضادة للمغص', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '1800 د.ج', 'category': 'تغذية الطفل'},
+      {'name': 'شامبو أطفال طبيعي', 'image': 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=300&q=80', 'price': '550 د.ج', 'category': 'العناية بالطفل'},
+      {'name': 'لهاية سيليكون طبية', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '350 د.ج', 'category': 'مستلزمات الطفل'},
+    ],
+    'home': [
+      {'name': 'فيتامين D3 للنساء', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1400 د.ج', 'category': 'مكملات غذائية'},
+      {'name': 'كريم ترطيب طبيعي', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1600 د.ج', 'category': 'العناية بالبشرة'},
+      {'name': 'شاي أعشاب مهدئ', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '700 د.ج', 'category': 'مشروبات صحية'},
+      {'name': 'أوميغا 3 طبيعي', 'image': 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80', 'price': '2200 د.ج', 'category': 'مكملات غذائية'},
+      {'name': 'سيروم فيتامين C', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1900 د.ج', 'category': 'العناية بالبشرة'},
+      {'name': 'حديد + فوليك أسيد', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1100 د.ج', 'category': 'مكملات غذائية'},
+    ],
+    'news': [
+      {'name': 'كتاب أمومة سعيدة', 'image': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&q=80', 'price': '1500 د.ج', 'category': 'كتب ومراجع'},
+      {'name': 'مفكرة تتبع الحمل', 'image': 'https://images.unsplash.com/photo-1517842645767-c639042777db?w=300&q=80', 'price': '950 د.ج', 'category': 'تنظيم'},
+      {'name': 'حقيبة الأمومة الشاملة', 'image': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&q=80', 'price': '4500 د.ج', 'category': 'حقائب'},
+      {'name': 'ألبوم ذكريات الطفل', 'image': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&q=80', 'price': '1800 د.ج', 'category': 'ذكريات'},
+      {'name': 'تطبيق متابعة الحمل Pro', 'image': 'https://images.unsplash.com/photo-1517842645767-c639042777db?w=300&q=80', 'price': '500 د.ج', 'category': 'رقمي'},
+      {'name': 'مجموعة العناية بالأم', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '3200 د.ج', 'category': 'هدايا'},
+    ],
+  };
+
   static final Map<String, List<String>> _inlineImageSets = {
     'حمل': [
       'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
@@ -5294,6 +5338,64 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                       SizedBox(width: 10),
                       Expanded(child: Text('هذا المقال للأغراض التثقيفية فقط. استشيري طبيبتك للحصول على نصيحة طبية شخصية.',
                         style: TextStyle(fontSize: 13, color: widget.color.withOpacity(0.8), fontStyle: FontStyle.italic))),
+                  // ── Products Carousel ──
+                  SizedBox(height: 24),
+                  Row(children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: widget.color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                      child: Icon(Icons.shopping_bag_outlined, color: widget.color, size: 20),
+                    ),
+                    SizedBox(width: 10),
+                    Text('منتجات قد تهمك', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20))),
+                  ]),
+                  SizedBox(height: 12),
+                  SizedBox(
+                    height: 200,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: (_productsBySection[widget.section] ?? _productsBySection['home']!).length,
+                      itemBuilder: (context, idx) {
+                        final products = _productsBySection[widget.section] ?? _productsBySection['home']!;
+                        final p = products[idx];
+                        return Container(
+                          width: 150,
+                          margin: EdgeInsets.only(left: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: Offset(0, 3))],
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                              child: Image.network(p['image']!, height: 100, width: 150, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(height: 100, color: widget.color.withOpacity(0.1),
+                                  child: Center(child: Icon(Icons.shopping_bag, color: widget.color, size: 30)))),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.all(10),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(p['name']!, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, height: 1.3),
+                                  maxLines: 2, overflow: TextOverflow.ellipsis),
+                                SizedBox(height: 4),
+                                Row(children: [
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(color: widget.color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                                    child: Text(p['category']!, style: TextStyle(fontSize: 9, color: widget.color, fontWeight: FontWeight.w600)),
+                                  ),
+                                  Spacer(),
+                                  Text(p['price']!, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: widget.color)),
+                                ]),
+                              ]),
+                            ),
+                          ]),
+                        );
+                      },
+                    ),
+                  ),
                     ]),
                   ),
                 ]),
