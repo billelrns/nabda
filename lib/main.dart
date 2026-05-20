@@ -6303,9 +6303,39 @@ class _NewsSection extends StatelessWidget {
      'content': 'في محاولة لمكافحة أزمة انخفاض معدلات الولادة في اليابان أعلنت مدينة نايغي اليابانية الصغيرة عن تقديم مكافأة مالية قدرها مليون ين ياباني أي ما يعادل حوالي سبعة آلاف دولار لكل مولود جديد يولد لعائلة مقيمة في المدينة. المبادرة تأتي بعد أن انخفض عدد سكان المدينة بنسبة أربعين بالمائة خلال عشرين عاماً.\n\nتقدم المدينة أيضاً مساكن مجانية للعائلات الشابة ورعاية صحية مجانية للأطفال حتى سن المدرسة وحضانات مجانية. بعد عام من تطبيق البرنامج ارتفعت معدلات الولادة بنسبة خمسة عشر بالمائة وانتقلت عائلات جديدة للمدينة. تعاني اليابان من أدنى معدل ولادات في تاريخها وتحاول الحكومة إيجاد حلول إبداعية لتشجيع الإنجاب.'},
   ];
 
+  /// Apply Firestore overrides to static news list
+  static List<Map<String, String>> _applyOverrides(List<Map<String, String>> news, Map<String, Map<String, dynamic>> overrides) {
+    if (overrides.isEmpty) return news;
+    return news.map((n) {
+      final title = n['title'] ?? '';
+      if (overrides.containsKey(title)) {
+        final o = overrides[title]!;
+        return <String, String>{
+          'title': (o['title'] as String?) ?? title,
+          'tag': (o['tag'] as String?) ?? n['tag'] ?? '',
+          'image': (o['imageUrl'] as String?) ?? n['image'] ?? '',
+          'content': (o['content'] as String?) ?? n['content'] ?? '',
+        };
+      }
+      return n;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('article_overrides').where('section', isEqualTo: 'news').snapshots(),
+      builder: (context, overrideSnap) {
+        final Map<String, Map<String, dynamic>> overrides = {};
+        if (overrideSnap.hasData) {
+          for (final doc in overrideSnap.data!.docs) {
+            final d = doc.data() as Map<String, dynamic>;
+            final origTitle = (d['originalTitle'] as String?) ?? doc.id;
+            overrides[origTitle] = d;
+          }
+        }
+        final resolvedNews = _applyOverrides(_news, overrides);
+        return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
@@ -6323,9 +6353,9 @@ class _NewsSection extends StatelessWidget {
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: _news.length > 6 ? 6 : _news.length,
+          itemCount: resolvedNews.length > 6 ? 6 : resolvedNews.length,
           itemBuilder: (context, i) {
-            final n = _news[i];
+            final n = resolvedNews[i];
             return _newsCard(context, n, i);
           },
         ),
@@ -6339,6 +6369,8 @@ class _NewsSection extends StatelessWidget {
           ),
         ),
       ],
+    );
+      },
     );
   }
 
@@ -6391,11 +6423,23 @@ class _AllNewsScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFFFAF9FB),
         appBar: AppBar(title: const Text('آخر الأخبار'), backgroundColor: accentColor, foregroundColor: Colors.white),
-        body: ListView.builder(
+        body: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('article_overrides').where('section', isEqualTo: 'news').snapshots(),
+          builder: (context, overrideSnap) {
+            final Map<String, Map<String, dynamic>> overrides = {};
+            if (overrideSnap.hasData) {
+              for (final doc in overrideSnap.data!.docs) {
+                final d = doc.data() as Map<String, dynamic>;
+                final origTitle = (d['originalTitle'] as String?) ?? doc.id;
+                overrides[origTitle] = d;
+              }
+            }
+            final resolvedNews = _NewsSection._applyOverrides(_NewsSection._news, overrides);
+            return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: _NewsSection._news.length,
+          itemCount: resolvedNews.length,
           itemBuilder: (context, i) {
-            final n = _NewsSection._news[i];
+            final n = resolvedNews[i];
             return GestureDetector(
               onTap: () => Navigator.push(context, MaterialPageRoute(
                 builder: (_) => _ArticleDetailPage(title: n['title']!, body: n['content']!, color: accentColor, imageUrl: n['image']!, section: 'news'),
@@ -6431,6 +6475,8 @@ class _AllNewsScreen extends StatelessWidget {
                 ]),
               ),
             );
+          },
+        );
           },
         ),
       ),
@@ -6748,24 +6794,4 @@ class _AIChatPageState extends State<AIChatPage> {
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(16),
               topRight: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-              bottomLeft: Radius.circular(4),
-            ),
-          ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            _dot(0), SizedBox(width: 4),
-            _dot(150), SizedBox(width: 4),
-            _dot(300),
-          ]),
-        ),
-      ]),
-    );
-  }
-
-  Widget _dot(int delayMs) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.3, end: 1.0),
-      duration: Duration(milliseconds: 600),
-      curve: Curves.easeInOut,
-      builder: (_, val, child) => Opacity(opacity: val, child: child),
-      child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.teal.shade300, shape: BoxShape.circle)
+   
