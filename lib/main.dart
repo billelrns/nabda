@@ -6794,4 +6794,27 @@ class _AIChatPageState extends State<AIChatPage> {
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(16),
               topRight: Radius.circular(16),
-   
+              bottomRight: Radius.circular(16),
+              bottomLeft: Radius.circular(4),
+            ),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            _dot(0), SizedBox(width: 4),
+            _dot(150), SizedBox(width: 4),
+            _dot(300),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _dot(int delayMs) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.3, end: 1.0),
+      duration: Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
+      builder: (_, val, child) => Opacity(opacity: val, child: child),
+      child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.teal.shade300, shape: BoxShape.circle)),
+    );
+  }
+}
