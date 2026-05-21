@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../models/pregnancy_week_articles.dart';
 import '../trackers/health_trackers_screen.dart';
 import '../../widgets/news_section.dart';
+import '../../services/dynamic_content_service.dart';
 
 
 // ─── Fetus Image Helper ───
@@ -892,12 +893,82 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                     // ── Featured Articles Section (hardcoded) ──
                     ..._buildFeaturedArticles(context),
 
+                    // ── Dynamic Discover Articles from Firestore ──
+                    StreamBuilder<QuerySnapshot>(
+                      stream: DynamicContentService.getArticles(section: 'pregnancy'),
+                      builder: (context, dynamicSnap) {
+                        final dynamicArticles = (dynamicSnap.data?.docs ?? [])
+                            .map((doc) => DynamicContentService.docToArticle(doc))
+                            .toList();
+                        if (dynamicArticles.isEmpty) return const SizedBox.shrink();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 20),
+                            Row(children: [
+                              Container(width: 4, height: 22, decoration: BoxDecoration(color: _pink, borderRadius: BorderRadius.circular(2))),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.new_releases, color: _teal, size: 20),
+                              const SizedBox(width: 6),
+                              const Expanded(child: Text('مقالات جديدة', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: _textPrimary))),
+                            ]),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              height: 195,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                reverse: true,
+                                itemCount: dynamicArticles.length,
+                                itemBuilder: (context, i) {
+                                  final art = dynamicArticles[i];
+                                  return GestureDetector(
+                                    onTap: () => Navigator.push(context, MaterialPageRoute(
+                                      builder: (_) => _DiscoverDetailScreen(
+                                        article: _DiscoverArt(
+                                          title: art['title'] ?? '',
+                                          emoji: '📰',
+                                          color1: _teal,
+                                          content: art['content'] ?? '',
+                                          image: art['image'] ?? '',
+                                        ),
+                                        categoryName: art['category'] ?? 'مقالات جديدة',
+                                      ),
+                                    )),
+                                    child: Container(
+                                      width: i == 0 ? 270 : 195,
+                                      margin: EdgeInsets.only(left: i == dynamicArticles.length - 1 ? 0 : 12),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(18),
+                                        boxShadow: [BoxShadow(color: _teal.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 3))],
+                                      ),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: (art['image'] ?? '').isNotEmpty
+                                        ? Stack(fit: StackFit.expand, children: [
+                                            Image.network(art['image']!, fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => Container(color: _teal.withOpacity(0.15), child: const Center(child: Text('📰', style: TextStyle(fontSize: 48))))),
+                                            Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.65)]))),
+                                            Positioned(bottom: 12, right: 12, left: 12, child: Text(art['title'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                                          ])
+                                        : Container(
+                                            color: _teal.withOpacity(0.15),
+                                            child: Center(child: Text(art['title'] ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+                                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+
                     // ── All Discover Sections ──
                     ..._buildAllDiscoverSections(),
 
                     // ════════════ LATEST NEWS ════════════
                     const SizedBox(height: 16),
-                    const NewsSection(accentColor: Color(0xFF00897B), sectionTitle: 'آخر أخبار الحمل والأمومة'),
+                    NewsSection(accentColor: Color(0xFF00897B), sectionTitle: 'آخر أخبار الحمل والأمومة'),
                     const SizedBox(height: 16),
 
                     // Navigation buttons
@@ -2944,6 +3015,65 @@ class _DiscoverDetailScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    // Products carousel (dynamic + static)
+                    const SizedBox(height: 24),
+                    Row(children: [
+                      Icon(Icons.shopping_bag_outlined, color: _teal, size: 22),
+                      const SizedBox(width: 8),
+                      const Text('منتجات قد تهمك', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+                    ]),
+                    const SizedBox(height: 12),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: DynamicContentService.getProducts(section: 'pregnancy'),
+                      builder: (context, prodSnap) {
+                        final dynamicProducts = (prodSnap.data?.docs ?? [])
+                            .map((doc) => DynamicContentService.docToProduct(doc))
+                            .toList();
+                        final allProducts = [...dynamicProducts, ..._pregnancyProducts];
+                        return SizedBox(
+                      height: 200,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: allProducts.length,
+                        itemBuilder: (_, i) {
+                          final p = allProducts[i];
+                          return Container(
+                            width: 150,
+                            margin: const EdgeInsets.only(left: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))],
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                                child: Image.network(p['image']!, height: 100, width: 150, fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(height: 100, width: 150, color: _teal.withOpacity(0.1),
+                                    child: const Icon(Icons.shopping_bag, color: _teal))),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text(p['name']!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                    decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                                    child: Text(p['category']!, style: const TextStyle(fontSize: 9, color: _teal)),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(p['price']!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _teal)),
+                                ]),
+                              ),
+                            ]),
+                          );
+                        },
+                      ),
+                    );
+                      },
+                    ),
                     const SizedBox(height: 30),
                   ],
                 ),
@@ -2954,6 +3084,16 @@ class _DiscoverDetailScreen extends StatelessWidget {
       ),
     );
   }
+
+  static const _pregnancyProducts = <Map<String, String>>[
+    {'name': 'وسادة الحمل المريحة', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '3500 د.ج', 'category': 'راحة الحامل'},
+    {'name': 'كريم علامات التمدد', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1800 د.ج', 'category': 'العناية بالبشرة'},
+    {'name': 'حمض الفوليك 400mcg', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '950 د.ج', 'category': 'مكملات غذائية'},
+    {'name': 'حزام دعم البطن', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '2200 د.ج', 'category': 'راحة الحامل'},
+    {'name': 'زيت اللوز للتدليك', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1200 د.ج', 'category': 'العناية بالبشرة'},
+    {'name': 'فيتامينات ما قبل الولادة', 'image': 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80', 'price': '2800 د.ج', 'category': 'مكملات غذائية'},
+  ];
+
   static List<Widget> _buildDiscoverParagraphs(String body, Color accentColor) {
     List<String> paragraphs;
     if (body.contains('\n\n')) {

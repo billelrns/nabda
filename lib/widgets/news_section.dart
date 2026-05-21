@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/dynamic_content_service.dart';
 
 /// Shared news section widget used across multiple pages (pregnancy, etc.)
+/// Now loads Firestore overrides to reflect admin edits.
 class NewsSection extends StatelessWidget {
   final Color accentColor;
   final String sectionTitle;
@@ -102,49 +105,110 @@ class NewsSection extends StatelessWidget {
      'content': 'في محاولة لمكافحة انخفاض معدلات الولادة أعلنت مدينة نايغي اليابانية عن تقديم مكافأة مالية قدرها مليون ين لكل مولود جديد أي حوالي سبعة آلاف دولار.\n\nبعد عام من تطبيق البرنامج ارتفعت معدلات الولادة بنسبة خمسة عشر بالمائة وانتقلت عائلات جديدة للمدينة.'},
   ];
 
+  /// Apply Firestore overrides to the static news list
+  static List<Map<String, String>> _applyOverrides(List<Map<String, String>> original, List<QueryDocumentSnapshot> overrideDocs) {
+    if (overrideDocs.isEmpty) return original;
+    final overrideMap = <String, Map<String, dynamic>>{};
+    for (final doc in overrideDocs) {
+      overrideMap[doc.id] = doc.data() as Map<String, dynamic>;
+    }
+    return original.map((n) {
+      final docId = n['title'].hashCode.toString();
+      if (overrideMap.containsKey(docId)) {
+        final o = overrideMap[docId]!;
+        return <String, String>{
+          'title': (o['title'] as String?) ?? n['title']!,
+          'tag': (o['tag'] as String?) ?? n['tag']!,
+          'image': (o['imageUrl'] as String?)?.isNotEmpty == true ? o['imageUrl'] as String : n['image']!,
+          'content': (o['body'] as String?) ?? n['content']!,
+          'originalTitle': n['title']!,
+        };
+      }
+      return {...n, 'originalTitle': n['title']!};
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-            child: Icon(Icons.newspaper, color: accentColor, size: 22),
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: Text(sectionTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20)))),
-        ]),
-        const SizedBox(height: 4),
-        const Text('أخبار غريبة ومدهشة من عالم الأمومة', style: TextStyle(fontSize: 13, color: Color(0xFF8B8190))),
-        const SizedBox(height: 14),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: news.length > 6 ? 6 : news.length,
-          itemBuilder: (context, i) {
-            final n = news[i];
-            return _newsCard(context, n, i);
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('article_overrides')
+        .where('section', isEqualTo: 'news')
+        .snapshots(),
+      builder: (context, overrideSnap) {
+        final overrideDocs = overrideSnap.data?.docs ?? [];
+        final mergedNews = _applyOverrides(news, overrideDocs);
+
+        // Load dynamic news articles from Firestore
+        return StreamBuilder<QuerySnapshot>(
+          stream: DynamicContentService.getArticles(section: 'news'),
+          builder: (context, dynamicSnap) {
+            final dynamicNews = (dynamicSnap.data?.docs ?? [])
+                .map((doc) {
+                  final a = DynamicContentService.docToArticle(doc);
+                  return <String, String>{
+                    'title': a['title'] ?? '',
+                    'tag': a['category'] ?? 'جديد',
+                    'image': a['image'] ?? '',
+                    'content': a['content'] ?? '',
+                    'originalTitle': a['title'] ?? '',
+                    'isDynamic': 'true',
+                  };
+                }).toList();
+
+            // Dynamic articles first, then static
+            final allNews = [...dynamicNews, ...mergedNews];
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    child: Icon(Icons.newspaper, color: accentColor, size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(sectionTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20)))),
+                ]),
+                const SizedBox(height: 4),
+                const Text('أخبار غريبة ومدهشة من عالم الأمومة', style: TextStyle(fontSize: 13, color: Color(0xFF8B8190))),
+                const SizedBox(height: 14),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: allNews.length > 6 ? 6 : allNews.length,
+                  itemBuilder: (context, i) {
+                    final n = allNews[i];
+                    return _newsCard(context, n, i);
+                  },
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AllNewsScreen(accentColor: accentColor))),
+                    icon: const Text('عرض جميع الأخبار', style: TextStyle(fontWeight: FontWeight.w600)),
+                    label: const Icon(Icons.arrow_back_ios, size: 14),
+                    style: TextButton.styleFrom(foregroundColor: accentColor),
+                  ),
+                ),
+              ],
+            );
           },
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: TextButton.icon(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AllNewsScreen(accentColor: accentColor))),
-            icon: const Text('عرض جميع الأخبار', style: TextStyle(fontWeight: FontWeight.w600)),
-            label: const Icon(Icons.arrow_back_ios, size: 14),
-            style: TextButton.styleFrom(foregroundColor: accentColor),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
   Widget _newsCard(BuildContext context, Map<String, String> n, int i) {
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(
-        builder: (_) => _NewsDetailPage(title: n['title']!, body: n['content']!, color: accentColor, imageUrl: n['image']!),
+        builder: (_) => _NewsDetailPage(
+          title: n['title']!,
+          body: n['content']!,
+          color: accentColor,
+          imageUrl: n['image']!,
+          originalTitle: n['originalTitle'] ?? n['title']!,
+        ),
       )),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -190,45 +254,78 @@ class AllNewsScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFFFAF9FB),
         appBar: AppBar(title: const Text('آخر الأخبار'), backgroundColor: accentColor, foregroundColor: Colors.white),
-        body: ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: NewsSection.news.length,
-          itemBuilder: (context, i) {
-            final n = NewsSection.news[i];
-            return GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => _NewsDetailPage(title: n['title']!, body: n['content']!, color: accentColor, imageUrl: n['image']!),
-              )),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
-                ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                    child: Image.network(n['image']!, height: 160, width: double.infinity, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(height: 160, color: accentColor.withOpacity(0.1), child: Icon(Icons.newspaper, color: accentColor, size: 50))),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(14),
+        body: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('article_overrides')
+            .where('section', isEqualTo: 'news')
+            .snapshots(),
+          builder: (context, overrideSnap) {
+            final overrideDocs = overrideSnap.data?.docs ?? [];
+            final mergedNews = NewsSection._applyOverrides(NewsSection.news, overrideDocs);
+            return StreamBuilder<QuerySnapshot>(
+              stream: DynamicContentService.getArticles(section: 'news'),
+              builder: (context, dynamicSnap) {
+                final dynamicNews = (dynamicSnap.data?.docs ?? [])
+                    .map((doc) {
+                      final a = DynamicContentService.docToArticle(doc);
+                      return <String, String>{
+                        'title': a['title'] ?? '',
+                        'tag': a['category'] ?? 'جديد',
+                        'image': a['image'] ?? '',
+                        'content': a['content'] ?? '',
+                        'originalTitle': a['title'] ?? '',
+                        'isDynamic': 'true',
+                      };
+                    }).toList();
+                final allNews = [...dynamicNews, ...mergedNews];
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: allNews.length,
+              itemBuilder: (context, i) {
+                final n = allNews[i];
+                return GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => _NewsDetailPage(
+                      title: n['title']!,
+                      body: n['content']!,
+                      color: accentColor,
+                      imageUrl: n['image']!,
+                      originalTitle: n['originalTitle'] ?? n['title']!,
+                    ),
+                  )),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
+                    ),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                        decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                        child: Text(n['tag']!, style: TextStyle(fontSize: 11, color: accentColor, fontWeight: FontWeight.w600)),
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                        child: Image.network(n['image']!, height: 160, width: double.infinity, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(height: 160, color: accentColor.withOpacity(0.1), child: Icon(Icons.newspaper, color: accentColor, size: 50))),
                       ),
-                      const SizedBox(height: 8),
-                      Text(n['title']!, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, height: 1.4)),
-                      const SizedBox(height: 6),
-                      Text(n['content']!.substring(0, n['content']!.length > 100 ? 100 : n['content']!.length) + '...',
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF8B8190), height: 1.5), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                            child: Text(n['tag']!, style: TextStyle(fontSize: 11, color: accentColor, fontWeight: FontWeight.w600)),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(n['title']!, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, height: 1.4)),
+                          const SizedBox(height: 6),
+                          Text(n['content']!.substring(0, n['content']!.length > 100 ? 100 : n['content']!.length) + '...',
+                            style: const TextStyle(fontSize: 13, color: Color(0xFF8B8190), height: 1.5), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        ]),
+                      ),
                     ]),
                   ),
-                ]),
-              ),
+                );
+              },
+            );
+              },
             );
           },
         ),
@@ -237,17 +334,62 @@ class AllNewsScreen extends StatelessWidget {
   }
 }
 
-/// Simple article detail page for news articles
-class _NewsDetailPage extends StatelessWidget {
+/// News detail page with Firestore override support and products carousel
+class _NewsDetailPage extends StatefulWidget {
   final String title;
   final String body;
   final Color color;
   final String imageUrl;
-  const _NewsDetailPage({required this.title, required this.body, required this.color, this.imageUrl = ''});
+  final String originalTitle;
+  const _NewsDetailPage({required this.title, required this.body, required this.color, this.imageUrl = '', this.originalTitle = ''});
+
+  @override
+  State<_NewsDetailPage> createState() => _NewsDetailPageState();
+}
+
+class _NewsDetailPageState extends State<_NewsDetailPage> {
+  String _title = '';
+  String _body = '';
+  String _imageUrl = '';
+
+  static const _products = <Map<String, String>>[
+    {'name': 'كتاب أمومة سعيدة', 'image': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&q=80', 'price': '1500 د.ج', 'category': 'كتب ومراجع'},
+    {'name': 'مفكرة تتبع الحمل', 'image': 'https://images.unsplash.com/photo-1517842645767-c639042777db?w=300&q=80', 'price': '950 د.ج', 'category': 'تنظيم'},
+    {'name': 'حقيبة الأمومة الشاملة', 'image': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&q=80', 'price': '4500 د.ج', 'category': 'حقائب'},
+    {'name': 'ألبوم ذكريات الطفل', 'image': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&q=80', 'price': '1800 د.ج', 'category': 'ذكريات'},
+    {'name': 'تطبيق متابعة الحمل Pro', 'image': 'https://images.unsplash.com/photo-1517842645767-c639042777db?w=300&q=80', 'price': '500 د.ج', 'category': 'رقمي'},
+    {'name': 'مجموعة العناية بالأم', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '3200 د.ج', 'category': 'هدايا'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _title = widget.title;
+    _body = widget.body;
+    _imageUrl = widget.imageUrl;
+    _loadOverride();
+  }
+
+  Future<void> _loadOverride() async {
+    final lookupTitle = widget.originalTitle.isNotEmpty ? widget.originalTitle : widget.title;
+    final docId = lookupTitle.hashCode.toString();
+    try {
+      final doc = await FirebaseFirestore.instance.collection('article_overrides').doc(docId).get();
+      if (doc.exists && mounted) {
+        final d = doc.data()!;
+        setState(() {
+          if (d['title'] != null) _title = d['title'];
+          if (d['body'] != null) _body = d['body'];
+          if (d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty) _imageUrl = d['imageUrl'];
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
-    final paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    final paragraphs = _body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    final staticProducts = _products;
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -255,14 +397,14 @@ class _NewsDetailPage extends StatelessWidget {
         body: CustomScrollView(
           slivers: [
             SliverAppBar(
-              expandedHeight: imageUrl.isNotEmpty ? 220 : 0,
+              expandedHeight: _imageUrl.isNotEmpty ? 220 : 0,
               pinned: true,
-              backgroundColor: color,
+              backgroundColor: widget.color,
               foregroundColor: Colors.white,
-              flexibleSpace: imageUrl.isNotEmpty
+              flexibleSpace: _imageUrl.isNotEmpty
                 ? FlexibleSpaceBar(
-                    background: Image.network(imageUrl, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(color: color.withOpacity(0.2))),
+                    background: Image.network(_imageUrl, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(color: widget.color.withOpacity(0.2))),
                   )
                 : null,
             ),
@@ -270,12 +412,11 @@ class _NewsDetailPage extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20), height: 1.5)),
+                  Text(_title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20), height: 1.5)),
                   const SizedBox(height: 16),
                   for (int i = 0; i < paragraphs.length; i++) ...[
                     Text(paragraphs[i].trim(), style: const TextStyle(fontSize: 16, height: 1.8, color: Color(0xFF333333))),
                     if (i < paragraphs.length - 1) const SizedBox(height: 16),
-                    // Ad placeholder in middle
                     if (i == paragraphs.length ~/ 2) ...[
                       const SizedBox(height: 12),
                       Container(
@@ -290,6 +431,65 @@ class _NewsDetailPage extends StatelessWidget {
                       const SizedBox(height: 12),
                     ],
                   ],
+                  const SizedBox(height: 24),
+                  Row(children: [
+                    Icon(Icons.shopping_bag_outlined, color: widget.color, size: 22),
+                    const SizedBox(width: 8),
+                    const Text('منتجات قد تهمك', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1F1A20))),
+                  ]),
+                  const SizedBox(height: 12),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: DynamicContentService.getProducts(section: 'news'),
+                    builder: (context, prodSnap) {
+                      final dynamicProducts = (prodSnap.data?.docs ?? [])
+                          .map((doc) => DynamicContentService.docToProduct(doc))
+                          .toList();
+                      final products = [...dynamicProducts, ...staticProducts];
+                      return SizedBox(
+                    height: 200,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: products.length,
+                      itemBuilder: (_, i) {
+                        final p = products[i];
+                        return Container(
+                          width: 150,
+                          margin: const EdgeInsets.only(left: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))],
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                              child: Image.network(p['image']!, height: 100, width: 150, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(height: 100, width: 150, color: widget.color.withOpacity(0.1),
+                                  child: Icon(Icons.shopping_bag, color: widget.color))),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(p['name']!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(color: widget.color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                                  child: Text(p['category']!, style: TextStyle(fontSize: 9, color: widget.color)),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(p['price']!, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: widget.color)),
+                              ]),
+                            ),
+                          ]),
+                        );
+                      },
+                    ),
+                  );
+                    },
+                  ),
+                  const SizedBox(height: 30),
                 ]),
               ),
             ),

@@ -21,6 +21,7 @@ import 'screens/shop/shop_page.dart';
 import 'services/country_currency_service.dart';
 import 'services/notification_service.dart';
 import 'services/admin_service.dart';
+import 'services/dynamic_content_service.dart';
 import 'screens/admin/admin_panel_screen.dart';
 import 'config/theme.dart';
 import 'screens/onboarding_screen.dart' show PrivacyPolicyPage, TermsOfServicePage;
@@ -4251,40 +4252,61 @@ class _CycleArticlesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = Colors.pink;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: _cycleArticles.entries.map((entry) {
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.auto_stories, color: color, size: 22),
-            SizedBox(width: 8),
-            Text(entry.key, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color.withOpacity(0.85))),
-          ]),
-          SizedBox(height: 10),
-          SizedBox(
-            height: 220,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: entry.value.length,
-              itemBuilder: (_, i) {
-                final d = entry.value[i];
-                return GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(title: d['title']!, body: d['content']!, color: color, imageUrl: d['image']!, section: 'cycle'))),
-                  child: Container(
-                    width: 200, margin: EdgeInsets.only(left: 12),
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white, boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))]),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      ClipRRect(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(d['image']!, height: 110, width: 200, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(height: 110, color: color.withOpacity(0.1), child: Icon(Icons.article, color: color, size: 40)))),
-                      Padding(padding: EdgeInsets.all(10), child: Text(d['title']!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis, textDirection: TextDirection.rtl)),
-                    ]),
-                  ),
-                );
-              },
-            ),
-          ),
-          SizedBox(height: 20),
-        ]);
-      }).toList(),
+    return StreamBuilder<QuerySnapshot>(
+      stream: DynamicContentService.getArticles(section: 'cycle'),
+      builder: (context, dynamicSnap) {
+        final dynamicArticles = (dynamicSnap.data?.docs ?? [])
+            .map((doc) => DynamicContentService.docToArticle(doc))
+            .toList();
+
+        // Merge dynamic articles into categories (dynamic first)
+        final merged = <String, List<Map<String, String>>>{};
+        // Add dynamic articles first, grouped by category
+        for (final art in dynamicArticles) {
+          merged.putIfAbsent(art['category']!, () => []).add(art);
+        }
+        // Then add static articles
+        for (final entry in _cycleArticles.entries) {
+          merged.putIfAbsent(entry.key, () => []);
+          merged[entry.key]!.addAll(entry.value);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: merged.entries.map((entry) {
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(Icons.auto_stories, color: color, size: 22),
+                SizedBox(width: 8),
+                Text(entry.key, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color.withOpacity(0.85))),
+              ]),
+              SizedBox(height: 10),
+              SizedBox(
+                height: 220,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: entry.value.length,
+                  itemBuilder: (_, i) {
+                    final d = entry.value[i];
+                    return GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(title: d['title']!, body: d['content']!, color: color, imageUrl: d['image']!, section: 'cycle'))),
+                      child: Container(
+                        width: 200, margin: EdgeInsets.only(left: 12),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white, boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))]),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          ClipRRect(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(d['image']!, height: 110, width: 200, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(height: 110, color: color.withOpacity(0.1), child: Icon(Icons.article, color: color, size: 40)))),
+                          Padding(padding: EdgeInsets.all(10), child: Text(d['title']!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis, textDirection: TextDirection.rtl)),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 20),
+            ]);
+          }).toList(),
+        );
+      },
     );
   }
 }
@@ -4526,59 +4548,83 @@ class _BabyArticlesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = const Color(0xFFE91E63);
-    final articles = _filteredArticles();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Age-specific header
-        if (ageDays > 0) ...[
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(colors: [color.withOpacity(0.08), const Color(0xFF00897B).withOpacity(0.06)]),
-            ),
-            child: Row(children: [
-              const Icon(Icons.child_care, color: Color(0xFFE91E63), size: 20),
-              const SizedBox(width: 8),
-              Text('مقالات مناسبة لعمر $_ageLabel', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
-            ]),
-          ),
-        ],
-        ...articles.entries.map((entry) {
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.auto_stories, color: color, size: 22),
-            SizedBox(width: 8),
-            Text(entry.key, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color.withOpacity(0.85))),
-          ]),
-          SizedBox(height: 10),
-          SizedBox(
-            height: 220,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: entry.value.length,
-              itemBuilder: (_, i) {
-                final d = entry.value[i];
-                return GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(title: d['title']!, body: d['content']!, color: color, imageUrl: d['image']!, section: 'baby'))),
-                  child: Container(
-                    width: 200, margin: EdgeInsets.only(left: 12),
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white, boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))]),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      ClipRRect(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(d['image']!, height: 110, width: 200, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(height: 110, color: color.withOpacity(0.1), child: Icon(Icons.article, color: color, size: 40)))),
-                      Padding(padding: EdgeInsets.all(10), child: Text(d['title']!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis, textDirection: TextDirection.rtl)),
-                    ]),
-                  ),
-                );
-              },
-            ),
-          ),
-          SizedBox(height: 20),
-        ]);
-      }),
-      ],
+    final staticArticles = _filteredArticles();
+    return StreamBuilder<QuerySnapshot>(
+      stream: DynamicContentService.getArticles(section: 'baby'),
+      builder: (context, dynamicSnap) {
+        final dynamicArticles = (dynamicSnap.data?.docs ?? [])
+            .map((doc) => DynamicContentService.docToArticle(doc))
+            .toList();
+
+        // Merge dynamic articles into categories (dynamic first)
+        final merged = <String, List<Map<String, String>>>{};
+        // Dynamic articles first — they show in a special category or their own
+        if (dynamicArticles.isNotEmpty) {
+          for (final art in dynamicArticles) {
+            final cat = art['category'] ?? 'مقالات جديدة';
+            merged.putIfAbsent(cat, () => []).add(art);
+          }
+        }
+        // Then add static filtered articles
+        for (final entry in staticArticles.entries) {
+          merged.putIfAbsent(entry.key, () => []);
+          merged[entry.key]!.addAll(entry.value);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Age-specific header
+            if (ageDays > 0) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(colors: [color.withOpacity(0.08), const Color(0xFF00897B).withOpacity(0.06)]),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.child_care, color: Color(0xFFE91E63), size: 20),
+                  const SizedBox(width: 8),
+                  Text('مقالات مناسبة لعمر $_ageLabel', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+                ]),
+              ),
+            ],
+            ...merged.entries.map((entry) {
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(Icons.auto_stories, color: color, size: 22),
+                SizedBox(width: 8),
+                Text(entry.key, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color.withOpacity(0.85))),
+              ]),
+              SizedBox(height: 10),
+              SizedBox(
+                height: 220,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: entry.value.length,
+                  itemBuilder: (_, i) {
+                    final d = entry.value[i];
+                    return GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(title: d['title']!, body: d['content']!, color: color, imageUrl: d['image']!, section: 'baby'))),
+                      child: Container(
+                        width: 200, margin: EdgeInsets.only(left: 12),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white, boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))]),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          ClipRRect(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(d['image']!, height: 110, width: 200, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(height: 110, color: color.withOpacity(0.1), child: Icon(Icons.article, color: color, size: 40)))),
+                          Padding(padding: EdgeInsets.all(10), child: Text(d['title']!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis, textDirection: TextDirection.rtl)),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 20),
+            ]);
+          }),
+          ],
+        );
+      },
     );
   }
 }
@@ -4627,40 +4673,52 @@ class _HomeArticlesSection extends StatelessWidget {
      'content': 'رغم أن معظم الحمل يمر بسلام هناك علامات تحذيرية تستدعي الاتصال بطبيبتك أو التوجه للطوارئ فوراً. نزيف مهبلي بأي كمية خاصة في الثلث الأول والأخير وتسرب سائل مائي من المهبل وانخفاض ملحوظ في حركة الجنين.\n\nعلامات أخرى تشمل صداع شديد مع تغيرات في الرؤية وتورم مفاجئ في الوجه واليدين وألم شديد في البطن لا يزول وحمى أعلى من ثمان وثلاثين درجة وحرقة أو ألم عند التبول. ثقي بغريزتك وإذا شعرت بأن شيئاً غير طبيعي لا تترددي في الاتصال حتى لو كان الوقت متأخراً.'},
   ];
 
+  static const _categories = <Map<String, dynamic>>[
+    {'name': 'تغذية وجمال', 'icon': 59651, 'color': 0xFF9C27B0},
+    {'name': 'رياضة ولياقة', 'icon': 57754, 'color': 0xFFFF9800},
+    {'name': 'صحة نفسية', 'icon': 61261, 'color': 0xFF009688},
+    {'name': 'أمومة وطفولة', 'icon': 57534, 'color': 0xFF2196F3},
+    {'name': 'علاقات أسرية', 'icon': 59020, 'color': 0xFF3F51B5},
+    {'name': 'نصائح طبية', 'icon': 58674, 'color': 0xFFF44336},
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final categories = <Map<String, dynamic>>[
-      {'name': 'تغذية وجمال', 'icon': Icons.spa, 'color': Colors.purple},
-      {'name': 'رياضة ولياقة', 'icon': Icons.fitness_center, 'color': Colors.orange},
-      {'name': 'صحة نفسية', 'icon': Icons.psychology, 'color': Colors.teal},
-      {'name': 'أمومة وطفولة', 'icon': Icons.child_care, 'color': Colors.blue},
-      {'name': 'علاقات أسرية', 'icon': Icons.people, 'color': Colors.indigo},
-      {'name': 'نصائح طبية', 'icon': Icons.medical_services, 'color': Colors.red},
-    ];
+    return StreamBuilder<QuerySnapshot>(
+      stream: DynamicContentService.getArticles(section: 'home'),
+      builder: (context, dynamicSnap) {
+        // Merge dynamic (Firestore) + static articles, dynamic first
+        final dynamicArticles = (dynamicSnap.data?.docs ?? [])
+            .map((doc) => DynamicContentService.docToArticle(doc))
+            .toList();
 
-    // Group articles by category
-    final grouped = <String, List<Map<String, String>>>{};
-    for (final art in _articles) {
-      grouped.putIfAbsent(art['category']!, () => []).add(art);
-    }
+        final allArticles = [...dynamicArticles, ..._articles];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('مقالات ونصائح', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20))),
-        SizedBox(height: 4),
-        Text('آخر المقالات في مختلف المجالات', style: TextStyle(fontSize: 14, color: const Color(0xFF8B8190))),
-        SizedBox(height: 16),
-        for (final catInfo in categories)
-          if (grouped.containsKey(catInfo['name']))
-            _buildHomeSection(
-              context,
-              catInfo['name'] as String,
-              catInfo['icon'] as IconData,
-              catInfo['color'] as Color,
-              grouped[catInfo['name']]!,
-            ),
-      ],
+        // Group by category
+        final grouped = <String, List<Map<String, String>>>{};
+        for (final art in allArticles) {
+          grouped.putIfAbsent(art['category']!, () => []).add(art);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('مقالات ونصائح', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20))),
+            SizedBox(height: 4),
+            Text('آخر المقالات في مختلف المجالات', style: TextStyle(fontSize: 14, color: const Color(0xFF8B8190))),
+            SizedBox(height: 16),
+            for (final catInfo in _categories)
+              if (grouped.containsKey(catInfo['name']))
+                _buildHomeSection(
+                  context,
+                  catInfo['name'] as String,
+                  IconData(catInfo['icon'] as int, fontFamily: 'MaterialIcons'),
+                  Color(catInfo['color'] as int),
+                  grouped[catInfo['name']]!,
+                ),
+          ],
+        );
+      },
     );
   }
 
@@ -5340,7 +5398,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                         style: TextStyle(fontSize: 13, color: widget.color.withOpacity(0.8), fontStyle: FontStyle.italic))),
                     ]),
                   ),
-                  // ── Products Carousel ──
+                  // ── Products Carousel (dynamic + static) ──
                   SizedBox(height: 24),
                   Row(children: [
                     Container(
@@ -5352,14 +5410,21 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                     Text('منتجات قد تهمك', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20))),
                   ]),
                   SizedBox(height: 12),
-                  SizedBox(
+                  StreamBuilder<QuerySnapshot>(
+                    stream: DynamicContentService.getProducts(section: widget.section),
+                    builder: (context, prodSnap) {
+                      final dynamicProducts = (prodSnap.data?.docs ?? [])
+                          .map((doc) => DynamicContentService.docToProduct(doc))
+                          .toList();
+                      final staticProducts = _productsBySection[widget.section] ?? _productsBySection['home']!;
+                      final allProducts = [...dynamicProducts, ...staticProducts];
+                      return SizedBox(
                     height: 200,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: (_productsBySection[widget.section] ?? _productsBySection['home']!).length,
+                      itemCount: allProducts.length,
                       itemBuilder: (context, idx) {
-                        final products = _productsBySection[widget.section] ?? _productsBySection['home']!;
-                        final p = products[idx];
+                        final p = allProducts[idx];
                         return Container(
                           width: 150,
                           margin: EdgeInsets.only(left: 12),
@@ -5397,6 +5462,8 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                         );
                       },
                     ),
+                  );
+                    },
                   ),
                 ]),
               ),
@@ -6530,41 +6597,62 @@ class _NewsSection extends StatelessWidget {
           }
         }
         final resolvedNews = _applyOverrides(_news, overrides);
-        return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-            child: Icon(Icons.newspaper, color: accentColor, size: 22),
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: Text(sectionTitle, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20)))),
-        ]),
-        const SizedBox(height: 4),
-        Text('أخبار غريبة ومدهشة من عالم الأمومة', style: TextStyle(fontSize: 13, color: const Color(0xFF8B8190))),
-        const SizedBox(height: 14),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: resolvedNews.length > 6 ? 6 : resolvedNews.length,
-          itemBuilder: (context, i) {
-            final n = resolvedNews[i];
-            return _newsCard(context, n, i);
+
+        // Also load dynamic news articles from Firestore
+        return StreamBuilder<QuerySnapshot>(
+          stream: DynamicContentService.getArticles(section: 'news'),
+          builder: (context, dynamicSnap) {
+            final dynamicNews = (dynamicSnap.data?.docs ?? [])
+                .map((doc) {
+                  final a = DynamicContentService.docToArticle(doc);
+                  return <String, String>{
+                    'title': a['title'] ?? '',
+                    'tag': a['category'] ?? 'جديد',
+                    'image': a['image'] ?? '',
+                    'content': a['content'] ?? '',
+                  };
+                }).toList();
+
+            // Dynamic news first, then static
+            final allNews = [...dynamicNews, ...resolvedNews];
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    child: Icon(Icons.newspaper, color: accentColor, size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(sectionTitle, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: const Color(0xFF1F1A20)))),
+                ]),
+                const SizedBox(height: 4),
+                Text('أخبار غريبة ومدهشة من عالم الأمومة', style: TextStyle(fontSize: 13, color: const Color(0xFF8B8190))),
+                const SizedBox(height: 14),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: allNews.length > 6 ? 6 : allNews.length,
+                  itemBuilder: (context, i) {
+                    final n = allNews[i];
+                    return _newsCard(context, n, i);
+                  },
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AllNewsScreen(accentColor: accentColor))),
+                    icon: const Text('عرض جميع الأخبار', style: TextStyle(fontWeight: FontWeight.w600)),
+                    label: const Icon(Icons.arrow_back_ios, size: 14),
+                    style: TextButton.styleFrom(foregroundColor: accentColor),
+                  ),
+                ),
+              ],
+            );
           },
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: TextButton.icon(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AllNewsScreen(accentColor: accentColor))),
-            icon: const Text('عرض جميع الأخبار', style: TextStyle(fontWeight: FontWeight.w600)),
-            label: const Icon(Icons.arrow_back_ios, size: 14),
-            style: TextButton.styleFrom(foregroundColor: accentColor),
-          ),
-        ),
-      ],
-    );
+        );
       },
     );
   }

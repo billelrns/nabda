@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/admin_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/dynamic_content_service.dart';
 
 // ─── Theme ───
 const Color _bg = Color(0xFFF5F5F8);
@@ -105,6 +106,16 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 emoji: '📝',
                 color: const Color(0xFF42A5F5),
                 onTap: () => _push(_ArticlesManagementScreen()),
+              ),
+
+            // Dynamic Content (new articles & products)
+            if (_admin.hasPermission(Permission.addArticles) || _admin.hasPermission(Permission.addProducts))
+              _ModuleCard(
+                title: 'المحتوى الجديد',
+                subtitle: 'إضافة مقالات ومنتجات جديدة (Firestore)',
+                emoji: '🆕',
+                color: const Color(0xFF00897B),
+                onTap: () => _push(_DynamicContentScreen()),
               ),
 
             // Users
@@ -2302,5 +2313,386 @@ class _DeliveryPricingScreen extends StatelessWidget {
         },
       ),
     ));
+  }
+}
+
+// ─────────────────────────────────────────────
+// Dynamic Content Management (Firestore articles & products)
+// ─────────────────────────────────────────────
+
+class _DynamicContentScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('المحتوى الجديد'),
+          backgroundColor: const Color(0xFF00897B),
+          foregroundColor: Colors.white,
+          bottom: const TabBar(
+            indicatorColor: Colors.white,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            tabs: [
+              Tab(icon: Icon(Icons.article), text: 'مقالات'),
+              Tab(icon: Icon(Icons.shopping_bag), text: 'منتجات'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _DynamicArticlesTab(),
+            _DynamicProductsTab(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DynamicArticlesTab extends StatelessWidget {
+  static const _sections = ['home', 'cycle', 'pregnancy', 'baby', 'news'];
+  static const _sectionLabels = {
+    'home': 'الرئيسية',
+    'cycle': 'الدورة',
+    'pregnancy': 'الحمل',
+    'baby': 'الطفل',
+    'news': 'الأخبار',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: DynamicContentService.articlesRef
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final docs = snap.data?.docs ?? [];
+        return Scaffold(
+          body: docs.isEmpty
+              ? const Center(child: Text('لا توجد مقالات جديدة بعد', style: TextStyle(fontSize: 16, color: Colors.grey)))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: docs.length,
+                  itemBuilder: (context, i) {
+                    final d = docs[i].data() as Map<String, dynamic>;
+                    final section = _sectionLabels[d['section']] ?? d['section'] ?? '';
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            d['image'] ?? '',
+                            width: 56, height: 56, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 56, height: 56, color: Colors.grey[200],
+                              child: const Icon(Icons.image, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        title: Text(d['title'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text('$section • ${d['category'] ?? ''}',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('حذف المقال'),
+                                content: const Text('هل أنت متأكد من حذف هذا المقال؟'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                    child: const Text('حذف', style: TextStyle(color: Colors.white)),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              await DynamicContentService.deleteArticle(docs[i].id);
+                            }
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+          floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: const Color(0xFF00897B),
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('إضافة مقال', style: TextStyle(color: Colors.white)),
+            onPressed: () => _showAddArticleSheet(context),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAddArticleSheet(BuildContext context) {
+    final titleC = TextEditingController();
+    final contentC = TextEditingController();
+    final imageC = TextEditingController();
+    final categoryC = TextEditingController();
+    String selectedSection = 'home';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => Padding(
+          padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('إضافة مقال جديد', textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                TextField(controller: titleC, decoration: InputDecoration(
+                  labelText: 'عنوان المقال *', filled: true, fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                const SizedBox(height: 12),
+                TextField(controller: contentC, maxLines: 4, decoration: InputDecoration(
+                  labelText: 'محتوى المقال *', filled: true, fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                const SizedBox(height: 12),
+                TextField(controller: imageC, decoration: InputDecoration(
+                  labelText: 'رابط الصورة *', filled: true, fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                const SizedBox(height: 12),
+                TextField(controller: categoryC, decoration: InputDecoration(
+                  labelText: 'التصنيف *', filled: true, fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: selectedSection,
+                  decoration: InputDecoration(
+                    labelText: 'القسم', filled: true, fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+                  items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(_sectionLabels[s] ?? s))).toList(),
+                  onChanged: (v) => setState(() => selectedSection = v ?? 'home'),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00897B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () async {
+                    if (titleC.text.trim().isEmpty || contentC.text.trim().isEmpty ||
+                        imageC.text.trim().isEmpty || categoryC.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(content: Text('يرجى ملء جميع الحقول المطلوبة')));
+                      return;
+                    }
+                    await DynamicContentService.addArticle(
+                      title: titleC.text.trim(),
+                      content: contentC.text.trim(),
+                      image: imageC.text.trim(),
+                      category: categoryC.text.trim(),
+                      section: selectedSection,
+                    );
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('تم إضافة المقال بنجاح ✓'), backgroundColor: Color(0xFF00897B)));
+                  },
+                  child: const Text('إضافة المقال', style: TextStyle(fontSize: 16)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DynamicProductsTab extends StatelessWidget {
+  static const _sections = ['home', 'cycle', 'pregnancy', 'baby', 'news'];
+  static const _sectionLabels = {
+    'home': 'الرئيسية',
+    'cycle': 'الدورة',
+    'pregnancy': 'الحمل',
+    'baby': 'الطفل',
+    'news': 'الأخبار',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: DynamicContentService.productsRef
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final docs = snap.data?.docs ?? [];
+        return Scaffold(
+          body: docs.isEmpty
+              ? const Center(child: Text('لا توجد منتجات جديدة بعد', style: TextStyle(fontSize: 16, color: Colors.grey)))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: docs.length,
+                  itemBuilder: (context, i) {
+                    final d = docs[i].data() as Map<String, dynamic>;
+                    final section = _sectionLabels[d['section']] ?? d['section'] ?? '';
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            d['image'] ?? '',
+                            width: 56, height: 56, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 56, height: 56, color: Colors.grey[200],
+                              child: const Icon(Icons.shopping_bag, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        title: Text(d['name'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text('$section • ${d['category'] ?? ''} • ${d['price'] ?? ''}',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('حذف المنتج'),
+                                content: const Text('هل أنت متأكد من حذف هذا المنتج؟'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                    child: const Text('حذف', style: TextStyle(color: Colors.white)),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              await DynamicContentService.deleteProduct(docs[i].id);
+                            }
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+          floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: const Color(0xFF00897B),
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('إضافة منتج', style: TextStyle(color: Colors.white)),
+            onPressed: () => _showAddProductSheet(context),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAddProductSheet(BuildContext context) {
+    final nameC = TextEditingController();
+    final imageC = TextEditingController();
+    final priceC = TextEditingController();
+    final categoryC = TextEditingController();
+    final linkC = TextEditingController();
+    String selectedSection = 'home';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => Padding(
+          padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('إضافة منتج جديد', textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                TextField(controller: nameC, decoration: InputDecoration(
+                  labelText: 'اسم المنتج *', filled: true, fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                const SizedBox(height: 12),
+                TextField(controller: imageC, decoration: InputDecoration(
+                  labelText: 'رابط الصورة *', filled: true, fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                const SizedBox(height: 12),
+                TextField(controller: priceC, decoration: InputDecoration(
+                  labelText: 'السعر *', filled: true, fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                const SizedBox(height: 12),
+                TextField(controller: categoryC, decoration: InputDecoration(
+                  labelText: 'التصنيف *', filled: true, fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                const SizedBox(height: 12),
+                TextField(controller: linkC, decoration: InputDecoration(
+                  labelText: 'رابط الشراء (اختياري)', filled: true, fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: selectedSection,
+                  decoration: InputDecoration(
+                    labelText: 'القسم', filled: true, fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+                  items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(_sectionLabels[s] ?? s))).toList(),
+                  onChanged: (v) => setState(() => selectedSection = v ?? 'home'),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00897B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () async {
+                    if (nameC.text.trim().isEmpty || imageC.text.trim().isEmpty ||
+                        priceC.text.trim().isEmpty || categoryC.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(content: Text('يرجى ملء جميع الحقول المطلوبة')));
+                      return;
+                    }
+                    await DynamicContentService.addProduct(
+                      name: nameC.text.trim(),
+                      image: imageC.text.trim(),
+                      price: priceC.text.trim(),
+                      category: categoryC.text.trim(),
+                      section: selectedSection,
+                      link: linkC.text.trim(),
+                    );
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('تم إضافة المنتج بنجاح ✓'), backgroundColor: Color(0xFF00897B)));
+                  },
+                  child: const Text('إضافة المنتج', style: TextStyle(fontSize: 16)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
