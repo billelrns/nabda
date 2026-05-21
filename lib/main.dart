@@ -5338,6 +5338,8 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                       SizedBox(width: 10),
                       Expanded(child: Text('هذا المقال للأغراض التثقيفية فقط. استشيري طبيبتك للحصول على نصيحة طبية شخصية.',
                         style: TextStyle(fontSize: 13, color: widget.color.withOpacity(0.8), fontStyle: FontStyle.italic))),
+                    ]),
+                  ),
                   // ── Products Carousel ──
                   SizedBox(height: 24),
                   Row(children: [
@@ -5395,8 +5397,6 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                         );
                       },
                     ),
-                  ),
-                    ]),
                   ),
                 ]),
               ),
