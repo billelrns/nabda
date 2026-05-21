@@ -488,12 +488,31 @@ class _OrdersManagementScreen extends StatelessWidget {
 // ═══════════════════════════════════════════════
 //  3. PRODUCTS MANAGEMENT
 // ═══════════════════════════════════════════════
-class _ProductsManagementScreen extends StatelessWidget {
+class _ProductsManagementScreen extends StatefulWidget {
+  @override
+  State<_ProductsManagementScreen> createState() => _ProductsManagementScreenState();
+}
+
+class _ProductsManagementScreenState extends State<_ProductsManagementScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabC;
+  String _searchQuery = '';
+  String _categoryFilter = 'all';
+
+  @override
+  void initState() {
+    super.initState();
+    _tabC = TabController(length: 2, vsync: this);
+  }
+  @override
+  void dispose() { _tabC.dispose(); super.dispose(); }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
       backgroundColor: _bg,
-      appBar: AppBar(centerTitle: true, title: const Text('🛍️ إدارة المنتجات', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text('🛍️ إدارة المنتجات', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
         backgroundColor: _card, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent,
         actions: [
           if (AdminService().hasPermission(Permission.addProducts))
@@ -501,15 +520,50 @@ class _ProductsManagementScreen extends StatelessWidget {
               Navigator.push(context, MaterialPageRoute(builder: (_) => _AddProductScreen()));
             }),
         ],
+        bottom: TabBar(
+          controller: _tabC,
+          labelColor: _teal,
+          unselectedLabelColor: _text2,
+          indicatorColor: _teal,
+          tabs: const [
+            Tab(text: 'منتجات المتجر'),
+            Tab(text: 'منتجات الكاروسال'),
+          ],
+        ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
+      body: TabBarView(
+        controller: _tabC,
+        children: [
+          _buildShopProductsTab(),
+          _buildCarouselProductsTab(),
+        ],
+      ),
+    ));
+  }
+
+  // ── Tab 1: Shop products (from Firestore 'products' collection) ──
+  Widget _buildShopProductsTab() {
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: TextField(
+          onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+          decoration: InputDecoration(
+            hintText: 'بحث في المنتجات...', prefixIcon: const Icon(Icons.search, color: _teal),
+            filled: true, fillColor: _card,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+          ),
+        ),
+      ),
+      Expanded(child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('products').orderBy('createdAt', descending: true).snapshots(),
         builder: (context, snap) {
           if (!snap.hasData || snap.data!.docs.isEmpty) {
             return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               const Text('🛍️', style: TextStyle(fontSize: 60)),
               const SizedBox(height: 16),
-              Text('لا توجد منتجات في قاعدة البيانات', style: TextStyle(fontSize: 14, color: _text2)),
+              Text('لا توجد منتجات في المتجر بعد', style: TextStyle(fontSize: 14, color: _text2)),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddProductScreen())),
@@ -518,11 +572,20 @@ class _ProductsManagementScreen extends StatelessWidget {
               ),
             ]));
           }
+          var docs = snap.data!.docs;
+          if (_searchQuery.isNotEmpty) {
+            docs = docs.where((doc) {
+              final d = doc.data() as Map<String, dynamic>;
+              final name = (d['name'] ?? '').toString().toLowerCase();
+              final cat = (d['category'] ?? '').toString().toLowerCase();
+              return name.contains(_searchQuery) || cat.contains(_searchQuery);
+            }).toList();
+          }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: snap.data!.docs.length,
+            itemCount: docs.length,
             itemBuilder: (_, i) {
-              final doc = snap.data!.docs[i];
+              final doc = docs[i];
               final d = doc.data() as Map<String, dynamic>;
               final hasImage = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
               return GestureDetector(
@@ -543,20 +606,211 @@ class _ProductsManagementScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(d['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: _text1), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text(d['price'] ?? '', style: TextStyle(fontSize: 12, color: _teal, fontWeight: FontWeight.bold)),
+                      Row(children: [
+                        Text(d['price'] ?? '', style: TextStyle(fontSize: 12, color: _teal, fontWeight: FontWeight.bold)),
+                        if (d['category'] != null) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                            child: Text(d['category'], style: TextStyle(fontSize: 10, color: _teal)),
+                          ),
+                        ],
+                      ]),
                     ])),
                     IconButton(icon: const Icon(Icons.edit_outlined, color: _teal, size: 20),
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddProductScreen(docId: doc.id, existingData: d)))),
                     if (AdminService().hasPermission(Permission.deleteProducts))
-                      IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 20), onPressed: () => doc.reference.delete()),
+                      IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 20),
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
+                            title: const Text('حذف المنتج'),
+                            content: Text('هل تريد حذف "${d['name']}"؟'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+                              ElevatedButton(onPressed: () => Navigator.pop(context, true),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                child: const Text('حذف', style: TextStyle(color: Colors.white))),
+                            ],
+                          ));
+                          if (confirm == true) doc.reference.delete();
+                        }),
                   ]),
                 ),
               );
             },
           );
         },
+      )),
+    ]);
+  }
+
+  // ── Tab 2: Carousel products (dynamic_products from Firestore + hardcoded) ──
+  Widget _buildCarouselProductsTab() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: DynamicContentService.productsRef.orderBy('createdAt', descending: true).snapshots(),
+      builder: (context, snap) {
+        final dynamicDocs = snap.data?.docs ?? [];
+
+        // Build a merged list: dynamic products first, then hardcoded by section
+        final List<Map<String, dynamic>> allProducts = [];
+
+        // Dynamic products
+        for (final doc in dynamicDocs) {
+          final d = doc.data() as Map<String, dynamic>;
+          allProducts.add({...d, '_docId': doc.id, '_source': 'dynamic'});
+        }
+
+        // Hardcoded products (from main.dart _productsBySection equivalent)
+        const hardcodedSections = {
+          'home': 'الرئيسية', 'cycle': 'الدورة', 'pregnancy': 'الحمل', 'baby': 'الطفل', 'news': 'الأخبار',
+        };
+        // We'll show them by section
+        const staticProducts = <String, List<Map<String, String>>>{
+          'pregnancy': [
+            {'name': 'وسادة الحمل المريحة', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '3500 د.ج', 'category': 'راحة الحامل'},
+            {'name': 'كريم علامات التمدد', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1800 د.ج', 'category': 'العناية بالبشرة'},
+            {'name': 'حمض الفوليك 400mcg', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '950 د.ج', 'category': 'مكملات غذائية'},
+            {'name': 'حزام دعم البطن', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '2200 د.ج', 'category': 'راحة الحامل'},
+            {'name': 'زيت اللوز للتدليك', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1200 د.ج', 'category': 'العناية بالبشرة'},
+            {'name': 'فيتامينات ما قبل الولادة', 'image': 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80', 'price': '2800 د.ج', 'category': 'مكملات غذائية'},
+          ],
+          'cycle': [
+            {'name': 'قربة ماء ساخن', 'image': 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=300&q=80', 'price': '800 د.ج', 'category': 'تخفيف الألم'},
+            {'name': 'شاي البابونج العضوي', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '650 د.ج', 'category': 'مشروبات صحية'},
+            {'name': 'مكمل المغنيسيوم', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1500 د.ج', 'category': 'مكملات غذائية'},
+            {'name': 'فوط صحية قطنية', 'image': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=300&q=80', 'price': '450 د.ج', 'category': 'نظافة شخصية'},
+          ],
+          'baby': [
+            {'name': 'كريم حماية الحفاض', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '750 د.ج', 'category': 'العناية بالطفل'},
+            {'name': 'زيت تدليك الأطفال', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '900 د.ج', 'category': 'العناية بالطفل'},
+            {'name': 'ميزان حرارة رقمي', 'image': 'https://images.unsplash.com/photo-1584308666544-27e30e01c6c6?w=300&q=80', 'price': '1200 د.ج', 'category': 'صحة الطفل'},
+            {'name': 'رضاعة مضادة للمغص', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '1800 د.ج', 'category': 'تغذية الطفل'},
+          ],
+          'home': [
+            {'name': 'فيتامين D3 للنساء', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1400 د.ج', 'category': 'مكملات غذائية'},
+            {'name': 'كريم ترطيب طبيعي', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1600 د.ج', 'category': 'العناية بالبشرة'},
+            {'name': 'شاي أعشاب مهدئ', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '700 د.ج', 'category': 'مشروبات صحية'},
+          ],
+        };
+
+        return ListView(padding: const EdgeInsets.all(16), children: [
+          // Dynamic products section
+          if (dynamicDocs.isNotEmpty) ...[
+            _sectionHeader('منتجات ديناميكية (Firestore)', Icons.cloud, Colors.blue, dynamicDocs.length),
+            const SizedBox(height: 8),
+            ...dynamicDocs.map((doc) {
+              final d = doc.data() as Map<String, dynamic>;
+              final sLabel = hardcodedSections[d['section']] ?? d['section'] ?? '';
+              return _carouselProductCard(
+                name: d['name'] ?? '', image: d['image'] ?? '', price: d['price'] ?? '',
+                category: d['category'] ?? '', section: sLabel,
+                isDynamic: true,
+                onDelete: () async {
+                  final confirm = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
+                    title: const Text('حذف المنتج'),
+                    content: Text('هل تريد حذف "${d['name']}"؟'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+                      ElevatedButton(onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        child: const Text('حذف', style: TextStyle(color: Colors.white))),
+                    ],
+                  ));
+                  if (confirm == true) await DynamicContentService.deleteProduct(doc.id);
+                },
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
+
+          // Hardcoded products by section
+          ...staticProducts.entries.map((entry) {
+            final sectionLabel = hardcodedSections[entry.key] ?? entry.key;
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _sectionHeader('$sectionLabel (مدمجة)', Icons.phone_android, Colors.orange, entry.value.length),
+              const SizedBox(height: 8),
+              ...entry.value.map((p) => _carouselProductCard(
+                name: p['name']!, image: p['image']!, price: p['price']!,
+                category: p['category']!, section: sectionLabel,
+                isDynamic: false, onDelete: null,
+              )),
+              const SizedBox(height: 16),
+            ]);
+          }),
+        ]);
+      },
+    );
+  }
+
+  Widget _sectionHeader(String title, IconData icon, Color color, int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+      child: Row(children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 8),
+        Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
+          child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+        ),
+      ]),
+    );
+  }
+
+  Widget _carouselProductCard({
+    required String name, required String image, required String price,
+    required String category, required String section,
+    required bool isDynamic, VoidCallback? onDelete,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _card, borderRadius: BorderRadius.circular(12),
+        border: isDynamic ? Border.all(color: Colors.blue.withOpacity(0.3)) : null,
       ),
-    ));
+      child: Row(children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(image, width: 48, height: 48, fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(width: 48, height: 48,
+              color: _teal.withOpacity(0.1), child: const Icon(Icons.shopping_bag, color: _teal))),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(name, style: const TextStyle(fontWeight: FontWeight.bold, color: _text1, fontSize: 13),
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 2),
+          Row(children: [
+            Text(price, style: TextStyle(fontSize: 12, color: _teal, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(color: Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+              child: Text(category, style: TextStyle(fontSize: 9, color: _text2)),
+            ),
+          ]),
+        ])),
+        if (isDynamic) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+            child: const Text('ديناميكي', style: TextStyle(color: Colors.blue, fontSize: 9, fontWeight: FontWeight.bold)),
+          ),
+          if (onDelete != null)
+            IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 18), onPressed: onDelete),
+        ] else
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+            child: const Text('مدمج', style: TextStyle(color: Colors.orange, fontSize: 9, fontWeight: FontWeight.bold)),
+          ),
+      ]),
+    );
   }
 }
 
@@ -1786,70 +2040,491 @@ class _ArticleImage {
 // ═══════════════════════════════════════════════
 //  5. USERS MANAGEMENT
 // ═══════════════════════════════════════════════
-class _UsersManagementScreen extends StatelessWidget {
+class _UsersManagementScreen extends StatefulWidget {
+  @override
+  State<_UsersManagementScreen> createState() => _UsersManagementScreenState();
+}
+
+class _UsersManagementScreenState extends State<_UsersManagementScreen> {
+  String _searchQuery = '';
+  String _roleFilter = 'all'; // all, admin, supervisor, employee, user
+
   @override
   Widget build(BuildContext context) {
     return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
       backgroundColor: _bg,
-      appBar: AppBar(centerTitle: true, title: const Text('\u{1f465} إدارة المستخدمات', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
+      appBar: AppBar(centerTitle: true, title: const Text('👥 إدارة المستخدمات', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
         backgroundColor: _card, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').orderBy('createdAt', descending: true).snapshots(),
-        builder: (context, snap) {
-          if (!snap.hasData || snap.data!.docs.isEmpty) {
-            return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Text('\u{1f465}', style: TextStyle(fontSize: 60)),
-              const SizedBox(height: 16),
-              Text('لا توجد مستخدمات بعد', style: TextStyle(fontSize: 16, color: _text2)),
-            ]));
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: snap.data!.docs.length,
-            itemBuilder: (_, i) {
-              final doc = snap.data!.docs[i];
-              final d = doc.data() as Map<String, dynamic>;
-              final isBanned = d['isBanned'] == true;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: isBanned ? Colors.red.shade50 : _card,
-                  borderRadius: BorderRadius.circular(14),
-                  border: isBanned ? Border.all(color: Colors.red.shade200) : null,
-                ),
-                child: Row(children: [
-                  CircleAvatar(
-                    backgroundColor: _teal.withOpacity(0.1),
-                    child: Text((d['name'] ?? '?')[0].toUpperCase(), style: TextStyle(color: _teal, fontWeight: FontWeight.bold)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Text(d['name'] ?? 'بدون اسم', style: const TextStyle(fontWeight: FontWeight.bold, color: _text1)),
-                      if (isBanned) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(6)),
-                          child: const Text('محظورة', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ]),
-                    Text(d['email'] ?? '', style: TextStyle(fontSize: 12, color: _text2)),
-                  ])),
-                  if (AdminService().hasPermission(Permission.banUsers))
-                    IconButton(
-                      icon: Icon(isBanned ? Icons.lock_open : Icons.block, color: isBanned ? Colors.green : Colors.red.shade300, size: 20),
-                      onPressed: () => doc.reference.update({'isBanned': !isBanned}),
+      body: Column(children: [
+        // Search bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: TextField(
+            onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+            decoration: InputDecoration(
+              hintText: 'بحث بالاسم أو الإيميل...',
+              prefixIcon: const Icon(Icons.search, color: _teal),
+              filled: true, fillColor: _card,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+            ),
+          ),
+        ),
+        // Role filter chips
+        SizedBox(
+          height: 44,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            children: [
+              _filterChip('الكل', 'all'),
+              _filterChip('أدمن', 'owner'),
+              _filterChip('مشرفة', 'supervisor'),
+              _filterChip('موظفة', 'employee'),
+              _filterChip('مستخدمة', 'user'),
+            ],
+          ),
+        ),
+        // Users list
+        Expanded(child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('users').orderBy('createdAt', descending: true).snapshots(),
+          builder: (context, snap) {
+            if (!snap.hasData || snap.data!.docs.isEmpty) {
+              return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Text('👥', style: TextStyle(fontSize: 60)),
+                const SizedBox(height: 16),
+                Text('لا توجد مستخدمات بعد', style: TextStyle(fontSize: 16, color: _text2)),
+              ]));
+            }
+            var docs = snap.data!.docs;
+            // Filter by search
+            if (_searchQuery.isNotEmpty) {
+              docs = docs.where((doc) {
+                final d = doc.data() as Map<String, dynamic>;
+                final name = (d['name'] ?? '').toString().toLowerCase();
+                final email = (d['email'] ?? '').toString().toLowerCase();
+                return name.contains(_searchQuery) || email.contains(_searchQuery);
+              }).toList();
+            }
+            // Filter by role
+            if (_roleFilter != 'all') {
+              docs = docs.where((doc) {
+                final d = doc.data() as Map<String, dynamic>;
+                final role = d['role'] ?? 'user';
+                return role == _roleFilter;
+              }).toList();
+            }
+            if (docs.isEmpty) {
+              return Center(child: Text('لا توجد نتائج', style: TextStyle(color: _text2)));
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: docs.length,
+              itemBuilder: (_, i) {
+                final doc = docs[i];
+                final d = doc.data() as Map<String, dynamic>;
+                final isBanned = d['isBanned'] == true;
+                final role = d['role'] ?? 'user';
+                final postsCount = d['postsCount'] ?? 0;
+                final likesReceived = d['likesReceived'] ?? 0;
+                return GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => _UserProfileAdminScreen(userId: doc.id, userData: d),
+                  )),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isBanned ? Colors.red.shade50 : _card,
+                      borderRadius: BorderRadius.circular(14),
+                      border: isBanned ? Border.all(color: Colors.red.shade200) : null,
                     ),
-                ]),
-              );
-            },
-          );
+                    child: Row(children: [
+                      CircleAvatar(
+                        backgroundColor: _teal.withOpacity(0.1),
+                        backgroundImage: (d['photoUrl'] != null && (d['photoUrl'] as String).isNotEmpty)
+                            ? NetworkImage(d['photoUrl']) : null,
+                        child: (d['photoUrl'] == null || (d['photoUrl'] as String).isEmpty)
+                            ? Text((d['name'] ?? '?')[0].toUpperCase(), style: TextStyle(color: _teal, fontWeight: FontWeight.bold))
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [
+                          Flexible(child: Text(d['name'] ?? 'بدون اسم', style: const TextStyle(fontWeight: FontWeight.bold, color: _text1),
+                              maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          const SizedBox(width: 6),
+                          _roleBadge(role),
+                          if (isBanned) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(6)),
+                              child: const Text('محظورة', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ]),
+                        const SizedBox(height: 2),
+                        Text(d['email'] ?? '', style: TextStyle(fontSize: 11, color: _text2)),
+                        const SizedBox(height: 4),
+                        Row(children: [
+                          Icon(Icons.article_outlined, size: 12, color: _text2),
+                          const SizedBox(width: 3),
+                          Text('$postsCount', style: TextStyle(fontSize: 11, color: _text2)),
+                          const SizedBox(width: 10),
+                          Icon(Icons.favorite_outline, size: 12, color: _text2),
+                          const SizedBox(width: 3),
+                          Text('$likesReceived', style: TextStyle(fontSize: 11, color: _text2)),
+                          const SizedBox(width: 10),
+                          Icon(Icons.access_time, size: 12, color: _text2),
+                          const SizedBox(width: 3),
+                          Text(_formatDate(d['createdAt']), style: TextStyle(fontSize: 11, color: _text2)),
+                        ]),
+                      ])),
+                      const Icon(Icons.chevron_left, color: Colors.grey, size: 20),
+                    ]),
+                  ),
+                );
+              },
+            );
+          },
+        )),
+      ]),
+    ));
+  }
+
+  Widget _filterChip(String label, String value) {
+    final selected = _roleFilter == value;
+    return Padding(
+      padding: const EdgeInsets.only(left: 6),
+      child: ChoiceChip(
+        label: Text(label, style: TextStyle(fontSize: 12, color: selected ? Colors.white : _text1)),
+        selected: selected,
+        selectedColor: _teal,
+        backgroundColor: _card,
+        onSelected: (_) => setState(() => _roleFilter = value),
+      ),
+    );
+  }
+
+  Widget _roleBadge(String role) {
+    Color color;
+    String label;
+    switch (role) {
+      case 'owner': color = Colors.deepPurple; label = 'أدمن'; break;
+      case 'supervisor': color = Colors.blue; label = 'مشرفة'; break;
+      case 'employee': color = Colors.orange; label = 'موظفة'; break;
+      default: return const SizedBox.shrink();
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
+      child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  String _formatDate(dynamic ts) {
+    if (ts == null) return '';
+    if (ts is Timestamp) {
+      final d = ts.toDate();
+      return '${d.year}/${d.month}/${d.day}';
+    }
+    return '';
+  }
+}
+
+// ─── Admin User Profile Screen ───
+class _UserProfileAdminScreen extends StatefulWidget {
+  final String userId;
+  final Map<String, dynamic> userData;
+  const _UserProfileAdminScreen({required this.userId, required this.userData});
+  @override
+  State<_UserProfileAdminScreen> createState() => _UserProfileAdminScreenState();
+}
+
+class _UserProfileAdminScreenState extends State<_UserProfileAdminScreen> {
+  late Map<String, dynamic> _data;
+
+  @override
+  void initState() {
+    super.initState();
+    _data = Map.from(widget.userData);
+  }
+
+  String get _roleName {
+    switch (_data['role'] ?? 'user') {
+      case 'owner': return 'أدمن (مالك)';
+      case 'supervisor': return 'مشرفة';
+      case 'employee': return 'موظفة';
+      default: return 'مستخدمة عادية';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isBanned = _data['isBanned'] == true;
+    return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text(_data['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: _text1)),
+        backgroundColor: _card, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent,
+      ),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('users').doc(widget.userId).snapshots(),
+        builder: (context, snap) {
+          if (snap.hasData && snap.data!.exists) {
+            _data = snap.data!.data() as Map<String, dynamic>;
+          }
+          return ListView(padding: const EdgeInsets.all(16), children: [
+            // Profile header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16)),
+              child: Column(children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: _teal.withOpacity(0.1),
+                  backgroundImage: (_data['photoUrl'] != null && (_data['photoUrl'] as String).isNotEmpty)
+                      ? NetworkImage(_data['photoUrl']) : null,
+                  child: (_data['photoUrl'] == null || (_data['photoUrl'] as String).isEmpty)
+                      ? Text((_data['name'] ?? '?')[0].toUpperCase(), style: TextStyle(fontSize: 28, color: _teal, fontWeight: FontWeight.bold))
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                Text(_data['name'] ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _text1)),
+                const SizedBox(height: 4),
+                Text(_data['email'] ?? '', style: TextStyle(fontSize: 13, color: _text2)),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isBanned ? Colors.red.withOpacity(0.1) : _teal.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(isBanned ? 'محظورة' : _roleName,
+                    style: TextStyle(color: isBanned ? Colors.red : _teal, fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 16),
+
+            // Stats
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('النشاط', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _text1)),
+                const SizedBox(height: 12),
+                _statRow(Icons.article_outlined, 'المنشورات', '${_data['postsCount'] ?? 0}'),
+                _statRow(Icons.favorite_outline, 'إعجابات مستلمة', '${_data['likesReceived'] ?? 0}'),
+                _statRow(Icons.comment_outlined, 'التعليقات', '${_data['commentsCount'] ?? 0}'),
+                _statRow(Icons.calendar_today, 'تاريخ الانضمام', _formatDate(_data['createdAt'])),
+                _statRow(Icons.login, 'آخر دخول', _formatDate(_data['lastLoginAt'])),
+                if (_data['cycleLength'] != null)
+                  _statRow(Icons.loop, 'طول الدورة', '${_data['cycleLength']} يوم'),
+                if (_data['pregnancyStartDate'] != null)
+                  _statRow(Icons.pregnant_woman, 'بداية الحمل', _formatDate(_data['pregnancyStartDate'])),
+                if (_data['babyName'] != null && (_data['babyName'] as String).isNotEmpty)
+                  _statRow(Icons.child_care, 'اسم الطفل', _data['babyName']),
+              ]),
+            ),
+            const SizedBox(height: 16),
+
+            // User's posts
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('آخر المنشورات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _text1)),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 200,
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('community_posts')
+                        .where('userId', isEqualTo: widget.userId)
+                        .orderBy('createdAt', descending: true)
+                        .limit(5)
+                        .snapshots(),
+                    builder: (ctx, postSnap) {
+                      if (!postSnap.hasData || postSnap.data!.docs.isEmpty) {
+                        return Center(child: Text('لا توجد منشورات', style: TextStyle(color: _text2)));
+                      }
+                      return ListView.builder(
+                        itemCount: postSnap.data!.docs.length,
+                        itemBuilder: (_, j) {
+                          final p = postSnap.data!.docs[j].data() as Map<String, dynamic>;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: _bg, borderRadius: BorderRadius.circular(10)),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(p['content'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 13, color: _text1)),
+                              const SizedBox(height: 4),
+                              Row(children: [
+                                Icon(Icons.favorite, size: 12, color: Colors.pink.shade200),
+                                const SizedBox(width: 3),
+                                Text('${(p['likes'] as List?)?.length ?? 0}', style: TextStyle(fontSize: 11, color: _text2)),
+                                const SizedBox(width: 10),
+                                Text(_formatDate(p['createdAt']), style: TextStyle(fontSize: 11, color: _text2)),
+                              ]),
+                            ]),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 16),
+
+            // Actions
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('إجراءات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _text1)),
+                const SizedBox(height: 12),
+
+                // Role change
+                if (AdminService().hasPermission(Permission.manageStaff))
+                  _actionButton(
+                    icon: Icons.admin_panel_settings,
+                    label: 'تغيير الدور',
+                    color: Colors.deepPurple,
+                    onTap: () => _showRoleDialog(),
+                  ),
+                const SizedBox(height: 8),
+
+                // Ban/Unban
+                if (AdminService().hasPermission(Permission.banUsers))
+                  _actionButton(
+                    icon: isBanned ? Icons.lock_open : Icons.block,
+                    label: isBanned ? 'إلغاء الحظر' : 'حظر المستخدمة',
+                    color: isBanned ? Colors.green : Colors.red,
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: Text(isBanned ? 'إلغاء الحظر' : 'حظر المستخدمة'),
+                          content: Text(isBanned ? 'هل تريد إلغاء حظر هذه المستخدمة؟' : 'هل أنت متأكد من حظر هذه المستخدمة؟'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              style: ElevatedButton.styleFrom(backgroundColor: isBanned ? Colors.green : Colors.red),
+                              child: Text(isBanned ? 'إلغاء الحظر' : 'حظر', style: const TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        await FirebaseFirestore.instance.collection('users').doc(widget.userId).update({'isBanned': !isBanned});
+                      }
+                    },
+                  ),
+              ]),
+            ),
+            const SizedBox(height: 40),
+          ]);
         },
       ),
     ));
+  }
+
+  Widget _statRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(children: [
+        Icon(icon, size: 18, color: _teal),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(fontSize: 13, color: _text2)),
+        const Spacer(),
+        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _text1)),
+      ]),
+    );
+  }
+
+  Widget _actionButton({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(width: 12),
+          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+          const Spacer(),
+          Icon(Icons.chevron_left, color: color, size: 20),
+        ]),
+      ),
+    );
+  }
+
+  void _showRoleDialog() {
+    final currentRole = _data['role'] ?? 'user';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تغيير الدور'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('الدور الحالي: $_roleName', style: TextStyle(color: _text2, fontSize: 13)),
+          const SizedBox(height: 16),
+          _roleOption(ctx, 'مستخدمة عادية', 'user', currentRole),
+          _roleOption(ctx, 'موظفة', 'employee', currentRole),
+          _roleOption(ctx, 'مشرفة', 'supervisor', currentRole),
+          _roleOption(ctx, 'أدمن (مالك)', 'owner', currentRole),
+        ]),
+      ),
+    );
+  }
+
+  Widget _roleOption(BuildContext ctx, String label, String role, String current) {
+    final selected = current == role;
+    return ListTile(
+      dense: true,
+      leading: Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off,
+          color: selected ? _teal : Colors.grey),
+      title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
+      onTap: () async {
+        Navigator.pop(ctx);
+        await FirebaseFirestore.instance.collection('users').doc(widget.userId).update({'role': role});
+        // Also update staff collection if promoting
+        if (role != 'user') {
+          await FirebaseFirestore.instance.collection('staff').doc(widget.userId).set({
+            'email': _data['email'] ?? '',
+            'name': _data['name'] ?? '',
+            'role': role,
+            'isActive': true,
+            'createdAt': FieldValue.serverTimestamp(),
+            'createdBy': FirebaseAuth.instance.currentUser?.uid ?? '',
+          }, SetOptions(merge: true));
+        } else {
+          // Demoting: remove from staff
+          await FirebaseFirestore.instance.collection('staff').doc(widget.userId).delete();
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('تم تغيير الدور إلى: $label ✓'), backgroundColor: _teal));
+        }
+      },
+    );
+  }
+
+  String _formatDate(dynamic ts) {
+    if (ts == null) return '—';
+    if (ts is Timestamp) {
+      final d = ts.toDate();
+      return '${d.year}/${d.month}/${d.day}';
+    }
+    return '—';
   }
 }
 
