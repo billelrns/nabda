@@ -4674,12 +4674,12 @@ class _HomeArticlesSection extends StatelessWidget {
   ];
 
   static const _categories = <Map<String, dynamic>>[
-    {'name': 'تغذية وجمال', 'icon': 59651, 'color': 0xFF9C27B0},
-    {'name': 'رياضة ولياقة', 'icon': 57754, 'color': 0xFFFF9800},
-    {'name': 'صحة نفسية', 'icon': 61261, 'color': 0xFF009688},
-    {'name': 'أمومة وطفولة', 'icon': 57534, 'color': 0xFF2196F3},
-    {'name': 'علاقات أسرية', 'icon': 59020, 'color': 0xFF3F51B5},
-    {'name': 'نصائح طبية', 'icon': 58674, 'color': 0xFFF44336},
+    {'name': 'تغذية وجمال', 'icon': IconData(59651, fontFamily: 'MaterialIcons'), 'color': 0xFF9C27B0},
+    {'name': 'رياضة ولياقة', 'icon': IconData(57754, fontFamily: 'MaterialIcons'), 'color': 0xFFFF9800},
+    {'name': 'صحة نفسية', 'icon': IconData(61261, fontFamily: 'MaterialIcons'), 'color': 0xFF009688},
+    {'name': 'أمومة وطفولة', 'icon': IconData(57534, fontFamily: 'MaterialIcons'), 'color': 0xFF2196F3},
+    {'name': 'علاقات أسرية', 'icon': IconData(59020, fontFamily: 'MaterialIcons'), 'color': 0xFF3F51B5},
+    {'name': 'نصائح طبية', 'icon': IconData(58674, fontFamily: 'MaterialIcons'), 'color': 0xFFF44336},
   ];
 
   @override
@@ -4712,7 +4712,7 @@ class _HomeArticlesSection extends StatelessWidget {
                 _buildHomeSection(
                   context,
                   catInfo['name'] as String,
-                  IconData(catInfo['icon'] as int, fontFamily: 'MaterialIcons'),
+                  catInfo['icon'] as IconData,
                   Color(catInfo['color'] as int),
                   grouped[catInfo['name']]!,
                 ),
@@ -4852,7 +4852,10 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
 
   Future<void> _loadOverride() async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('article_overrides').doc(_docId).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('article_overrides')
+          .doc(_docId)
+          .get(const GetOptions(source: Source.server));
       if (doc.exists && mounted) {
         final d = doc.data()!;
         setState(() {
@@ -5425,7 +5428,96 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                       itemCount: allProducts.length,
                       itemBuilder: (context, idx) {
                         final p = allProducts[idx];
-                        return Container(
+                        return GestureDetector(
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => Directionality(
+                                textDirection: TextDirection.rtl,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                  ),
+                                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                    // Handle bar
+                                    Container(
+                                      margin: EdgeInsets.only(top: 12, bottom: 8),
+                                      width: 40, height: 4,
+                                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                                    ),
+                                    // Product image
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Image.network(
+                                        p['image']!,
+                                        height: 200, width: double.infinity, fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          height: 200, color: widget.color.withOpacity(0.1),
+                                          child: Center(child: Icon(Icons.shopping_bag, color: widget.color, size: 60))),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.all(20),
+                                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                        // Category badge
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: widget.color.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(p['category']!, style: TextStyle(fontSize: 11, color: widget.color, fontWeight: FontWeight.w700)),
+                                        ),
+                                        SizedBox(height: 10),
+                                        // Product name
+                                        Text(p['name']!, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20), height: 1.3)),
+                                        SizedBox(height: 10),
+                                        // Price row
+                                        Row(children: [
+                                          Text(p['price']!, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: widget.color)),
+                                          Spacer(),
+                                          Icon(Icons.local_shipping_outlined, color: Colors.green.shade600, size: 18),
+                                          SizedBox(width: 4),
+                                          Text('شحن مجاني', style: TextStyle(fontSize: 12, color: Colors.green.shade600, fontWeight: FontWeight.w600)),
+                                        ]),
+                                        SizedBox(height: 20),
+                                        // Shop button
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton.icon(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              Navigator.push(context, MaterialPageRoute(
+                                                builder: (_) => Directionality(
+                                                  textDirection: TextDirection.rtl,
+                                                  child: ShopPage(),
+                                                ),
+                                              ));
+                                            },
+                                            icon: Icon(Icons.shopping_cart_outlined, size: 20),
+                                            label: Text('تسوق الآن', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: widget.color,
+                                              foregroundColor: Colors.white,
+                                              padding: EdgeInsets.symmetric(vertical: 14),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                              elevation: 0,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                      ]),
+                                    ),
+                                  ]),
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
                           width: 150,
                           margin: EdgeInsets.only(left: 12),
                           decoration: BoxDecoration(
@@ -5459,6 +5551,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                               ]),
                             ),
                           ]),
+                        ),
                         );
                       },
                     ),

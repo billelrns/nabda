@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../services/admin_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/dynamic_content_service.dart';
+import '../../services/community_engagement_service.dart';
 
 // ─── Theme ───
 const Color _bg = Color(0xFFF5F5F8);
@@ -156,6 +157,16 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 emoji: '🚚',
                 color: const Color(0xFF66BB6A),
                 onTap: () => _push(_DeliveryPricingScreen()),
+              ),
+
+            // Community Engagement
+            if (_admin.hasPermission(Permission.viewDashboard))
+              _ModuleCard(
+                title: 'تنشيط المجتمع',
+                subtitle: 'سؤال اليوم، نصائح، ترحيب، ترويج',
+                emoji: '💬',
+                color: const Color(0xFFAB47BC),
+                onTap: () => _push(const _CommunityEngagementScreen()),
               ),
 
             // Notifications
@@ -496,13 +507,42 @@ class _ProductsManagementScreen extends StatefulWidget {
 class _ProductsManagementScreenState extends State<_ProductsManagementScreen> with SingleTickerProviderStateMixin {
   late TabController _tabC;
   String _searchQuery = '';
-  String _categoryFilter = 'all';
+  String _carouselSearchQuery = '';
+  String _shopCategoryFilter = 'الكل';
+  String _carouselSectionFilter = 'الكل';
+
+  static const _sectionLabels = {'home': 'الرئيسية', 'cycle': 'الدورة', 'pregnancy': 'الحمل', 'baby': 'الطفل', 'news': 'الأخبار'};
+
+  static const _staticCarouselProducts = <String, List<Map<String, String>>>{
+    'pregnancy': [
+      {'name': 'وسادة الحمل المريحة', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '3500 د.ج', 'category': 'راحة الحامل'},
+      {'name': 'كريم علامات التمدد', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1800 د.ج', 'category': 'العناية بالبشرة'},
+      {'name': 'حمض الفوليك 400mcg', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '950 د.ج', 'category': 'مكملات غذائية'},
+      {'name': 'حزام دعم البطن', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '2200 د.ج', 'category': 'راحة الحامل'},
+      {'name': 'زيت اللوز للتدليك', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1200 د.ج', 'category': 'العناية بالبشرة'},
+      {'name': 'فيتامينات ما قبل الولادة', 'image': 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80', 'price': '2800 د.ج', 'category': 'مكملات غذائية'},
+    ],
+    'cycle': [
+      {'name': 'قربة ماء ساخن', 'image': 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=300&q=80', 'price': '800 د.ج', 'category': 'تخفيف الألم'},
+      {'name': 'شاي البابونج العضوي', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '650 د.ج', 'category': 'مشروبات صحية'},
+      {'name': 'مكمل المغنيسيوم', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1500 د.ج', 'category': 'مكملات غذائية'},
+      {'name': 'فوط صحية قطنية', 'image': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=300&q=80', 'price': '450 د.ج', 'category': 'نظافة شخصية'},
+    ],
+    'baby': [
+      {'name': 'كريم حماية الحفاض', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '750 د.ج', 'category': 'العناية بالطفل'},
+      {'name': 'زيت تدليك الأطفال', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '900 د.ج', 'category': 'العناية بالطفل'},
+      {'name': 'ميزان حرارة رقمي', 'image': 'https://images.unsplash.com/photo-1584308666544-27e30e01c6c6?w=300&q=80', 'price': '1200 د.ج', 'category': 'صحة الطفل'},
+      {'name': 'رضاعة مضادة للمغص', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '1800 د.ج', 'category': 'تغذية الطفل'},
+    ],
+    'home': [
+      {'name': 'فيتامين D3 للنساء', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1400 د.ج', 'category': 'مكملات غذائية'},
+      {'name': 'كريم ترطيب طبيعي', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1600 د.ج', 'category': 'العناية بالبشرة'},
+      {'name': 'شاي أعشاب مهدئ', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '700 د.ج', 'category': 'مشروبات صحية'},
+    ],
+  };
 
   @override
-  void initState() {
-    super.initState();
-    _tabC = TabController(length: 2, vsync: this);
-  }
+  void initState() { super.initState(); _tabC = TabController(length: 2, vsync: this); }
   @override
   void dispose() { _tabC.dispose(); super.dispose(); }
 
@@ -512,132 +552,304 @@ class _ProductsManagementScreenState extends State<_ProductsManagementScreen> wi
       backgroundColor: _bg,
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('🛍️ إدارة المنتجات', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
+        title: const Text('إدارة المنتجات', style: TextStyle(fontWeight: FontWeight.bold, color: _text1, fontSize: 18)),
         backgroundColor: _card, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent,
         actions: [
           if (AdminService().hasPermission(Permission.addProducts))
-            IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () {
+            IconButton(icon: const Icon(Icons.add_circle_outline, size: 26), onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => _AddProductScreen()));
             }),
         ],
         bottom: TabBar(
-          controller: _tabC,
-          labelColor: _teal,
-          unselectedLabelColor: _text2,
-          indicatorColor: _teal,
-          tabs: const [
-            Tab(text: 'منتجات المتجر'),
-            Tab(text: 'منتجات الكاروسال'),
-          ],
+          controller: _tabC, labelColor: _teal, unselectedLabelColor: _text2, indicatorColor: _teal,
+          indicatorWeight: 3,
+          tabs: const [Tab(text: 'منتجات المتجر'), Tab(text: 'منتجات الكاروسال')],
         ),
       ),
-      body: TabBarView(
-        controller: _tabC,
-        children: [
-          _buildShopProductsTab(),
-          _buildCarouselProductsTab(),
-        ],
-      ),
+      body: TabBarView(controller: _tabC, children: [_buildShopTab(), _buildCarouselTab()]),
     ));
   }
 
-  // ── Tab 1: Shop products (from Firestore 'products' collection) ──
-  Widget _buildShopProductsTab() {
-    return Column(children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        child: TextField(
-          onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-          decoration: InputDecoration(
-            hintText: 'بحث في المنتجات...', prefixIcon: const Icon(Icons.search, color: _teal),
-            filled: true, fillColor: _card,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-          ),
-        ),
-      ),
-      Expanded(child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('products').orderBy('createdAt', descending: true).snapshots(),
-        builder: (context, snap) {
-          if (!snap.hasData || snap.data!.docs.isEmpty) {
-            return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Text('🛍️', style: TextStyle(fontSize: 60)),
-              const SizedBox(height: 16),
-              Text('لا توجد منتجات في المتجر بعد', style: TextStyle(fontSize: 14, color: _text2)),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddProductScreen())),
-                icon: const Icon(Icons.add), label: const Text('إضافة منتج'),
-                style: ElevatedButton.styleFrom(backgroundColor: _teal, foregroundColor: Colors.white),
+  // ═══════════════════════════════════════════════════════════════
+  // ██  TAB 1: SHOP PRODUCTS (Firestore 'products')
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildShopTab() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('products').snapshots(),
+      builder: (context, snap) {
+        var docs = snap.data?.docs ?? [];
+        // Extract categories for filter chips
+        final allCats = <String>{'الكل'};
+        for (final doc in docs) {
+          final cat = ((doc.data() as Map<String, dynamic>)['category'] ?? '').toString();
+          if (cat.isNotEmpty) allCats.add(cat);
+        }
+
+        // Apply filters
+        if (_searchQuery.isNotEmpty) {
+          docs = docs.where((doc) {
+            final d = doc.data() as Map<String, dynamic>;
+            return (d['name'] ?? '').toString().toLowerCase().contains(_searchQuery) ||
+                   (d['category'] ?? '').toString().toLowerCase().contains(_searchQuery);
+          }).toList();
+        }
+        if (_shopCategoryFilter != 'الكل') {
+          docs = docs.where((doc) => ((doc.data() as Map<String, dynamic>)['category'] ?? '') == _shopCategoryFilter).toList();
+        }
+
+        return Column(children: [
+          // Search bar
+          Padding(padding: const EdgeInsets.fromLTRB(16, 10, 16, 6), child: TextField(
+            onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+            decoration: InputDecoration(
+              hintText: 'بحث بالاسم أو التصنيف...', prefixIcon: const Icon(Icons.search, color: _teal),
+              filled: true, fillColor: _card,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16)),
+          )),
+          // Category filter chips
+          if (allCats.length > 2)
+            SizedBox(height: 40, child: ListView(
+              scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: allCats.map((cat) => Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: ChoiceChip(
+                  label: Text(cat, style: TextStyle(fontSize: 11, color: _shopCategoryFilter == cat ? Colors.white : _text2)),
+                  selected: _shopCategoryFilter == cat,
+                  selectedColor: _teal,
+                  backgroundColor: _card,
+                  onSelected: (_) => setState(() => _shopCategoryFilter = cat),
+                  visualDensity: VisualDensity.compact,
+                ),
+              )).toList(),
+            )),
+          // Stats bar
+          Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 4), child: Row(children: [
+            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              child: Text('${docs.length} منتج', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _teal))),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddProductScreen())),
+              icon: const Icon(Icons.add, size: 16), label: const Text('إضافة منتج', style: TextStyle(fontSize: 12)),
+              style: TextButton.styleFrom(foregroundColor: _teal, visualDensity: VisualDensity.compact)),
+          ])),
+          // Products grid
+          Expanded(child: docs.isEmpty
+            ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(Icons.shopping_bag_outlined, size: 60, color: _teal.withOpacity(0.3)),
+                const SizedBox(height: 12),
+                Text('لا توجد منتجات', style: TextStyle(color: _text2)),
+              ]))
+            : ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16), itemCount: docs.length,
+                itemBuilder: (_, i) => _shopProductCard(docs[i]),
               ),
+          ),
+        ]);
+      },
+    );
+  }
+
+  Widget _shopProductCard(QueryDocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    final imageUrl = d['imageUrl'] as String? ?? '';
+    final imageUrls = d['imageUrls'] as List<dynamic>? ?? [];
+    final mainImg = imageUrls.isNotEmpty ? imageUrls.first.toString() : imageUrl;
+    final hasImg = mainImg.isNotEmpty;
+    final hasOldPrice = (d['oldPrice'] ?? '').toString().isNotEmpty;
+
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddProductScreen(docId: doc.id, existingData: d))),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+        child: Row(children: [
+          // Product image (larger)
+          ClipRRect(
+            borderRadius: const BorderRadius.only(topRight: Radius.circular(16), bottomRight: Radius.circular(16)),
+            child: hasImg
+              ? Image.network(mainImg, width: 100, height: 100, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _imgPlaceholder(d['emoji']))
+              : _imgPlaceholder(d['emoji']),
+          ),
+          const SizedBox(width: 12),
+          // Details
+          Expanded(child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(d['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: _text1, fontSize: 14),
+                maxLines: 2, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 4),
+              Row(children: [
+                Text(d['price'] ?? '', style: const TextStyle(fontSize: 15, color: _teal, fontWeight: FontWeight.bold)),
+                if (hasOldPrice) ...[
+                  const SizedBox(width: 6),
+                  Text(d['oldPrice'], style: TextStyle(fontSize: 11, color: _text2, decoration: TextDecoration.lineThrough)),
+                ],
+              ]),
+              const SizedBox(height: 6),
+              if (d['category'] != null) Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: _teal.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+                child: Text(d['category'], style: const TextStyle(fontSize: 10, color: _teal, fontWeight: FontWeight.w600)),
+              ),
+              if (imageUrls.length > 1) Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text('${imageUrls.length} صور', style: TextStyle(fontSize: 10, color: _text2)),
+              ),
+            ],
+          ))),
+          // Actions column
+          Padding(padding: const EdgeInsets.only(left: 6), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            _actionBtn(Icons.edit_outlined, _teal,
+              () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddProductScreen(docId: doc.id, existingData: d)))),
+            const SizedBox(height: 4),
+            _actionBtn(Icons.content_copy_outlined, Colors.blue, () => _copyShopToCarousel(d)),
+            const SizedBox(height: 4),
+            if (AdminService().hasPermission(Permission.deleteProducts))
+              _actionBtn(Icons.delete_outline, Colors.red.shade400, () => _confirmDeleteShop(doc, d['name'] ?? '')),
+          ])),
+          const SizedBox(width: 6),
+        ]),
+      ),
+    );
+  }
+
+  Widget _imgPlaceholder(String? emoji) => Container(width: 100, height: 100,
+    color: _teal.withOpacity(0.08),
+    child: Center(child: Text(emoji ?? '🛍️', style: const TextStyle(fontSize: 32))));
+
+  Widget _actionBtn(IconData icon, Color color, VoidCallback onTap) => InkWell(
+    onTap: onTap, borderRadius: BorderRadius.circular(8),
+    child: Container(padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+      child: Icon(icon, size: 18, color: color)));
+
+  Future<void> _confirmDeleteShop(QueryDocumentSnapshot doc, String name) async {
+    final ok = await showDialog<bool>(context: context, builder: (_) => Directionality(
+      textDirection: TextDirection.rtl, child: AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [Icon(Icons.warning_amber, color: Colors.red.shade400), const SizedBox(width: 8), const Text('حذف المنتج')]),
+        content: Text('هل تريد حذف "$name"؟ لا يمكن التراجع عن هذا الإجراء.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('حذف', style: TextStyle(color: Colors.white))),
+        ],
+      ),
+    ));
+    if (ok == true) { doc.reference.delete(); if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تم حذف المنتج ✓'), backgroundColor: Color(0xFF00897B))); }
+  }
+
+  // Copy a shop product to carousel (dynamic_products)
+  void _copyShopToCarousel(Map<String, dynamic> d) {
+    final nameC = TextEditingController(text: d['name'] ?? '');
+    final priceC = TextEditingController(text: d['price'] ?? '');
+    final imageC = TextEditingController(text: d['imageUrl'] ?? '');
+    final categoryC = TextEditingController(text: d['category'] ?? '');
+    final linkC = TextEditingController();
+    String section = 'home';
+    _showProductFormSheet(
+      title: 'نسخ إلى الكاروسال', icon: Icons.copy, color: Colors.blue, btnText: 'نسخ إلى الكاروسال', btnIcon: Icons.arrow_back,
+      nameC: nameC, priceC: priceC, imageC: imageC, categoryC: categoryC, linkC: linkC,
+      section: section, onSectionChanged: (v) => section = v,
+      onSave: () async {
+        await DynamicContentService.addProduct(name: nameC.text.trim(), image: imageC.text.trim(),
+          price: priceC.text.trim(), category: categoryC.text.trim(), section: section, link: linkC.text.trim());
+        return 'تم النسخ إلى الكاروسال ✓';
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ██  TAB 2: CAROUSEL PRODUCTS (dynamic_products + hardcoded)
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildCarouselTab() {
+    return Column(children: [
+      // Search
+      Padding(padding: const EdgeInsets.fromLTRB(16, 10, 16, 6), child: TextField(
+        onChanged: (v) => setState(() => _carouselSearchQuery = v.toLowerCase()),
+        decoration: InputDecoration(
+          hintText: 'بحث بالاسم أو التصنيف...', prefixIcon: const Icon(Icons.search, color: _teal),
+          filled: true, fillColor: _card,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16)),
+      )),
+      // Section filter chips
+      SizedBox(height: 40, child: ListView(
+        scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: ['الكل', ..._sectionLabels.values].map((label) => Padding(
+          padding: const EdgeInsets.only(left: 6),
+          child: ChoiceChip(
+            label: Text(label, style: TextStyle(fontSize: 11, color: _carouselSectionFilter == label ? Colors.white : _text2)),
+            selected: _carouselSectionFilter == label,
+            selectedColor: _teal, backgroundColor: _card,
+            onSelected: (_) => setState(() => _carouselSectionFilter = label),
+            visualDensity: VisualDensity.compact),
+        )).toList(),
+      )),
+      // Products list
+      Expanded(child: StreamBuilder<QuerySnapshot>(
+        stream: DynamicContentService.productsRef.orderBy('createdAt', descending: true).snapshots(),
+        builder: (context, snap) {
+          final dynamicDocs = snap.data?.docs ?? [];
+          final List<_CarouselProductItem> allItems = [];
+
+          for (final doc in dynamicDocs) {
+            final d = doc.data() as Map<String, dynamic>;
+            allItems.add(_CarouselProductItem(name: d['name'] ?? '', image: d['image'] ?? '', price: d['price'] ?? '',
+              category: d['category'] ?? '', section: d['section'] ?? '', sectionLabel: _sectionLabels[d['section']] ?? d['section'] ?? '',
+              isDynamic: true, docId: doc.id, link: d['link'] ?? ''));
+          }
+          for (final entry in _staticCarouselProducts.entries) {
+            for (final p in entry.value) {
+              allItems.add(_CarouselProductItem(name: p['name']!, image: p['image']!, price: p['price']!,
+                category: p['category']!, section: entry.key, sectionLabel: _sectionLabels[entry.key] ?? entry.key,
+                isDynamic: false, docId: null, link: ''));
+            }
+          }
+
+          // Apply filters
+          var filtered = allItems.toList();
+          if (_carouselSearchQuery.isNotEmpty) {
+            filtered = filtered.where((e) =>
+              e.name.toLowerCase().contains(_carouselSearchQuery) ||
+              e.category.toLowerCase().contains(_carouselSearchQuery) ||
+              e.price.toLowerCase().contains(_carouselSearchQuery)).toList();
+          }
+          if (_carouselSectionFilter != 'الكل') {
+            filtered = filtered.where((e) => e.sectionLabel == _carouselSectionFilter).toList();
+          }
+
+          if (filtered.isEmpty) {
+            return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.search_off, size: 50, color: _teal.withOpacity(0.3)),
+              const SizedBox(height: 10),
+              Text('لا توجد نتائج', style: TextStyle(color: _text2)),
             ]));
           }
-          var docs = snap.data!.docs;
-          if (_searchQuery.isNotEmpty) {
-            docs = docs.where((doc) {
-              final d = doc.data() as Map<String, dynamic>;
-              final name = (d['name'] ?? '').toString().toLowerCase();
-              final cat = (d['category'] ?? '').toString().toLowerCase();
-              return name.contains(_searchQuery) || cat.contains(_searchQuery);
-            }).toList();
-          }
+
+          // Stats
+          final dynCount = filtered.where((e) => e.isDynamic).length;
+          final staticCount = filtered.length - dynCount;
+
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: docs.length,
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            itemCount: filtered.length + 1,
             itemBuilder: (_, i) {
-              final doc = docs[i];
-              final d = doc.data() as Map<String, dynamic>;
-              final hasImage = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
-              return GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddProductScreen(docId: doc.id, existingData: d))),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14)),
-                  child: Row(children: [
-                    if (hasImage)
-                      ClipRRect(borderRadius: BorderRadius.circular(12),
-                        child: Image.network(d['imageUrl'], width: 50, height: 50, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(width: 50, height: 50, color: _teal.withOpacity(0.1),
-                            child: Center(child: Text(d['emoji'] ?? '🛍️', style: const TextStyle(fontSize: 24))))))
-                    else
-                      Container(width: 50, height: 50, decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                        child: Center(child: Text(d['emoji'] ?? '🛍️', style: const TextStyle(fontSize: 24)))),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(d['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: _text1), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Row(children: [
-                        Text(d['price'] ?? '', style: TextStyle(fontSize: 12, color: _teal, fontWeight: FontWeight.bold)),
-                        if (d['category'] != null) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                            child: Text(d['category'], style: TextStyle(fontSize: 10, color: _teal)),
-                          ),
-                        ],
-                      ]),
-                    ])),
-                    IconButton(icon: const Icon(Icons.edit_outlined, color: _teal, size: 20),
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => _AddProductScreen(docId: doc.id, existingData: d)))),
-                    if (AdminService().hasPermission(Permission.deleteProducts))
-                      IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 20),
-                        onPressed: () async {
-                          final confirm = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
-                            title: const Text('حذف المنتج'),
-                            content: Text('هل تريد حذف "${d['name']}"؟'),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
-                              ElevatedButton(onPressed: () => Navigator.pop(context, true),
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                child: const Text('حذف', style: TextStyle(color: Colors.white))),
-                            ],
-                          ));
-                          if (confirm == true) doc.reference.delete();
-                        }),
-                  ]),
-                ),
-              );
+              if (i == 0) {
+                return Padding(padding: const EdgeInsets.only(bottom: 8), child: Row(children: [
+                  _statChip('${filtered.length} منتج', _teal),
+                  const SizedBox(width: 6),
+                  if (dynCount > 0) _statChip('$dynCount ديناميكي', Colors.blue),
+                  if (dynCount > 0) const SizedBox(width: 6),
+                  _statChip('$staticCount مدمج', Colors.orange),
+                ]));
+              }
+              final item = filtered[i - 1];
+              return _carouselProductCard(item);
             },
           );
         },
@@ -645,173 +857,255 @@ class _ProductsManagementScreenState extends State<_ProductsManagementScreen> wi
     ]);
   }
 
-  // ── Tab 2: Carousel products (dynamic_products from Firestore + hardcoded) ──
-  Widget _buildCarouselProductsTab() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: DynamicContentService.productsRef.orderBy('createdAt', descending: true).snapshots(),
-      builder: (context, snap) {
-        final dynamicDocs = snap.data?.docs ?? [];
+  Widget _statChip(String text, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+    child: Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)));
 
-        // Build a merged list: dynamic products first, then hardcoded by section
-        final List<Map<String, dynamic>> allProducts = [];
+  Widget _carouselProductCard(_CarouselProductItem item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: _card, borderRadius: BorderRadius.circular(16),
+        border: item.isDynamic ? Border.all(color: Colors.blue.withOpacity(0.2)) : null,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+      child: Row(children: [
+        // Image
+        ClipRRect(
+          borderRadius: const BorderRadius.only(topRight: Radius.circular(16), bottomRight: Radius.circular(16)),
+          child: Image.network(item.image, width: 90, height: 90, fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(width: 90, height: 90, color: _teal.withOpacity(0.08),
+              child: const Icon(Icons.shopping_bag, color: _teal, size: 30))),
+        ),
+        const SizedBox(width: 10),
+        // Details
+        Expanded(child: Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, color: _text1, fontSize: 13),
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 3),
+            Text(item.price, style: const TextStyle(fontSize: 14, color: _teal, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
+            Row(children: [
+              Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: Colors.grey.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                child: Text(item.category, style: TextStyle(fontSize: 9, color: _text2))),
+              const SizedBox(width: 4),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: _teal.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                child: Text(item.sectionLabel, style: const TextStyle(fontSize: 9, color: _teal))),
+              const SizedBox(width: 4),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: item.isDynamic ? Colors.blue.withOpacity(0.08) : Colors.orange.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(6)),
+                child: Text(item.isDynamic ? 'ديناميكي' : 'مدمج',
+                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: item.isDynamic ? Colors.blue : Colors.orange))),
+            ]),
+          ],
+        ))),
+        // Actions
+        Padding(padding: const EdgeInsets.only(left: 6), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          _actionBtn(item.isDynamic ? Icons.edit_outlined : Icons.copy_outlined, _teal,
+            item.isDynamic ? () => _editCarouselProduct(item) : () => _convertToDynamic(item)),
+          const SizedBox(height: 4),
+          _actionBtn(Icons.store_outlined, Colors.purple, () => _copyCarouselToShop(item)),
+          const SizedBox(height: 4),
+          if (item.isDynamic)
+            _actionBtn(Icons.delete_outline, Colors.red.shade400, () => _confirmDeleteCarousel(item)),
+        ])),
+        const SizedBox(width: 6),
+      ]),
+    );
+  }
 
-        // Dynamic products
-        for (final doc in dynamicDocs) {
-          final d = doc.data() as Map<String, dynamic>;
-          allProducts.add({...d, '_docId': doc.id, '_source': 'dynamic'});
-        }
+  // ═══════════════════════════════════════════════════════════════
+  // ██  SHARED ACTIONS
+  // ═══════════════════════════════════════════════════════════════
 
-        // Hardcoded products (from main.dart _productsBySection equivalent)
-        const hardcodedSections = {
-          'home': 'الرئيسية', 'cycle': 'الدورة', 'pregnancy': 'الحمل', 'baby': 'الطفل', 'news': 'الأخبار',
-        };
-        // We'll show them by section
-        const staticProducts = <String, List<Map<String, String>>>{
-          'pregnancy': [
-            {'name': 'وسادة الحمل المريحة', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '3500 د.ج', 'category': 'راحة الحامل'},
-            {'name': 'كريم علامات التمدد', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1800 د.ج', 'category': 'العناية بالبشرة'},
-            {'name': 'حمض الفوليك 400mcg', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '950 د.ج', 'category': 'مكملات غذائية'},
-            {'name': 'حزام دعم البطن', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '2200 د.ج', 'category': 'راحة الحامل'},
-            {'name': 'زيت اللوز للتدليك', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1200 د.ج', 'category': 'العناية بالبشرة'},
-            {'name': 'فيتامينات ما قبل الولادة', 'image': 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80', 'price': '2800 د.ج', 'category': 'مكملات غذائية'},
-          ],
-          'cycle': [
-            {'name': 'قربة ماء ساخن', 'image': 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=300&q=80', 'price': '800 د.ج', 'category': 'تخفيف الألم'},
-            {'name': 'شاي البابونج العضوي', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '650 د.ج', 'category': 'مشروبات صحية'},
-            {'name': 'مكمل المغنيسيوم', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1500 د.ج', 'category': 'مكملات غذائية'},
-            {'name': 'فوط صحية قطنية', 'image': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=300&q=80', 'price': '450 د.ج', 'category': 'نظافة شخصية'},
-          ],
-          'baby': [
-            {'name': 'كريم حماية الحفاض', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '750 د.ج', 'category': 'العناية بالطفل'},
-            {'name': 'زيت تدليك الأطفال', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '900 د.ج', 'category': 'العناية بالطفل'},
-            {'name': 'ميزان حرارة رقمي', 'image': 'https://images.unsplash.com/photo-1584308666544-27e30e01c6c6?w=300&q=80', 'price': '1200 د.ج', 'category': 'صحة الطفل'},
-            {'name': 'رضاعة مضادة للمغص', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '1800 د.ج', 'category': 'تغذية الطفل'},
-          ],
-          'home': [
-            {'name': 'فيتامين D3 للنساء', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1400 د.ج', 'category': 'مكملات غذائية'},
-            {'name': 'كريم ترطيب طبيعي', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1600 د.ج', 'category': 'العناية بالبشرة'},
-            {'name': 'شاي أعشاب مهدئ', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '700 د.ج', 'category': 'مشروبات صحية'},
-          ],
-        };
-
-        return ListView(padding: const EdgeInsets.all(16), children: [
-          // Dynamic products section
-          if (dynamicDocs.isNotEmpty) ...[
-            _sectionHeader('منتجات ديناميكية (Firestore)', Icons.cloud, Colors.blue, dynamicDocs.length),
-            const SizedBox(height: 8),
-            ...dynamicDocs.map((doc) {
-              final d = doc.data() as Map<String, dynamic>;
-              final sLabel = hardcodedSections[d['section']] ?? d['section'] ?? '';
-              return _carouselProductCard(
-                name: d['name'] ?? '', image: d['image'] ?? '', price: d['price'] ?? '',
-                category: d['category'] ?? '', section: sLabel,
-                isDynamic: true,
-                onDelete: () async {
-                  final confirm = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
-                    title: const Text('حذف المنتج'),
-                    content: Text('هل تريد حذف "${d['name']}"؟'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
-                      ElevatedButton(onPressed: () => Navigator.pop(context, true),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                        child: const Text('حذف', style: TextStyle(color: Colors.white))),
-                    ],
-                  ));
-                  if (confirm == true) await DynamicContentService.deleteProduct(doc.id);
-                },
-              );
-            }),
-            const SizedBox(height: 16),
-          ],
-
-          // Hardcoded products by section
-          ...staticProducts.entries.map((entry) {
-            final sectionLabel = hardcodedSections[entry.key] ?? entry.key;
-            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _sectionHeader('$sectionLabel (مدمجة)', Icons.phone_android, Colors.orange, entry.value.length),
-              const SizedBox(height: 8),
-              ...entry.value.map((p) => _carouselProductCard(
-                name: p['name']!, image: p['image']!, price: p['price']!,
-                category: p['category']!, section: sectionLabel,
-                isDynamic: false, onDelete: null,
-              )),
-              const SizedBox(height: 16),
-            ]);
-          }),
-        ]);
+  void _editCarouselProduct(_CarouselProductItem item) {
+    final nameC = TextEditingController(text: item.name);
+    final priceC = TextEditingController(text: item.price);
+    final imageC = TextEditingController(text: item.image);
+    final categoryC = TextEditingController(text: item.category);
+    final linkC = TextEditingController(text: item.link);
+    String section = item.section;
+    _showProductFormSheet(
+      title: 'تعديل المنتج', icon: Icons.edit, color: _teal, btnText: 'حفظ التعديلات', btnIcon: Icons.save,
+      nameC: nameC, priceC: priceC, imageC: imageC, categoryC: categoryC, linkC: linkC,
+      section: section, onSectionChanged: (v) => section = v,
+      onSave: () async {
+        await DynamicContentService.productsRef.doc(item.docId).update({
+          'name': nameC.text.trim(), 'price': priceC.text.trim(), 'image': imageC.text.trim(),
+          'category': categoryC.text.trim(), 'section': section, 'link': linkC.text.trim()});
+        return 'تم تعديل المنتج ✓';
       },
     );
   }
 
-  Widget _sectionHeader(String title, IconData icon, Color color, int count) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-      child: Row(children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 8),
-        Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
-          child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-        ),
-      ]),
+  void _convertToDynamic(_CarouselProductItem item) {
+    final nameC = TextEditingController(text: item.name);
+    final priceC = TextEditingController(text: item.price);
+    final imageC = TextEditingController(text: item.image);
+    final categoryC = TextEditingController(text: item.category);
+    final linkC = TextEditingController();
+    String section = item.section;
+    _showProductFormSheet(
+      title: 'نسخ كمنتج ديناميكي', icon: Icons.copy, color: Colors.orange.shade700,
+      btnText: 'نسخ كديناميكي', btnIcon: Icons.copy,
+      nameC: nameC, priceC: priceC, imageC: imageC, categoryC: categoryC, linkC: linkC,
+      section: section, onSectionChanged: (v) => section = v,
+      hint: 'هذا المنتج مدمج. يمكنك إنشاء نسخة ديناميكية قابلة للتعديل.',
+      onSave: () async {
+        await DynamicContentService.addProduct(name: nameC.text.trim(), image: imageC.text.trim(),
+          price: priceC.text.trim(), category: categoryC.text.trim(), section: section, link: linkC.text.trim());
+        return 'تم إنشاء نسخة ديناميكية ✓';
+      },
     );
   }
 
-  Widget _carouselProductCard({
-    required String name, required String image, required String price,
-    required String category, required String section,
-    required bool isDynamic, VoidCallback? onDelete,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _card, borderRadius: BorderRadius.circular(12),
-        border: isDynamic ? Border.all(color: Colors.blue.withOpacity(0.3)) : null,
-      ),
-      child: Row(children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.network(image, width: 48, height: 48, fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(width: 48, height: 48,
-              color: _teal.withOpacity(0.1), child: const Icon(Icons.shopping_bag, color: _teal))),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(name, style: const TextStyle(fontWeight: FontWeight.bold, color: _text1, fontSize: 13),
-              maxLines: 1, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 2),
-          Row(children: [
-            Text(price, style: TextStyle(fontSize: 12, color: _teal, fontWeight: FontWeight.bold)),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-              decoration: BoxDecoration(color: Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-              child: Text(category, style: TextStyle(fontSize: 9, color: _text2)),
-            ),
-          ]),
-        ])),
-        if (isDynamic) ...[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-            decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-            child: const Text('ديناميكي', style: TextStyle(color: Colors.blue, fontSize: 9, fontWeight: FontWeight.bold)),
-          ),
-          if (onDelete != null)
-            IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 18), onPressed: onDelete),
-        ] else
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-            decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-            child: const Text('مدمج', style: TextStyle(color: Colors.orange, fontSize: 9, fontWeight: FontWeight.bold)),
-          ),
-      ]),
+  void _copyCarouselToShop(_CarouselProductItem item) {
+    final nameC = TextEditingController(text: item.name);
+    final priceC = TextEditingController(text: item.price);
+    final imageC = TextEditingController(text: item.image);
+    final categoryC = TextEditingController(text: item.category);
+    final linkC = TextEditingController();
+    String section = item.section;
+    _showProductFormSheet(
+      title: 'نسخ إلى المتجر', icon: Icons.store, color: Colors.purple, btnText: 'إضافة للمتجر', btnIcon: Icons.store,
+      nameC: nameC, priceC: priceC, imageC: imageC, categoryC: categoryC, linkC: linkC,
+      section: section, onSectionChanged: (v) => section = v,
+      onSave: () async {
+        await FirebaseFirestore.instance.collection('products').add({
+          'name': nameC.text.trim(), 'price': priceC.text.trim(), 'imageUrl': imageC.text.trim(),
+          'category': categoryC.text.trim(), 'emoji': '🛍️', 'rating': 4.5,
+          'createdAt': FieldValue.serverTimestamp(), 'createdBy': FirebaseAuth.instance.currentUser?.uid});
+        return 'تم إضافة المنتج للمتجر ✓';
+      },
     );
   }
+
+  Future<void> _confirmDeleteCarousel(_CarouselProductItem item) async {
+    final ok = await showDialog<bool>(context: context, builder: (_) => Directionality(
+      textDirection: TextDirection.rtl, child: AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [Icon(Icons.warning_amber, color: Colors.red.shade400), const SizedBox(width: 8), const Text('حذف المنتج')]),
+        content: Text('هل تريد حذف "${item.name}"؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('حذف', style: TextStyle(color: Colors.white))),
+        ],
+      ),
+    ));
+    if (ok == true && item.docId != null) {
+      await DynamicContentService.deleteProduct(item.docId!);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حذف المنتج ✓'), backgroundColor: Color(0xFF00897B)));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ██  SHARED PRODUCT FORM BOTTOM SHEET
+  // ═══════════════════════════════════════════════════════════════
+  void _showProductFormSheet({
+    required String title, required IconData icon, required Color color,
+    required String btnText, required IconData btnIcon,
+    required TextEditingController nameC, required TextEditingController priceC,
+    required TextEditingController imageC, required TextEditingController categoryC,
+    required TextEditingController linkC,
+    required String section, required ValueChanged<String> onSectionChanged,
+    required Future<String> Function() onSave, String? hint,
+  }) {
+    String currentSection = section;
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setBS) => Container(
+        decoration: const BoxDecoration(color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+        child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(icon, color: color, size: 22), const SizedBox(width: 8),
+            Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: color)),
+          ]),
+          if (hint != null) ...[
+            const SizedBox(height: 8),
+            Container(padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color.withOpacity(0.06), borderRadius: BorderRadius.circular(10)),
+              child: Text(hint, style: TextStyle(fontSize: 12, color: color), textAlign: TextAlign.center)),
+          ],
+          // Image preview
+          if (imageC.text.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ClipRRect(borderRadius: BorderRadius.circular(12),
+              child: Image.network(imageC.text, height: 100, width: double.infinity, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+          ],
+          const SizedBox(height: 16),
+          _formField(nameC, 'اسم المنتج', Icons.shopping_bag_outlined),
+          _formField(priceC, 'السعر', Icons.attach_money),
+          _formField(imageC, 'رابط الصورة', Icons.image_outlined),
+          _formField(categoryC, 'التصنيف', Icons.category_outlined),
+          _formField(linkC, 'رابط الشراء (اختياري)', Icons.link),
+          const SizedBox(height: 6),
+          Directionality(textDirection: TextDirection.rtl, child: DropdownButtonFormField<String>(
+            value: currentSection,
+            decoration: InputDecoration(labelText: 'القسم', prefixIcon: const Icon(Icons.dashboard_outlined, color: _teal),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14)),
+            items: _sectionLabels.entries.map((e) =>
+              DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
+            onChanged: (v) { setBS(() => currentSection = v!); onSectionChanged(v!); },
+          )),
+          const SizedBox(height: 18),
+          Row(children: [
+            Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(ctx),
+              style: OutlinedButton.styleFrom(foregroundColor: _text2, padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              child: const Text('إلغاء'))),
+            const SizedBox(width: 12),
+            Expanded(child: ElevatedButton.icon(
+              onPressed: () async {
+                if (nameC.text.trim().isEmpty) return;
+                final msg = await onSave();
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(msg), backgroundColor: const Color(0xFF00897B)));
+              },
+              icon: Icon(btnIcon, size: 18), label: Text(btnText),
+              style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            )),
+          ]),
+        ])),
+      )),
+    );
+  }
+
+  Widget _formField(TextEditingController c, String label, IconData icon) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: TextField(controller: c, decoration: InputDecoration(
+      labelText: label, prefixIcon: Icon(icon, color: _teal, size: 20),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14))),
+  );
+}
+
+// ── Helper class for carousel product items ──
+class _CarouselProductItem {
+  final String name, image, price, category, section, sectionLabel, link;
+  final bool isDynamic;
+  final String? docId;
+
+  _CarouselProductItem({
+    required this.name, required this.image, required this.price,
+    required this.category, required this.section, required this.sectionLabel,
+    required this.isDynamic, required this.docId, required this.link,
+  });
 }
 
 // ─── Add / Edit Product Screen (with images) ───
