@@ -154,6 +154,7 @@ class AppRoutes {
         path: privacy,
         builder: (context, state) => const PrivacyPolicyPage(),
       ),
+<<<<<<< HEAD
       GoRoute(
         path: medicationTracker,
         builder: (context, state) => const MedicationTrackerScreen(),
@@ -162,6 +163,8 @@ class AppRoutes {
         path: healthMeasurements,
         builder: (context, state) => const HealthMeasurementsScreen(),
       ),
+=======
+>>>>>>> 453daa85893860540803e26cf738c05a8fac2c35
     ],
     errorBuilder: (context, state) => Scaffold(
       appBar: AppBar(title: const Text('خطأ')),
