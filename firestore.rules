@@ -1,0 +1,189 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper Functions ─────────────────────────────────────────
+
+    // هل المستخدم مسجّل دخوله؟
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // هل هو صاحب المورد؟
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // هل له دور إداري نشط؟
+    function isActiveStaff() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/staff/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.isActive == true;
+    }
+
+    // هل هو مالك أو مشرف؟
+    function isOwnerOrSupervisor() {
+      return isActiveStaff() &&
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role in ['owner', 'supervisor'];
+    }
+
+    // هل هو مالك فقط؟
+    function isAppOwner() {
+      return isActiveStaff() &&
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == 'owner';
+    }
+
+    // ─── المستخدمون ───────────────────────────────────────────────
+    match /users/{userId} {
+      // كل مستخدم يقرأ ويعدّل بياناته فقط
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      allow delete: if false; // لا أحد يحذف حسابه من الكلاينت
+
+      // الأدمن يستطيع قراءة بيانات المستخدمين
+      allow read: if isActiveStaff();
+    }
+
+    // ─── الدورة الشهرية ───────────────────────────────────────────
+    match /cycles/{cycleId} {
+      allow read, delete: if isAuthenticated() &&
+        isOwner(resource.data.userId);
+      allow create: if isAuthenticated() &&
+        isOwner(request.resource.data.userId);
+      allow update: if isAuthenticated() &&
+        isOwner(resource.data.userId) &&
+        isOwner(request.resource.data.userId); // لا تغيير userId
+    }
+
+    // ─── الحمل ────────────────────────────────────────────────────
+    match /pregnancies/{pregnancyId} {
+      allow read, delete: if isAuthenticated() &&
+        isOwner(resource.data.userId);
+      allow create: if isAuthenticated() &&
+        isOwner(request.resource.data.userId);
+      allow update: if isAuthenticated() &&
+        isOwner(resource.data.userId) &&
+        isOwner(request.resource.data.userId);
+    }
+
+    // ─── الأدوية والفيتامينات ─────────────────────────────────────
+    match /medications/{medId} {
+      allow read, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // ─── الأطفال ──────────────────────────────────────────────────
+    match /babies/{babyId} {
+      allow read, delete: if isAuthenticated() &&
+        isOwner(resource.data.userId);
+      allow create: if isAuthenticated() &&
+        isOwner(request.resource.data.userId);
+      allow update: if isAuthenticated() &&
+        isOwner(resource.data.userId) &&
+        isOwner(request.resource.data.userId);
+    }
+
+    // ─── الرسائل ──────────────────────────────────────────────────
+    match /messages/{messageId} {
+      allow read, delete: if isAuthenticated() &&
+        isOwner(resource.data.userId);
+      allow create: if isAuthenticated() &&
+        isOwner(request.resource.data.userId);
+      allow update: if false;
+    }
+
+    // ─── منشورات المجتمع ──────────────────────────────────────────
+    match /community_posts/{postId} {
+      // كل المستخدمين يقرؤون المنشورات
+      allow read: if isAuthenticated();
+
+      // الإنشاء: userId يجب أن يطابق المستخدم الحالي
+      allow create: if isAuthenticated() &&
+        isOwner(request.resource.data.userId) &&
+        request.resource.data.content.size() <= 2000; // حد أقصى للنص
+
+      // التعديل: صاحب المنشور فقط، أو الأدمن
+      allow update: if isAuthenticated() &&
+        (isOwner(resource.data.userId) || isOwnerOrSupervisor());
+
+      // الحذف: صاحب المنشور أو الأدمن
+      allow delete: if isAuthenticated() &&
+        (isOwner(resource.data.userId) || isOwnerOrSupervisor());
+    }
+
+    // ─── الموظفون (Staff) ─────────────────────────────────────────
+    match /staff/{staffId} {
+      // الموظف يقرأ بياناته فقط
+      allow read: if isAuthenticated() && isOwner(staffId);
+      // المالك يدير الموظفين
+      allow read, write: if isAppOwner();
+    }
+
+    // ─── الطلبات ──────────────────────────────────────────────────
+    match /orders/{orderId} {
+      // صاحب الطلب يقرأه فقط
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      // إنشاء طلب جديد
+      allow create: if isAuthenticated() &&
+        isOwner(request.resource.data.userId);
+      // تحديث الحالة: الأدمن فقط
+      allow update: if isOwnerOrSupervisor();
+      allow delete: if false;
+    }
+
+    // ─── المنتجات ─────────────────────────────────────────────────
+    match /products/{productId} {
+      // القراءة للجميع المسجلين
+      allow read: if isAuthenticated();
+      // الكتابة للموظفين فقط
+      allow create, update: if isActiveStaff();
+      allow delete: if isOwnerOrSupervisor();
+    }
+
+    // ─── المقالات ─────────────────────────────────────────────────
+    match /articles/{articleId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isActiveStaff();
+      allow delete: if isOwnerOrSupervisor();
+    }
+
+    // ─── المحتوى الديناميكي ───────────────────────────────────────
+    match /dynamic_products/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isActiveStaff();
+    }
+
+    match /dynamic_articles/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isActiveStaff();
+    }
+
+    // ─── الكوبونات ────────────────────────────────────────────────
+    match /coupons/{couponId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwnerOrSupervisor();
+    }
+
+    // ─── أسعار التوصيل ────────────────────────────────────────────
+    match /delivery_pricing/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwnerOrSupervisor();
+    }
+
+    // ─── Subcollections داخل المستخدم (babies, baby_logs, etc.) ──
+    match /users/{userId}/{subcollection}/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/{subcollection}/{docId}/{nested=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ─── رفض أي شيء آخر ──────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

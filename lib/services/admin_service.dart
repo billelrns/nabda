@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 // ─── Role Enum ───
 enum AdminRole { owner, supervisor, employee, user }
@@ -185,20 +186,16 @@ class AdminService extends ChangeNotifier {
     if (!hasPermission(Permission.manageStaff)) return false;
 
     try {
-      // Find user by email in users collection
+      // ابحث عن المستخدم بالبريد الإلكتروني
       final users = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: email)
           .limit(1)
           .get();
 
-      String uid;
-      if (users.docs.isNotEmpty) {
-        uid = users.docs.first.id;
-      } else {
-        // Create a placeholder with email as ID
-        uid = email.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
-      }
+      // لا نضيف موظفاً إلا إذا كان حسابه موجوداً فعلاً
+      if (users.docs.isEmpty) return false;
+      final String uid = users.docs.first.id;
 
       final staff = StaffMember(
         uid: uid,

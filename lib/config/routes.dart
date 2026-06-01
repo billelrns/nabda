@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/splash_screen.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
@@ -19,6 +20,10 @@ import '../screens/doctors/doctors_list_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/admin/admin_panel_screen.dart';
 import '../screens/shop/cart_screen.dart';
+import '../screens/baby_names/baby_names_screen.dart';
+import '../screens/health/medication_tracker_screen.dart';
+import '../screens/health/health_measurements_screen.dart';
+import '../services/admin_service.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -40,6 +45,11 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String adminPanel = '/admin';
   static const String cart = '/cart';
+  static const String babyNames = '/baby-names';
+  static const String terms = '/terms';
+  static const String privacy = '/privacy';
+  static const String medicationTracker = '/medications';
+  static const String healthMeasurements = '/health-measurements';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -116,11 +126,41 @@ class AppRoutes {
       ),
       GoRoute(
         path: adminPanel,
+        redirect: (context, state) async {
+          // يجب أن يكون المستخدم مسجلاً دخوله
+          final user = FirebaseAuth.instance.currentUser;
+          if (user == null) return login;
+          // يجب أن يكون له دور إداري
+          final admin = AdminService();
+          await admin.initialize();
+          if (!admin.isAdmin) return home;
+          return null;
+        },
         builder: (context, state) => const AdminPanelScreen(),
       ),
       GoRoute(
         path: cart,
         builder: (context, state) => const CartScreen(),
+      ),
+      GoRoute(
+        path: babyNames,
+        builder: (context, state) => const BabyNamesScreen(),
+      ),
+      GoRoute(
+        path: terms,
+        builder: (context, state) => const TermsOfServicePage(),
+      ),
+      GoRoute(
+        path: privacy,
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        path: medicationTracker,
+        builder: (context, state) => const MedicationTrackerScreen(),
+      ),
+      GoRoute(
+        path: healthMeasurements,
+        builder: (context, state) => const HealthMeasurementsScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
