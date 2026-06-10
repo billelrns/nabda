@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/dynamic_content_service.dart';
+import 'dart:math';
+import 'package:url_launcher/url_launcher.dart';
+import '../screens/shop/shop_page.dart';
 
 /// Shared news section widget used across multiple pages (pregnancy, etc.)
 /// Now loads Firestore overrides to reflect admin edits.
@@ -149,6 +152,7 @@ class NewsSection extends StatelessWidget {
                     'title': a['title'] ?? '',
                     'tag': a['category'] ?? 'جديد',
                     'image': a['image'] ?? '',
+                    'image2': a['image2'] ?? '',
                     'content': a['content'] ?? '',
                     'originalTitle': a['title'] ?? '',
                     'isDynamic': 'true',
@@ -207,6 +211,7 @@ class NewsSection extends StatelessWidget {
           body: n['content']!,
           color: accentColor,
           imageUrl: n['image']!,
+          image2: n['image2'] ?? '',
           originalTitle: n['originalTitle'] ?? n['title']!,
         ),
       )),
@@ -271,6 +276,7 @@ class AllNewsScreen extends StatelessWidget {
                         'title': a['title'] ?? '',
                         'tag': a['category'] ?? 'جديد',
                         'image': a['image'] ?? '',
+                    'image2': a['image2'] ?? '',
                         'content': a['content'] ?? '',
                         'originalTitle': a['title'] ?? '',
                         'isDynamic': 'true',
@@ -289,6 +295,7 @@ class AllNewsScreen extends StatelessWidget {
                       body: n['content']!,
                       color: accentColor,
                       imageUrl: n['image']!,
+          image2: n['image2'] ?? '',
                       originalTitle: n['originalTitle'] ?? n['title']!,
                     ),
                   )),
@@ -340,8 +347,9 @@ class _NewsDetailPage extends StatefulWidget {
   final String body;
   final Color color;
   final String imageUrl;
+  final String image2;
   final String originalTitle;
-  const _NewsDetailPage({required this.title, required this.body, required this.color, this.imageUrl = '', this.originalTitle = ''});
+  const _NewsDetailPage({required this.title, required this.body, required this.color, this.imageUrl = '', this.image2 = '', this.originalTitle = ''});
 
   @override
   State<_NewsDetailPage> createState() => _NewsDetailPageState();
@@ -351,6 +359,7 @@ class _NewsDetailPageState extends State<_NewsDetailPage> {
   String _title = '';
   String _body = '';
   String _imageUrl = '';
+  String _image2 = '';
 
   static const _products = <Map<String, String>>[
     {'name': 'كتاب أمومة سعيدة', 'image': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&q=80', 'price': '1500 د.ج', 'category': 'كتب ومراجع'},
@@ -367,6 +376,7 @@ class _NewsDetailPageState extends State<_NewsDetailPage> {
     _title = widget.title;
     _body = widget.body;
     _imageUrl = widget.imageUrl;
+    _image2 = widget.image2;
     _loadOverride();
   }
 
@@ -389,7 +399,6 @@ class _NewsDetailPageState extends State<_NewsDetailPage> {
   @override
   Widget build(BuildContext context) {
     final paragraphs = _body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
-    final staticProducts = _products;
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -414,87 +423,230 @@ class _NewsDetailPageState extends State<_NewsDetailPage> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(_title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20), height: 1.5)),
                   const SizedBox(height: 16),
+                  // ===== AD SLOT 1 — إعلان أعلى المقال (استبدله بإعلان Google/AdMob) =====
+                  NabdaAd(slot: 0, groupId: _title, place: 'news', color: widget.color),
+                  const SizedBox(height: 18),
                   for (int i = 0; i < paragraphs.length; i++) ...[
-                    Text(paragraphs[i].trim(), style: const TextStyle(fontSize: 16, height: 1.8, color: Color(0xFF333333))),
-                    if (i < paragraphs.length - 1) const SizedBox(height: 16),
-                    if (i == paragraphs.length ~/ 2) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity, height: 80,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: const Center(child: Text('مساحة إعلانية', style: TextStyle(color: Colors.grey, fontSize: 13))),
+                    if (_image2.isNotEmpty && paragraphs.length > 1 && i == paragraphs.length - 1) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.network(_image2, width: double.infinity, height: 200, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink()),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 18),
+                    ],
+                    Text(paragraphs[i].trim(), style: const TextStyle(fontSize: 16, height: 1.9, color: Color(0xFF333333))),
+                    if (i < paragraphs.length - 1) const SizedBox(height: 16),
+                    // ===== AD SLOT 2 — إعلان وسط المقال =====
+                    if (i == 1 && paragraphs.length > 3) ...[
+                      const SizedBox(height: 14),
+                      NabdaAd(slot: 1, groupId: _title, place: 'news', color: widget.color),
+                      const SizedBox(height: 14),
                     ],
                   ],
-                  const SizedBox(height: 24),
-                  Row(children: [
-                    Icon(Icons.shopping_bag_outlined, color: widget.color, size: 22),
-                    const SizedBox(width: 8),
-                    const Text('منتجات قد تهمك', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1F1A20))),
-                  ]),
-                  const SizedBox(height: 12),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: DynamicContentService.getProducts(section: 'news'),
-                    builder: (context, prodSnap) {
-                      final dynamicProducts = (prodSnap.data?.docs ?? [])
-                          .map((doc) => DynamicContentService.docToProduct(doc))
-                          .toList();
-                      final products = [...dynamicProducts, ...staticProducts];
-                      return SizedBox(
-                    height: 200,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: products.length,
-                      itemBuilder: (_, i) {
-                        final p = products[i];
-                        return Container(
-                          width: 150,
-                          margin: const EdgeInsets.only(left: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))],
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                              child: Image.network(p['image']!, height: 100, width: 150, fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(height: 100, width: 150, color: widget.color.withOpacity(0.1),
-                                  child: Icon(Icons.shopping_bag, color: widget.color))),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text(p['name']!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                  decoration: BoxDecoration(color: widget.color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                                  child: Text(p['category']!, style: TextStyle(fontSize: 9, color: widget.color)),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(p['price']!, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: widget.color)),
-                              ]),
-                            ),
-                          ]),
-                        );
-                      },
-                    ),
-                  );
-                    },
-                  ),
+                  const SizedBox(height: 22),
+                  // ===== AD SLOT 3 — إعلان أسفل المقال =====
+                  NabdaAd(slot: 2, groupId: _title, place: 'news', color: widget.color),
                   const SizedBox(height: 30),
                 ]),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+//  منظومة إعلانات نبضة: أولوية موزونة + جدولة + استهداف + منع تكرار + عدّادات
+// ============================================================
+const bool kAdmobReady = false; // اجعلها true بعد ربط حساب AdMob
+
+class _NAd {
+  final String id, title, link, image, target;
+  final int priority;
+  _NAd(this.id, this.title, this.link, this.image, this.target, this.priority);
+}
+
+class NabdaAds {
+  static List<_NAd>? _cache;
+  static DateTime _cacheAt = DateTime.fromMillisecondsSinceEpoch(0);
+  static List<Map<String, dynamic>> _products = [];
+  static final Map<String, List<_NAd>> _orders = {};
+  static final Set<String> _countedImpressions = {};
+
+  static Future<void> _ensureLoaded() async {
+    if (_cache != null && DateTime.now().difference(_cacheAt).inSeconds < 120) return;
+    try {
+      final adsSnap = await FirebaseFirestore.instance.collection('ads').where('active', isEqualTo: true).limit(50).get();
+      final now = DateTime.now();
+      final list = <_NAd>[];
+      for (final d in adsSnap.docs) {
+        final a = d.data();
+        final start = (a['startAt'] as Timestamp?)?.toDate();
+        final end = (a['endAt'] as Timestamp?)?.toDate();
+        if (start != null && now.isBefore(start)) continue;
+        if (end != null && now.isAfter(end)) continue;
+        list.add(_NAd(
+          d.id,
+          (a['title'] ?? 'إعلان') as String,
+          (a['link'] ?? '') as String,
+          (a['image'] ?? '') as String,
+          (a['target'] ?? '') as String,
+          ((a['priority'] ?? 1) as num).toInt(),
+        ));
+      }
+      _cache = list;
+      _cacheAt = now;
+      _orders.clear();
+      final prodSnap = await FirebaseFirestore.instance.collection('dynamic_products').limit(20).get();
+      _products = prodSnap.docs.map((d) => d.data() as Map<String, dynamic>).toList();
+    } catch (_) {
+      _cache ??= [];
+    }
+  }
+
+  static List<_NAd> _weightedOrder(List<_NAd> ads) {
+    final pool = List.of(ads);
+    final out = <_NAd>[];
+    final rnd = Random();
+    while (pool.isNotEmpty) {
+      int total = 0;
+      for (final a in pool) total += (a.priority < 1 ? 1 : a.priority);
+      int r = rnd.nextInt(total);
+      int idx = 0;
+      for (int i = 0; i < pool.length; i++) {
+        r -= (pool[i].priority < 1 ? 1 : pool[i].priority);
+        if (r < 0) { idx = i; break; }
+      }
+      out.add(pool.removeAt(idx));
+    }
+    return out;
+  }
+
+  static bool _matches(_NAd a, String place) {
+    final t = a.target.trim();
+    return t.isEmpty || t == 'all' || t == place;
+  }
+
+  static Future<_NAd?> pickAd(String groupId, String place, int slot) async {
+    await _ensureLoaded();
+    final key = '$groupId|$place';
+    var order = _orders[key];
+    if (order == null) {
+      final eligible = (_cache ?? []).where((a) => _matches(a, place)).toList();
+      order = _weightedOrder(eligible);
+      _orders[key] = order;
+      if (_orders.length > 80) _orders.remove(_orders.keys.first);
+    }
+    if (order.isEmpty) return null;
+    return order[slot % order.length];
+  }
+
+  static Map<String, dynamic>? pickProduct() {
+    if (_products.isEmpty) return null;
+    return _products[Random().nextInt(_products.length)];
+  }
+
+  static void countImpression(String adId) {
+    if (adId.isEmpty || _countedImpressions.contains(adId)) return;
+    _countedImpressions.add(adId);
+    FirebaseFirestore.instance.collection('ads').doc(adId).update({'impressions': FieldValue.increment(1)}).catchError((_) {});
+  }
+
+  static void countClick(String adId) {
+    if (adId.isEmpty) return;
+    FirebaseFirestore.instance.collection('ads').doc(adId).update({'clicks': FieldValue.increment(1)}).catchError((_) {});
+  }
+}
+
+class NabdaAd extends StatefulWidget {
+  final int slot;
+  final String groupId; // معرّف المقال/الصفحة لمنع التكرار بين الفتحات
+  final String place;   // الاستهداف: all/home/cycle/pregnancy/baby/news/article أو فئة
+  final Color color;
+  const NabdaAd({Key? key, this.slot = 0, this.groupId = 'g', this.place = 'all', this.color = const Color(0xFFE91E63)}) : super(key: key);
+  @override
+  State<NabdaAd> createState() => _NabdaAdState();
+}
+
+class _NabdaAdState extends State<NabdaAd> {
+  _NAd? _ad;
+  Map<String, dynamic>? _product;
+  bool _loading = true;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final ad = await NabdaAds.pickAd(widget.groupId, widget.place, widget.slot);
+      if (ad != null) {
+        if (mounted) setState(() { _ad = ad; _loading = false; });
+        NabdaAds.countImpression(ad.id);
+      } else {
+        final p = NabdaAds.pickProduct();
+        if (mounted) setState(() { _product = p; _loading = false; });
+      }
+    } catch (_) {
+      if (mounted) setState(() { _loading = false; });
+    }
+  }
+
+  Future<void> _onTap() async {
+    if (_ad != null) {
+      NabdaAds.countClick(_ad!.id);
+      final uri = Uri.tryParse(_ad!.link);
+      if (_ad!.link.isNotEmpty && uri != null) {
+        try { await launchUrl(uri, mode: LaunchMode.externalApplication); } catch (_) {}
+      }
+    } else if (_product != null) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopPage()));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading || (_ad == null && _product == null)) return const SizedBox.shrink();
+    final isAd = _ad != null;
+    final img = isAd ? _ad!.image : ((_product?['image'] ?? '') as String);
+    final title = isAd ? _ad!.title : ((_product?['name'] ?? 'منتج') as String);
+    final badge = isAd ? 'إعلان' : 'من متجرنا';
+    final price = isAd ? '' : ((_product?['price'] ?? '') as String);
+    return GestureDetector(
+      onTap: _onTap,
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            child: Image.network(img, width: double.infinity, height: 150, fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(height: 150, color: widget.color.withOpacity(0.1), child: Icon(Icons.image, color: widget.color))),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: widget.color.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+                child: Text(badge, style: TextStyle(fontSize: 10, color: widget.color, fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold))),
+              if (price.isNotEmpty) Text(price, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: widget.color)),
+              const SizedBox(width: 6),
+              const Icon(Icons.arrow_back_ios, size: 12, color: Colors.grey),
+            ]),
+          ),
+        ]),
       ),
     );
   }

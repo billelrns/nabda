@@ -12,9 +12,21 @@ const Color _text1 = Color(0xFF2D2D3A);
 const Color _text2 = Color(0xFF6B7280);
 const Color _indigo = Color(0xFF5C6BC0);
 
-DocumentReference get _userDoc {
-  final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
-  return FirebaseFirestore.instance.collection('users').doc(uid);
+// ينتظر جهوزية تسجيل الدخول لتفادي القراءة/الكتابة تحت حساب "anonymous" على الويب
+Future<DocumentReference?> _userDocRef() async {
+  var user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    try {
+      user = await FirebaseAuth.instance
+          .authStateChanges()
+          .firstWhere((u) => u != null)
+          .timeout(const Duration(seconds: 6));
+    } catch (_) {
+      user = FirebaseAuth.instance.currentUser;
+    }
+  }
+  if (user == null) return null;
+  return FirebaseFirestore.instance.collection('users').doc(user.uid);
 }
 
 // ═══════════════════════════════════════════════
@@ -57,7 +69,9 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> with SingleTi
 
   Future<void> _loadProfile() async {
     try {
-      final doc = await _userDoc.get();
+      final ref = await _userDocRef();
+      if (ref == null) { setState(() { _profileLoaded = true; _needsSetup = true; }); return; }
+      final doc = await ref.get();
       final data = doc.data() as Map<String, dynamic>? ?? {};
       final wt = data['weight_tracker_profile'] as Map<String, dynamic>?;
       if (wt != null) {
@@ -89,7 +103,9 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> with SingleTi
 
   Future<void> _loadEntries() async {
     try {
-      final snap = await _userDoc.collection('weight_tracker')
+      final ref = await _userDocRef();
+      if (ref == null) { setState(() { _loadingEntries = false; }); return; }
+      final snap = await ref.collection('weight_tracker')
           .orderBy('date', descending: false).get();
       setState(() {
         _entries = snap.docs.map((d) {
@@ -180,7 +196,14 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> with SingleTi
   }
 
   Future<void> _saveProfile(double preWeight, double height, int week, bool twins) async {
-    await _userDoc.set({
+    final ref = await _userDocRef();
+    if (ref == null) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذّر الحفظ — تأكدي من تسجيل الدخول'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    await ref.set({
       'weight_tracker_profile': {
         'pre_weight': preWeight,
         'height': height,
@@ -198,26 +221,41 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> with SingleTi
   }
 
   Future<void> _addWeight(double weight) async {
-    await _userDoc.collection('weight_tracker').add({
-      'weight': weight,
-      'date': FieldValue.serverTimestamp(),
-      'week': _currentWeek,
-    });
-    await _loadEntries();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('تم تسجيل الوزن بنجاح'),
-          backgroundColor: _teal,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+    final ref = await _userDocRef();
+    if (ref == null) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذّر الحفظ — تأكدي من تسجيل الدخول'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    try {
+      await ref.collection('weight_tracker').add({
+        'weight': weight,
+        'date': FieldValue.serverTimestamp(),
+        'week': _currentWeek,
+      });
+      await _loadEntries();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('تم تسجيل الوزن بنجاح'),
+            backgroundColor: _teal,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ في الحفظ: $e'), backgroundColor: Colors.red),
       );
     }
   }
 
   Future<void> _deleteEntry(String id) async {
-    await _userDoc.collection('weight_tracker').doc(id).delete();
+    final ref = await _userDocRef();
+    if (ref == null) return;
+    await ref.collection('weight_tracker').doc(id).delete();
     await _loadEntries();
   }
 

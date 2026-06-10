@@ -119,6 +119,16 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 onTap: () => _push(_DynamicContentScreen()),
               ),
 
+            // Ads (owner/admin only)
+            if (_admin.hasPermission(Permission.manageCoupons))
+              _ModuleCard(
+                title: 'إدارة الإعلانات',
+                subtitle: 'إعلانات داخل المقالات — إضافة، رفع صورة، تفعيل، حذف',
+                emoji: '\u{1F4E2}',
+                color: const Color(0xFFAB47BC),
+                onTap: () => _push(_AdsManagementScreen()),
+              ),
+
             // Users
             if (_admin.hasPermission(Permission.viewUsers))
               _ModuleCard(
@@ -3691,6 +3701,185 @@ class _DynamicProductsTab extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+
+// ─── Ads Management (owner/supervisor) ───
+class _AdsManagementScreen extends StatefulWidget {
+  @override
+  State<_AdsManagementScreen> createState() => _AdsManagementScreenState();
+}
+
+class _AdsManagementScreenState extends State<_AdsManagementScreen> {
+  final _titleC = TextEditingController();
+  final _linkC = TextEditingController();
+  final _imageC = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+  Uint8List? _bytes;
+  XFile? _file;
+  bool _saving = false;
+  final _priorityC = TextEditingController(text: '1');
+  String _target = '';
+  DateTime? _start;
+  DateTime? _end;
+
+  void _snack(String m, {Color c = const Color(0xFF00897B)}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m), backgroundColor: c));
+  }
+
+  Future<void> _pick() async {
+    try {
+      final f = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+      if (f != null) {
+        final b = await f.readAsBytes();
+        setState(() { _file = f; _bytes = b; _imageC.clear(); });
+      }
+    } catch (e) { _snack('تعذّر اختيار الصورة', c: Colors.red); }
+  }
+
+  Future<void> _add() async {
+    final hasImg = _bytes != null || _imageC.text.trim().isNotEmpty;
+    if (!hasImg) { _snack('أضف صورة للإعلان (رفع أو رابط)', c: Colors.orange); return; }
+    setState(() => _saving = true);
+    try {
+      String image = _imageC.text.trim();
+      if (_file != null && _bytes != null) {
+        final ts = DateTime.now().millisecondsSinceEpoch;
+        final ref = FirebaseStorage.instance.ref().child('ads/ad_$ts.jpg');
+        await ref.putData(_bytes!, SettableMetadata(contentType: 'image/jpeg'));
+        image = await ref.getDownloadURL();
+      }
+      final data = <String, dynamic>{
+        'title': _titleC.text.trim(),
+        'link': _linkC.text.trim(),
+        'image': image,
+        'active': true,
+        'priority': int.tryParse(_priorityC.text.trim()) ?? 1,
+        'target': _target,
+        'impressions': 0,
+        'clicks': 0,
+        'createdAt': FieldValue.serverTimestamp(),
+        'createdBy': FirebaseAuth.instance.currentUser?.uid,
+      };
+      if (_start != null) data['startAt'] = Timestamp.fromDate(_start!);
+      if (_end != null) data['endAt'] = Timestamp.fromDate(_end!);
+      await FirebaseFirestore.instance.collection('ads').add(data);
+      _titleC.clear(); _linkC.clear(); _imageC.clear(); _priorityC.text = '1';
+      setState(() { _file = null; _bytes = null; _target = ''; _start = null; _end = null; });
+      _snack('تمت إضافة الإعلان ✓');
+    } catch (e) {
+      _snack('خطأ: $e', c: Colors.red);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const teal = Color(0xFF00897B);
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF7F7FB),
+        appBar: AppBar(title: const Text('\u{1F4E2} إدارة الإعلانات', style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: const Color(0xFFAB47BC), foregroundColor: Colors.white),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)]),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('إضافة إعلان جديد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                TextField(controller: _titleC, decoration: const InputDecoration(labelText: 'عنوان الإعلان', border: OutlineInputBorder())),
+                const SizedBox(height: 12),
+                TextField(controller: _linkC, decoration: const InputDecoration(labelText: 'رابط الوجهة (URL)', hintText: 'https://...', border: OutlineInputBorder())),
+                const SizedBox(height: 12),
+                Row(children: [
+                  SizedBox(width: 110, child: TextField(controller: _priorityC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'الأولوية', border: OutlineInputBorder()))),
+                  const SizedBox(width: 10),
+                  Expanded(child: DropdownButtonFormField<String>(
+                    value: _target,
+                    decoration: const InputDecoration(labelText: 'الاستهداف', border: OutlineInputBorder()),
+                    items: const [
+                      DropdownMenuItem(value: '', child: Text('كل الأماكن')),
+                      DropdownMenuItem(value: 'news', child: Text('المقالات/الأخبار')),
+                      DropdownMenuItem(value: 'pregnancy', child: Text('الحمل')),
+                      DropdownMenuItem(value: 'cycle', child: Text('الدورة')),
+                      DropdownMenuItem(value: 'baby', child: Text('الطفل')),
+                      DropdownMenuItem(value: 'home', child: Text('الرئيسية')),
+                      DropdownMenuItem(value: 'fertility', child: Text('رحلة الخصوبة')),
+                    ],
+                    onChanged: (v) => setState(() => _target = v ?? ''),
+                  )),
+                ]),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: OutlinedButton.icon(icon: const Icon(Icons.event, size: 18), label: Text(_start == null ? 'يبدأ: غير محدد' : 'يبدأ: ' + _start!.toString().substring(0,10)), onPressed: () async { final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2024), lastDate: DateTime(2030)); if (d != null) setState(() => _start = d); })),
+                  const SizedBox(width: 10),
+                  Expanded(child: OutlinedButton.icon(icon: const Icon(Icons.event_busy, size: 18), label: Text(_end == null ? 'ينتهي: غير محدد' : 'ينتهي: ' + _end!.toString().substring(0,10)), onPressed: () async { final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2024), lastDate: DateTime(2030)); if (d != null) setState(() => _end = DateTime(d.year, d.month, d.day, 23, 59)); })),
+                ]),
+                const SizedBox(height: 12),
+                const Text('صورة الإعلان', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('المقاس الأفضل: 1200×628 بكسل (أفقي، نسبة 1.91:1). أقل قبول 800×420.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 8),
+                if (_bytes != null)
+                  ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.memory(_bytes!, height: 150, width: double.infinity, fit: BoxFit.cover))
+                else if (_imageC.text.trim().isNotEmpty)
+                  ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(_imageC.text.trim(), height: 150, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(height: 150, color: teal.withOpacity(0.08), child: const Center(child: Icon(Icons.image, color: teal))))),
+                const SizedBox(height: 8),
+                Row(children: [
+                  Expanded(child: OutlinedButton.icon(onPressed: _pick, icon: const Icon(Icons.upload), label: const Text('رفع صورة من الجهاز'))),
+                ]),
+                const SizedBox(height: 8),
+                TextField(controller: _imageC, decoration: const InputDecoration(labelText: 'أو الصق رابط صورة', hintText: 'https://...', border: OutlineInputBorder()), onChanged: (_) => setState(() { _file = null; _bytes = null; })),
+                const SizedBox(height: 14),
+                SizedBox(width: double.infinity, child: ElevatedButton(
+                  onPressed: _saving ? null : _add,
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFAB47BC), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
+                  child: _saving ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('➕ إضافة الإعلان', style: TextStyle(fontWeight: FontWeight.bold)),
+                )),
+              ]),
+            ),
+            const SizedBox(height: 20),
+            const Text('الإعلانات الحالية', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('ads').orderBy('createdAt', descending: true).snapshots(),
+              builder: (context, snap) {
+                if (snap.hasError) return Padding(padding: const EdgeInsets.all(12), child: Text('خطأ: ${snap.error}', style: const TextStyle(color: Colors.red)));
+                final docs = snap.data?.docs ?? [];
+                if (docs.isEmpty) return const Padding(padding: EdgeInsets.all(16), child: Text('لا توجد إعلانات بعد — سيظهر منتج من المتجر تلقائياً.', style: TextStyle(color: Colors.grey)));
+                return Column(children: docs.map((d) {
+                  final a = d.data() as Map<String, dynamic>;
+                  final on = a['active'] != false;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)]),
+                    child: Row(children: [
+                      ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network((a['image'] ?? '') as String, width: 84, height: 60, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(width: 84, height: 60, color: teal.withOpacity(0.08), child: const Icon(Icons.image, color: teal)))),
+                      const SizedBox(width: 10),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text((a['title'] ?? 'إعلان') as String, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('👁 ' + '${a['impressions'] ?? 0}' + ' · 🖱 ' + '${a['clicks'] ?? 0}' + ' · أولوية ' + '${a['priority'] ?? 1}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ])),
+                      Switch(value: on, activeColor: teal, onChanged: (v) => FirebaseFirestore.instance.collection('ads').doc(d.id).update({'active': v})),
+                      IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: () async {
+                        final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(title: const Text('حذف الإعلان؟'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')), TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('حذف', style: TextStyle(color: Colors.red)))]));
+                        if (ok == true) FirebaseFirestore.instance.collection('ads').doc(d.id).delete();
+                      }),
+                    ]),
+                  );
+                }).toList());
+              },
+            ),
+          ],
         ),
       ),
     );

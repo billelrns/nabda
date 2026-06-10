@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/splash_screen.dart';
 import '../screens/onboarding_screen.dart';
+import '../screens/intro_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/home/home_screen.dart';
@@ -28,6 +29,7 @@ import '../services/admin_service.dart';
 class AppRoutes {
   static const String splash = '/';
   static const String onboarding = '/onboarding';
+  static const String intro = '/intro';
   static const String login = '/login';
   static const String register = '/register';
   static const String home = '/home';
@@ -57,6 +59,10 @@ class AppRoutes {
       GoRoute(
         path: splash,
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: intro,
+        builder: (context, state) => const IntroScreen(),
       ),
       GoRoute(
         path: onboarding,
@@ -154,7 +160,6 @@ class AppRoutes {
         path: privacy,
         builder: (context, state) => const PrivacyPolicyPage(),
       ),
-<<<<<<< HEAD
       GoRoute(
         path: medicationTracker,
         builder: (context, state) => const MedicationTrackerScreen(),
@@ -163,8 +168,6 @@ class AppRoutes {
         path: healthMeasurements,
         builder: (context, state) => const HealthMeasurementsScreen(),
       ),
-=======
->>>>>>> 453daa85893860540803e26cf738c05a8fac2c35
     ],
     errorBuilder: (context, state) => Scaffold(
       appBar: AppBar(title: const Text('خطأ')),

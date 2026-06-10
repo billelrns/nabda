@@ -322,6 +322,40 @@ lib/
 #### 35. أفكار ترويج المنتجات داخل التطبيق (مقترحة)
 - الأقوى: ربط المنتجات بمرحلة المستخدمة (أسبوع الحمل/عمر الطفل). إضافة: عرض/منتج اليوم، تخفيضات سريعة، تذكير السلة المتروكة، بيع مكمّل بعد الشراء، خصم أول طلب، توقيت ذكي. وداخل التطبيق: بانر عروض، كاروسيل «موصى لكِ»، ذكر منتجات في نهاية المقالات، شارة عروض على أيقونة المتجر.
 
+### المرحلة 13: موقع الأخبار (nabda.online) + لوحة التحكم + نظام الإعلانات (2-5 يونيو 2026)
+
+#### 36. موقع nabda.online (WordPress + Bimber)
+- الدومين مسجّل في **Namecheap**، موجّه إلى **Hostinger** (خطة Business) عبر خوادم الأسماء `hermes.dns-parking.com` و`artemis.dns-parking.com`. ثُبّت WordPress كموقع ثانٍ بجانب piecety.com.
+- ثيم **Bimber** (مجلة فيروسية) — **أُزيل من ThemeForest** وخادم تسجيله `api.bringthepixel.com` يرجع 404، لذلك يعمل **بدون تسجيل** (لا تحديثات/دعم/Snax). فوقه **ثيم فرعي `nabda-child`** (RTL، خط Almarai، ألوان فيروزي/وردي) — ملفاته في `nabda_website/`.
+- **إضافة المزامنة `nabda-app-sync` (v1.1.0):** عند نشر/تعديل مقال على الموقع تُرسله إلى Firestore `dynamic_articles` (معرّف ثابت `wp_<postID>`، `section=news`)، وتحذفه عند حذف المقال. تسجّل الدخول عبر Firebase Auth بحساب `billel@nabda.com` (staff) للحصول على idToken لأن قواعد Firestore تسمح بالكتابة للموظّفين فقط.
+
+#### 37. لوحة تحكم الأخبار (ملف `nabda_news_dashboard.html`)
+- صفحة HTML واحدة تُفتح بالمتصفح: تسجيل دخول بحساب إداري، **جلب أحدث المواضيع** عبر Gemini 2.5-flash مع بحث Google، **صور حقيقية من Pexels** (صورتان لكل مقال)، مراجعة وتعديل، ثم **نشر مباشر إلى `dynamic_articles`** فيظهر في «آخر الأخبار» بالتطبيق.
+- المفاتيح داخل الملف: Firebase web key، مفتاح Gemini الجديد، مفتاح Pexels.
+
+#### 38. إصلاحات Firestore الحاسمة
+- **فهرس مركّب مفقود** على `dynamic_articles` (الحقول: `section` تصاعدي، `createdAt` تنازلي) — كان غيابه يمنع ظهور **كل المحتوى الديناميكي** في التطبيق (home/baby/cycle/pregnancy/news). أُنشئ الفهرس.
+- قاعدة جديدة لمجموعة **`ads`** (قراءة للمسجّلين، كتابة للموظّفين) أُضيفت إلى `firestore.rules` ونُشرت في الكونسول.
+- ملاحظة وصول: مشروع Firebase `nabda-app-ca864` مملوك لحساب Google مختلف عن `billelnoui19@gmail.com` (الأخير يعطي 403 في الكونسول).
+
+#### 39. تحسين عرض المقالات
+- مقالات أطول (٥-٧ فقرات)، **صورة ثانية `image2`** تظهر قبل الفقرة الأخيرة، و**حُذف كاروسيل المنتجات** التلقائي في آخر المقال.
+- أُضيف `image2` إلى `DynamicContentService.docToArticle` و`_NewsDetailPage` في `news_section.dart`.
+
+#### 40. نظام الإعلانات (إعلانات Google + إعلانات خاصة + منتج من المتجر)
+- **ودجت `NabdaAd`** (في `news_section.dart`): يمزج في أماكن الإعلانات بين **إعلاناتك الخاصة** (مجموعة `ads`، active==true) و**منتج بارز من المتجر** (`dynamic_products`)، مع علَم `kAdmobReady=false` يحجز خانة **Google AdMob** للتفعيل لاحقاً (يحتاج حساب AdMob + حزمة google_mobile_ads). الضغط على الإعلان الخاص يفتح رابطه عبر `url_launcher`، والمنتج يفتح صفحة المتجر.
+- **مدير إعلانات داخل التطبيق** (`_AdsManagementScreen` في لوحة الأدمن) — بطاقة «📢 إدارة الإعلانات» تظهر **للمالك/المشرف فقط** (صلاحية `manageCoupons`): إضافة إعلان (عنوان + رابط + **رفع صورة من الجهاز** إلى Storage أو رابط)، تفعيل/إيقاف، حذف. مكتوب فيها **المقاس الأفضل: 1200×628 بكسل (1.91:1)**.
+- لوحة الويب أيضاً تدير الإعلانات (القسم ④) مع رفع صورة (Firebase Storage) وزر Pexels وهامش المقاس.
+- في `main.dart` استُبدل مكان «Google AdMob» الثابت في صفحة تفاصيل المقال بودجت `NabdaAd` (أُضيف import لـ `widgets/news_section.dart`). ملاحظة: توجد صفحتا مقالات أخريان فيهما نفس المكان الثابت (`discover_articles_screen.dart`، `pregnancy_weeks_screen.dart`) لم تُحوّل بعد.
+
+#### 41. تبعيات ومتأثرات
+- أُضيف **`url_launcher: ^6.3.1`** إلى `pubspec.yaml`، وكتلة `<queries>` (https) إلى `AndroidManifest.xml` (تُعدّلان يدوياً في `C:\nabda_app`).
+- صار `copy_to_nabda.bat` ينسخ: main.dart، medication_tracker_screen.dart، medication_model.dart، health_tracking_service.dart، admin_panel_screen.dart، weight_tracker_screen.dart، **news_section.dart**، **dynamic_content_service.dart** (+ هذا الملف).
+- **مفتاح Gemini القديم في `main.dart` عُطّل من Google (تسريب)** → مساعد الذكاء الاصطناعي في التطبيق يحتاج مفتاحاً جديداً من aistudio.google.com.
+- **تنبيه بناء:** مزامنة مجلد OneDrive تقتطع الملفات أحياناً عند الكتابة عبر أدوات التحرير المباشرة — الحل المعتمد: بناء الملف كاملاً في `/tmp` ثم نسخه (`cp`) إلى المجلد.
+
+---
+
 ---
 
 ## الملفات الرئيسية
@@ -475,7 +509,7 @@ aabc7c2 - feat: improved products & users management with profiles & role promot
 
 - [ ] إضافة firebase_messaging لإشعارات push حقيقية
 - [ ] نقل مفاتيح API إلى متغيرات بيئة (.env)
-- [ ] إنشاء موقع ويب للتطبيق
+- [x] إنشاء موقع ويب للتطبيق (nabda.online — WordPress/Bimber + مزامنة تلقائية)
 - [ ] رفع التحديثات إلى GitHub (git push origin main)
 - [ ] إضافة unit tests للخدمات الأساسية
 - [ ] تحسين أداء التطبيق (lazy loading للصور)
@@ -499,5 +533,5 @@ aabc7c2 - feat: improved products & users management with profiles & role promot
 
 ---
 
-*آخر تحديث: 1 يونيو 2026*
+*آخر تحديث: 5 يونيو 2026*
 *إعداد: Claude AI بناءً على جلسات العمل مع Billel*

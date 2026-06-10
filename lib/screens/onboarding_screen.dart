@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,7 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 // ──────────────────────────────────────────────────────────
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
+  /// يُستدعى بعد إنهاء إعداد الحساب (RootGate يقرّر الوجهة).
+  final VoidCallback? onDone;
+  const OnboardingScreen({Key? key, this.onDone}) : super(key: key);
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
@@ -28,7 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   static const _sub = Color(0xFF4A434B);
 
   // ── State ──
-  int _step = 0; // 0-6
+  int _step = 1;
   String? _lifeStage; // 'pregnant','baby','planning','cycle'
   String? _calcMethod; // 'lastPeriod','dueDate','dontKnow'
   DateTime _selectedDate = DateTime.now().subtract(const Duration(days: 90));
@@ -38,6 +39,30 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   bool _termsAccepted = false;
   bool _privacyAccepted = false;
   bool _saving = false;
+  DateTime _babyBirthDate = DateTime.now();
+  final _babyNameController = TextEditingController();
+
+  // ── بيانات الدورة/الخصوبة (لمرحلتَي "أخطط للحمل" و"تتبع الدورة") ──
+  int _cycleLength = 28;
+  // استبيان الخصوبة (نفس خيارات FertilityScreen)
+  int _tryMonths = 6; // 3 / 6 / 12 / 24
+  String _age = '25-34'; // 18-24 / 25-34 / 35-39 / 40+
+  String _regular = 'yes'; // yes / no
+  String _condition = 'none'; // none / pcos / thyroid / other
+
+  // أنا حامل → pregnancyProfile
+  bool _firstPregnancy = true;
+  String _pregBabies = 'single';   // single / twins / more
+  String _pregAge = '25-34';       // 18-24 / 25-34 / 35-39 / 40+
+  String _pregCondition = 'none';  // none / diabetes / hypertension / nausea / other
+  // عندي طفل → babyProfile
+  String _babyGender = 'male';     // male / female
+  String _feeding = 'breast';      // breast / formula / mixed
+  bool _firstChild = true;
+  // تتبع الدورة → cycleProfile
+  int _periodLength = 5;           // 2..10
+  String _cycleRegular = 'yes';    // yes / no
+  String _trackingGoal = 'health'; // health / fertility / avoid
 
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
@@ -57,100 +82,126 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void dispose() {
     _fadeCtrl.dispose();
     _nameController.dispose();
+    _babyNameController.dispose();
     super.dispose();
   }
 
-  void _goNext() {
+  /// مسار الخطوات حسب المرحلة المختارة (تنقّل معتمد على المسار = أنظف وأأمن).
+  /// 0 ترحيب · 1 المرحلة · 2 طريقة الحمل · 3 التاريخ · 4 الأسابيع ·
+  /// 7 إعداد الخصوبة · 5 الاسم · 6 الموافقة.
+  List<int> _path() {
+    switch (_lifeStage) {
+      case 'pregnant':
+        return _calcMethod == 'dontKnow' ? [1, 2, 4, 9] : [1, 2, 3, 9];
+      case 'planning':
+        return [1, 3, 7];
+      case 'cycle':
+        return [1, 3, 7];   // الخطوة 7 موسَّعة (انظر 5)
+      case 'baby':
+        return [1, 8, 10];
+      default:
+        return [1];
+    }
+  }
+
+  void _animateTo(int target) {
     _fadeCtrl.reverse().then((_) {
-      setState(() {
-        if (_step == 1 && _lifeStage != 'pregnant') {
-          _step = 5; // skip pregnancy steps, go to name
-        } else if (_step == 2 && _calcMethod == 'dontKnow') {
-          _step = 4; // go to weeks picker
-        } else if (_step == 3) {
-          _step = 5; // skip weeks picker, go to name
-        } else if (_step == 4) {
-          _step = 5; // from weeks picker to name
-        } else {
-          _step++;
-        }
-      });
+      setState(() => _step = target);
       _fadeCtrl.forward();
     });
   }
 
+  void _goNext() {
+    final p = _path();
+    final i = p.indexOf(_step);
+    if (i >= 0 && i < p.length - 1) {
+      _animateTo(p[i + 1]);
+    }
+  }
+
   void _goBack() {
-    if (_step == 0) return;
-    _fadeCtrl.reverse().then((_) {
-      setState(() {
-        if (_step == 5 && _lifeStage != 'pregnant') {
-          _step = 1; // back to life stage
-        } else if (_step == 4 && _calcMethod == 'dontKnow') {
-          _step = 2;
-        } else if (_step == 5 && _calcMethod == 'dontKnow') {
-          _step = 4;
-        } else if (_step == 5) {
-          _step = 3;
-        } else {
-          _step--;
-        }
-      });
-      _fadeCtrl.forward();
-    });
+    if (_step == 1) return;
+    final p = _path();
+    final i = p.indexOf(_step);
+    if (i > 0) {
+      _animateTo(p[i - 1]);
+    } else {
+      _animateTo(1);
+    }
   }
 
   // ── Save & navigate ──
   Future<void> _finishOnboarding() async {
     setState(() => _saving = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('onboarding_done', true);
+      final user = FirebaseAuth.instance.currentUser;
+      final stage = _lifeStage ?? 'cycle';
 
-      // Calculate pregnancy start date if applicable
+      // تاريخ بداية الحمل (pregnancyStart) كما هو حالياً
       DateTime? pregnancyStart;
-      if (_lifeStage == 'pregnant') {
+      if (stage == 'pregnant') {
         if (_calcMethod == 'lastPeriod') {
           pregnancyStart = _selectedDate;
         } else if (_calcMethod == 'dueDate') {
-          pregnancyStart =
-              _selectedDate.subtract(const Duration(days: 280));
+          pregnancyStart = _selectedDate.subtract(const Duration(days: 280));
         } else {
-          // from weeks
           pregnancyStart = DateTime.now()
               .subtract(Duration(days: _selectedWeeks * 7 + _selectedDays));
         }
       }
 
-      // Save locally
-      await prefs.setString('life_stage', _lifeStage ?? 'cycle');
-      await prefs.setString('user_name', _nameController.text.trim());
-      if (pregnancyStart != null) {
-        await prefs.setString(
-            'pregnancy_start', pregnancyStart.toIso8601String());
+      final data = <String, dynamic>{
+        'lifeStage': stage,
+        'onboardingDone': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      if (stage == 'pregnant' && pregnancyStart != null) {
+        data['pregnancyStartDate'] = Timestamp.fromDate(pregnancyStart);
+      }
+      if (stage == 'pregnant') {
+        data['pregnancyProfile'] = {'firstPregnancy': _firstPregnancy, 'babies': _pregBabies, 'age': _pregAge, 'condition': _pregCondition};
+      }
+      if (stage == 'planning' || stage == 'cycle') {
+        data['lastPeriodStart'] = Timestamp.fromDate(_selectedDate);
+        data['cycleLength'] = _cycleLength;
+      }
+      if (stage == 'planning') {
+        data['goal'] = 'trying';
+        data['fertilityProfile'] = {
+          'tryMonths': _tryMonths,
+          'age': _age,
+          'regular': _regular,
+          'condition': _condition,
+        };
+      }
+      if (stage == 'baby') {
+        data['babyBirthDate'] = Timestamp.fromDate(_babyBirthDate);
+        final bn = _babyNameController.text.trim();
+        if (bn.isNotEmpty) data['babyName'] = bn;
+      }
+      if (stage == 'baby') {
+        data['babyProfile'] = {'gender': _babyGender, 'feeding': _feeding, 'firstChild': _firstChild};
+        data['babyGender'] = _babyGender;
+      }
+      if (stage == 'cycle') {
+        data['cycleProfile'] = {'periodLength': _periodLength, 'regular': _cycleRegular, 'trackingGoal': _trackingGoal};
       }
 
-      // Save to Firestore if user is logged in
-      final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final data = <String, dynamic>{
-          'displayName': _nameController.text.trim(),
-          'lifeStage': _lifeStage,
-          'onboardingDone': true,
-          'updatedAt': FieldValue.serverTimestamp(),
-        };
-        if (pregnancyStart != null) {
-          data['pregnancyStartDate'] = Timestamp.fromDate(pregnancyStart);
-        }
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
             .set(data, SetOptions(merge: true));
       }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('life_stage', stage);
+      await prefs.setBool('onboarding_done', true);
     } catch (_) {}
 
     if (!mounted) return;
     setState(() => _saving = false);
-    context.go('/login');
+    widget.onDone?.call();
   }
 
   // ══════════════════════════════════════════════════════════
@@ -171,8 +222,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Widget _buildCurrentStep() {
     switch (_step) {
-      case 0:
-        return _welcomeStep();
       case 1:
         return _lifeStageStep();
       case 2:
@@ -181,12 +230,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         return _datePickerStep();
       case 4:
         return _weeksPickerStep();
-      case 5:
-        return _nameStep();
-      case 6:
-        return _termsStep();
+      case 7:
+        return _fertilitySetupStep();
+      case 8:
+        return _babyStep();
+      case 9:
+        return _pregnancyProfileStep();
+      case 10:
+        return _babyProfileStep();
       default:
-        return _welcomeStep();
+        return _lifeStageStep();
     }
   }
 
@@ -202,14 +255,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Widget _progressBar() {
-    // Calculate effective step out of total
-    int totalSteps = _lifeStage == 'pregnant' ? 7 : 4;
-    int currentStep;
-    if (_lifeStage != 'pregnant') {
-      currentStep = _step <= 1 ? _step + 1 : (_step == 5 ? 3 : 4);
-    } else {
-      currentStep = _step + 1;
-    }
+    // التقدّم معتمد على مسار المرحلة الحالية
+    final p = _path();
+    final idx = p.indexOf(_step);
+    final int totalSteps = p.length;
+    final int currentStep = idx >= 0 ? idx + 1 : 1;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 8),
       child: ClipRRect(
@@ -439,10 +489,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
           ),
         ),
-        _primaryButton(
-          text: 'التالي',
-          onPressed: _lifeStage != null ? _goNext : null,
-        ),
+        _saving
+            ? const Center(child: CircularProgressIndicator(color: _pink))
+            : _primaryButton(
+                text: _path().last == _step ? 'حفظ' : 'التالي',
+                onPressed: _lifeStage != null
+                    ? (_path().last == _step ? _finishOnboarding : _goNext)
+                    : null,
+              ),
         const SizedBox(height: 30),
       ],
     );
@@ -567,10 +621,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           value: 'dontKnow',
         ),
         const Spacer(),
-        _primaryButton(
-          text: 'التالي',
-          onPressed: _calcMethod != null ? _goNext : null,
-        ),
+        _saving
+            ? const Center(child: CircularProgressIndicator(color: _pink))
+            : _primaryButton(
+                text: _path().last == _step ? 'حفظ' : 'التالي',
+                onPressed: _calcMethod != null
+                    ? (_path().last == _step ? _finishOnboarding : _goNext)
+                    : null,
+              ),
         const SizedBox(height: 30),
       ],
     );
@@ -621,7 +679,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   //  STEP 3 — DATE PICKER (like WeMoms & Healofy scroll wheels)
   // ══════════════════════════════════════════════════════════
   Widget _datePickerStep() {
-    final isLastPeriod = _calcMethod == 'lastPeriod';
+    // للمرحلتين "أخطط للحمل" و"تتبع الدورة" نطلب تاريخ آخر دورة دائماً.
+    final isLastPeriod = _lifeStage != 'pregnant' || _calcMethod == 'lastPeriod';
     final title = isLastPeriod
         ? 'متى كان تاريخ\nآخر دورة شهرية؟'
         : 'ما هو تاريخ\nالولادة المتوقع؟';
@@ -667,7 +726,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isLastPeriod ? '🤰 أنا حامل' : '👶 تاريخ الولادة',
+                _lifeStage == 'planning'
+                    ? '💕 أخطط للحمل'
+                    : _lifeStage == 'cycle'
+                        ? '📅 تتبع الدورة'
+                        : (isLastPeriod ? '🤰 أنا حامل' : '👶 تاريخ الولادة'),
                 style: const TextStyle(fontSize: 14, color: _pink),
               ),
               const SizedBox(width: 8),
@@ -702,7 +765,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           ),
         ),
         const Spacer(),
-        _primaryButton(text: 'التالي', onPressed: _goNext),
+        _saving
+            ? const Center(child: CircularProgressIndicator(color: _pink))
+            : _primaryButton(
+                text: _path().last == _step ? 'حفظ' : 'التالي',
+                onPressed: _path().last == _step ? _finishOnboarding : _goNext,
+              ),
         const SizedBox(height: 30),
       ],
     );
@@ -797,10 +865,249 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           ],
         ),
         const Spacer(),
-        _primaryButton(
-          text: 'التالي',
-          onPressed: _selectedWeeks > 0 || _selectedDays > 0 ? _goNext : null,
+        _saving
+            ? const Center(child: CircularProgressIndicator(color: _pink))
+            : _primaryButton(
+                text: _path().last == _step ? 'حفظ' : 'التالي',
+                onPressed: _selectedWeeks > 0 || _selectedDays > 0
+                    ? (_path().last == _step ? _finishOnboarding : _goNext)
+                    : null,
+              ),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  STEP 7 — FERTILITY SETUP (طول الدورة + استبيان الخصوبة)
+  // ══════════════════════════════════════════════════════════
+  Widget _fertilitySetupStep() {
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        _backButton(),
+        _progressBar(),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: Text(
+            _lifeStage == 'cycle' ? 'إعداد الدورة الشهرية' : 'إعداد رحلة الخصوبة',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                fontSize: 26, fontWeight: FontWeight.w800, color: _dark),
+          ),
         ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: Text(
+            _lifeStage == 'cycle'
+                ? 'حددي طول دورتك الشهرية لتخصيص جدول التوقعات والتذكيرات'
+                : 'أجيبي على أسئلة قصيرة لنحسب أيام التبويض ونمنحك توجيهاً مخصّصاً',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, color: _sub, height: 1.5),
+          ),
+        ),
+        const SizedBox(height: 22),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 26),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _fertField(
+                  'طول دورتك الشهرية',
+                  _dropInt(_cycleLength, [for (int i = 21; i <= 35; i++) i],
+                      (v) => setState(() => _cycleLength = v),
+                      suffix: ' يوم'),
+                ),
+                if (_lifeStage == 'cycle') ...[
+                  _fertField('مدة الحيض', _dropInt(_periodLength, [for (int i = 2; i <= 10; i++) i],
+                    (v) => setState(() => _periodLength = v), suffix: ' أيام')),
+                  _fertField('هل دورتك منتظمة؟', _dropStr<String>(_cycleRegular,
+                    const {'yes': 'نعم، منتظمة', 'no': 'لا، غير منتظمة'}, (v) => setState(() => _cycleRegular = v))),
+                  _fertField('هدفك من التتبع', _dropStr<String>(_trackingGoal,
+                    const {'health': 'متابعة صحية', 'fertility': 'معرفة أيام الخصوبة', 'avoid': 'تنظيم/تجنّب الحمل'}, (v) => setState(() => _trackingGoal = v))),
+                ],
+                if (_lifeStage != 'cycle') ...[
+                  _fertField(
+                    'منذ متى تحاولين الحمل؟',
+                    _dropStr<int>(_tryMonths, const {
+                      3: 'أقل من 6 أشهر',
+                      6: '6 إلى 12 شهراً',
+                      12: 'أكثر من سنة',
+                      24: 'أكثر من سنتين',
+                    }, (v) => setState(() => _tryMonths = v)),
+                  ),
+                  _fertField(
+                    'عمرك',
+                    _dropStr<String>(_age, const {
+                      '18-24': '18 - 24',
+                      '25-34': '25 - 34',
+                      '35-39': '35 - 39',
+                      '40+': '40 فأكثر',
+                    }, (v) => setState(() => _age = v)),
+                  ),
+                  _fertField(
+                    'هل دورتك منتظمة؟',
+                    _dropStr<String>(_regular, const {
+                      'yes': 'نعم، منتظمة',
+                      'no': 'لا، غير منتظمة',
+                    }, (v) => setState(() => _regular = v)),
+                  ),
+                  _fertField(
+                    'هل لديك حالة معروفة؟',
+                    _dropStr<String>(_condition, const {
+                      'none': 'لا شيء',
+                      'pcos': 'تكيّس المبايض (PCOS)',
+                      'thyroid': 'الغدة الدرقية',
+                      'other': 'أخرى',
+                    }, (v) => setState(() => _condition = v)),
+                  ),
+                ],
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+        _saving
+            ? const Center(child: CircularProgressIndicator(color: _pink))
+            : _primaryButton(
+                text: _path().last == _step ? 'حفظ' : 'التالي',
+                onPressed: _path().last == _step ? _finishOnboarding : _goNext,
+              ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _fertField(String label, Widget field) => Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w700, color: _dark)),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: field,
+            ),
+          ],
+        ),
+      );
+
+  Widget _dropInt(int value, List<int> items, ValueChanged<int> onChanged,
+          {String suffix = ''}) =>
+      DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          isExpanded: true,
+          value: value,
+          items: items
+              .map((e) =>
+                  DropdownMenuItem(value: e, child: Text('$e$suffix')))
+              .toList(),
+          onChanged: (v) {
+            if (v != null) onChanged(v);
+          },
+        ),
+      );
+
+  Widget _dropStr<T>(T value, Map<T, String> items, ValueChanged<T> onChanged) =>
+      DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          isExpanded: true,
+          value: value,
+          items: items.entries
+              .map((e) =>
+                  DropdownMenuItem<T>(value: e.key, child: Text(e.value)))
+              .toList(),
+          onChanged: (v) {
+            if (v != null) onChanged(v);
+          },
+        ),
+      );
+
+  // ══════════════════════════════════════════════════════════
+  //  STEP 8 — BABY DATA
+  // ══════════════════════════════════════════════════════════
+  Widget _babyStep() {
+    final now = DateTime.now();
+    final minDate = now.subtract(const Duration(days: 3 * 365));
+    final maxDate = now;
+
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        _backButton(),
+        _progressBar(),
+        const SizedBox(height: 30),
+        const Text(
+          'بيانات طفلك',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: _dark,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'أدخلي اسم وتاريخ ميلاد طفلك لمتابعة نموه',
+          style: TextStyle(fontSize: 15, color: _sub),
+        ),
+        const SizedBox(height: 40),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: TextField(
+            controller: _babyNameController,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            decoration: InputDecoration(
+              hintText: 'اسم طفلك (اختياري)',
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 16),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            ),
+          ),
+        ),
+        const Spacer(),
+        const Text(
+          'تاريخ ميلاد الطفل',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _dark),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 180,
+          child: Localizations.override(
+            context: context,
+            locale: const Locale('en'),
+            child: CupertinoDatePicker(
+              mode: CupertinoDatePickerMode.date,
+              initialDateTime: _babyBirthDate.isAfter(maxDate) ? maxDate : (_babyBirthDate.isBefore(minDate) ? minDate : _babyBirthDate),
+              minimumDate: minDate,
+              maximumDate: maxDate,
+              onDateTimeChanged: (d) => setState(() => _babyBirthDate = d),
+            ),
+          ),
+        ),
+        const Spacer(),
+        _saving
+            ? const Center(child: CircularProgressIndicator(color: _pink))
+            : _primaryButton(
+                text: _path().last == _step ? 'حفظ' : 'التالي',
+                onPressed: _path().last == _step ? _finishOnboarding : _goNext,
+              ),
         const SizedBox(height: 30),
       ],
     );
@@ -994,6 +1301,66 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         ],
       ),
     );
+  }
+
+  // STEP 9 — PREGNANCY PROFILE
+  Widget _pregnancyProfileStep() {
+    return Column(children: [
+      const SizedBox(height: 16), _backButton(), _progressBar(), const SizedBox(height: 16),
+      const Padding(padding: EdgeInsets.symmetric(horizontal: 30),
+        child: Text('أخبرينا عن حملك', textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: _dark))),
+      const SizedBox(height: 8),
+      const Padding(padding: EdgeInsets.symmetric(horizontal: 30),
+        child: Text('لنخصّص لكِ المحتوى والنصائح المناسبة لمرحلة حملك',
+          textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: _sub, height: 1.5))),
+      const SizedBox(height: 22),
+      Expanded(child: SingleChildScrollView(padding: const EdgeInsets.symmetric(horizontal: 26),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          _fertField('هل هذا حملك الأول؟', _dropStr<bool>(_firstPregnancy,
+            const {true: 'نعم، حملي الأول', false: 'لا، سبق لي الحمل'}, (v) => setState(() => _firstPregnancy = v))),
+          _fertField('عدد الأجنّة', _dropStr<String>(_pregBabies,
+            const {'single': 'حمل مفرد', 'twins': 'توأم', 'more': 'أكثر من اثنين'}, (v) => setState(() => _pregBabies = v))),
+          _fertField('عمرك', _dropStr<String>(_pregAge,
+            const {'18-24': '18 - 24', '25-34': '25 - 34', '35-39': '35 - 39', '40+': '40 فأكثر'}, (v) => setState(() => _pregAge = v))),
+          _fertField('هل لديك حالة صحية خلال الحمل؟', _dropStr<String>(_pregCondition,
+            const {'none': 'لا شيء', 'diabetes': 'سكري الحمل', 'hypertension': 'ارتفاع الضغط', 'nausea': 'غثيان شديد', 'other': 'أخرى'}, (v) => setState(() => _pregCondition = v))),
+          const SizedBox(height: 8),
+        ]))),
+      _saving ? const Center(child: CircularProgressIndicator(color: _pink))
+        : _primaryButton(text: _path().last == _step ? 'حفظ' : 'التالي',
+            onPressed: _path().last == _step ? _finishOnboarding : _goNext),
+      const SizedBox(height: 24),
+    ]);
+  }
+
+  // STEP 10 — BABY PROFILE
+  Widget _babyProfileStep() {
+    return Column(children: [
+      const SizedBox(height: 16), _backButton(), _progressBar(), const SizedBox(height: 16),
+      const Padding(padding: EdgeInsets.symmetric(horizontal: 30),
+        child: Text('أخبرينا عن طفلك', textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: _dark))),
+      const SizedBox(height: 8),
+      const Padding(padding: EdgeInsets.symmetric(horizontal: 30),
+        child: Text('لنخصّص محتوى رعاية ونمو طفلك',
+          textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: _sub, height: 1.5))),
+      const SizedBox(height: 22),
+      Expanded(child: SingleChildScrollView(padding: const EdgeInsets.symmetric(horizontal: 26),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          _fertField('جنس الطفل', _dropStr<String>(_babyGender,
+            const {'male': 'ذكر', 'female': 'أنثى'}, (v) => setState(() => _babyGender = v))),
+          _fertField('نوع الرضاعة', _dropStr<String>(_feeding,
+            const {'breast': 'طبيعية', 'formula': 'صناعية', 'mixed': 'مختلطة'}, (v) => setState(() => _feeding = v))),
+          _fertField('هل هو طفلك الأول؟', _dropStr<bool>(_firstChild,
+            const {true: 'نعم', false: 'لا'}, (v) => setState(() => _firstChild = v))),
+          const SizedBox(height: 8),
+        ]))),
+      _saving ? const Center(child: CircularProgressIndicator(color: _pink))
+        : _primaryButton(text: _path().last == _step ? 'حفظ' : 'التالي',
+            onPressed: _path().last == _step ? _finishOnboarding : _goNext),
+      const SizedBox(height: 24),
+    ]);
   }
 }
 

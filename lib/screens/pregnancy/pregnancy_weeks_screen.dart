@@ -9,6 +9,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../models/pregnancy_week_articles.dart';
 import '../trackers/health_trackers_screen.dart';
 import '../../widgets/news_section.dart';
+import '../../widgets/personalized_tips.dart';
+import '../../widgets/conditional_content.dart';
 import '../../services/dynamic_content_service.dart';
 
 
@@ -156,47 +158,47 @@ final List<_PregnancyArticle> _pregnancyArticles = [
 
 // Fruit data mapping for all 40 weeks
 const Map<int, List<String>> _fruitData = {
-  1: ['🌱', 'بذرة خشخاش'],
-  2: ['🫐', 'حبة توت'],
-  3: ['🍚', 'حبة أرز'],
-  4: ['🌰', 'بندق صغير'],
-  5: ['🍎', 'بذرة التفاح'],
-  6: ['🥒', 'عدس'],
-  7: ['🫒', 'حمص'],
-  8: ['🍓', 'فراولة صغيرة'],
-  9: ['🍇', 'حبة العنب'],
-  10: ['🍑', 'خوخ صغير'],
+  1: ['🌱', 'بذرة'],
+  2: ['🟤', 'حبة سمسم'],
+  3: ['⚪', 'كرة خلوية'],
+  4: ['🟤', 'حبة سمسم'],
+  5: ['🍎', 'بذرة تفاحة'],
+  6: ['🫘', 'حبة عدس'],
+  7: ['🫛', 'حبة حمّص'],
+  8: ['🫘', 'حبة فاصولياء'],
+  9: ['🍒', 'حبة كرز'],
+  10: ['🍓', 'فراولة'],
   11: ['🍋', 'ليمونة صغيرة'],
   12: ['🥝', 'كيوي'],
-  13: ['🍑', 'خوخ متوسط'],
-  14: ['🫐', 'توت أزرق'],
-  15: ['🥬', 'تفاحة صغيرة'],
-  16: ['🍊', 'برتقالة صغيرة'],
-  17: ['🍌', 'موزة صغيرة'],
-  18: ['🍒', 'كيسان فلفل'],
-  19: ['🥒', 'خيار صغير'],
+  13: ['🍋', 'ليمونة'],
+  14: ['🍑', 'خوخة'],
+  15: ['🍎', 'تفاحة'],
+  16: ['🥑', 'أفوكادو'],
+  17: ['🍐', 'إجاصة'],
+  18: ['🔴', 'رمّانة'],
+  19: ['🥭', 'مانجو'],
   20: ['🍌', 'موزة'],
-  21: ['🍕', 'ذرة'],
-  22: ['🥕', 'جزرة'],
-  23: ['🥒', 'خيار متوسط'],
-  24: ['🌽', 'ذرة كاملة'],
-  25: ['🥬', 'كرة ملفوف'],
-  26: ['🥦', 'برنامج'],
-  27: ['🍆', 'باذنجان'],
-  28: ['🥔', 'حبة بطاطا'],
-  29: ['🥬', 'رأس ملفوف'],
-  30: ['🍉', 'شمام'],
-  31: ['🍈', 'كنتالوب'],
-  32: ['🍍', 'أناناس'],
-  33: ['🥝', 'جوز الهند'],
-  34: ['🍐', 'كمثرى'],
-  35: ['🍎', 'تفاح أحمر'],
-  36: ['🧅', 'بصلة'],
-  37: ['🥬', 'رومaine'],
-  38: ['🍯', 'عسل'],
-  39: ['🎃', 'يقطين صغير'],
-  40: ['🎃', 'يقطين'],
-  41: ['🎃', 'يقطين كبير'],
+  21: ['🥕', 'جزرة'],
+  22: ['🥒', 'كوسة'],
+  23: ['🍠', 'بطاطا حلوة'],
+  24: ['🌽', 'كوز ذرة'],
+  25: ['🥔', 'بطاطا كبيرة'],
+  26: ['🥬', 'خسّة'],
+  27: ['🥦', 'قرنبيطة'],
+  28: ['🍆', 'باذنجانة'],
+  29: ['🍈', 'شمّامة صغيرة'],
+  30: ['🥬', 'رأس ملفوف'],
+  31: ['🥥', 'جوز الهند'],
+  32: ['🥬', 'ملفوفة حمراء'],
+  33: ['🍍', 'أناناس'],
+  34: ['🍈', 'شمّامة'],
+  35: ['🍈', 'بطيخة صفراء'],
+  36: ['🥬', 'رأس خسّ كبير'],
+  37: ['🥦', 'قرنبيطة عملاقة'],
+  38: ['🍍', 'أناناس كبير'],
+  39: ['🍉', 'بطيخة صغيرة'],
+  40: ['🍉', 'بطيخة حمراء'],
+  41: ['🎃', 'يقطينة كبيرة'],
 };
 
 // Trimester-specific medical checklist items
@@ -258,7 +260,10 @@ class PregnancyWeeksScreen extends StatelessWidget {
         ),
         body: ListView(
           padding: const EdgeInsets.all(16),
-          children: List.generate(3, (ti) {
+          children: [
+            const PersonalizedTipsCard(),
+            const ConditionalContentSection(),
+            ...List.generate(3, (ti) {
             final name = ['الثلث الأول', 'الثلث الثاني', 'الثلث الثالث'][ti];
             final weeks = [
               pregnancyWeekArticles.where((a) => a.week <= 12).toList(),
@@ -378,7 +383,8 @@ class PregnancyWeeksScreen extends StatelessWidget {
               const SizedBox(height: 12),
             ]);
           }),
-        ),
+        ],
+      ),
       ),
     );
   }
@@ -2374,22 +2380,9 @@ class _ArticleDetailScreen extends StatelessWidget {
           style: const TextStyle(fontSize: 16.5, height: 1.9, color: _textPrimary)),
       ));
       if (i == midPoint && paragraphs.length > 3) {
-        widgets.add(Container(
-          width: double.infinity,
-          margin: const EdgeInsets.symmetric(vertical: 12),
-          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F0F7),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE8E0EC), width: 0.8),
-          ),
-          child: const Column(children: [
-            Icon(Icons.campaign_outlined, color: Color(0xFFBBA8C4), size: 28),
-            SizedBox(height: 8),
-            Text('مساحة إعلانية', style: TextStyle(fontSize: 12, color: Color(0xFFBBA8C4), fontWeight: FontWeight.w600)),
-            SizedBox(height: 2),
-            Text('Google AdMob', style: TextStyle(fontSize: 10, color: Color(0xFFD0C4D6))),
-          ]),
+        widgets.add(const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: NabdaAd(slot: 0, groupId: 'pwk1', place: 'pregnancy', color: Color(0xFFE91E63)),
         ));
       }
     }
@@ -3130,22 +3123,9 @@ class _DiscoverDetailScreen extends StatelessWidget {
           style: const TextStyle(fontSize: 16.5, height: 1.9, color: _textPrimary)),
       ));
       if (i == midPoint && paragraphs.length > 3) {
-        widgets.add(Container(
-          width: double.infinity,
-          margin: const EdgeInsets.symmetric(vertical: 12),
-          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F0F7),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE8E0EC), width: 0.8),
-          ),
-          child: const Column(children: [
-            Icon(Icons.campaign_outlined, color: Color(0xFFBBA8C4), size: 28),
-            SizedBox(height: 8),
-            Text('مساحة إعلانية', style: TextStyle(fontSize: 12, color: Color(0xFFBBA8C4), fontWeight: FontWeight.w600)),
-            SizedBox(height: 2),
-            Text('Google AdMob', style: TextStyle(fontSize: 10, color: Color(0xFFD0C4D6))),
-          ]),
+        widgets.add(const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: NabdaAd(slot: 0, groupId: 'pwk2', place: 'pregnancy', color: Color(0xFFE91E63)),
         ));
       }
     }

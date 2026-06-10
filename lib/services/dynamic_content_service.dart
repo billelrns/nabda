@@ -84,6 +84,7 @@ class DynamicContentService {
       'title': (d['title'] ?? '') as String,
       'content': (d['content'] ?? '') as String,
       'image': (d['image'] ?? '') as String,
+      'image2': (d['image2'] ?? '') as String,
       'category': (d['category'] ?? '') as String,
       'section': (d['section'] ?? '') as String,
       'docId': doc.id,

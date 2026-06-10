@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,13 +20,17 @@ import 'firebase_options.dart';
 import 'screens/community/community_screen.dart';
 import 'screens/pregnancy/pregnancy_weeks_screen.dart';
 import 'screens/shop/shop_page.dart';
+import 'widgets/news_section.dart';
+import 'screens/fertility/fertility_screen.dart';
 import 'services/country_currency_service.dart';
 import 'services/notification_service.dart';
 import 'services/admin_service.dart';
 import 'services/dynamic_content_service.dart';
 import 'screens/admin/admin_panel_screen.dart';
 import 'config/theme.dart';
-import 'screens/onboarding_screen.dart' show PrivacyPolicyPage, TermsOfServicePage;
+import 'screens/onboarding_screen.dart' show OnboardingScreen, PrivacyPolicyPage, TermsOfServicePage;
+import 'screens/splash_screen.dart';
+import 'screens/intro_screen.dart';
 import 'screens/baby_names/baby_names_screen.dart';
 import 'screens/trackers/weight_tracker_screen.dart';
 import 'screens/trackers/health_trackers_screen.dart';
@@ -40,6 +43,11 @@ import 'screens/pregnancy/nutrition_screen.dart';
 import 'screens/pregnancy/exercises_screen.dart';
 import 'screens/pregnancy/achievements_screen.dart';
 import 'screens/pregnancy/share_progress_screen.dart';
+import 'widgets/personalized_tips.dart';
+import 'widgets/cycle_calendar.dart';
+import 'widgets/conditional_content.dart';
+import 'widgets/cycle_analysis_screen.dart';
+import 'widgets/cycle_phase_wheel.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -188,7 +196,8 @@ void main() async {
 
   // Initialize notifications (FCM + Local)
   try {
-    await NotificationService().initialize();
+    // لا ننتظرها حتى لا تحجب الإقلاع عند انقطاع الشبكة (FCM getToken قد يعلّق)
+    NotificationService().initialize();
   } catch (_) {
     // Fallback: basic local notifications init
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -239,8 +248,41 @@ class _NabdaAppState extends State<NabdaApp> {
       ],
       supportedLocales: [Locale('ar', 'SA'), Locale('fr', 'FR'), Locale('en', 'US')],
       locale: localeNotifier.locale,
-      home: AuthGate(),
+      home: const RootGate(),
     );
+  }
+}
+
+// ==================== ROOT GATE (شاشة البداية + التعريف ثم المصادقة) ====================
+/// يدير تسلسل الإقلاع: شاشة بداية متحركة ← (أول تشغيل) شاشات تعريف ← إعداد
+/// الحساب ← ثم AuthGate الذي يقرّر بين تسجيل الدخول والتطبيق الرئيسي.
+class RootGate extends StatefulWidget {
+  const RootGate({Key? key}) : super(key: key);
+  @override
+  State<RootGate> createState() => _RootGateState();
+}
+
+class _RootGateState extends State<RootGate> {
+  // 0 = splash، 1 = intro، 2 = AuthGate
+  int _phase = 0;
+
+  Future<void> _afterSplash() async {
+    final prefs = await SharedPreferences.getInstance();
+    final introSeen = prefs.getBool('intro_seen') ?? false;
+    if (!mounted) return;
+    setState(() => _phase = introSeen ? 2 : 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    switch (_phase) {
+      case 1:
+        return IntroScreen(onDone: () => setState(() => _phase = 2));
+      case 2:
+        return AuthGate();
+      default:
+        return SplashScreen(onDone: _afterSplash);
+    }
   }
 }
 
@@ -254,9 +296,45 @@ class AuthGate extends StatelessWidget {
         if (snap.connectionState == ConnectionState.waiting)
           return Scaffold(body: Center(child: CircularProgressIndicator()));
         if (snap.hasData) {
-          // جدولة إشعارات التطبيق (مرة واحدة لكل جلسة)
           AppNotifs.scheduleAll();
-          return MainNav();
+          AdminService().initialize();
+          return StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users').doc(snap.data!.uid).snapshots(),
+            builder: (context, us) {
+              if (!us.hasData)
+                return Scaffold(body: Center(child: CircularProgressIndicator()));
+              final ud = us.data!.data() as Map<String, dynamic>? ?? {};
+              final done = ud['onboardingDone'] == true || ud['lifeStage'] != null;
+              if (done) {
+                // Background sync to local SharedPreferences
+                SharedPreferences.getInstance().then((prefs) {
+                  if (ud['lifeStage'] != null) {
+                    prefs.setString('life_stage', ud['lifeStage']);
+                  }
+                  prefs.setBool('onboarding_done', true);
+                  if (ud['displayName'] != null) {
+                    prefs.setString('user_name', ud['displayName']);
+                  } else if (ud['name'] != null) {
+                    prefs.setString('user_name', ud['name']);
+                  }
+                  if (ud['pregnancyStartDate'] != null) {
+                    final date = (ud['pregnancyStartDate'] as Timestamp).toDate();
+                    prefs.setString('pregnancy_start', date.toIso8601String());
+                  }
+                  if (ud['lastPeriodStart'] != null) {
+                    final date = (ud['lastPeriodStart'] as Timestamp).toDate();
+                    prefs.setString('last_period_start', date.toIso8601String());
+                  }
+                  if (ud['cycleLength'] != null) {
+                    prefs.setInt('cycle_length', ud['cycleLength'] as int);
+                  }
+                });
+              }
+              if (!done) return OnboardingScreen(onDone: () {});
+              return MainNav();
+            },
+          );
         }
         return LoginPage();
       },
@@ -528,6 +606,7 @@ class AppNotifs {
   static const _tipsBase = 1100;  // 1100-1129
   static const _pregBase = 1200;  // 1200-1219
   static const _prodBase = 1300;  // 1300-1329
+  static const _fertBase = 1400;  // 1400-1419
 
   static bool _done = false;
 
@@ -632,6 +711,7 @@ class AppNotifs {
       if (_on('tips')) await _scheduleTips(); else await _cancelRange(_tipsBase, _tipsBase + 29);
       if (_on('pregnancy')) await _schedulePregnancyAndCycle(); else await _cancelRange(_pregBase, _pregBase + 19);
       if (_on('products')) await _scheduleProducts(); else await _cancelRange(_prodBase, _prodBase + 29);
+      await _scheduleFertility();
     } catch (_) {}
   }
 
@@ -676,7 +756,7 @@ class AppNotifs {
       final data = doc.data();
       if (data == null) return;
 
-      final pregTs = data['pregnancyStart'];
+      final pregTs = data['pregnancyStartDate'] ?? data['pregnancyStart'];
       if (pregTs is Timestamp) {
         // \u0648\u0636\u0639 \u0627\u0644\u062D\u0645\u0644: \u062A\u0630\u0643\u064A\u0631 \u0623\u0633\u0628\u0648\u0639\u064A \u0644\u0644\u0623\u0633\u0627\u0628\u064A\u0639 \u0627\u0644\u0623\u0631\u0628\u0639\u0629 \u0627\u0644\u0642\u0627\u062F\u0645\u0629
         final start = pregTs.toDate();
@@ -708,6 +788,41 @@ class AppNotifs {
               '\uD83D\uDCC5 \u0645\u0648\u0639\u062F \u0627\u0644\u062F\u0648\u0631\u0629', '\u0627\u0644\u064A\u0648\u0645 \u0627\u0644\u0645\u0648\u0639\u062F \u0627\u0644\u0645\u062A\u0648\u0642\u0651\u0639 \u0644\u062F\u0648\u0631\u062A\u0643 \uD83D\uDC97 \u0627\u0639\u062A\u0646\u064A \u0628\u0646\u0641\u0633\u0643.',
               tz.TZDateTime(tz.local, next.year, next.month, next.day, 10, 0));
         }
+      }
+    } catch (_) {}
+  }
+
+  static Future<void> _scheduleFertility() async {
+    await _cancelRange(_fertBase, _fertBase + 19);
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = doc.data();
+      if (data == null) return;
+      if ((data['goal'] ?? '') != 'trying') return;
+      if (data['fertilityReminders'] == false) return;
+      if ((data['pregnancyStartDate'] ?? data['pregnancyStart']) != null) return;
+      final lpTs = data['lastPeriodStart'];
+      if (lpTs is! Timestamp) return;
+      final start = lpTs.toDate();
+      final len = (data['cycleLength'] as num?)?.toInt() ?? 28;
+      final luteal = (data['lutealPhase'] as num?)?.toInt() ?? 14;
+      final now = DateTime.now();
+      DateTime ov = start.add(Duration(days: len - luteal));
+      int guard = 0;
+      while (ov.add(const Duration(days: 1)).isBefore(now) && guard < 18) { ov = ov.add(Duration(days: len)); guard++; }
+      final fertileStart = ov.subtract(const Duration(days: 5));
+      int id = _fertBase;
+      for (int dd = 0; dd <= 6 && id < _fertBase + 19; dd++) {
+        final day = fertileStart.add(Duration(days: dd));
+        final at = tz.TZDateTime(tz.local, day.year, day.month, day.day, 9, 0);
+        if (at.isBefore(tz.TZDateTime.now(tz.local))) continue;
+        final isPeak = day.year == ov.year && day.month == ov.month && day.day == ov.day;
+        await _zonedOnce(id++, _pregCh, 'رحلة الخصوبة',
+          isPeak ? '💗 يوم الإباضة المتوقّع' : '🌸 أيام الخصوبة العالية',
+          isPeak ? 'اليوم هو يوم الإباضة المتوقّع — فرصتك الأعلى للحمل اليوم وغداً 💗' : 'أنتِ ضمن نافذة الخصوبة 🌸 وقت مناسب للمحاولة. تابعي في تطبيق نبضة.',
+          at);
       }
     } catch (_) {}
   }
@@ -1069,6 +1184,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       CurvedAnimation(parent: _formController, curve: const Interval(0.6, 0.85, curve: Curves.elasticOut)));
 
     _formController.forward();
+    _loadAuthMode();
+  }
+
+  // أول استخدام (لا يوجد حساب على الجهاز) → ابدئي بوضع «إنشاء حساب»؛
+  // العائدات (سبق لهنّ الدخول) → وضع «تسجيل الدخول».
+  Future<void> _loadAuthMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasAccount = prefs.getBool('has_account') ?? false;
+    if (!hasAccount && mounted && !isRegister) {
+      setState(() => isRegister = true);
+      _restartAnimation();
+    }
   }
 
   void _calcStrength() {
@@ -1115,8 +1242,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         if (nameC.text.isNotEmpty) await cred.user?.updateDisplayName(nameC.text.trim());
         await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
           'name': nameC.text.trim(),
+          'displayName': nameC.text.trim(),
           'email': emailC.text.trim(),
           'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'termsAccepted': true,
           'cycleLength': 28,
           'lastPeriodStart': null,
           'pregnancyStartDate': null,
@@ -1127,6 +1257,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: emailC.text.trim(), password: passC.text);
       }
+      // نجح الدخول/التسجيل: علّمي الجهاز أنّ لديه حساباً (العودة لاحقاً بوضع الدخول)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_account', true);
     } catch (e) {
       String error = e.toString().split(']').last.trim();
       if (error.contains('user-not-found')) error = '\u0644\u0627 \u064A\u0648\u062C\u062F \u062D\u0633\u0627\u0628 \u0628\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F';
@@ -1444,6 +1577,27 @@ class _MainNavState extends State<MainNav> {
   void initState() {
     super.initState();
     _pages = [HomePage(onCardTap: goToTab), CyclePage(), PregnancyPage(), BabyPage(), ShopPage()];
+    _applyInitialTab();
+  }
+
+  // تهبط المستخدمة على التبويب المناسب لمرحلتها بعد الإعداد
+  Future<void> _applyInitialTab() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stage = prefs.getString('life_stage');
+    int? target;
+    switch (stage) {
+      case 'planning':
+      case 'pregnant':
+        target = 2; // متابعة الحمل / محاولة الحمل
+        break;
+      case 'cycle':
+        target = 1; // الدورة
+        break;
+      case 'baby':
+        target = 3; // الطفل
+        break;
+    }
+    if (target != null && mounted) setState(() => _index = target!);
   }
 
   void goToTab(int index) => setState(() => _index = index);
@@ -1635,6 +1789,8 @@ class _HomePageState extends State<HomePage> {
   String _userName = '';
   int _pregnancyWeek = 0;
   Map<String, dynamic> _userData = {};
+  double? _currentWeight; // آخر وزن مسجّل
+  double? _preWeight;     // وزن ما قبل الحمل
 
   @override
   void initState() {
@@ -1648,16 +1804,32 @@ class _HomePageState extends State<HomePage> {
     final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     final data = doc.data() ?? {};
     int week = 0;
-    if (data['pregnancyStart'] != null) {
+    final pregStart = data['pregnancyStartDate'] ?? data['pregnancyStart'];
+    if (pregStart != null) {
       try {
-        final start = (data['pregnancyStart'] as Timestamp).toDate();
+        final start = (pregStart as Timestamp).toDate();
         week = (DateTime.now().difference(start).inDays / 7).floor().clamp(1, 42);
       } catch (_) {}
     }
+    // ── جلب بيانات الوزن الحقيقية ──
+    double? curWeight, preWeight;
+    try {
+      final wp = data['weight_tracker_profile'] as Map<String, dynamic>?;
+      preWeight = (wp?['pre_weight'] as num?)?.toDouble();
+      final wsnap = await FirebaseFirestore.instance
+          .collection('users').doc(user.uid)
+          .collection('weight_tracker')
+          .orderBy('date', descending: true).limit(1).get();
+      if (wsnap.docs.isNotEmpty) {
+        curWeight = (wsnap.docs.first.data()['weight'] as num?)?.toDouble();
+      }
+    } catch (_) {}
     if (mounted) setState(() {
       _userName = data['name'] as String? ?? user.displayName ?? '';
       _pregnancyWeek = week;
       _userData = data;
+      _currentWeight = curWeight;
+      _preWeight = preWeight;
     });
   }
 
@@ -1691,9 +1863,10 @@ class _HomePageState extends State<HomePage> {
               if (snapshot.hasData && snapshot.data!.exists) {
                 _userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
                 if (_userData['name'] != null) _userName = _userData['name'] as String;
-                if (_userData['pregnancyStart'] != null) {
+                final pregStart = _userData['pregnancyStartDate'] ?? _userData['pregnancyStart'];
+                if (pregStart != null) {
                   try {
-                    final start = (_userData['pregnancyStart'] as Timestamp).toDate();
+                    final start = (pregStart as Timestamp).toDate();
                     _pregnancyWeek = (DateTime.now().difference(start).inDays / 7).floor().clamp(1, 42);
                   } catch (_) {}
                 }
@@ -1857,7 +2030,7 @@ class _HomePageState extends State<HomePage> {
                         // ════════════ LATEST NEWS ════════════
                         Padding(
                           padding: const EdgeInsets.all(20),
-                          child: _NewsSection(accentColor: Color(0xFFE91E63), sectionTitle: 'آخر الأخبار'),
+                          child: Column(children: const [NabdaAd(slot: 0, groupId: 'home', place: 'home', color: Color(0xFFE91E63)), SizedBox(height: 6), _NewsSection(accentColor: Color(0xFFE91E63), sectionTitle: 'آخر الأخبار')]),
                         ),
 
 const SizedBox(height: 30),
@@ -2240,68 +2413,117 @@ const SizedBox(height: 30),
 
   // ─────────── QUICK ACCESS GRID ───────────
   Widget _buildQuickGrid() {
-    final cards = [
-      _QAData(Icons.pregnant_woman, 'متابعة الحمل', 'الأسبوع $_pregnancyWeek', '✓ محدّث اليوم',
-        [const Color(0xFFFF6BA3), _pink], () => widget.onCardTap?.call(2)),
-      _QAData(Icons.water_drop, 'متابعة الدورة', 'آخر دورة قبل 28 يوم', 'إعدادي ملفّكِ',
-        [_lavender2, const Color(0xFF9B6FE1)], () => widget.onCardTap?.call(1)),
-      _QAData(Icons.monitor_weight, 'تتبّع الوزن', '68.4 كغ', '+ 2.1 كغ هذا الشهر',
-        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackerScreen()))),
-      _QAData(Icons.timer, 'العدّ التنازلي', '${(40 - _pregnancyWeek) * 7} يوم للولادة', '',
-        [_peach, const Color(0xFFFF8852)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => DueDateCountdownScreen()))),
-    ];
+    // ── قيم حقيقية محسوبة من بيانات المستخدمة ──
+    final bool hasCycle = _userData['lastPeriodStart'] != null;
+    final int cycleLen = (_userData['cycleLength'] as num?)?.toInt() ?? 28;
+    final int cycleDay = _calcCycleDay(_userData);
+    final int nextPeriod = (cycleLen - cycleDay).clamp(0, cycleLen);
 
-    return Column(
-      children: [
-        Row(children: [
-          Expanded(child: _buildQACard(cards[0])),
-          const SizedBox(width: 10),
-          Expanded(child: _buildQACard(cards[1])),
-        ]),
-        const SizedBox(height: 10),
-        Row(children: [
-          Expanded(child: _buildQACard(cards[2])),
-          const SizedBox(width: 10),
-          Expanded(child: _buildQACard(cards[3])),
-        ]),
-      ],
-    );
+    // الوزن
+    final String weightVal = _currentWeight != null
+        ? '${_currentWeight!.toStringAsFixed(1)} كغ'
+        : 'أضيفي وزنكِ';
+    String weightMeta = '';
+    if (_currentWeight != null && _preWeight != null && _preWeight! > 0) {
+      final d = _currentWeight! - _preWeight!;
+      weightMeta = '${d >= 0 ? '+' : ''}${d.toStringAsFixed(1)} كغ عن البداية';
+    }
+
+    final weightCard = _QAData(Icons.monitor_weight, 'تتبّع الوزن', weightVal, weightMeta,
+        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackerScreen())));
+
+    // ── منطق التنسيق: الحمل والدورة لا يظهران معاً ──
+    final bool isPregnant = _pregnancyWeek > 0;
+    List<_QAData> cards;
+    if (isPregnant) {
+      final int daysLeft = ((40 - _pregnancyWeek) * 7).clamp(0, 280);
+      cards = [
+        _QAData(Icons.pregnant_woman, 'متابعة الحمل', 'الأسبوع $_pregnancyWeek', 'من 40 أسبوعاً',
+          [const Color(0xFFFF6BA3), _pink], () => widget.onCardTap?.call(2)),
+        _QAData(Icons.timer, 'العدّ التنازلي', '$daysLeft يوم', 'حتى الولادة',
+          [_peach, const Color(0xFFFF8852)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => DueDateCountdownScreen()))),
+        weightCard,
+        // الدورة متوقفة طبيعياً أثناء الحمل
+        _QAData(Icons.water_drop, 'متابعة الدورة', 'متوقفة', 'أثناء الحمل',
+          [_lavender2, const Color(0xFF9B6FE1)], () => widget.onCardTap?.call(1)),
+      ];
+    } else {
+      cards = [
+        _QAData(Icons.water_drop, 'متابعة الدورة',
+          hasCycle ? 'اليوم $cycleDay' : 'إعدادي ملفّكِ',
+          hasCycle ? 'باقٍ $nextPeriod يوم' : '',
+          [_lavender2, const Color(0xFF9B6FE1)], () => widget.onCardTap?.call(1)),
+        weightCard,
+        // دعوة لتفعيل متابعة الحمل عند الحاجة
+        _QAData(Icons.pregnant_woman, 'متابعة الحمل', 'غير مفعّلة', 'فعّليها هنا',
+          [const Color(0xFFFF6BA3), _pink], () => widget.onCardTap?.call(2)),
+      ];
+    }
+
+    // عرض البطاقات في صفوف من بطاقتين (يدعم العدد الفردي)
+    final rows = <Widget>[];
+    for (int i = 0; i < cards.length; i += 2) {
+      rows.add(Row(children: [
+        Expanded(child: _buildQACard(cards[i])),
+        const SizedBox(width: 10),
+        if (i + 1 < cards.length)
+          Expanded(child: _buildQACard(cards[i + 1]))
+        else
+          const Expanded(child: SizedBox()),
+      ]));
+      if (i + 2 < cards.length) rows.add(const SizedBox(height: 10));
+    }
+    return Column(children: rows);
   }
 
+  // بطاقة مدمجة أفقية (أصغر مساحة) مع قيمة حقيقية
   Widget _buildQACard(_QAData d) {
     return GestureDetector(
       onTap: d.onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
-        constraints: const BoxConstraints(minHeight: 108),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        constraints: const BoxConstraints(minHeight: 70),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(color: Colors.white.withOpacity(0.9), width: 0.5),
           boxShadow: [
             BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
             BoxShadow(color: _ink.withOpacity(0.04), blurRadius: 2, offset: const Offset(0, 1)),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
             Container(
-              width: 42, height: 42,
+              width: 38, height: 38,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 gradient: LinearGradient(colors: d.gradColors),
               ),
-              child: Icon(d.icon, color: Colors.white, size: 20),
+              child: Icon(d.icon, color: Colors.white, size: 19),
             ),
-            const SizedBox(height: 8),
-            Text(d.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _ink)),
-            const SizedBox(height: 2),
-            Text(d.subtitle, style: const TextStyle(fontSize: 11.5, color: _ink3, fontWeight: FontWeight.w500)),
-            if (d.meta.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(d.meta, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _tealDeep)),
-            ],
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(d.title,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _ink3),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 2),
+                  Text(d.subtitle,
+                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: _ink),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                  if (d.meta.isNotEmpty) ...[
+                    const SizedBox(height: 1),
+                    Text(d.meta,
+                      style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: _tealDeep),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -2500,7 +2722,7 @@ const SizedBox(height: 30),
   // ─────────── CHIP ROW ───────────
   Widget _buildChipRow() {
     final chips = [
-      _ChipData('🤖', 'المساعد الذكي', _lavender, () => Navigator.push(context, MaterialPageRoute(builder: (_) => AIChatPage()))),
+      // ملاحظة: "المساعد الذكي" مُتاح من البطاقة الكبيرة أعلاه، فأُزيل من هنا لتجنّب التكرار
       _ChipData('👶', 'رعاية الطفل', const Color(0xFFFFD9E5), () => widget.onCardTap?.call(3)),
       _ChipData('👥', 'مجتمع الأمهات', _sky, () => Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityScreen()))),
       _ChipData('💚', 'العادات الصحية', _teal50, () => Navigator.push(context, MaterialPageRoute(builder: (_) => HealthTrackersScreen()))),
@@ -2783,6 +3005,43 @@ class _CyclePageState extends State<CyclePage> {
       SnackBar(content: const Text('\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u062F\u0648\u0631\u0629'), backgroundColor: Colors.grey.shade600));
   }
 
+  // \u2500\u2500 \u0634\u0627\u0634\u0629 "\u0627\u0644\u062F\u0648\u0631\u0629 \u0645\u062A\u0648\u0642\u0641\u0629 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062D\u0645\u0644" \u2500\u2500
+  Widget _pregnancyPausedView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(36),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120, height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(colors: [_pink.withOpacity(0.15), _teal.withOpacity(0.15)]),
+              ),
+              child: const Icon(Icons.pregnant_woman, size: 60, color: _pink),
+            ),
+            const SizedBox(height: 24),
+            const Text('\u062F\u0648\u0631\u062A\u0643\u0650 \u0645\u062A\u0648\u0642\u0641\u0629 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062D\u0645\u0644',
+              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: _ink),
+              textAlign: TextAlign.center),
+            const SizedBox(height: 10),
+            Text('\u062A\u062A\u0648\u0642\u0641 \u0627\u0644\u062F\u0648\u0631\u0629 \u0627\u0644\u0634\u0647\u0631\u064A\u0629 \u0637\u0628\u064A\u0639\u064A\u0627\u064B \u062E\u0644\u0627\u0644 \u0641\u062A\u0631\u0629 \u0627\u0644\u062D\u0645\u0644\u060C \u0648\u0633\u062A\u0639\u0648\u062F \u062A\u062F\u0631\u064A\u062C\u064A\u0627\u064B \u0628\u0639\u062F \u0627\u0644\u0648\u0644\u0627\u062F\u0629 \uD83D\uDC97',
+              style: TextStyle(fontSize: 14, color: _ink3, height: 1.6),
+              textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(color: _teal50, borderRadius: BorderRadius.circular(14)),
+              child: const Text('\u062A\u0627\u0628\u0639\u064A \u062D\u0645\u0644\u0643\u0650 \u0645\u0646 \u0642\u0633\u0645 "\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644"',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _tealDeep)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   String _phaseName(int day, int len) {
     if (day <= 5) return '\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u062D\u064A\u0636';
     if (day <= (len * 0.46).round()) return '\u0627\u0644\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u062C\u0631\u064A\u0628\u064A\u0629';
@@ -2813,17 +3072,22 @@ class _CyclePageState extends State<CyclePage> {
           child: StreamBuilder<DocumentSnapshot>(
             stream: DB.userDoc.snapshots(),
             builder: (context, snapshot) {
-              int cycleLength = 28, cycleDay = 1;
+              Map<String, dynamic> data = {};
               if (snapshot.hasData && snapshot.data!.exists) {
-                var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-                cycleLength = (data['cycleLength'] as int?) ?? 28;
-                if (data['lastPeriodStart'] != null) {
-                  try {
-                    Timestamp ts = data['lastPeriodStart'];
-                    int diff = DateTime.now().difference(ts.toDate()).inDays + 1;
-                    cycleDay = ((diff - 1) % cycleLength) + 1;
-                  } catch (_) {}
-                }
+                data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+              }
+              // ── أثناء الحمل: الدورة متوقفة طبيعياً، لا نعرض العدّاد ──
+              final bool isPregnant = (data['pregnancyStartDate'] ?? data['pregnancyStart']) != null;
+              if (isPregnant) return _pregnancyPausedView();
+
+              int cycleLength = 28, cycleDay = 1;
+              cycleLength = (data['cycleLength'] as int?) ?? 28;
+              if (data['lastPeriodStart'] != null) {
+                try {
+                  Timestamp ts = data['lastPeriodStart'];
+                  int diff = DateTime.now().difference(ts.toDate()).inDays + 1;
+                  cycleDay = ((diff - 1) % cycleLength) + 1;
+                } catch (_) {}
               }
 
               final phase = _phaseName(cycleDay, cycleLength);
@@ -2897,6 +3161,11 @@ class _CyclePageState extends State<CyclePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 8),
+                        const CyclePhaseWheel(),
+                        const PersonalizedTipsCard(),
+                        const CycleCalendarCard(),
+                        const ConditionalContentSection(),
+                        const CycleAnalysisButton(),
 
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 HERO CYCLE CARD \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
                         Container(
@@ -3447,14 +3716,98 @@ class _PregnancyPageState extends State<PregnancyPage> {
     final date = await showDatePicker(
       context: context,
       initialDate: DateTime.now().subtract(Duration(days: 7 * 20)),
-      firstDate: DateTime.now().subtract(Duration(days: 280)),
+      firstDate: DateTime.now().subtract(Duration(days: 320)), // يسمح بما بعد 42 أسبوعاً (للحالات المتأخرة واختبار الولادة)
       lastDate: DateTime.now(),
       helpText: '\u0627\u062E\u062A\u0627\u0631\u064A \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629',
       builder: (context, child) => Localizations.override(context: context, locale: const Locale('en'), child: child!),
     );
     if (date != null) {
-      await DB.userDoc.set({'pregnancyStartDate': Timestamp.fromDate(date)}, SetOptions(merge: true));
+      // بداية حمل جديدة: نلغي أي إقرار سابق بتجاوز الموعد
+      await DB.userDoc.set({'pregnancyStartDate': Timestamp.fromDate(date), 'postTermAck': null}, SetOptions(merge: true));
     }
+  }
+
+  // ── المستخدمة أكدت أن الطفل وُلد: إنهاء وضع الحمل وعودة الدورة ──
+  Future<void> _confirmBirth() async {
+    await DB.userDoc.set({'pregnancyStartDate': null, 'postTermAck': null}, SetOptions(merge: true));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('مبروك! 🎉 تم إنهاء وضع الحمل وستعود متابعة الدورة'), backgroundColor: Color(0xFF00897B)),
+    );
+  }
+
+  // ── المستخدمة ما زالت حاملاً: نوقف تكرار السؤال ونعرض ملاحظة طبية ──
+  Future<void> _stillPregnant() async {
+    await DB.userDoc.set({'postTermAck': true}, SetOptions(merge: true));
+  }
+
+  // ── تنبيه "هل وُلد طفلكِ؟" عند تجاوز الأسبوع 42 ──
+  Widget _postTermPrompt(int days) {
+    final int weeks = days ~/ 7;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Column(children: [
+        Container(
+          width: double.infinity,
+          color: const Color(0xFF00897B),
+          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(vertical: 14),
+            child: Center(child: Text('متابعة الحمل', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Container(
+                  width: 110, height: 110,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFFF4F93).withOpacity(0.12)),
+                  child: const Icon(Icons.child_friendly, size: 56, color: Color(0xFFFF4F93)),
+                ),
+                const SizedBox(height: 24),
+                Text('تجاوزتِ الأسبوع 42 من الحمل ($weeks أسبوعاً)',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1B1320)), textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                const Text('عادةً تكون الولادة قد حدثت في هذه المرحلة. هل وُلد طفلكِ؟',
+                  style: TextStyle(fontSize: 15, color: Color(0xFF4A3F4F), height: 1.6), textAlign: TextAlign.center),
+                const SizedBox(height: 28),
+                SizedBox(width: double.infinity, height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: _confirmBirth,
+                    icon: const Icon(Icons.celebration),
+                    label: const Text('نعم، وُلد طفلي 🎉', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00897B), foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(width: double.infinity, height: 52,
+                  child: OutlinedButton(
+                    onPressed: _stillPregnant,
+                    style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFFF4F93),
+                      side: const BorderSide(color: Color(0xFFFF4F93)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                    child: const Text('لا، ما زلت حاملاً', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(color: const Color(0xFFFFF1F6), borderRadius: BorderRadius.circular(14)),
+                  child: const Row(children: [
+                    Icon(Icons.info_outline, color: Color(0xFFE53B7E), size: 20),
+                    SizedBox(width: 10),
+                    Expanded(child: Text('تجاوز الأسبوع 42 نادر ويستدعي متابعة طبية — يُنصح بمراجعة طبيبتكِ.',
+                      style: TextStyle(fontSize: 12.5, color: Color(0xFF4A3F4F), height: 1.5))),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+        ),
+      ]),
+    );
   }
 
   @override
@@ -3500,6 +3853,9 @@ class _PregnancyPageState extends State<PregnancyPage> {
         }
         var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
         if (data['pregnancyStartDate'] == null) {
+          if ((data['goal'] ?? '') == 'trying') {
+            return FertilityScreen(userData: data);
+          }
           return Column(children: [
             Container(
               color: Color(0xFF00897B),
@@ -3509,12 +3865,39 @@ class _PregnancyPageState extends State<PregnancyPage> {
                 IconButton(icon: Icon(Icons.date_range, color: Colors.white), onPressed: _setPregnancyStart, tooltip: '\u062A\u062D\u062F\u064A\u062F \u062A\u0627\u0631\u064A\u062E \u0622\u062E\u0631 \u062F\u0648\u0631\u0629'),
               ]),
             ),
+            GestureDetector(
+              onTap: () => DB.userDoc.set({'goal': 'trying'}, SetOptions(merge: true)),
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFFCE4EC), Color(0xFFE0F2F1)]),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0x33E91E63)),
+                ),
+                child: Row(children: const [
+                  Text('🌱', style: TextStyle(fontSize: 26)),
+                  SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('أحاول الحمل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20))),
+                    SizedBox(height: 4),
+                    Text('افتحي رحلة الخصوبة: أيام التبويض، تذكير التوقيت، وتوجيه مخصّص', style: TextStyle(fontSize: 12, color: Color(0xFF6B6470))),
+                  ])),
+                  Icon(Icons.arrow_back_ios, size: 14, color: Color(0xFFE91E63)),
+                ]),
+              ),
+            ),
             Expanded(child: _noPregnancy()),
           ]);
         }
 
         Timestamp ts = data['pregnancyStartDate'];
         int daysSinceLastPeriod = DateTime.now().difference(ts.toDate()).inDays;
+        // ── تجاوز 42 أسبوعاً (294 يوماً) = انتهاء الحمل واقعياً ──
+        final bool postTermAck = data['postTermAck'] == true;
+        if (daysSinceLastPeriod > 294 && !postTermAck) {
+          return _postTermPrompt(daysSinceLastPeriod);
+        }
         int week = (daysSinceLastPeriod / 7).floor();
         if (week < 1) week = 1;
         if (week > 42) week = 42;
@@ -3841,6 +4224,26 @@ class _BabyPageState extends State<BabyPage> {
                   int sleep = (log['sleep'] as int?) ?? 0;
                   int diaper = (log['diaper'] as int?) ?? 0;
 
+                  String selectedGender = '';
+                  if (babyDocs.isNotEmpty) {
+                    QueryDocumentSnapshot? selectedDoc;
+                    for (final d in babyDocs) {
+                      if (d.id == activeBabyId) { selectedDoc = d; break; }
+                    }
+                    selectedDoc ??= babyDocs.first;
+                    final bd = selectedDoc.data() as Map<String, dynamic>;
+                    selectedGender = bd['gender'] ?? bd['babyGender'] ?? '';
+                  }
+                  if (selectedGender.isEmpty) {
+                    selectedGender = userData['babyGender'] ?? (userData['babyProfile'] as Map?)?['gender'] ?? '';
+                  }
+                  final bool _isBoy = (selectedGender == 'male');
+                  final Color gAccent     = _isBoy ? const Color(0xFF4A90D9) : _pink;     // أزرق / وردي
+                  final Color gAccentDeep = _isBoy ? const Color(0xFF2E6FB0) : _pinkHot;
+                  final List<Color> gOrb  = _isBoy
+                      ? const [Color(0xFFE6F0FF), Color(0xFFBFD9FF), Color(0xFF8DB7FF)]   // تدرّج أزرق
+                      : const [Color(0xFFFFE6EF), Color(0xFFFFC0D6), Color(0xFFFF8DB7)];  // التدرّج الوردي الحالي
+
                   return CustomScrollView(
                     slivers: [
                       // \u2500\u2500 Top Bar \u2500\u2500
@@ -3880,7 +4283,7 @@ class _BabyPageState extends State<BabyPage> {
                               child: Container(
                                 width: 40, height: 40,
                                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: Colors.white.withOpacity(0.8)),
-                                child: const Icon(Icons.edit_outlined, size: 18, color: _pink),
+                                child: Icon(Icons.edit_outlined, size: 18, color: gAccent),
                               ),
                             ),
                             const SizedBox(width: 14),
@@ -3890,6 +4293,8 @@ class _BabyPageState extends State<BabyPage> {
 
                       SliverToBoxAdapter(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         const SizedBox(height: 8),
+                        const PersonalizedTipsCard(),
+                        const ConditionalContentSection(),
 
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 BABY SELECTOR \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
                         if (babyDocs.isNotEmpty)
@@ -3915,13 +4320,13 @@ class _BabyPageState extends State<BabyPage> {
                                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(20),
-                                          color: isSelected ? _pink : Colors.white.withOpacity(0.7),
+                                          color: isSelected ? gAccent : Colors.white.withOpacity(0.7),
                                           border: Border.all(
-                                            color: isSelected ? _pink : _ink.withOpacity(0.1),
+                                            color: isSelected ? gAccent : _ink.withOpacity(0.1),
                                             width: isSelected ? 1.5 : 0.5,
                                           ),
                                           boxShadow: isSelected
-                                            ? [BoxShadow(color: _pink.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4))]
+                                            ? [BoxShadow(color: gAccent.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4))]
                                             : [],
                                         ),
                                         child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -3985,14 +4390,14 @@ class _BabyPageState extends State<BabyPage> {
                               width: 100, height: 100,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                gradient: const RadialGradient(colors: [Color(0xFFFFE6EF), Color(0xFFFFC0D6), Color(0xFFFF8DB7)]),
-                                boxShadow: [BoxShadow(color: _pink.withOpacity(0.25), blurRadius: 32, offset: const Offset(0, 12))],
+                                gradient: RadialGradient(colors: gOrb),
+                                boxShadow: [BoxShadow(color: gAccent.withOpacity(0.25), blurRadius: 32, offset: const Offset(0, 12))],
                               ),
                               child: Center(child: Text(_emojiForAge(ageDays), style: const TextStyle(fontSize: 48))),
                             ),
                             const SizedBox(height: 14),
                             // Name
-                            Text(babyName.isEmpty ? '\u0637\u0641\u0644\u064A' : babyName,
+                            Text(babyName.isEmpty ? 'طفلي' : babyName,
                               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: _ink)),
                             if (ageText.isNotEmpty) ...[
                               const SizedBox(height: 4),
@@ -4000,12 +4405,12 @@ class _BabyPageState extends State<BabyPage> {
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(999),
-                                  gradient: LinearGradient(colors: [_lavender2.withOpacity(0.18), _pink.withOpacity(0.12)]),
+                                  gradient: LinearGradient(colors: [_lavender2.withOpacity(0.18), gAccent.withOpacity(0.12)]),
                                 ),
                                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  const Icon(Icons.cake_outlined, size: 14, color: _pinkHot),
+                                  Icon(Icons.cake_outlined, size: 14, color: gAccentDeep),
                                   const SizedBox(width: 6),
-                                  Text('\u0627\u0644\u0639\u0645\u0631: $ageText', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _pinkHot)),
+                                  Text('العمر: $ageText', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: gAccentDeep)),
                                 ]),
                               ),
                             ],
@@ -4099,7 +4504,7 @@ class _BabyPageState extends State<BabyPage> {
                         // ════════════ LATEST NEWS ════════════
                         Padding(
                           padding: const EdgeInsets.all(20),
-                          child: _NewsSection(accentColor: Color(0xFFE91E63), sectionTitle: 'آخر أخبار الطفل'),
+                          child: Column(children: const [NabdaAd(slot: 0, groupId: 'baby', place: 'baby', color: Color(0xFFE91E63)), SizedBox(height: 6), _NewsSection(accentColor: Color(0xFFE91E63), sectionTitle: 'آخر أخبار الطفل')]),
                         ),
                         const SizedBox(height: 30),
                       ])),
@@ -5783,22 +6188,9 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                       }
                       // Google Ads placeholder at midpoint
                       if (i == midPoint && paragraphs.length > 3) {
-                        widgets.add(Container(
-                          width: double.infinity,
-                          margin: EdgeInsets.symmetric(vertical: 16),
-                          padding: EdgeInsets.symmetric(vertical: 28, horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Color(0xFFF5F0F7),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Color(0xFFE8E0EC), width: 0.8),
-                          ),
-                          child: Column(children: [
-                            Icon(Icons.campaign_outlined, color: Color(0xFFBBA8C4), size: 28),
-                            SizedBox(height: 8),
-                            Text('\u0645\u0633\u0627\u062D\u0629 \u0625\u0639\u0644\u0627\u0646\u064A\u0629', style: TextStyle(fontSize: 12, color: Color(0xFFBBA8C4), fontWeight: FontWeight.w600)),
-                            SizedBox(height: 2),
-                            Text('Google AdMob', style: TextStyle(fontSize: 10, color: Color(0xFFD0C4D6))),
-                          ]),
+                        widgets.add(Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: NabdaAd(slot: 0, groupId: 'newsdetail', place: 'news', color: Color(0xFFE91E63)),
                         ));
                       }
                       // Second image after midpoint+2
@@ -6473,7 +6865,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       if (!mounted) return;
                       // Pop the ProfilePage first, then navigate
                       Navigator.of(context).popUntil((route) => route.isFirst);
-                      GoRouter.of(context).go('/onboarding');
                     },
                     icon: Icon(Icons.logout),
                     label: Text(tr('logout'), style: TextStyle(fontSize: 16)),
@@ -7384,7 +7775,7 @@ class _AIChatPageState extends State<AIChatPage> {
     final sysText = 'أنت مساعد صحي ذكي اسمك نبضة، متخصص في صحة المرأة. أجب دائماً بالعربية. تخصصاتك: الدورة، الحمل، الولادة، رعاية الطفل، التغذية. أجب بإيجاز. إذا تطلب السؤال تشخيصاً طبياً انصحي بزيارة الطبيب.';
 
     try {
-      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$_apiKey';
+      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$_apiKey';
       final body = jsonEncode({
         'systemInstruction': {'parts': [{'text': sysText}]},
         'contents': _chatHistory,
