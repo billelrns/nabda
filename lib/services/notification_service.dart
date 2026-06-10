@@ -59,9 +59,10 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
 
-    // 4. Get and save FCM token
-    final token = await _fcm.getToken();
-    if (token != null) await saveFCMToken(token);
+    // 4. Get and save FCM token (non-blocking + timeout — لا يحجب عند انقطاع الشبكة)
+    _fcm.getToken().timeout(const Duration(seconds: 6), onTimeout: () => null).then((t) {
+      if (t != null) saveFCMToken(t);
+    }).catchError((_) {});
 
     // 5. Listen for token refresh
     _fcm.onTokenRefresh.listen(saveFCMToken);
@@ -79,7 +80,7 @@ class NotificationService {
     }
 
     _initialized = true;
-    debugPrint('NotificationService initialized. FCM token: $token');
+    debugPrint('NotificationService initialized.');
   }
 
   // ─── Handle foreground message → show local notification ───

@@ -22,8 +22,14 @@ class AppValidators {
       return 'الرجاء إدخال كلمة المرور';
     }
 
-    if (value.length < 6) {
-      return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    if (value.length < 8) {
+      return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+    }
+
+    final hasNumber = RegExp(r'[0-9]').hasMatch(value);
+    final hasSpecial = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value);
+    if (!hasNumber && !hasSpecial) {
+      return 'كلمة المرور يجب أن تحتوي على رقم أو رمز خاص (!@#\$%...)';
     }
 
     return null;

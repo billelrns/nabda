@@ -6,6 +6,7 @@ import 'post_detail_screen.dart';
 import 'leaderboard_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
+import '../../services/community_engagement_service.dart';
 import '../../models/community_post_model.dart';
 
 class CommunityScreen extends StatefulWidget {
@@ -209,14 +210,24 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final isLiked = _currentUserId != null && post.likedBy.contains(_currentUserId);
     final categoryColor = _categoryColors[post.category] ?? const Color(0xFF00897B);
     final categoryLabel = _categoryLabels[post.category] ?? post.category;
-    final displayName = post.isAnonymous ? 'مجهولة' : post.author;
-    final avatarText = post.isAnonymous ? 'م' : (post.author.isNotEmpty ? post.author[0] : '؟');
+    final isTeamPost = post.userId == CommunityEngagementService.teamUserId;
+    final displayName = isTeamPost
+        ? CommunityEngagementService.teamName
+        : (post.isAnonymous ? 'مجهولة' : post.author);
+    final avatarText = isTeamPost
+        ? 'ن'
+        : (post.isAnonymous ? 'م' : (post.author.isNotEmpty ? post.author[0] : '؟'));
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
-      elevation: 1.5,
-      shadowColor: Colors.black12,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: isTeamPost ? 2.5 : 1.5,
+      shadowColor: isTeamPost ? const Color(0xFF00897B).withOpacity(0.3) : Colors.black12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isTeamPost
+            ? const BorderSide(color: Color(0xFF00897B), width: 1.2)
+            : BorderSide.none,
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostDetailScreen(postId: post.id))),
@@ -228,29 +239,50 @@ class _CommunityScreenState extends State<CommunityScreen> {
               // Author row
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: categoryColor.withOpacity(0.12),
-                    child: Text(
-                      avatarText,
-                      style: TextStyle(
-                        color: categoryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                  isTeamPost
+                    ? Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF00897B), Color(0xFF4DB6AC)],
+                          ),
+                          boxShadow: [BoxShadow(color: const Color(0xFF00897B).withOpacity(0.3), blurRadius: 6)],
+                        ),
+                        child: const Icon(Icons.favorite, color: Colors.white, size: 20),
+                      )
+                    : CircleAvatar(
+                        radius: 20,
+                        backgroundColor: categoryColor.withOpacity(0.12),
+                        child: Text(
+                          avatarText,
+                          style: TextStyle(
+                            color: categoryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          displayName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              displayName,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: isTeamPost ? const Color(0xFF00897B) : null,
+                              ),
+                            ),
+                            if (isTeamPost) ...[
+                              const SizedBox(width: 4),
+                              const Icon(Icons.verified, size: 16, color: Color(0xFF00897B)),
+                            ],
+                          ],
                         ),
                         Text(
                           _timeAgo(post.createdAt),

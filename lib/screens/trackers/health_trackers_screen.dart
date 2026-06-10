@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import 'weight_tracker_screen.dart';
+import '../health/medication_tracker_screen.dart';
+import '../health/health_measurements_screen.dart';
 
 // ─── Theme ───
 const Color _bg = Color(0xFFFFF5F7);
@@ -72,7 +75,7 @@ class HealthTrackersScreen extends StatelessWidget {
               subtitle: 'تتبعي زيادة وزنك أسبوعيًا',
               emoji: '⚖️',
               color: const Color(0xFF5C6BC0),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _WeightTrackerScreen())),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeightTrackerScreen())),
             ),
             const SizedBox(height: 12),
             _TrackerCard(
@@ -121,6 +124,22 @@ class HealthTrackersScreen extends StatelessWidget {
               emoji: '💧',
               color: const Color(0xFF29B6F6),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _WaterTrackerScreen())),
+            ),
+            const SizedBox(height: 12),
+            _TrackerCard(
+              title: 'الأدوية والفيتامينات',
+              subtitle: 'تتبعي مواعيد أدويتك اليومية',
+              emoji: '💊',
+              color: const Color(0xFF00897B),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MedicationTrackerScreen())),
+            ),
+            const SizedBox(height: 12),
+            _TrackerCard(
+              title: 'ضغط الدم والسكر',
+              subtitle: 'سجّلي قياساتك وراقبي اتجاهها',
+              emoji: '📊',
+              color: const Color(0xFFEF5350),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthMeasurementsScreen())),
             ),
             const SizedBox(height: 30),
           ],
@@ -175,155 +194,8 @@ class _TrackerCard extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════
-//  1. WEIGHT TRACKER
+//  1. WEIGHT TRACKER — moved to weight_tracker_screen.dart
 // ═══════════════════════════════════════════════
-class _WeightTrackerScreen extends StatefulWidget {
-  const _WeightTrackerScreen({Key? key}) : super(key: key);
-  @override
-  State<_WeightTrackerScreen> createState() => _WeightTrackerScreenState();
-}
-
-class _WeightTrackerScreenState extends State<_WeightTrackerScreen> {
-  final _weightController = TextEditingController();
-
-  Future<void> _addWeight() async {
-    final w = double.tryParse(_weightController.text);
-    if (w == null || w < 30 || w > 200) return;
-    await _userDoc.collection('weight_tracker').add({
-      'weight': w,
-      'date': FieldValue.serverTimestamp(),
-    });
-    _weightController.clear();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('تم تسجيل الوزن'), backgroundColor: _teal, behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-      );
-    }
-  }
-
-  @override
-  void dispose() { _weightController.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _bg,
-        appBar: AppBar(
-          title: const Text('⚖️ تتبع الوزن', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
-          backgroundColor: _card, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent,
-        ),
-        body: Column(
-          children: [
-            // Input area
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(18),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)]),
-              child: Column(
-                children: [
-                  const Text('سجّلي وزنك اليوم', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _text1)),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _weightController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            hintText: 'الوزن بالكيلوغرام',
-                            suffixText: 'كغ',
-                            filled: true, fillColor: _bg,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _addWeight,
-                        style: ElevatedButton.styleFrom(backgroundColor: _teal, foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14)),
-                        child: const Text('تسجيل', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text('الزيادة المثالية: 11-16 كغ خلال الحمل', style: TextStyle(fontSize: 11, color: _text2)),
-                ],
-              ),
-            ),
-            // History
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: _userDoc.collection('weight_tracker').orderBy('date', descending: true).limit(30).snapshots(),
-                builder: (context, snap) {
-                  if (!snap.hasData || snap.data!.docs.isEmpty) {
-                    return Center(child: Text('لا توجد تسجيلات بعد', style: TextStyle(color: _text2)));
-                  }
-                  final docs = snap.data!.docs;
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: docs.length,
-                    itemBuilder: (_, i) {
-                      final d = docs[i].data() as Map<String, dynamic>;
-                      final w = d['weight'] ?? 0.0;
-                      final ts = d['date'] as Timestamp?;
-                      final dateStr = ts != null ? '${ts.toDate().day}/${ts.toDate().month}/${ts.toDate().year}' : '---';
-                      double? diff;
-                      if (i < docs.length - 1) {
-                        final prev = (docs[i + 1].data() as Map<String, dynamic>)['weight'] ?? 0.0;
-                        diff = (w as num).toDouble() - (prev as num).toDouble();
-                      }
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14)),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 44, height: 44,
-                              decoration: BoxDecoration(color: const Color(0xFF5C6BC0).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                              child: const Center(child: Text('⚖️', style: TextStyle(fontSize: 20))),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('$w كغ', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _text1)),
-                                Text(dateStr, style: TextStyle(fontSize: 11, color: _text2)),
-                              ],
-                            )),
-                            if (diff != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: diff > 0 ? Colors.orange.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  '${diff > 0 ? "+" : ""}${diff.toStringAsFixed(1)} كغ',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: diff > 0 ? Colors.orange : Colors.green),
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ═══════════════════════════════════════════════
 //  2. BLOOD PRESSURE TRACKER

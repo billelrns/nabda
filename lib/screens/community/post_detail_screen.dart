@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/community_engagement_service.dart';
 import '../../models/community_post_model.dart';
 
 class PostDetailScreen extends StatefulWidget {
@@ -179,13 +180,23 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final isLiked = _currentUserId != null && post.likedBy.contains(_currentUserId);
     final categoryColor = _categoryColors[post.category] ?? const Color(0xFF00897B);
     final categoryLabel = _categoryLabels[post.category] ?? post.category;
-    final displayName = post.isAnonymous ? 'مجهولة' : post.author;
-    final avatarText = post.isAnonymous ? 'م' : (post.author.isNotEmpty ? post.author[0] : '؟');
+    final isTeamPost = post.userId == CommunityEngagementService.teamUserId;
+    final displayName = isTeamPost
+        ? CommunityEngagementService.teamName
+        : (post.isAnonymous ? 'مجهولة' : post.author);
+    final avatarText = isTeamPost
+        ? 'ن'
+        : (post.isAnonymous ? 'م' : (post.author.isNotEmpty ? post.author[0] : '؟'));
 
     return Card(
-      elevation: 1.5,
-      shadowColor: Colors.black12,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: isTeamPost ? 2.5 : 1.5,
+      shadowColor: isTeamPost ? const Color(0xFF00897B).withOpacity(0.3) : Colors.black12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isTeamPost
+            ? const BorderSide(color: Color(0xFF00897B), width: 1.2)
+            : BorderSide.none,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -197,29 +208,50 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 // Author row
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: categoryColor.withOpacity(0.12),
-                      child: Text(
-                        avatarText,
-                        style: TextStyle(
-                          color: categoryColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                    isTeamPost
+                      ? Container(
+                          width: 44, height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF00897B), Color(0xFF4DB6AC)],
+                            ),
+                            boxShadow: [BoxShadow(color: const Color(0xFF00897B).withOpacity(0.3), blurRadius: 6)],
+                          ),
+                          child: const Icon(Icons.favorite, color: Colors.white, size: 22),
+                        )
+                      : CircleAvatar(
+                          radius: 22,
+                          backgroundColor: categoryColor.withOpacity(0.12),
+                          child: Text(
+                            avatarText,
+                            style: TextStyle(
+                              color: categoryColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            displayName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                displayName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: isTeamPost ? const Color(0xFF00897B) : null,
+                                ),
+                              ),
+                              if (isTeamPost) ...[
+                                const SizedBox(width: 4),
+                                const Icon(Icons.verified, size: 18, color: Color(0xFF00897B)),
+                              ],
+                            ],
                           ),
                           Text(
                             _timeAgo(post.createdAt),
@@ -385,14 +417,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final author = comment['author'] ?? 'مستخدمة';
     final text = comment['text'] ?? '';
     final createdAt = _parseCommentDate(comment['createdAt']);
-    final avatarText = author.isNotEmpty ? author[0] : '؟';
+    final isTeamComment = comment['userId'] == CommunityEngagementService.teamUserId ||
+        comment['isTeam'] == true;
+    final avatarText = isTeamComment ? 'ن' : (author.isNotEmpty ? author[0] : '؟');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isTeamComment ? const Color(0xFF00897B).withOpacity(0.04) : Colors.white,
         borderRadius: BorderRadius.circular(14),
+        border: isTeamComment ? Border.all(color: const Color(0xFF00897B).withOpacity(0.2)) : null,
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
         ],
@@ -400,18 +435,27 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: const Color(0xFF00897B).withOpacity(0.12),
-            child: Text(
-              avatarText,
-              style: const TextStyle(
-                color: Color(0xFF00897B),
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+          isTeamComment
+            ? Container(
+                width: 36, height: 36,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: [Color(0xFF00897B), Color(0xFF4DB6AC)]),
+                ),
+                child: const Icon(Icons.favorite, color: Colors.white, size: 16),
+              )
+            : CircleAvatar(
+                radius: 18,
+                backgroundColor: const Color(0xFF00897B).withOpacity(0.12),
+                child: Text(
+                  avatarText,
+                  style: const TextStyle(
+                    color: Color(0xFF00897B),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
               ),
-            ),
-          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -420,12 +464,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 Row(
                   children: [
                     Text(
-                      author,
-                      style: const TextStyle(
+                      isTeamComment ? CommunityEngagementService.teamName : author,
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
+                        color: isTeamComment ? const Color(0xFF00897B) : null,
                       ),
                     ),
+                    if (isTeamComment) ...[
+                      const SizedBox(width: 3),
+                      const Icon(Icons.verified, size: 14, color: Color(0xFF00897B)),
+                    ],
                     const Spacer(),
                     Text(
                       _timeAgo(createdAt),

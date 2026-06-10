@@ -23,6 +23,9 @@ class AuthService {
 
       final user = userCredential.user;
       if (user != null) {
+        // أرسل بريد التحقق فور إنشاء الحساب
+        await user.sendEmailVerification();
+
         final userModel = UserModel(
           id: user.uid,
           name: name,
@@ -39,7 +42,16 @@ class AuthService {
         return userModel;
       }
     } on FirebaseAuthException catch (e) {
-      throw Exception('خطأ في التسجيل: ${e.message}');
+      switch (e.code) {
+        case 'email-already-in-use':
+          throw Exception('هذا البريد الإلكتروني مستخدم بالفعل');
+        case 'weak-password':
+          throw Exception('كلمة المرور ضعيفة جداً');
+        case 'invalid-email':
+          throw Exception('صيغة البريد الإلكتروني غير صحيحة');
+        default:
+          throw Exception('حدث خطأ في إنشاء الحساب، يرجى المحاولة لاحقاً');
+      }
     }
     return null;
   }
@@ -63,7 +75,19 @@ class AuthService {
         }
       }
     } on FirebaseAuthException catch (e) {
-      throw Exception('خطأ في تسجيل الدخول: ${e.message}');
+      switch (e.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+        case 'invalid-email':
+          throw Exception('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        case 'user-disabled':
+          throw Exception('هذا الحساب موقوف، يرجى التواصل مع الدعم');
+        case 'too-many-requests':
+          throw Exception('محاولات كثيرة، يرجى الانتظار قليلاً ثم المحاولة مجدداً');
+        default:
+          throw Exception('حدث خطأ، يرجى المحاولة لاحقاً');
+      }
     }
     return null;
   }
@@ -85,12 +109,15 @@ class AuthService {
   }
 
   Future<void> updateUserProfile({
-    required String uid,
     String? name,
     String? avatar,
     String? language,
     String? mode,
   }) async {
+    // استخدم uid المستخدم الحالي فقط — لا نقبل uid من الخارج
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) throw Exception('يجب تسجيل الدخول أولاً');
+
     try {
       final updateData = <String, dynamic>{
         if (name != null) 'name': name,
@@ -102,7 +129,7 @@ class AuthService {
 
       await _firestore.collection('users').doc(uid).update(updateData);
     } catch (e) {
-      throw Exception('خطأ في تحديث البيانات: $e');
+      throw Exception('خطأ في تحديث البيانات، يرجى المحاولة لاحقاً');
     }
   }
 

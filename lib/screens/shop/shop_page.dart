@@ -484,9 +484,9 @@ class _ShopPageState extends State<ShopPage> {
     final country = _currencyService.currentCountry;
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _bgColor,
-        body: CustomScrollView(
+      child: Container(
+        color: _bgColor,
+        child: CustomScrollView(
           slivers: [
             // App Bar
             SliverAppBar(
