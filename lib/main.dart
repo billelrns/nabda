@@ -46,6 +46,8 @@ import 'screens/pregnancy/share_progress_screen.dart';
 import 'widgets/personalized_tips.dart';
 import 'widgets/cycle_calendar.dart';
 import 'widgets/conditional_content.dart';
+import 'widgets/cycle_analysis_screen.dart';
+import 'widgets/cycle_phase_wheel.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -3159,9 +3161,11 @@ class _CyclePageState extends State<CyclePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 8),
+                        const CyclePhaseWheel(),
                         const PersonalizedTipsCard(),
                         const CycleCalendarCard(),
                         const ConditionalContentSection(),
+                        const CycleAnalysisButton(),
 
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 HERO CYCLE CARD \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
                         Container(
