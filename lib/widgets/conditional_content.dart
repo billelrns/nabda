@@ -10,7 +10,8 @@ import 'news_section.dart';
 /// فلا يظهر محتوى الحمل في تبويب الطفل مثلاً.
 class ConditionalContentSection extends StatelessWidget {
   final String stage;
-  const ConditionalContentSection({super.key, required this.stage});
+  final bool horizontal;
+  const ConditionalContentSection({super.key, required this.stage, this.horizontal = false});
 
   @override
   Widget build(BuildContext context) {
@@ -65,11 +66,194 @@ class ConditionalContentSection extends StatelessWidget {
     );
   }
 
+  Widget _ph(_Topic t) => Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [t.color.withValues(alpha: 0.15), t.color.withValues(alpha: 0.05)],
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              left: 10,
+              bottom: 5,
+              child: Text(
+                t.emoji,
+                style: TextStyle(fontSize: 50, color: Colors.white.withValues(alpha: 0.35)),
+              ),
+            ),
+            Positioned(
+              right: 12,
+              bottom: 10,
+              child: Text(t.emoji, style: const TextStyle(fontSize: 36)),
+            ),
+          ],
+        ),
+      );
+
   Widget _buildSection(BuildContext context, _Topic t,
       {List<QueryDocumentSnapshot>? docs, List<SpecArticle>? hardcoded}) {
     void open(String title, String body, String image) => Navigator.push(context,
         MaterialPageRoute(builder: (_) => _ArticlePage(
           title: title, body: body, image: image, color: t.color, place: _place)));
+
+    final itemsCount = docs != null ? docs.length : (hardcoded != null ? hardcoded.length : 0);
+    if (itemsCount == 0) return const SizedBox.shrink();
+
+    if (horizontal) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Carousel Header
+            Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: t.color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  t.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D2D3A),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(t.emoji, style: const TextStyle(fontSize: 18)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Carousel
+            SizedBox(
+              height: 200,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                reverse: true,
+                itemCount: itemsCount,
+                itemBuilder: (context, i) {
+                  String title = '';
+                  String body = '';
+                  String image = '';
+                  if (docs != null) {
+                    final d = docs[i].data() as Map<String, dynamic>;
+                    title = d['title'] as String? ?? '';
+                    body = d['body'] as String? ?? '';
+                    image = d['image'] as String? ?? '';
+                  } else if (hardcoded != null) {
+                    title = hardcoded[i].title;
+                    body = hardcoded[i].body;
+                    image = '';
+                  }
+                  return GestureDetector(
+                    onTap: () => open(title, body, image),
+                    child: Container(
+                      width: 240,
+                      margin: EdgeInsets.only(left: i == itemsCount - 1 ? 0 : 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 3)),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Top part (Image or Placeholder with category badge)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 90,
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(18),
+                                      topLeft: Radius.circular(18),
+                                    ),
+                                    child: image.isNotEmpty
+                                        ? Image.network(image, fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => _ph(t))
+                                        : _ph(t),
+                                  ),
+                                ),
+                                // Category badge
+                                Positioned(
+                                  top: 12,
+                                  right: 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      t.title,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: t.color,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Text section
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2D2D3A),
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const Spacer(),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.access_time, size: 12, color: Colors.grey[400]),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'قراءة سريعة',
+                                        style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

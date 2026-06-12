@@ -740,6 +740,10 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                     _buildQuickInfoRow(a),
                     const SizedBox(height: 16),
 
+                    // محتوى مخصّص حسب ملف المستخدمة — يظهر بشكل كاروسال أفقي
+                    const ConditionalContentSection(stage: 'pregnant', horizontal: true),
+                    const SizedBox(height: 16),
+
                     // ── Articles Carousel ──
                     _buildArticlesCarousel(),
                     const SizedBox(height: 16),
@@ -819,7 +823,6 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                     const SizedBox(height: 24),
                     // محتوى مخصّص حسب ملف المستخدمة — يظهر قبل كل المقالات العامة
                     const PersonalizedTipsCard(stage: 'pregnant'),
-                    const ConditionalContentSection(stage: 'pregnant'),
                     // ─── Health Trackers Banner ───
                     GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthTrackersScreen())),
