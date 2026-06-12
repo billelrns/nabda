@@ -43,6 +43,12 @@ service cloud.firestore {
 
       // الأدمن يستطيع قراءة بيانات المستخدمين
       allow read: if isActiveStaff();
+
+      // كل المجموعات الفرعية للمستخدم (babies, baby_logs, cycle_logs,
+      // weight_tracker, vaccines, logs...) يملكها صاحب الحساب فقط
+      match /{subCollection=**} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
     }
 
     // ─── الدورة الشهرية ───────────────────────────────────────────
