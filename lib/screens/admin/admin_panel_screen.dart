@@ -8,6 +8,8 @@ import '../../services/admin_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/dynamic_content_service.dart';
 import '../../services/community_engagement_service.dart';
+import '../../services/specialized_articles_service.dart';
+import '../../data/specialized_articles.dart';
 
 // ─── Theme ───
 const Color _bg = Color(0xFFF5F5F8);
@@ -3334,7 +3336,7 @@ class _DynamicContentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('المحتوى الجديد'),
@@ -3347,6 +3349,7 @@ class _DynamicContentScreen extends StatelessWidget {
             tabs: [
               Tab(icon: Icon(Icons.article), text: 'مقالات'),
               Tab(icon: Icon(Icons.shopping_bag), text: 'منتجات'),
+              Tab(icon: Icon(Icons.health_and_safety), text: 'متخصّصة'),
             ],
           ),
         ),
@@ -3354,6 +3357,7 @@ class _DynamicContentScreen extends StatelessWidget {
           children: [
             _DynamicArticlesTab(),
             _DynamicProductsTab(),
+            _SpecializedArticlesTab(),
           ],
         ),
       ),
@@ -3882,6 +3886,317 @@ class _AdsManagementScreenState extends State<_AdsManagementScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  SPECIALIZED ARTICLES TAB (Firestore-backed)
+// ═══════════════════════════════════════════════
+
+const _specTopicKeys = [
+  'twins', 'diabetes', 'htn', 'nausea', 'firstPreg',
+  'formula', 'mixed', 'firstChild', 'irregular', 'pcos', 'thyroid',
+];
+const _specTopicLabels = {
+  'twins': 'الحمل بتوأم',
+  'diabetes': 'سكري الحمل',
+  'htn': 'ارتفاع الضغط في الحمل',
+  'nausea': 'غثيان الحمل',
+  'firstPreg': 'دليل الحمل الأول',
+  'formula': 'الرضاعة الصناعية',
+  'mixed': 'الرضاعة المختلطة',
+  'firstChild': 'طفلك الأول',
+  'irregular': 'الدورة غير المنتظمة',
+  'pcos': 'تكيّس المبايض',
+  'thyroid': 'الغدة الدرقية',
+};
+
+class _SpecializedArticlesTab extends StatefulWidget {
+  @override
+  State<_SpecializedArticlesTab> createState() => _SpecializedArticlesTabState();
+}
+
+class _SpecializedArticlesTabState extends State<_SpecializedArticlesTab> {
+  bool _seeding = false;
+  final ImagePicker _picker = ImagePicker();
+
+  void _snack(String msg, {Color color = const Color(0xFF00897B)}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: color));
+  }
+
+  Future<void> _seed() async {
+    setState(() => _seeding = true);
+    try {
+      final n = await SpecializedArticlesService.seedFromHardcoded();
+      if (n == 0) {
+        _snack('المقالات موجودة مسبقًا، لا حاجة للاستيراد', color: Colors.orange);
+      } else {
+        _snack('تم استيراد $n مقالًا بنجاح ✓');
+      }
+    } catch (e) {
+      _snack('خطأ: $e', color: Colors.red);
+    } finally {
+      if (mounted) setState(() => _seeding = false);
+    }
+  }
+
+  Future<void> _showSheet(BuildContext ctx, {QueryDocumentSnapshot? doc}) async {
+    final titleC = TextEditingController(text: doc != null ? (doc.data() as Map)['title'] ?? '' : '');
+    final bodyC = TextEditingController(text: doc != null ? (doc.data() as Map)['body'] ?? '' : '');
+    final orderC = TextEditingController(text: doc != null ? '${(doc.data() as Map)['order'] ?? 0}' : '0');
+    String selectedTopic = doc != null ? (doc.data() as Map)['topic'] ?? 'twins' : 'twins';
+    String imageUrl = doc != null ? (doc.data() as Map)['image'] ?? '' : '';
+    Uint8List? imgBytes;
+    XFile? imgFile;
+
+    await showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (sheetCtx, setS) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: Padding(
+            padding: EdgeInsets.only(left: 20, right: 20, top: 20,
+              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(doc == null ? 'إضافة مقال متخصّص' : 'تعديل المقال',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  // Topic dropdown
+                  DropdownButtonFormField<String>(
+                    value: selectedTopic,
+                    decoration: InputDecoration(
+                      labelText: 'الموضوع',
+                      filled: true, fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+                    items: _specTopicKeys.map((k) => DropdownMenuItem(
+                      value: k,
+                      child: Text('${_specTopicLabels[k] ?? k} ($k)'),
+                    )).toList(),
+                    onChanged: (v) => setS(() => selectedTopic = v ?? 'twins'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(controller: titleC, decoration: InputDecoration(
+                    labelText: 'عنوان المقال *', filled: true, fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                  const SizedBox(height: 12),
+                  TextField(controller: bodyC, maxLines: 8, decoration: InputDecoration(
+                    labelText: 'نصّ المقال *', alignLabelWithHint: true, filled: true, fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                  const SizedBox(height: 12),
+                  TextField(controller: orderC, keyboardType: TextInputType.number, decoration: InputDecoration(
+                    labelText: 'الترتيب (رقم)', filled: true, fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                  const SizedBox(height: 12),
+                  // Image section
+                  const Text('صورة المقال (اختياري)', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  if (imgBytes != null)
+                    ClipRRect(borderRadius: BorderRadius.circular(10),
+                      child: Image.memory(imgBytes!, height: 120, width: double.infinity, fit: BoxFit.cover))
+                  else if (imageUrl.isNotEmpty)
+                    ClipRRect(borderRadius: BorderRadius.circular(10),
+                      child: Image.network(imageUrl, height: 120, width: double.infinity, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(height: 80, color: Colors.grey[200],
+                          child: const Center(child: Icon(Icons.image, color: Colors.grey))))),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.upload),
+                    label: const Text('رفع صورة من الجهاز'),
+                    onPressed: () async {
+                      try {
+                        final f = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+                        if (f != null) {
+                          final b = await f.readAsBytes();
+                          setS(() { imgFile = f; imgBytes = b; imageUrl = ''; });
+                        }
+                      } catch (e) { _snack('تعذّر اختيار الصورة', color: Colors.red); }
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00897B),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    onPressed: () async {
+                      if (titleC.text.trim().isEmpty || bodyC.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                          const SnackBar(content: Text('يرجى إدخال العنوان والنصّ')));
+                        return;
+                      }
+                      // Upload image if picked
+                      String finalImage = imageUrl;
+                      if (imgFile != null && imgBytes != null) {
+                        final ts = DateTime.now().millisecondsSinceEpoch;
+                        final ref = FirebaseStorage.instance.ref().child('specialized/spec_$ts.jpg');
+                        await ref.putData(imgBytes!, SettableMetadata(contentType: 'image/jpeg'));
+                        finalImage = await ref.getDownloadURL();
+                      }
+                      final data = {
+                        'topic': selectedTopic,
+                        'title': titleC.text.trim(),
+                        'body': bodyC.text.trim(),
+                        'image': finalImage,
+                        'order': int.tryParse(orderC.text.trim()) ?? 0,
+                      };
+                      if (doc == null) {
+                        await SpecializedArticlesService.add(
+                          topic: data['topic'] as String,
+                          title: data['title'] as String,
+                          body: data['body'] as String,
+                          image: data['image'] as String,
+                          order: data['order'] as int,
+                        );
+                      } else {
+                        await SpecializedArticlesService.update(doc.id, data);
+                      }
+                      if (sheetCtx.mounted) { Navigator.pop(sheetCtx); }
+                      _snack(doc == null ? 'تمت الإضافة ✓' : 'تم التعديل ✓');
+                    },
+                    child: Text(doc == null ? 'إضافة المقال' : 'حفظ التعديلات',
+                      style: const TextStyle(fontSize: 16)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: SpecializedArticlesService.streamAll(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final rawDocs = snap.data?.docs ?? [];
+        // Sort by topic then order
+        final docs = rawDocs.toList()
+          ..sort((a, b) {
+            final ad = a.data() as Map<String, dynamic>;
+            final bd = b.data() as Map<String, dynamic>;
+            final tCmp = (ad['topic'] as String? ?? '').compareTo(bd['topic'] as String? ?? '');
+            if (tCmp != 0) return tCmp;
+            return ((ad['order'] as int?) ?? 0).compareTo((bd['order'] as int?) ?? 0);
+          });
+        return Scaffold(
+          backgroundColor: const Color(0xFFF5F5F8),
+          body: Column(
+            children: [
+              // Import button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: _seeding
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.download_for_offline),
+                    label: const Text('استيراد المقالات الأساسية (66)'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF7E57C2),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    onPressed: _seeding ? null : _seed,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                child: Text('${docs.length} مقال في Firestore',
+                  style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12)),
+              ),
+              Expanded(
+                child: docs.isEmpty
+                  ? const Center(child: Text('لا توجد مقالات متخصّصة بعد\nاضغط «استيراد» للبدء',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 15, color: Colors.grey)))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: docs.length,
+                      itemBuilder: (context, i) {
+                        final d = docs[i].data() as Map<String, dynamic>;
+                        final topic = d['topic'] as String? ?? '';
+                        final topicLabel = _specTopicLabels[topic] ?? topic;
+                        final imgUrl = d['image'] as String? ?? '';
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: ListTile(
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: imgUrl.isNotEmpty
+                                ? Image.network(imgUrl, width: 52, height: 52, fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 52, height: 52, color: Colors.grey[200],
+                                      child: const Icon(Icons.article, color: Colors.grey)))
+                                : Container(width: 52, height: 52, color: Colors.grey[200],
+                                    child: const Icon(Icons.article, color: Colors.grey)),
+                            ),
+                            title: Text(d['title'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            subtitle: Text('$topicLabel • ترتيب: ${d['order'] ?? 0}',
+                              style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Color(0xFF00897B), size: 20),
+                                  tooltip: 'تعديل',
+                                  onPressed: () => _showSheet(context, doc: docs[i]),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                  tooltip: 'حذف',
+                                  onPressed: () async {
+                                    final ok = await showDialog<bool>(
+                                      context: context,
+                                      builder: (_) => AlertDialog(
+                                        title: const Text('حذف المقال؟'),
+                                        content: Text('سيُحذف: «${d['title']}»'),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+                                          TextButton(onPressed: () => Navigator.pop(context, true),
+                                            child: const Text('حذف', style: TextStyle(color: Colors.red))),
+                                        ],
+                                      ),
+                                    );
+                                    if (ok == true) { await SpecializedArticlesService.delete(docs[i].id); }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+              ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: const Color(0xFF00897B),
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('مقال جديد', style: TextStyle(color: Colors.white)),
+            onPressed: () => _showSheet(context),
+          ),
+        );
+      },
     );
   }
 }

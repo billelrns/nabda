@@ -153,6 +153,16 @@ service cloud.firestore {
       allow write: if isActiveStaff();
     }
 
+    // ─── المقالات المتخصّصة (specialized_articles) ────────────────
+    match /specialized_articles/{docId} {
+      // المستخدمات المسجّلات يقرأن المقالات
+      allow read: if isAuthenticated();
+      // الأدمن (كل الموظفين النشطين) يضيف ويعدّل
+      allow create, update: if isActiveStaff();
+      // الحذف للمالك أو المشرف فقط
+      allow delete: if isOwnerOrSupervisor();
+    }
+
     // ─── الكوبونات ────────────────────────────────────────────────
     match /coupons/{couponId} {
       allow read: if isAuthenticated();
