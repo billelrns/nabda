@@ -261,8 +261,6 @@ class PregnancyWeeksScreen extends StatelessWidget {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const PersonalizedTipsCard(stage: 'pregnant'),
-            const ConditionalContentSection(stage: 'pregnant'),
             ...List.generate(3, (ti) {
             final name = ['الثلث الأول', 'الثلث الثاني', 'الثلث الثالث'][ti];
             final weeks = [
@@ -819,6 +817,9 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
 
                     // ── Discover Section Header ──
                     const SizedBox(height: 24),
+                    // محتوى مخصّص حسب ملف المستخدمة — يظهر قبل كل المقالات العامة
+                    const PersonalizedTipsCard(stage: 'pregnant'),
+                    const ConditionalContentSection(stage: 'pregnant'),
                     // ─── Health Trackers Banner ───
                     GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthTrackersScreen())),
