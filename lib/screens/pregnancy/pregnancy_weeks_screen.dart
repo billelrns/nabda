@@ -262,7 +262,7 @@ class PregnancyWeeksScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           children: [
             const PersonalizedTipsCard(),
-            const ConditionalContentSection(),
+            const ConditionalContentSection(stage: 'pregnant'),
             ...List.generate(3, (ti) {
             final name = ['الثلث الأول', 'الثلث الثاني', 'الثلث الثالث'][ti];
             final weeks = [

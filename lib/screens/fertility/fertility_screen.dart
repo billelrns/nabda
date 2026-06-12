@@ -167,7 +167,7 @@ class _FertilityScreenState extends State<FertilityScreen> {
       const SizedBox(height: 10),
       _knowledgeCard('📋', 'استبيان الخصوبة', 'أجيبي على أسئلة قصيرة لتوجيه مخصّص', _peach, _openQuestionnaire),
       const SizedBox(height: 22),
-      const ConditionalContentSection(),
+      const ConditionalContentSection(stage: 'planning'),
       const SizedBox(height: 14),
       _sectionTitle('📚 مقالات مفيدة'),
       const SizedBox(height: 10),

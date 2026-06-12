@@ -3164,7 +3164,7 @@ class _CyclePageState extends State<CyclePage> {
                         const CyclePhaseWheel(),
                         const PersonalizedTipsCard(),
                         const CycleCalendarCard(),
-                        const ConditionalContentSection(),
+                        const ConditionalContentSection(stage: 'cycle'),
                         const CycleAnalysisButton(),
 
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 HERO CYCLE CARD \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
@@ -4294,7 +4294,7 @@ class _BabyPageState extends State<BabyPage> {
                       SliverToBoxAdapter(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         const SizedBox(height: 8),
                         const PersonalizedTipsCard(),
-                        const ConditionalContentSection(),
+                        const ConditionalContentSection(stage: 'baby'),
 
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 BABY SELECTOR \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
                         if (babyDocs.isNotEmpty)
