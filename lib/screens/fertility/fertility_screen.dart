@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/news_section.dart';
+import '../../widgets/conditional_content.dart';
 
 /// رحلة الخصوبة — تصميم فاخر (glassmorphism) للنساء اللواتي يحاولن الحمل.
 /// محتوى إرشادي فقط ولا يغني عن استشارة الطبيب.
@@ -166,6 +167,8 @@ class _FertilityScreenState extends State<FertilityScreen> {
       const SizedBox(height: 10),
       _knowledgeCard('📋', 'استبيان الخصوبة', 'أجيبي على أسئلة قصيرة لتوجيه مخصّص', _peach, _openQuestionnaire),
       const SizedBox(height: 22),
+      const ConditionalContentSection(),
+      const SizedBox(height: 14),
       _sectionTitle('📚 مقالات مفيدة'),
       const SizedBox(height: 10),
       ..._useful.map((a) => _articleCard(a, _blush)),
