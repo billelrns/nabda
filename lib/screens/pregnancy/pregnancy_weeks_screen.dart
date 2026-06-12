@@ -261,7 +261,7 @@ class PregnancyWeeksScreen extends StatelessWidget {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const PersonalizedTipsCard(),
+            const PersonalizedTipsCard(stage: 'pregnant'),
             const ConditionalContentSection(stage: 'pregnant'),
             ...List.generate(3, (ti) {
             final name = ['الثلث الأول', 'الثلث الثاني', 'الثلث الثالث'][ti];

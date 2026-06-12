@@ -5,7 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 /// بطاقة نصائح مخصّصة تُحسب من بيانات الاستبيانات وتظهر أعلى كل تبويب.
 /// مستقلّة بذاتها: تقرأ وثيقة المستخدمة داخليًا، فتُدرَج بسطر واحد في أي مكان.
 class PersonalizedTipsCard extends StatelessWidget {
-  const PersonalizedTipsCard({Key? key}) : super(key: key);
+  /// مرحلة التبويب الذي أُدرجت فيه البطاقة (pregnant/baby/cycle).
+  final String stage;
+  const PersonalizedTipsCard({Key? key, required this.stage}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +18,8 @@ class PersonalizedTipsCard extends StatelessWidget {
       builder: (context, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
         final d = snap.data!.data() as Map<String, dynamic>? ?? {};
+        // اعرض فقط في التبويب المطابق لمرحلة المستخدمة
+        if (d['lifeStage'] != stage) return const SizedBox.shrink();
         final tips = _tipsFor(d);
         if (tips.isEmpty) return const SizedBox.shrink();
         return Directionality(
