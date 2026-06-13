@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/country_currency_service.dart';
 import '../../services/cart_service.dart';
 import 'cart_screen.dart';
+import 'landing_product_screen.dart';
 
 // ─── Theme Colors ───
 const Color _bgColor = Color(0xFFFFF5F7);
@@ -442,6 +443,16 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   void _showFirestoreProductDetail(BuildContext context, Map<String, dynamic> d) {
+    if (d['displayType'] == 'landing') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LandingProductScreen(productData: d),
+        ),
+      );
+      return;
+    }
+
     // Build list of all product images (support both old single imageUrl and new imageUrls list)
     final List<String> allImages = [];
     final imageUrls = d['imageUrls'] as List<dynamic>? ?? [];
@@ -667,7 +678,8 @@ class _ShopPageState extends State<ShopPage> {
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         itemCount: docs.length,
                         itemBuilder: (_, i) {
-                          final d = docs[i].data() as Map<String, dynamic>;
+                          final d = Map<String, dynamic>.from(docs[i].data() as Map<String, dynamic>);
+                          d['id'] = docs[i].id;
                           final hasImage = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
                           final price = d['price'] ?? '0';
                           final oldPrice = d['oldPrice'] ?? '';
