@@ -1125,8 +1125,13 @@ class _AddProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<_AddProductScreen> {
   final _nameC = TextEditingController();
+  final _shortNameC = TextEditingController();
+  final _shortDescC = TextEditingController();
+  final _weightC = TextEditingController();
   final _priceC = TextEditingController();
   final _oldPriceC = TextEditingController();
+  final _costPriceC = TextEditingController();
+  final _stockC = TextEditingController();
   final _descC = TextEditingController();
   final _emojiC = TextEditingController(text: '🛍️');
   String _category = 'ملابس الحمل';
@@ -1138,12 +1143,40 @@ class _AddProductScreenState extends State<_AddProductScreen> {
   // Description images
   final List<_ArticleImage> _descImages = [];
 
+  // Cover Image
+  _ArticleImage? _coverImage;
+
+  // Settings
+  String _displayType = 'product';
+  bool _skipCart = false;
+  bool _allowBackorder = false;
+  bool _hideRelated = false;
+  bool _strictOptions = false;
+  bool _customThankYou = false;
+  final _thankYouTextC = TextEditingController();
+
+  // Shipping
+  bool _freeShipping = false;
+  bool _freeShippingPickupOnly = false;
+  bool _customShipping = false;
+  final _customShippingPriceC = TextEditingController();
+  bool _customShippingPickup = false;
+  final _customShippingPickupPriceC = TextEditingController();
+
+  // Variants, secondary options, offers, reviews lists
+  final List<_VariantItem> _variants = [];
+  final List<_SecondaryOptionItem> _secondaryOptions = [];
+  final List<_OfferItem> _offers = [];
+  final List<_ReviewItem> _reviews = [];
+
   bool _isSaving = false;
   final _picker = ImagePicker();
 
-  final _categories = ['ملابس الحمل', 'لوازم الرضيع', 'ملابس المولود', 'الرضاعة والتغذية', 'الحفاضات والنظافة',
+  final _categories = [
+    'ملابس الحمل', 'لوازم الرضيع', 'ملابس المولود', 'الرضاعة والتغذية', 'الحفاضات والنظافة',
     'عناية بالحامل', 'فيتامينات ومكملات', 'حقيبة الولادة', 'ألعاب وتحفيز', 'راحة الأم',
-    'كتب وأدلة', 'أجهزة طبية', 'تذكارات وهدايا', 'سفر وتنقل', 'ديكور غرفة الطفل'];
+    'كتب وأدلة', 'أجهزة طبية', 'تذكارات وهدايا', 'سفر وتنقل', 'ديكور غرفة الطفل'
+  ];
 
   @override
   void initState() {
@@ -1157,7 +1190,8 @@ class _AddProductScreenState extends State<_AddProductScreen> {
       _emojiC.text = d['emoji'] ?? '🛍️';
       _category = d['category'] ?? 'ملابس الحمل';
       if (!_categories.contains(_category)) _category = 'ملابس الحمل';
-      // Load product images (support both old single imageUrl and new imageUrls list)
+
+      // Load product gallery images
       final imageUrls = d['imageUrls'] as List<dynamic>? ?? [];
       if (imageUrls.isNotEmpty) {
         for (final url in imageUrls) {
@@ -1165,14 +1199,117 @@ class _AddProductScreenState extends State<_AddProductScreen> {
           if (s.isNotEmpty) _productImages.add(_ArticleImage(url: s));
         }
       } else {
-        // Backward compat: old single imageUrl
         final oldUrl = d['imageUrl'] as String?;
         if (oldUrl != null && oldUrl.isNotEmpty) _productImages.add(_ArticleImage(url: oldUrl));
       }
+
       // Load description images
       final descImgs = d['descImages'] as List<dynamic>? ?? [];
       for (final img in descImgs) _descImages.add(_ArticleImage(url: img.toString()));
+
+      // New fields
+      _shortNameC.text = d['shortName'] ?? '';
+      _shortDescC.text = d['shortDescription'] ?? '';
+      _weightC.text = d['weight'] != null ? d['weight'].toString() : '';
+      _costPriceC.text = d['costPrice'] ?? '';
+      _stockC.text = d['stock'] != null ? d['stock'].toString() : '';
+      _displayType = d['displayType'] ?? 'product';
+
+      // Cover image
+      final cov = d['coverImage'] as String?;
+      if (cov != null && cov.isNotEmpty) {
+        _coverImage = _ArticleImage(url: cov);
+      }
+
+      // Settings
+      final set = d['settings'] as Map<String, dynamic>? ?? {};
+      _skipCart = set['skipCart'] ?? false;
+      _allowBackorder = set['allowBackorder'] ?? false;
+      _hideRelated = set['hideRelated'] ?? false;
+      _strictOptions = set['strictOptions'] ?? false;
+      _customThankYou = set['customThankYou'] ?? false;
+      _thankYouTextC.text = set['thankYouText'] ?? '';
+
+      // Shipping
+      final sh = d['shipping'] as Map<String, dynamic>? ?? {};
+      _freeShipping = sh['freeShipping'] ?? false;
+      _freeShippingPickupOnly = sh['freeShippingPickupOnly'] ?? false;
+      _customShipping = sh['customShipping'] ?? false;
+      _customShippingPriceC.text = sh['customShippingPrice'] != null ? sh['customShippingPrice'].toString() : '';
+      _customShippingPickup = sh['customShippingPickup'] ?? false;
+      _customShippingPickupPriceC.text = sh['customShippingPickupPrice'] != null ? sh['customShippingPickupPrice'].toString() : '';
+
+      // Variants
+      final vars = d['variants'] as List<dynamic>? ?? [];
+      for (final v in vars) {
+        final vm = v as Map<String, dynamic>;
+        _variants.add(_VariantItem(
+          title: vm['title'] ?? '',
+          colorHex: vm['colorHex'] ?? '',
+          image: _ArticleImage(url: vm['image'] ?? ''),
+          sku: vm['sku'] ?? '',
+          stock: vm['stock'] ?? 0,
+          enabled: vm['enabled'] ?? true,
+        ));
+      }
+
+      // Secondary Options
+      final sec = d['secondaryOptions'] as List<dynamic>? ?? [];
+      for (final s in sec) {
+        final sm = s as Map<String, dynamic>;
+        final vals = (sm['values'] as List<dynamic>? ?? []).map((e) => e.toString()).toList();
+        _secondaryOptions.add(_SecondaryOptionItem(
+          title: sm['title'] ?? '',
+          values: vals,
+        ));
+      }
+
+      // Offers
+      final ofs = d['offers'] as List<dynamic>? ?? [];
+      for (final o in ofs) {
+        final om = o as Map<String, dynamic>;
+        _offers.add(_OfferItem(
+          title: om['title'] ?? '',
+          quantity: om['quantity'] ?? 1,
+          pricePerPiece: (om['pricePerPiece'] ?? 0).toDouble(),
+          freeShipping: om['freeShipping'] ?? false,
+          isBest: om['isBest'] ?? false,
+          isDefault: om['isDefault'] ?? false,
+          image: _ArticleImage(url: om['image'] ?? ''),
+        ));
+      }
+
+      // Reviews
+      final revs = d['reviews'] as List<dynamic>? ?? [];
+      for (final r in revs) {
+        final rm = r as Map<String, dynamic>;
+        _reviews.add(_ReviewItem(
+          name: rm['name'] ?? '',
+          gender: rm['gender'] ?? 'female',
+          rating: (rm['rating'] ?? 5.0).toDouble(),
+          image: _ArticleImage(url: rm['image'] ?? ''),
+          text: rm['text'] ?? '',
+        ));
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _nameC.dispose();
+    _shortNameC.dispose();
+    _shortDescC.dispose();
+    _weightC.dispose();
+    _priceC.dispose();
+    _oldPriceC.dispose();
+    _costPriceC.dispose();
+    _stockC.dispose();
+    _descC.dispose();
+    _emojiC.dispose();
+    _thankYouTextC.dispose();
+    _customShippingPriceC.dispose();
+    _customShippingPickupPriceC.dispose();
+    super.dispose();
   }
 
   Future<XFile?> _pickImage() async {
@@ -1217,6 +1354,25 @@ class _AddProductScreenState extends State<_AddProductScreen> {
     }
   }
 
+  Future<void> _pickCoverImage() async {
+    final f = await _pickImage();
+    if (f != null) {
+      final b = await _readFileBytes(f);
+      if (b != null) setState(() => _coverImage = _ArticleImage(file: f, bytes: b));
+    }
+  }
+
+  Future<_ArticleImage?> _pickItemImage() async {
+    final f = await _pickImage();
+    if (f != null) {
+      final b = await _readFileBytes(f);
+      if (b != null) {
+        return _ArticleImage(file: f, bytes: b);
+      }
+    }
+    return null;
+  }
+
   Future<void> _save() async {
     if (_nameC.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى إدخال اسم المنتج'), backgroundColor: Colors.orange));
@@ -1231,37 +1387,116 @@ class _AddProductScreenState extends State<_AddProductScreen> {
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
 
-      // Upload product images
+      // 1. Upload cover image
+      String coverImageUrl = '';
+      if (_coverImage != null) {
+        if (_coverImage!.url != null) {
+          coverImageUrl = _coverImage!.url!;
+        } else if (_coverImage!.file != null) {
+          final url = await _uploadImage(_coverImage!.file!, 'products/cover_${ts}.jpg');
+          if (url != null) coverImageUrl = url;
+        }
+      }
+
+      // 2. Upload gallery images
       final List<String> productImageUrls = [];
       for (int i = 0; i < _productImages.length; i++) {
         final img = _productImages[i];
         if (img.url != null) {
           productImageUrls.add(img.url!);
         } else if (img.file != null) {
-          final url = await _uploadImage(img.file!, 'products/product_${ts}_$i.jpg');
+          final url = await _uploadImage(img.file!, 'products/product_${ts}_${i}.jpg');
           if (url != null) productImageUrls.add(url);
         }
       }
 
-      // Upload description images
+      // 3. Upload description images
       final List<String> descImageUrls = [];
       for (int i = 0; i < _descImages.length; i++) {
         final img = _descImages[i];
         if (img.url != null) descImageUrls.add(img.url!);
         else if (img.file != null) {
-          final url = await _uploadImage(img.file!, 'products/desc_${ts}_$i.jpg');
+          final url = await _uploadImage(img.file!, 'products/desc_${ts}_${i}.jpg');
           if (url != null) descImageUrls.add(url);
         }
       }
 
+      // 4. Upload variant images
+      for (int i = 0; i < _variants.length; i++) {
+        final v = _variants[i];
+        if (v.image.file != null) {
+          final url = await _uploadImage(v.image.file!, 'products/variant_${ts}_${i}.jpg');
+          if (url != null) {
+            v.image = _ArticleImage(url: url);
+          }
+        }
+      }
+
+      // 5. Upload offer images
+      for (int i = 0; i < _offers.length; i++) {
+        final o = _offers[i];
+        if (o.image.file != null) {
+          final url = await _uploadImage(o.image.file!, 'products/offer_${ts}_${i}.jpg');
+          if (url != null) {
+            o.image = _ArticleImage(url: url);
+          }
+        }
+      }
+
+      // 6. Upload review images
+      for (int i = 0; i < _reviews.length; i++) {
+        final r = _reviews[i];
+        if (r.image.file != null) {
+          final url = await _uploadImage(r.image.file!, 'products/review_${ts}_${i}.jpg');
+          if (url != null) {
+            r.image = _ArticleImage(url: url);
+          }
+        }
+      }
+
       final data = <String, dynamic>{
-        'name': _nameC.text.trim(), 'price': _priceC.text.trim(), 'oldPrice': _oldPriceC.text.trim(),
-        'description': _descC.text.trim(), 'emoji': _emojiC.text, 'category': _category,
+        'name': _nameC.text.trim(),
+        'price': _priceC.text.trim(),
+        'oldPrice': _oldPriceC.text.trim(),
+        'description': _descC.text.trim(),
+        'emoji': _emojiC.text.trim(),
+        'category': _category,
         'imageUrl': productImageUrls.isNotEmpty ? productImageUrls.first : '', // backward compat
-        'imageUrls': productImageUrls, // new: all product images
+        'imageUrls': productImageUrls,
         'descImages': descImageUrls,
+        
+        // New Dukan-style fields
+        'shortName': _shortNameC.text.trim(),
+        'shortDescription': _shortDescC.text.trim(),
+        'weight': int.tryParse(_weightC.text.trim()) ?? 0,
+        'costPrice': _costPriceC.text.trim(),
+        'stock': int.tryParse(_stockC.text.trim()) ?? 0,
+        'coverImage': coverImageUrl,
+        'displayType': _displayType,
+        'settings': {
+          'skipCart': _skipCart,
+          'allowBackorder': _allowBackorder,
+          'hideRelated': _hideRelated,
+          'strictOptions': _strictOptions,
+          'customThankYou': _customThankYou,
+          'thankYouText': _thankYouTextC.text.trim(),
+        },
+        'shipping': {
+          'freeShipping': _freeShipping,
+          'freeShippingPickupOnly': _freeShippingPickupOnly,
+          'customShipping': _customShipping,
+          'customShippingPrice': double.tryParse(_customShippingPriceC.text.trim()) ?? 0.0,
+          'customShippingPickup': _customShippingPickup,
+          'customShippingPickupPrice': double.tryParse(_customShippingPickupPriceC.text.trim()) ?? 0.0,
+        },
+        'variants': _variants.map((v) => v.toMap()).toList(),
+        'secondaryOptions': _secondaryOptions.map((s) => s.toMap()).toList(),
+        'offers': _offers.map((o) => o.toMap()).toList(),
+        'reviews': _reviews.map((r) => r.toMap()).toList(),
+
         'updatedAt': FieldValue.serverTimestamp(),
       };
+
       if (_isEditing) {
         await FirebaseFirestore.instance.collection('products').doc(widget.docId).update(data);
         debugPrint('Product updated: ${widget.docId}');
@@ -1303,9 +1538,6 @@ class _AddProductScreenState extends State<_AddProductScreen> {
   }
 
   @override
-  void dispose() { _nameC.dispose(); _priceC.dispose(); _oldPriceC.dispose(); _descC.dispose(); _emojiC.dispose(); super.dispose(); }
-
-  @override
   Widget build(BuildContext context) {
     return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
       backgroundColor: _bg,
@@ -1317,149 +1549,513 @@ class _AddProductScreenState extends State<_AddProductScreen> {
             const CircularProgressIndicator(color: _teal), const SizedBox(height: 16),
             Text('جاري ${_isEditing ? "حفظ التعديلات" : "حفظ المنتج"}...', style: TextStyle(color: _text2)),
             const SizedBox(height: 8),
-            Text('يتم رفع الصور...', style: TextStyle(fontSize: 12, color: _text2)),
+            Text('يتم رفع الصور والبيانات...', style: TextStyle(fontSize: 12, color: _text2)),
           ]))
-        : SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(children: [
-
-        // ─── Product Images (Gallery) ───
-        Container(
-          width: double.infinity, padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.photo_camera, color: _teal, size: 20), const SizedBox(width: 8),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('صور المنتج', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
-                Text('الصورة الأولى هي الصورة الرئيسية', style: TextStyle(fontSize: 10, color: _text2)),
-              ])),
-              TextButton.icon(
-                onPressed: _addProductImage,
-                icon: const Icon(Icons.add_photo_alternate, size: 18),
-                label: Text('إضافة (${_productImages.length})', style: const TextStyle(fontSize: 12)),
-                style: TextButton.styleFrom(foregroundColor: _teal)),
-            ]),
-            const SizedBox(height: 10),
-            if (_productImages.isEmpty)
-              InkWell(
-                onTap: _addProductImage,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(height: 120, width: double.infinity,
-                  decoration: BoxDecoration(color: _teal.withOpacity(0.05), borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _teal.withOpacity(0.3))),
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.add_photo_alternate, size: 40, color: _teal.withOpacity(0.6)),
-                    const SizedBox(height: 8),
-                    Text('اضغط لاختيار صور المنتج', style: TextStyle(color: _teal.withOpacity(0.8), fontSize: 13)),
-                    Text('يمكنك إضافة عدة صور', style: TextStyle(color: _text2, fontSize: 11)),
-                  ])),
-              )
-            else
-              SizedBox(
-                height: 140,
-                child: ReorderableListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _productImages.length,
-                  onReorder: (oldIdx, newIdx) {
-                    setState(() {
-                      if (newIdx > oldIdx) newIdx--;
-                      final item = _productImages.removeAt(oldIdx);
-                      _productImages.insert(newIdx, item);
-                    });
-                  },
-                  itemBuilder: (_, i) {
-                    final img = _productImages[i];
-                    return Container(
-                      key: ValueKey('pimg_$i'),
-                      width: 130, margin: const EdgeInsets.only(left: 8),
-                      child: Stack(children: [
-                        ClipRRect(borderRadius: BorderRadius.circular(12),
-                          child: _buildImgPreview(img.bytes, img.url, height: 130, width: 130)),
-                        // Remove button
-                        Positioned(top: 4, left: 4, child: InkWell(
-                          onTap: () => setState(() => _productImages.removeAt(i)),
-                          child: Container(padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                            child: const Icon(Icons.close, color: Colors.white, size: 14)))),
-                        // Badge (main / number)
-                        Positioned(bottom: 4, right: 4, child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: i == 0 ? _teal : Colors.black54,
-                            borderRadius: BorderRadius.circular(8)),
-                          child: Text(i == 0 ? 'رئيسية' : '${i + 1}',
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                        )),
-                      ]),
-                    );
-                  },
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                
+                // Section 1: معلومات المنتج (Product Info)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('1. معلومات المنتج', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.info, color: _teal),
+                    children: [
+                      _field(_nameC, 'اسم المنتج', Icons.shopping_bag),
+                      _field(_shortNameC, 'الاسم المختصر (مثال: حذاء رياضي)', Icons.short_text),
+                      _field(_shortDescC, 'الوصف المختصر (يظهر تحت السعر)', Icons.textsms_outlined),
+                      _field(_weightC, 'الوزن بالجرام (مثال: 1000)', Icons.scale_outlined, type: TextInputType.number),
+                      _field(_stockC, 'المخزون الكلي (بدون خيارات)', Icons.inventory_2_outlined, type: TextInputType.number),
+                      _field(_emojiC, 'الإيموجي المميز', Icons.emoji_emotions_outlined),
+                      const SizedBox(height: 4),
+                      DropdownButtonFormField<String>(
+                        value: _category,
+                        decoration: InputDecoration(labelText: 'القسم الرئيسي', filled: true, fillColor: _card,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+                        items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 14)))).toList(),
+                        onChanged: (v) => setState(() => _category = v!),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
                 ),
-              ),
-          ]),
-        ),
-        const SizedBox(height: 14),
+                const Divider(),
 
-        _field(_nameC, 'اسم المنتج', Icons.shopping_bag),
-        _field(_priceC, 'السعر (مثال: 2500)', Icons.attach_money, type: TextInputType.text),
-        _field(_oldPriceC, 'السعر القديم (اختياري)', Icons.money_off, type: TextInputType.text),
-        _field(_emojiC, 'الإيموجي', Icons.emoji_emotions),
-        _field(_descC, 'وصف المنتج', Icons.description, maxLines: 4),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          value: _category,
-          decoration: InputDecoration(labelText: 'القسم', filled: true, fillColor: _card,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
-          items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 14)))).toList(),
-          onChanged: (v) => setState(() => _category = v!),
-        ),
-        const SizedBox(height: 14),
+                // Section 2: وصف المنتج (Description)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('2. وصف المنتج والتفاصيل', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.description, color: _teal),
+                    children: [
+                      _field(_descC, 'وصف المنتج التفصيلي', Icons.notes_outlined, maxLines: 6),
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity, padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(12)),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Row(children: [
+                            const Icon(Icons.photo_library, color: _pink, size: 20), const SizedBox(width: 8),
+                            const Expanded(child: Text('صور شرح الوصف', style: TextStyle(fontWeight: FontWeight.bold, color: _text1))),
+                            TextButton.icon(
+                              onPressed: _addDescImage,
+                              icon: const Icon(Icons.add_photo_alternate, size: 18),
+                              label: Text('إضافة (${_descImages.length})', style: const TextStyle(fontSize: 12)),
+                              style: TextButton.styleFrom(foregroundColor: _pink)),
+                          ]),
+                          if (_descImages.isEmpty)
+                            Padding(padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Center(child: Text('لا توجد صور وصف حالياً', style: TextStyle(fontSize: 12, color: _text2))))
+                          else
+                            ..._descImages.asMap().entries.map((e) => Padding(padding: const EdgeInsets.only(top: 10), child: Stack(children: [
+                              ClipRRect(borderRadius: BorderRadius.circular(10), child: _buildImgPreview(e.value.bytes, e.value.url, height: 100)),
+                              Positioned(top: 4, left: 4, child: InkWell(onTap: () => setState(() => _descImages.removeAt(e.key)),
+                                child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                  child: const Icon(Icons.close, color: Colors.white, size: 14)))),
+                            ]))),
+                        ]),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+                const Divider(),
 
-        // ─── Description Images ───
-        Container(
-          width: double.infinity, padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.photo_library, color: _pink, size: 20), const SizedBox(width: 8),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('صور الوصف', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
-                Text('صور تظهر في وصف المنتج التفصيلي', style: TextStyle(fontSize: 10, color: _text2)),
-              ])),
-              TextButton.icon(
-                onPressed: _addDescImage,
-                icon: const Icon(Icons.add_photo_alternate, size: 18),
-                label: Text('إضافة (${_descImages.length})', style: const TextStyle(fontSize: 12)),
-                style: TextButton.styleFrom(foregroundColor: _pink)),
-            ]),
-            if (_descImages.isEmpty)
-              Padding(padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Center(child: Column(children: [
-                  Icon(Icons.photo_library_outlined, size: 32, color: _text2.withOpacity(0.3)),
-                  const SizedBox(height: 6),
-                  Text('لا توجد صور وصف. اضغط "إضافة" لإدراج صور.', textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: _text2)),
-                ]))),
-            ..._descImages.asMap().entries.map((e) => Padding(padding: const EdgeInsets.only(top: 10), child: Stack(children: [
-              ClipRRect(borderRadius: BorderRadius.circular(10), child: _buildImgPreview(e.value.bytes, e.value.url, height: 100)),
-              Positioned(top: 4, left: 4, child: InkWell(onTap: () => setState(() => _descImages.removeAt(e.key)),
-                child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  child: const Icon(Icons.close, color: Colors.white, size: 14)))),
-              Positioned(bottom: 4, right: 4, child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
-                child: Text('${e.key + 1}', style: const TextStyle(color: Colors.white, fontSize: 11)),
-              )),
-            ]))),
-          ]),
-        ),
-        const SizedBox(height: 20),
+                // Section 3: تسعيرات المنتج (Pricing)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('3. تسعيرات المنتج', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.attach_money, color: _teal),
+                    children: [
+                      _field(_priceC, 'السعر الحالي (مثال: 2500)', Icons.price_check, type: TextInputType.text),
+                      _field(_oldPriceC, 'السعر القديم المشطوب (اختياري)', Icons.money_off, type: TextInputType.text),
+                      _field(_costPriceC, 'سعر التكلفة (للأدمن فقط، اختياري)', Icons.calculate_outlined, type: TextInputType.text),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+                const Divider(),
 
-        SizedBox(width: double.infinity, height: 52, child: ElevatedButton.icon(
-          onPressed: _save, icon: Icon(_isEditing ? Icons.save : Icons.add),
-          label: Text(_isEditing ? 'حفظ التعديلات' : 'حفظ المنتج', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(backgroundColor: _teal, foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-        )),
-      ])),
+                // Section 4: صور المنتج (Images)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('4. صور المنتج والغلاف', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.photo_library_outlined, color: _teal),
+                    children: [
+                      // Cover Image Slot
+                      Container(
+                        width: double.infinity, padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(12)),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Row(children: [
+                            const Icon(Icons.photo, color: _teal, size: 20), const SizedBox(width: 8),
+                            const Expanded(child: Text('صورة الغلاف (الرئيسية بصفحة الهبوط)', style: TextStyle(fontWeight: FontWeight.bold))),
+                            if (_coverImage != null)
+                              TextButton(
+                                onPressed: () => setState(() => _coverImage = null),
+                                child: const Text('حذف', style: TextStyle(color: Colors.red)),
+                              )
+                            else
+                              TextButton.icon(
+                                onPressed: _pickCoverImage,
+                                icon: const Icon(Icons.image_search, size: 18),
+                                label: const Text('اختيار', style: TextStyle(fontSize: 12)),
+                              ),
+                          ]),
+                          if (_coverImage != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: _buildImgPreview(_coverImage!.bytes, _coverImage!.url, height: 150),
+                            ),
+                        ]),
+                      ),
+                      
+                      // Product Images Gallery (existing)
+                      Container(
+                        width: double.infinity, padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(12)),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Row(children: [
+                            const Icon(Icons.collections, color: _teal, size: 20), const SizedBox(width: 8),
+                            const Expanded(child: Text('معرض صور المنتج الأساسي', style: TextStyle(fontWeight: FontWeight.bold))),
+                            TextButton.icon(
+                              onPressed: _addProductImage,
+                              icon: const Icon(Icons.add_photo_alternate, size: 18),
+                              label: Text('إضافة (${_productImages.length})', style: const TextStyle(fontSize: 12)),
+                              style: TextButton.styleFrom(foregroundColor: _teal)),
+                          ]),
+                          const SizedBox(height: 10),
+                          if (_productImages.isEmpty)
+                            Padding(padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Center(child: Text('لا توجد صور معرض حالياً', style: TextStyle(fontSize: 12, color: _text2))))
+                          else
+                            SizedBox(
+                              height: 140,
+                              child: ReorderableListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _productImages.length,
+                                onReorder: (oldIdx, newIdx) {
+                                  setState(() {
+                                    if (newIdx > oldIdx) newIdx--;
+                                    final item = _productImages.removeAt(oldIdx);
+                                    _productImages.insert(newIdx, item);
+                                  });
+                                },
+                                itemBuilder: (_, i) {
+                                  final img = _productImages[i];
+                                  return Container(
+                                    key: ValueKey('pimg_$i'),
+                                    width: 130, margin: const EdgeInsets.only(left: 8),
+                                    child: Stack(children: [
+                                      ClipRRect(borderRadius: BorderRadius.circular(12),
+                                        child: _buildImgPreview(img.bytes, img.url, height: 130, width: 130)),
+                                      Positioned(top: 4, left: 4, child: InkWell(
+                                        onTap: () => setState(() => _productImages.removeAt(i)),
+                                        child: Container(padding: const EdgeInsets.all(4),
+                                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                          child: const Icon(Icons.close, color: Colors.white, size: 14)))),
+                                      Positioned(bottom: 4, right: 4, child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: i == 0 ? _teal : Colors.black54,
+                                          borderRadius: BorderRadius.circular(8)),
+                                        child: Text(i == 0 ? 'رئيسية' : '${i + 1}',
+                                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      )),
+                                    ]),
+                                  );
+                                },
+                              ),
+                            ),
+                        ]),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+                const Divider(),
+
+                // Section 5: الإعدادات العامة (General Settings)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('5. الإعدادات العامة ونوع العرض', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.settings, color: _teal),
+                    children: [
+                      // Display type dropdown
+                      DropdownButtonFormField<String>(
+                        value: _displayType,
+                        decoration: InputDecoration(labelText: 'نوع عرض المنتج', filled: true, fillColor: _card,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+                        items: const [
+                          DropdownMenuItem(value: 'product', child: Text('صفحة منتج عادية')),
+                          DropdownMenuItem(value: 'landing', child: Text('صفحة هبوط COD (طلب مباشر)')),
+                        ],
+                        onChanged: (v) => setState(() => _displayType = v!),
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // skipCart switch
+                      SwitchListTile(
+                        title: const Text('طلب مباشر بلا سلة (Skip Cart)'),
+                        subtitle: const Text('تخطي السلة والانتقال لطلب المنتج مباشرة بصفحة الهبوط'),
+                        value: _skipCart,
+                        activeColor: _teal,
+                        onChanged: (v) => setState(() => _skipCart = v),
+                      ),
+                      
+                      // allowBackorder switch
+                      SwitchListTile(
+                        title: const Text('السماح بالطلب عند نفاد المخزون (Backorder)'),
+                        value: _allowBackorder,
+                        activeColor: _teal,
+                        onChanged: (v) => setState(() => _allowBackorder = v),
+                      ),
+                      
+                      // hideRelated switch
+                      SwitchListTile(
+                        title: const Text('إخفاء المنتجات ذات الصلة (Hide Related)'),
+                        value: _hideRelated,
+                        activeColor: _teal,
+                        onChanged: (v) => setState(() => _hideRelated = v),
+                      ),
+                      
+                      // strictOptions switch
+                      SwitchListTile(
+                        title: const Text('الوضع الصارم للخيارات (Strict Options)'),
+                        subtitle: const Text('يمنع الطلب حتى يتم اختيار اللون والمقاس صراحة'),
+                        value: _strictOptions,
+                        activeColor: _teal,
+                        onChanged: (v) => setState(() => _strictOptions = v),
+                      ),
+                      
+                      // customThankYou switch
+                      SwitchListTile(
+                        title: const Text('صفحة شكر مخصصة (Custom Thank You)'),
+                        value: _customThankYou,
+                        activeColor: _teal,
+                        onChanged: (v) => setState(() => _customThankYou = v),
+                      ),
+                      
+                      if (_customThankYou)
+                        _field(_thankYouTextC, 'نص صفحة الشكر المخصص', Icons.celebration, maxLines: 3),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+                const Divider(),
+
+                // Section 6: الشحن (Shipping)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('6. إعدادات الشحن وتكاليفه', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.local_shipping, color: _teal),
+                    children: [
+                      SwitchListTile(
+                        title: const Text('شحن مجاني'),
+                        value: _freeShipping,
+                        activeColor: _teal,
+                        onChanged: (v) => setState(() => _freeShipping = v),
+                      ),
+                      SwitchListTile(
+                        title: const Text('شحن مجاني للاستلام من النقطة فقط'),
+                        value: _freeShippingPickupOnly,
+                        activeColor: _teal,
+                        onChanged: (v) => setState(() => _freeShippingPickupOnly = v),
+                      ),
+                      
+                      // Custom shipping
+                      SwitchListTile(
+                        title: const Text('تكلفة شحن مخصصة للبيت'),
+                        value: _customShipping,
+                        activeColor: _teal,
+                        onChanged: (v) => setState(() => _customShipping = v),
+                      ),
+                      if (_customShipping)
+                        _field(_customShippingPriceC, 'سعر الشحن للبيت', Icons.price_change_outlined, type: TextInputType.number),
+                        
+                      // Custom shipping pickup
+                      SwitchListTile(
+                        title: const Text('تكلفة شحن مخصصة للاستلام من النقطة'),
+                        value: _customShippingPickup,
+                        activeColor: _teal,
+                        onChanged: (v) => setState(() => _customShippingPickup = v),
+                      ),
+                      if (_customShippingPickup)
+                        _field(_customShippingPickupPriceC, 'سعر الشحن للاستلام من النقطة', Icons.price_change, type: TextInputType.number),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+                const Divider(),
+
+                // Section 7: الخيارات الرئيسية والألوان (Variants)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('7. الخيارات الرئيسية والألوان', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.color_lens, color: _teal),
+                    children: [
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _variants.length,
+                        itemBuilder: (context, idx) {
+                          final v = _variants[idx];
+                          return _VariantCell(
+                            item: v,
+                            onDelete: () => setState(() => _variants.removeAt(idx)),
+                            onImageCleared: () => setState(() => v.image = const _ArticleImage()),
+                            onPickImage: () async {
+                              final img = await _pickItemImage();
+                              if (img != null) {
+                                setState(() => v.image = img);
+                              }
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _variants.add(_VariantItem(
+                              title: '',
+                              colorHex: 'FFFFFF',
+                              sku: '',
+                              stock: 10,
+                              enabled: true,
+                              image: const _ArticleImage(),
+                            ));
+                          });
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('إضافة خيار / لون جديد'),
+                        style: ElevatedButton.styleFrom(backgroundColor: _teal.withOpacity(0.1), foregroundColor: _teal, elevation: 0),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+                const Divider(),
+
+                // Section 8: الخيارات الثانوية (Secondary Options)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('8. الخيارات الثانوية (مثل المقاسات)', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.layers, color: _teal),
+                    children: [
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _secondaryOptions.length,
+                        itemBuilder: (context, idx) {
+                          final s = _secondaryOptions[idx];
+                          return _SecondaryOptionCell(
+                            item: s,
+                            onDelete: () => setState(() => _secondaryOptions.removeAt(idx)),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _secondaryOptions.add(_SecondaryOptionItem(
+                              title: '',
+                              values: [],
+                            ));
+                          });
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('إضافة خيار ثنائي جديد'),
+                        style: ElevatedButton.styleFrom(backgroundColor: _teal.withOpacity(0.1), foregroundColor: _teal, elevation: 0),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+                const Divider(),
+
+                // Section 9: العروض (Quantity Offers)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('9. عروض الكمية والتخفيضات', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.local_offer, color: _teal),
+                    children: [
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _offers.length,
+                        itemBuilder: (context, idx) {
+                          final o = _offers[idx];
+                          return _OfferCell(
+                            item: o,
+                            onDelete: () => setState(() => _offers.removeAt(idx)),
+                            onImageCleared: () => setState(() => o.image = const _ArticleImage()),
+                            onPickImage: () async {
+                              final img = await _pickItemImage();
+                              if (img != null) {
+                                setState(() => o.image = img);
+                              }
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _offers.add(_OfferItem(
+                              title: '',
+                              quantity: 1,
+                              pricePerPiece: 0.0,
+                              freeShipping: false,
+                              isBest: false,
+                              isDefault: false,
+                              image: const _ArticleImage(),
+                            ));
+                          });
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('إضافة عرض كمية جديد'),
+                        style: ElevatedButton.styleFrom(backgroundColor: _teal.withOpacity(0.1), foregroundColor: _teal, elevation: 0),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+                const Divider(),
+
+                // Section 10: المراجعات (Reviews)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('10. مراجعات وتقييمات العملاء المضافة', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.rate_review, color: _teal),
+                    children: [
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _reviews.length,
+                        itemBuilder: (context, idx) {
+                          final r = _reviews[idx];
+                          return _ReviewCell(
+                            item: r,
+                            onDelete: () => setState(() => _reviews.removeAt(idx)),
+                            onImageCleared: () => setState(() => r.image = const _ArticleImage()),
+                            onPickImage: () async {
+                              final img = await _pickItemImage();
+                              if (img != null) {
+                                setState(() => r.image = img);
+                              }
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _reviews.add(_ReviewItem(
+                              name: '',
+                              gender: 'female',
+                              rating: 5.0,
+                              text: '',
+                              image: const _ArticleImage(),
+                            ));
+                          });
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('إضافة مراجعة جديدة'),
+                        style: ElevatedButton.styleFrom(backgroundColor: _teal.withOpacity(0.1), foregroundColor: _teal, elevation: 0),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+
+                // Save button
+                SizedBox(width: double.infinity, height: 52, child: ElevatedButton.icon(
+                  onPressed: _save, icon: Icon(_isEditing ? Icons.save : Icons.add),
+                  label: Text(_isEditing ? 'حفظ التعديلات' : 'حفظ المنتج', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: _teal, foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                )),
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
     ));
   }
 
@@ -1476,9 +2072,712 @@ class _AddProductScreenState extends State<_AddProductScreen> {
   }
 }
 
-// ═══════════════════════════════════════════════
-//  4. ARTICLES MANAGEMENT
-// ═══════════════════════════════════════════════
+class _VariantItem {
+  String title;
+  String colorHex;
+  _ArticleImage image;
+  String sku;
+  int stock;
+  bool enabled;
+
+  _VariantItem({
+    required this.title,
+    required this.colorHex,
+    required this.image,
+    required this.sku,
+    required this.stock,
+    required this.enabled,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'colorHex': colorHex,
+      'image': image.url ?? '',
+      'sku': sku,
+      'stock': stock,
+      'enabled': enabled,
+    };
+  }
+}
+
+class _SecondaryOptionItem {
+  String title;
+  List<String> values;
+
+  _SecondaryOptionItem({
+    required this.title,
+    required this.values,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'values': values,
+    };
+  }
+}
+
+class _OfferItem {
+  String title;
+  int quantity;
+  double pricePerPiece;
+  bool freeShipping;
+  bool isBest;
+  bool isDefault;
+  _ArticleImage image;
+
+  _OfferItem({
+    required this.title,
+    required this.quantity,
+    required this.pricePerPiece,
+    required this.freeShipping,
+    required this.isBest,
+    required this.isDefault,
+    required this.image,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'quantity': quantity,
+      'pricePerPiece': pricePerPiece,
+      'freeShipping': freeShipping,
+      'isBest': isBest,
+      'isDefault': isDefault,
+      'image': image.url ?? '',
+    };
+  }
+}
+
+class _ReviewItem {
+  String name;
+  String gender;
+  double rating;
+  _ArticleImage image;
+  String text;
+
+  _ReviewItem({
+    required this.name,
+    required this.gender,
+    required this.rating,
+    required this.image,
+    required this.text,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'gender': gender,
+      'rating': rating,
+      'image': image.url ?? '',
+      'text': text,
+    };
+  }
+}
+
+class _VariantCell extends StatefulWidget {
+  final _VariantItem item;
+  final VoidCallback onDelete;
+  final Future<void> Function() onPickImage;
+  final VoidCallback onImageCleared;
+  const _VariantCell({
+    required this.item,
+    required this.onDelete,
+    required this.onPickImage,
+    required this.onImageCleared,
+  });
+
+  @override
+  State<_VariantCell> createState() => _VariantCellState();
+}
+
+class _VariantCellState extends State<_VariantCell> {
+  late TextEditingController _titleC;
+  late TextEditingController _colorC;
+  late TextEditingController _skuC;
+  late TextEditingController _stockC;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleC = TextEditingController(text: widget.item.title);
+    _colorC = TextEditingController(text: widget.item.colorHex);
+    _skuC = TextEditingController(text: widget.item.sku);
+    _stockC = TextEditingController(text: widget.item.stock.toString());
+  }
+
+  @override
+  void dispose() {
+    _titleC.dispose();
+    _colorC.dispose();
+    _skuC.dispose();
+    _stockC.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Color? previewColor;
+    if (_colorC.text.trim().isNotEmpty) {
+      final cleanHex = _colorC.text.trim().replaceAll('#', '');
+      try {
+        previewColor = Color(int.parse('FF' + cleanHex, radix: 16));
+      } catch (_) {}
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _titleC,
+                    decoration: const InputDecoration(labelText: 'اسم الخيار/اللون (أحمر، أزرق...)'),
+                    onChanged: (val) => widget.item.title = val,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: widget.onDelete,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _colorC,
+                    decoration: const InputDecoration(labelText: 'رمز اللون Hex (مثال: FF0000)'),
+                    onChanged: (val) {
+                      widget.item.colorHex = val;
+                      setState(() {});
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: previewColor ?? Colors.grey[300],
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _skuC,
+                    decoration: const InputDecoration(labelText: 'SKU'),
+                    onChanged: (val) => widget.item.sku = val,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _stockC,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'المخزون'),
+                    onChanged: (val) {
+                      widget.item.stock = int.tryParse(val) ?? 0;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Text('تفعيل'),
+                      Switch(
+                        value: widget.item.enabled,
+                        onChanged: (val) {
+                          setState(() {
+                            widget.item.enabled = val;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                // Image picker
+                if (widget.item.image.url != null || widget.item.image.file != null)
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: widget.item.image.bytes != null
+                            ? Image.memory(widget.item.image.bytes!, width: 50, height: 50, fit: BoxFit.cover)
+                            : Image.network(widget.item.image.url!, width: 50, height: 50, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(Icons.error)),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: InkWell(
+                          onTap: widget.onImageCleared,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                            child: const Icon(Icons.close, size: 10, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  TextButton.icon(
+                    onPressed: widget.onPickImage,
+                    icon: const Icon(Icons.add_a_photo, size: 16),
+                    label: const Text('صورة', style: TextStyle(fontSize: 12)),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SecondaryOptionCell extends StatefulWidget {
+  final _SecondaryOptionItem item;
+  final VoidCallback onDelete;
+  const _SecondaryOptionCell({required this.item, required this.onDelete});
+
+  @override
+  State<_SecondaryOptionCell> createState() => _SecondaryOptionCellState();
+}
+
+class _SecondaryOptionCellState extends State<_SecondaryOptionCell> {
+  late TextEditingController _titleC;
+  final _valueC = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _titleC = TextEditingController(text: widget.item.title);
+  }
+
+  @override
+  void dispose() {
+    _titleC.dispose();
+    _valueC.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _titleC,
+                    decoration: const InputDecoration(labelText: 'اسم الخيار الثنائي (مثال: المقاس، الحجم...)'),
+                    onChanged: (val) => widget.item.title = val,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: widget.onDelete,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _valueC,
+                    decoration: const InputDecoration(hintText: 'أدخل قيمة (مثال: S، M، L...)'),
+                    onSubmitted: (val) {
+                      final v = val.trim();
+                      if (v.isNotEmpty && !widget.item.values.contains(v)) {
+                        setState(() {
+                          widget.item.values.add(v);
+                          _valueC.clear();
+                        });
+                      }
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add, color: _teal),
+                  onPressed: () {
+                    final v = _valueC.text.trim();
+                    if (v.isNotEmpty && !widget.item.values.contains(v)) {
+                      setState(() {
+                        widget.item.values.add(v);
+                        _valueC.clear();
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: widget.item.values.map((val) {
+                return Chip(
+                  label: Text(val),
+                  onDeleted: () {
+                    setState(() {
+                      widget.item.values.remove(val);
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OfferCell extends StatefulWidget {
+  final _OfferItem item;
+  final VoidCallback onDelete;
+  final Future<void> Function() onPickImage;
+  final VoidCallback onImageCleared;
+  const _OfferCell({
+    required this.item,
+    required this.onDelete,
+    required this.onPickImage,
+    required this.onImageCleared,
+  });
+
+  @override
+  State<_OfferCell> createState() => _OfferCellState();
+}
+
+class _OfferCellState extends State<_OfferCell> {
+  late TextEditingController _titleC;
+  late TextEditingController _qtyC;
+  late TextEditingController _priceC;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleC = TextEditingController(text: widget.item.title);
+    _qtyC = TextEditingController(text: widget.item.quantity.toString());
+    _priceC = TextEditingController(text: widget.item.pricePerPiece.toString());
+  }
+
+  @override
+  void dispose() {
+    _titleC.dispose();
+    _qtyC.dispose();
+    _priceC.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _titleC,
+                    decoration: const InputDecoration(labelText: 'عنوان العرض (مثال: اشتر 2 واحصل على 1 مجاناً)'),
+                    onChanged: (val) => widget.item.title = val,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: widget.onDelete,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _qtyC,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'الكمية'),
+                    onChanged: (val) {
+                      widget.item.quantity = int.tryParse(val) ?? 1;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _priceC,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'السعر للقطعة الواحدة'),
+                    onChanged: (val) {
+                      widget.item.pricePerPiece = double.tryParse(val) ?? 0.0;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Text('شحن مجاني؟'),
+                      Checkbox(
+                        value: widget.item.freeShipping,
+                        onChanged: (val) {
+                          setState(() {
+                            widget.item.freeShipping = val ?? false;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Text('أفضل عرض؟'),
+                      Checkbox(
+                        value: widget.item.isBest,
+                        onChanged: (val) {
+                          setState(() {
+                            widget.item.isBest = val ?? false;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Text('العرض الافتراضي؟'),
+                      Checkbox(
+                        value: widget.item.isDefault,
+                        onChanged: (val) {
+                          setState(() {
+                            widget.item.isDefault = val ?? false;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                // Image slot
+                if (widget.item.image.url != null || widget.item.image.file != null)
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: widget.item.image.bytes != null
+                            ? Image.memory(widget.item.image.bytes!, width: 50, height: 50, fit: BoxFit.cover)
+                            : Image.network(widget.item.image.url!, width: 50, height: 50, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(Icons.error)),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: InkWell(
+                          onTap: widget.onImageCleared,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                            child: const Icon(Icons.close, size: 10, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  TextButton.icon(
+                    onPressed: widget.onPickImage,
+                    icon: const Icon(Icons.add_a_photo, size: 16),
+                    label: const Text('صورة', style: TextStyle(fontSize: 12)),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReviewCell extends StatefulWidget {
+  final _ReviewItem item;
+  final VoidCallback onDelete;
+  final Future<void> Function() onPickImage;
+  final VoidCallback onImageCleared;
+  const _ReviewCell({
+    required this.item,
+    required this.onDelete,
+    required this.onPickImage,
+    required this.onImageCleared,
+  });
+
+  @override
+  State<_ReviewCell> createState() => _ReviewCellState();
+}
+
+class _ReviewCellState extends State<_ReviewCell> {
+  late TextEditingController _nameC;
+  late TextEditingController _textC;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameC = TextEditingController(text: widget.item.name);
+    _textC = TextEditingController(text: widget.item.text);
+  }
+
+  @override
+  void dispose() {
+    _nameC.dispose();
+    _textC.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _nameC,
+                    decoration: const InputDecoration(labelText: 'اسم صاحب المراجعة'),
+                    onChanged: (val) => widget.item.name = val,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: widget.onDelete,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: widget.item.gender,
+                    decoration: const InputDecoration(labelText: 'الجنس'),
+                    items: const [
+                      DropdownMenuItem(value: 'female', child: Text('أنثى')),
+                      DropdownMenuItem(value: 'male', child: Text('ذكر')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          widget.item.gender = val;
+                        });
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButtonFormField<double>(
+                    value: widget.item.rating,
+                    decoration: const InputDecoration(labelText: 'التقييم (1-5)'),
+                    items: [1.0, 2.0, 3.0, 4.0, 5.0].map((r) => DropdownMenuItem(value: r, child: Text(r.toString()))).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          widget.item.rating = val;
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _textC,
+              maxLines: 2,
+              decoration: const InputDecoration(labelText: 'نص المراجعة'),
+              onChanged: (val) => widget.item.text = val,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (widget.item.image.url != null || widget.item.image.file != null)
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: widget.item.image.bytes != null
+                            ? Image.memory(widget.item.image.bytes!, width: 50, height: 50, fit: BoxFit.cover)
+                            : Image.network(widget.item.image.url!, width: 50, height: 50, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(Icons.error)),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: InkWell(
+                          onTap: widget.onImageCleared,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                            child: const Icon(Icons.close, size: 10, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  TextButton.icon(
+                    onPressed: widget.onPickImage,
+                    icon: const Icon(Icons.add_a_photo, size: 16),
+                    label: const Text('صورة المراجع (اختياري)', style: TextStyle(fontSize: 12)),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 class _ArticlesManagementScreen extends StatefulWidget {
   @override
   State<_ArticlesManagementScreen> createState() => _ArticlesManagementScreenState();
