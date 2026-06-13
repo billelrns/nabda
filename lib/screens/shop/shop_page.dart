@@ -21,8 +21,7 @@ class _Product {
   final String oldPrice;
   final double rating;
   final Color color;
-  final String desc;
-  const _Product({required this.name, required this.emoji, required this.price, this.oldPrice = '', this.rating = 4.5, required this.color, this.desc = ''});
+  const _Product({required this.name, required this.emoji, required this.price, this.oldPrice = '', this.rating = 4.5, required this.color});
 }
 
 // ─── Category Model ───

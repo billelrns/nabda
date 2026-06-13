@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:nabda_app/services/country_currency_service.dart';
-import 'package:nabda_app/services/cart_service.dart';
 
 class LandingProductScreen extends StatefulWidget {
   final Map<String, dynamic> productData;
@@ -132,7 +131,6 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
   static const Color _teal = Color(0xFF009688);
   static const Color _lightTeal = Color(0xFFE0F2F1);
   static const Color _bg = Color(0xFFF9F9F9);
-  static const Color _card = Colors.white;
   static const Color _textPrimary = Color(0xFF2D2D3A);
   static const Color _textSecondary = Color(0xFF6B7280);
 
