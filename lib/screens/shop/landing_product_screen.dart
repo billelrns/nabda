@@ -45,7 +45,10 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
     '41- سوق أهراس', '42- تيبازة', '43- ميلة', '44- عين الدفلى', '45- النعامة',
     '46- عين تموشنت', '47- غرداية', '48- غليزان', '49- تيميمون', '50- برج باجي مختار',
     '51- أولاد جلال', '52- بني عباس', '53- عين صالح', '54- عين قزام', '55- تقرت',
-    '56- جانت', '57- المغير', '58- المنيعة'
+    '56- جانت', '57- المغير', '58- المنيعة',
+    '59- آفلو', '60- بريكة', '61- القنطرة', '62- بئر العاتر', '63- العريشة',
+    '64- قصر الشلالة', '65- عين وسارة', '66- مسعد', '67- قصر البخاري', '68- بوسعادة',
+    '69- الأبيض سيدي الشيخ'
   ];
 
   @override
@@ -857,6 +860,7 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
                                     controller: _nameC,
                                     decoration: InputDecoration(
                                       labelText: 'الاسم الكامل للمستلم',
+                                      helperText: '(يمكنكِ كتابة اسم زوجكِ)',
                                       prefixIcon: const Icon(Icons.person_outline, color: _teal),
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
