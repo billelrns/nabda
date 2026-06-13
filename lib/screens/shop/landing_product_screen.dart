@@ -174,10 +174,18 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
     if (!_validateOptions()) return;
     if (!_formKey.currentState!.validate()) return;
 
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('يرجى تسجيل الدخول لإتمام الطلب'),
+        backgroundColor: Colors.orange,
+      ));
+      return;
+    }
+
     setState(() => _isOrdering = true);
 
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
       final country = _currencySvc.currentCountry;
 
       // Address construction
@@ -243,22 +251,35 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
         'total': _formatPrice(_totalAmount),
       };
 
+      // 0. تحقّق من توفّر المخزون قبل إنشاء الطلب (المنتج مُتتبَّع عندما stock > 0؛ stock==0 = غير محدود)
+      final stockSettings = widget.productData['settings'] as Map<String, dynamic>? ?? {};
+      final stockBackorder = stockSettings['allowBackorder'] ?? false;
+      if (productId.toString().isNotEmpty && stockBackorder != true) {
+        final pSnap = await FirebaseFirestore.instance.collection('products').doc(productId).get();
+        final pStock = (pSnap.data()?['stock'] as int?) ?? 0;
+        if (pStock > 0 && _quantity > pStock) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('الكمية المطلوبة غير متوفّرة حاليًا في المخزون'),
+              backgroundColor: Colors.orange,
+            ));
+          }
+          return; // finally يعيد _isOrdering = false
+        }
+      }
+
       // 1. Write to general orders collection
       final docRef = await FirebaseFirestore.instance.collection('orders').add(orderMap);
 
-      // 2. Write to user's orders subcollection if logged in
-      if (uid != 'guest') {
-        // Prepare local timestamp version for set call (since FieldValue isn't supported in set options sometimes or for local safety)
-        final localOrderMap = Map<String, dynamic>.from(orderMap);
-        localOrderMap['createdAt'] = Timestamp.now();
-        
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .collection('orders')
-            .doc(docRef.id)
-            .set(localOrderMap);
-      }
+      // 2. Write to user's orders subcollection
+      final localOrderMap = Map<String, dynamic>.from(orderMap);
+      localOrderMap['createdAt'] = Timestamp.now();
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('orders')
+          .doc(docRef.id)
+          .set(localOrderMap);
 
       // Decrement stock if stock management is set
       try {
