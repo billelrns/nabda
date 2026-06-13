@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:nabda_app/services/country_currency_service.dart';
+import 'package:nabda_app/data/algeria_locations.dart';
 
 class LandingProductScreen extends StatefulWidget {
   final Map<String, dynamic> productData;
@@ -22,7 +23,9 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
   final _stateC = TextEditingController(); // For other countries
 
   // State selections
-  String? _selectedWilaya; // For Algeria dropdown
+  String? _selectedWilaya; // For Algeria dropdown (format: "NN- name")
+  String? _selectedCommune; // For Algeria commune dropdown
+  bool _locLoaded = false; // أصبحت بيانات البلديات جاهزة؟
   String _shippingMethod = 'home'; // 'home' or 'pickup'
   int _quantity = 1;
   Map<String, dynamic>? _selectedOffer;
@@ -51,11 +54,22 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
     '69- الأبيض سيدي الشيخ'
   ];
 
+  /// رقم الولاية المختارة (1..69) المستخرج من بادئة النص "NN- ...".
+  int? get _selectedWilayaId {
+    if (_selectedWilaya == null) return null;
+    return int.tryParse(_selectedWilaya!.split('-').first.trim());
+  }
+
   @override
   void initState() {
     super.initState();
     _currencySvc.addListener(_onCurrencyChange);
-    
+
+    // حمّل بيانات البلديات الجزائرية (للقائمة المنسدلة المرتبطة بالولاية)
+    AlgeriaLocations.ensureLoaded().then((_) {
+      if (mounted) setState(() => _locLoaded = true);
+    });
+
     // Auto-select default offer if exists
     final offers = widget.productData['offers'] as List<dynamic>? ?? [];
     if (offers.isNotEmpty) {
@@ -195,7 +209,7 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
       String address = '';
       if (country.code == 'DZ') {
         final wil = _selectedWilaya ?? '';
-        final com = _communeC.text.trim();
+        final com = _selectedCommune ?? '';
         address = 'الولاية: $wil - البلدية: $com';
       } else {
         final state = _stateC.text.trim();
@@ -927,21 +941,37 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
                                       items: _wilayas.map((w) {
                                         return DropdownMenuItem(value: w, child: Text(w));
                                       }).toList(),
-                                      onChanged: (val) => setState(() => _selectedWilaya = val),
+                                      onChanged: (val) => setState(() {
+                                        _selectedWilaya = val;
+                                        _selectedCommune = null; // إعادة ضبط البلدية عند تغيير الولاية
+                                      }),
                                       validator: (v) => v == null ? 'يرجى اختيار الولاية' : null,
                                     ),
                                     const SizedBox(height: 12),
-                                    
-                                    // Commune text field
-                                    TextFormField(
-                                      controller: _communeC,
+
+                                    // Commune dropdown (مرتبط بالولاية المختارة)
+                                    DropdownButtonFormField<String>(
+                                      value: _selectedCommune,
+                                      isExpanded: true,
                                       decoration: InputDecoration(
                                         labelText: 'البلدية',
                                         prefixIcon: const Icon(Icons.location_city_outlined, color: _teal),
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                       ),
-                                      validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى كتابة اسم البلدية' : null,
+                                      hint: Text(
+                                        _selectedWilaya == null
+                                            ? 'اختاري الولاية أولاً'
+                                            : (!_locLoaded ? 'جارٍ تحميل البلديات...' : 'اختاري البلدية'),
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                      items: AlgeriaLocations.communesFor(_selectedWilayaId ?? 0)
+                                          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                          .toList(),
+                                      onChanged: _selectedWilaya == null
+                                          ? null
+                                          : (val) => setState(() => _selectedCommune = val),
+                                      validator: (v) => (v == null || v.isEmpty) ? 'يرجى اختيار البلدية' : null,
                                     ),
                                   ] else ...[
                                     // Other countries: State Text field
