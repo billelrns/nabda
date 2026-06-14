@@ -356,6 +356,49 @@ lib/
 
 ---
 
+### المرحلة 14: منظومة الإعلانات المتقدمة + قسم رحلة الخصوبة (5-6 يونيو 2026)
+
+#### 42. محرّك إعلانات NabdaAds (في `lib/widgets/news_section.dart`)
+- مجموعة Firestore **`ads`**: `{title, link, image, active, priority, target, startAt, endAt, impressions, clicks, source}`.
+- ميزات المحرّك: **أولوية موزونة** (اختيار عشوائي مرجّح)، **جدولة** (startAt/endAt)، **استهداف** عبر `target` (قيم: '' أو all/news/pregnancy/cycle/baby/home/fertility)، **منع تكرار** داخل نفس المقال (ترتيب موزون مخزّن لكل `groupId|place`)، **عدّادات** ظهور/نقر.
+- ودجت `NabdaAd(slot, groupId, place, color)`؛ عند غياب إعلانات مؤهّلة يعرض **منتجاً من `dynamic_products`** (fallback)، وعلَم `kAdmobReady=false` محجوز لإعلانات Google AdMob مستقبلاً.
+- أماكن الإعلانات: صفحة الأخبار (3 - main.dart `_NewsSection` detail عبر slot/place)، main.dart news detail، `discover_articles_screen.dart`، `pregnancy_weeks_screen.dart` (مكانان)، الرئيسية + صفحة الطفل (واحد لكلٍّ)، وصفحة الخصوبة (2) + صفحة مقال الخصوبة (3).
+- **قاعدة Firestore لـ `ads`**: قراءة لأي مستخدم مسجّل؛ create/delete للموظّفين؛ update للموظّف، أو لأي مستخدم مسجّل **لزيادة `impressions`/`clicks` فقط** (عبر `affectedKeys().hasOnly`). نُشرت في الكونسول.
+
+#### 43. واجهات إدارة الإعلانات
+- **لوحة الويب** `nabda_news_dashboard.html` (القسم ④): إضافة/تفعيل/حذف + رفع صورة (Firebase Storage) + Pexels + حقول الأولوية/الاستهداف/الجدولة + عرض الإحصائيات + هامش المقاس 1200×628.
+- **داخل التطبيق**: `_AdsManagementScreen` في `admin_panel_screen.dart`، بطاقة «📢 إدارة الإعلانات» تظهر **للمالك/المشرف فقط** (صلاحية `manageCoupons`)، برفع صورة من الجهاز + أولوية + استهداف + جدولة + إحصائيات.
+
+#### 44. قسم رحلة الخصوبة (TTC) — `lib/screens/fertility/fertility_screen.dart`
+- حقل `goal=='trying'` في وثيقة المستخدمة يبدّل تبويب الحمل (عند `pregnancyStartDate==null`) إلى `FertilityScreen`. بطاقة CTA «🌱 أحاول الحمل» تضبط goal، وزر «أكّدي حملك» يضبط `pregnancyStartDate` + `goal=null` فيعود لمتتبّع الحمل.
+- يحسب نافذة الخصوبة من `lastPeriodStart`+`cycleLength`-`lutealPhase`. تصميم فاخر (هيرو + خط زمني للأيام بحالات + بطاقات + مقالات مفيدة + قصص ملهمة + إعلانات + استبيان توجيه ضعف الخصوبة). تذكير التوقيت عبر `AppNotifs._scheduleFertility()` (معرّفات 1400-1419، alarmClock) داخل `scheduleAll()`.
+
+---
+
+### المرحلة 15: شاشات التعريف + الشعار + شاشة البداية المتحركة + إصلاح الشاشة السوداء (6-7 يونيو 2026)
+
+#### 45. شاشات التعريف (Onboarding intro) — `lib/screens/intro_screen.dart`
+- 3 شرائح ترحيبية (ترحيب+شعار / دليلكِ في كل مرحلة / الخصوصية + «ابدئي رحلتك»). مسار `/intro` في `routes.dart`. `splash` يعرضها أول تشغيل عبر علم `intro_seen` ثم يقود إلى `/onboarding` (إعداد الحساب الأصلي 7 خطوات الموجود مسبقاً).
+- ملاحظة: يوجد فرق بين **intro** (تعريف) و**onboarding** (إعداد بيانات المستخدمة) — لا تخلط بينهما.
+
+#### 46. الشعار + شاشة البداية المتحركة
+- الشعار في `assets/images/logo_nabda.png` (يُستخدم في intro + splash). **أيقونة التطبيق (launcher) لم تُضبط بعد** — تحتاج `flutter_launcher_icons` + نسخة مربّعة مبسّطة من الشعار.
+- `splash_screen.dart` أُعيد تصميمها: ظهور (scale elasticOut + fade) + **نبض قلب متكرّر** على الشعار + مؤشّر تحميل. (جُرّبت نسخة بـ Stack/ظل متحرّك ثم بُسّطت لودجت قياسية لتفادي مشاكل الرسم.)
+
+#### 47. ⚠️ إصلاح حاسم: الشاشة السوداء عند الإقلاع (السبب والحل)
+- **العَرَض:** شاشة سوداء تماماً عند فتح التطبيق على الهاتف (Samsung A50)، والسجل يُظهر `Unable to resolve host firestore.googleapis.com` (الهاتف بلا إنترنت) + `Width is zero` + Impeller.
+- **التشخيص الخاطئ أولاً:** ظُنّ أنه Impeller (لم يكن السبب) ثم شاشة البداية (لم تكن السبب).
+- **السبب الحقيقي:** `main()` كان ينفّذ `await NotificationService().initialize();` وهذه تنتظر `FirebaseMessaging.getToken()` الذي **يحتاج شبكة**؛ فعند انقطاع إنترنت الهاتف **يعلّق قبل `runApp()`** → لا تُرسم أي واجهة → شاشة سوداء. (كان يعمل سابقاً لأن الهاتف كان متصلاً.)
+- **الحل:** في `main.dart` أُزيل `await` (تهيئة الإشعارات صارت غير حاجبة)، وفي `lib/services/notification_service.dart` صار `getToken()` بمهلة 6 ثوانٍ وغير حاجب (`.timeout(...).then(saveFCMToken)`)، وأُصلح `debugPrint` الذي كان يشير لمتغيّر `token` محذوف.
+- **الدرس للمستقبل (مهم لـ Claude Code):** لا تنتظر (`await`) أي نداء شبكة (FCM getToken، قراءات Firestore) **قبل `runApp()`**؛ يجب أن يُقلع التطبيق ويُرسم حتى دون إنترنت. النتيجة: التطبيق الآن يُقلع ويعرض الواجهات أوفلاين (المحتوى فقط يحتاج شبكة).
+
+#### 48. ملاحظات للعمل عبر Claude Code في Antigravity
+- **مشروع البناء الحقيقي** هو `C:\nabda_app` (مجلد OneDrive `nabda_app_backup` هو نسخة تحرير/احتياطية). مع Claude Code يمكنك **التحرير مباشرة في `C:\nabda_app`** والاستغناء عن `copy_to_nabda.bat`.
+- `pubspec.yaml` و`android/app/src/main/AndroidManifest.xml` تُحرَّر مباشرة في `C:\nabda_app`. الأصول في `assets/images/` (مسجّلة في pubspec).
+- التشغيل على الهاتف: تفعيل «تصحيح USB»، ثم `flutter run`. على Samsung A50 الإشعارات المجدولة تحتاج `AndroidScheduleMode.alarmClock` (راجع AppNotifs/NotifService).
+- مفاتيح: Firebase web key في firebase_options + main.dart؛ **مفتاح Gemini القديم سُرّب وعُطّل واستُبدل بجديد** (في main.dart). قواعد Firestore + الفهرس المركّب لـ `dynamic_articles` (section ASC, createdAt DESC) منشورة. مجموعات: users, dynamic_articles, dynamic_products, ads, staff, products, orders, community_posts, coupons.
+- حساب إداري للنشر/المزامنة: `billel@nabda.com` (في staff، owner). الموقع: nabda.online (WordPress+Bimber) يزامن مقالاته إلى `dynamic_articles` عبر إضافة `nabda-app-sync`.
+
 ---
 
 ## الملفات الرئيسية
@@ -533,5 +576,79 @@ aabc7c2 - feat: improved products & users management with profiles & role promot
 
 ---
 
-*آخر تحديث: 5 يونيو 2026*
+## المرحلة 16: إعادة هيكلة الـ Onboarding + تخصيص المحتوى + تقويم دورة تفاعلي (9-10 يونيو 2026)
+
+#### 47. إصلاح تدفّق الإقلاع وشاشات التعريف
+- كان التطبيق يفتح مباشرة على شاشة تسجيل الدخول متخطّيًا شاشة البداية وشاشات التعريف، لأن `main.dart` يستخدم `home: AuthGate()` بينما splash/intro كانتا موصولتين بـ GoRouter ميّت (`routes.dart` غير مستورَد في أي ملف).
+- أُضيف `RootGate` (في `main.dart`) يدير التسلسل: **Splash → (أول تشغيل) Intro → AuthGate**. شاشتا splash/intro حُوّلتا من `context.go` إلى نمط `onDone`.
+- أُصلحت علامات تعارض Git merge غير محلولة في `routes.dart`.
+
+#### 48. نقل الـ Onboarding إلى ما بعد تسجيل الدخول + إزالة التكرار
+- التدفّق الجديد: **تعريف → إنشاء حساب/دخول → سؤال المرحلة (onboarding)**.
+- `AuthGate` صار StreamBuilder متداخلًا: عند الدخول يقرأ وثيقة المستخدمة؛ إن لم يكتمل `onboardingDone` (أو غاب `lifeStage`) يعرض `OnboardingScreen` تفاعليًا، وإلا `MainNav`.
+- حُذفت خطوتا الاسم والشروط من الـ onboarding (تُؤخذ من التسجيل). التسجيل يحفظ `displayName` + `termsAccepted`.
+- `LoginPage` يبدأ بوضع **إنشاء حساب** لأول استخدام (علم `has_account` في prefs)، والعائدات يَرَيْن تسجيل الدخول.
+
+#### 49. استبيانات لكل مرحلة + ربط الخصوبة
+- استبيان مخصّص لكل مرحلة يُحفظ في وثيقة المستخدمة:
+  - **حامل:** `pregnancyProfile{firstPregnancy, babies, age, condition}` + `pregnancyStartDate`.
+  - **طفل:** `babyProfile{gender, feeding, firstChild}` + `babyGender` + `babyBirthDate`/`babyName`.
+  - **أخطط للحمل:** `goal:'trying'` + `lastPeriodStart` + `cycleLength` + `fertilityProfile{tryMonths, age, regular, condition}`.
+  - **دورة:** `lastPeriodStart` + `cycleLength` + `cycleProfile{periodLength, regular, trackingGoal}`.
+- اختيار «أخطط للحمل» يوجّه تلقائيًا إلى `FertilityScreen` (عبر `goal=='trying'` في تبويب الحمل)، وتهبط المستخدمة على تبويب مرحلتها (`_applyInitialTab`).
+
+#### 50. تخصيص المحتوى حسب البيانات المجموعة
+- **`lib/widgets/personalized_tips.dart`** (`PersonalizedTipsCard`): بطاقة نصائح مخصّصة أعلى كل تبويب حسب الملف الشخصي.
+- **`lib/widgets/conditional_content.dart`** (`ConditionalContentSection`): مقالات/أقسام مشروطة (توأم، سكري حمل، ارتفاع ضغط، رضاعة صناعية/مختلطة، دورة غير منتظمة).
+- تلوين واجهة تبويب الطفل حسب `babyGender` (أزرق/وردي) في البطاقة الرئيسية والأفاتار وشريحة اختيار الطفل.
+
+#### 51. تقويم الدورة التفاعلي
+- **`lib/widgets/cycle_calendar.dart`** (`CycleCalendarCard`): تقويم شهري (سابق/قادم) يلوّن أيام الحيض 🩸 والخصوبة 🌱 والإباضة 🥚 مع إيموجي، محسوبة من `lastPeriodStart`+`cycleLength`+`periodLength`.
+- **تفاعلي:** الضغط على أي يوم يفتح نافذة لتسجيل الحيض وشدّته (خفيف/متوسط/غزير) واضطراب (تأخّر/تبكير/نزيف غزير/تنقيط/ألم شديد/غياب) وملاحظة، تُحفظ في `cycle_logs` (جاهزة للتحليل لاحقًا)، مع زر «تعيين كبداية دورة جديدة» يحدّث `lastPeriodStart`. الاضطرابات تظهر بعلامة ⚠️.
+
+#### 52. تصحيح بيانات الحمل (أحجام/أوزان/أسماء الفواكه)
+- جدول دقيق لطول ووزن الجنين أسبوعيًا (4-41) في `models/pregnancy_week_articles.dart`.
+- استبدال `_fruitData` (في `pregnancy_weeks_screen.dart`) بأسماء فواكه/خضار **مألوفة جزائريًا/عربيًا** مع إيموجي مطابق (تصحيح أخطاء فجّة مثل «برنامج»، «🍕 ذرة»، «🍯 عسل»، «رومaine»).
+- توحيد جملة مقارنة الحجم داخل نصوص `fetalDevAr` مع `babySizeAr` الجديد لكل أسبوع.
+
+#### 53. منهجية العمل والـ Git
+- **معظم التعديلات نُفّذت عبر وكيل Antigravity/Gemini** (لتوفير استهلاك Claude)، و**Claude Code (Opus 4.8)** تولّى التصميم والمراجعة والتحقق (`flutter analyze` بصفر أخطاء في كل خطوة).
+- **ملاحظة بيئة:** الوكلاء المُطلَقون داخل Antigravity (أداة Agent / TeamCreate) **بلا صلاحية كتابة على الملفات** — التنفيذ يكون عبر وكيل Antigravity الخارجي أو الجلسة الرئيسية.
+- **Git:** فرع `feat/onboarding-personalization`، commit `2f53d20` (75 ملفًا، +24708/−2874) — يضمّ أيضًا أعمال المراحل 11-15 التي لم تكن محفوظة سابقًا في git. لم يُرفع (push) بعد.
+- ملفات جديدة: `widgets/personalized_tips.dart`، `widgets/conditional_content.dart`، `widgets/cycle_calendar.dart`، `screens/intro_screen.dart`.
+
+#### 54. المقالات المتخصّصة + ترحيلها إلى Firestore + لوحة الأدمن
+- مكتبة **66 مقالًا متخصّصًا** (11 موضوعًا × 6، كلّها ≥300 كلمة) في `lib/data/specialized_articles.dart`: توأم، سكري حمل، ارتفاع ضغط، رضاعة صناعية/مختلطة، دورة غير منتظمة، غثيان، حمل أول، طفل أول، تكيّس مبايض، غدة درقية.
+- ترحيلها إلى Firestore (`specialized_articles`) عبر `SpecializedArticlesService` (streamByTopic/streamAll/seedFromHardcoded) — يديرها الأدمن من تبويب «متخصّصة» (CRUD + رفع صور). النسخة المكتوبة احتياط في التطبيق فقط.
+- **ملاحظة تشغيل:** لظهور المقالات في الأدمن يلزم نشر `firestore.rules` + ضغط زر «استيراد المقالات الأساسية (66)».
+
+#### 55. إصلاح بلاغات العرض الثلاثة + قواعد المجموعات الفرعية
+- **حارس المرحلة:** `ConditionalContentSection` و`PersonalizedTipsCard` أخذا `stage` وحارس `d['lifeStage'] != stage` فلا يظهر محتوى مرحلة في تبويب أخرى.
+- **تنسيق المقال** أُعيد ليطابق `_NewsDetailPage`: رأس صورة + `NabdaAd` (إعلان/منتج قريب) موزّعة.
+- خريطة شاشات الحمل: `WeekDetailScreen` = تبويب الحمل (الجنين/الحجم)؛ `PregnancyWeeksScreen` بلا أسبوع = قائمة الأثلاث. أُدرج المحتوى المخصّص في `WeekDetailScreen` قبل المقالات العامة، ثم حُوّل لكاروسال أفقي تحت معلومات الحجم/الوزن.
+- **إصلاح `permission-denied`:** أُضيفت قاعدة `match /users/{userId}/{sub=**}` للمجموعات الفرعية (babies/baby_logs/cycle_logs/weight_tracker/vaccines/logs) — كانت قاعدة الرفض الأخيرة تلتقطها.
+
+#### 56. منتجات بنمط Dukan — المرحلة 1: محرّر المنتج المتقدّم
+- إعادة بناء `_AddProductScreen` إلى **10 أقسام قابلة للطي**: معلومات، وصف، تسعيرات (سعر/قديم/تكلفة)، صور (غلاف + معرض)، إعدادات عامة (`displayType` صفحة منتج/هبوط + تخطّي السلة + وضع صارم + …)، شحن (مجاني/مخصّص/نقطة استلام)، خيارات وألوان (`variants`)، خيارات ثانوية (`secondaryOptions`/مقاسات)، عروض كمية (`offers`)، مراجعات (`reviews`).
+- توافق رجعي كامل + رفع صور الغلاف/الخيارات/العروض/المراجعات كروابط قبل الكتابة. (commit `8ac6fe4`)
+
+#### 57. المرحلة 2: صفحة الهبوط + الدفع المباشر COD
+- `lib/screens/shop/landing_product_screen.dart`: تُفتح عند `displayType=='landing'` من `shop_page.dart`. هيرو + اختيار لون/مقاس + عروض كمية + مراجعات + **نموذج طلب مباشر** (تخطّي السلة) يكتب في `orders` + `users/{uid}/orders/{id}` بمخطّط `OrderModel` + صفحة شكر. (commit `5788def`)
+
+#### 58. إصلاح ثغرتي صفحة الهبوط
+- **حارس تسجيل الدخول:** إزالة `?? 'guest'` المُضلِّل (قواعد Firestore تشترط مصادقة) ورسالة «سجّلي الدخول».
+- **منع البيع الزائد:** فحص مخزون قبل إنشاء الطلب (المنتج مُتتبَّع عندما `stock>0`؛ `stock==0`=غير محدود) فلا يُقبل طلب أكبر من المتاح، دون تعطيل المنتجات غير المُتتبَّعة. (commit `d6a3d7f`)
+
+#### 59. تحديث الولايات (69) + البلديات المنسدلة (تقسيم 2025)
+- **الجزائر أصبحت 69 ولاية منذ 16 نوفمبر 2025** (تُرقّى 11 مقاطعة إدارية: 59–69). أُضيفت إلى قائمة الولايات في صفحة الهبوط. (كان التطبيق يحوي 58 فقط.)
+- **بلديات منسدلة مرتبطة بالولاية:** بيانات 69 ولاية / 1541 بلدية في `assets/data/algeria_cities.json` تُحمَّل عبر `lib/data/algeria_locations.dart`؛ اختيار الولاية يُصفّي بلدياتها. المصدر: مجموعة بيانات تقسيم 2025 (قابلة للاستبدال بقائمة شركة التوصيل ZR Express لاحقًا بتبديل ملف JSON).
+- جملة إرشادية «(يمكنكِ كتابة اسم زوجكِ)» تحت حقل اسم المستلم. (commit `ae2597d`, `9f6e612`)
+
+#### 60. خطط موثّقة (لم تُنفَّذ بعد) ومنهجية
+- ملفات خطط في جذر المشروع: `WEB_ADMIN_PLAN.md` (لوحة تحكم ويب عبر Flutter Web على Firebase، النطاق `admin.nabda.online`، Bimber يبقى واجهة عامة)، `AUTH_HYBRID_PLAN.md` (مصادقة هجينة هاتف-أو-بريد + كلمة مرور بلا OTP عبر بريد اصطناعي — صفر تكلفة SMS)، `LANDING_PRODUCTS_PLAN.md` (مراحل منتجات Dukan).
+- استمرار النمط: التصميم/المراجعة/التحقّق في Claude (Opus 4.8) والتنفيذ غالبًا عبر Antigravity؛ `flutter analyze` بصفر أخطاء وبناء `nabda.apk` ورفع Git بعد كل مرحلة.
+
+---
+
+*آخر تحديث: 14 يونيو 2026*
 *إعداد: Claude AI بناءً على جلسات العمل مع Billel*
