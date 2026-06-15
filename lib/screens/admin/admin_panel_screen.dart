@@ -1169,6 +1169,12 @@ class _AddProductScreenState extends State<_AddProductScreen> {
   final List<_OfferItem> _offers = [];
   final List<_ReviewItem> _reviews = [];
 
+  // Video Ad fields
+  final _videoUrlC = TextEditingController();
+  String _videoType = 'auto'; // 'auto' | 'hls' | 'mp4'
+  _ArticleImage? _videoThumbnail;
+  bool _showVideoInFeed = false;
+
   bool _isSaving = false;
   final _picker = ImagePicker();
 
@@ -1291,6 +1297,15 @@ class _AddProductScreenState extends State<_AddProductScreen> {
           text: rm['text'] ?? '',
         ));
       }
+
+      // Video Ad fields
+      _videoUrlC.text = d['videoUrl'] ?? '';
+      _videoType = d['videoType'] ?? 'auto';
+      _showVideoInFeed = d['showVideoInFeed'] ?? false;
+      final vt = d['videoThumbnail'] as String?;
+      if (vt != null && vt.isNotEmpty) {
+        _videoThumbnail = _ArticleImage(url: vt);
+      }
     }
   }
 
@@ -1309,6 +1324,7 @@ class _AddProductScreenState extends State<_AddProductScreen> {
     _thankYouTextC.dispose();
     _customShippingPriceC.dispose();
     _customShippingPickupPriceC.dispose();
+    _videoUrlC.dispose();
     super.dispose();
   }
 
@@ -1362,6 +1378,14 @@ class _AddProductScreenState extends State<_AddProductScreen> {
     }
   }
 
+  Future<void> _pickVideoThumbnail() async {
+    final f = await _pickImage();
+    if (f != null) {
+      final b = await _readFileBytes(f);
+      if (b != null) setState(() => _videoThumbnail = _ArticleImage(file: f, bytes: b));
+    }
+  }
+
   Future<_ArticleImage?> _pickItemImage() async {
     final f = await _pickImage();
     if (f != null) {
@@ -1386,6 +1410,28 @@ class _AddProductScreenState extends State<_AddProductScreen> {
     debugPrint('=== SAVE PRODUCT START ===');
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
+
+      // Upload video thumbnail
+      String videoThumbnailUrl = '';
+      if (_videoThumbnail != null) {
+        if (_videoThumbnail!.url != null) {
+          videoThumbnailUrl = _videoThumbnail!.url!;
+        } else if (_videoThumbnail!.file != null) {
+          final url = await _uploadImage(_videoThumbnail!.file!, 'products/video_thumb_${ts}.jpg');
+          if (url != null) videoThumbnailUrl = url;
+        }
+      }
+
+      // Infer video type if 'auto'
+      String finalVideoType = _videoType;
+      if (finalVideoType == 'auto') {
+        final u = _videoUrlC.text.trim().toLowerCase();
+        if (u.contains('.m3u8')) {
+          finalVideoType = 'hls';
+        } else {
+          finalVideoType = 'mp4';
+        }
+      }
 
       // 1. Upload cover image
       String coverImageUrl = '';
@@ -1493,6 +1539,11 @@ class _AddProductScreenState extends State<_AddProductScreen> {
         'secondaryOptions': _secondaryOptions.map((s) => s.toMap()).toList(),
         'offers': _offers.map((o) => o.toMap()).toList(),
         'reviews': _reviews.map((r) => r.toMap()).toList(),
+        
+        'videoUrl': _videoUrlC.text.trim(),
+        'videoType': finalVideoType,
+        'videoThumbnail': videoThumbnailUrl,
+        'showVideoInFeed': _showVideoInFeed,
 
         'updatedAt': FieldValue.serverTimestamp(),
       };
@@ -1735,6 +1786,71 @@ class _AddProductScreenState extends State<_AddProductScreen> {
                         ]),
                       ),
                       const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+                const Divider(),
+
+                // Section Video Ad: فيديو إعلاني
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('فيديو إعلاني (In-Feed Ad)', style: TextStyle(fontWeight: FontWeight.bold, color: _teal)),
+                    leading: const Icon(Icons.video_library_outlined, color: _teal),
+                    children: [
+                      _field(_videoUrlC, 'رابط الفيديو الإعلاني (Bunny HLS, MP4)', Icons.link),
+                      const SizedBox(height: 4),
+                      DropdownButtonFormField<String>(
+                        value: _videoType,
+                        decoration: InputDecoration(labelText: 'نوع الفيديو', filled: true, fillColor: _card,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+                        items: const [
+                          DropdownMenuItem(value: 'auto', child: Text('تحديد تلقائي حسب الرابط')),
+                          DropdownMenuItem(value: 'hls', child: Text('HLS (.m3u8)')),
+                          DropdownMenuItem(value: 'mp4', child: Text('MP4 مباشر')),
+                        ],
+                        onChanged: (v) => setState(() => _videoType = v!),
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Video Thumbnail image picker
+                      Container(
+                        width: double.infinity, padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(12)),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Row(children: [
+                            const Icon(Icons.photo, color: _teal, size: 20), const SizedBox(width: 8),
+                            const Expanded(child: Text('صورة الغلاف للفيديو (Poster)', style: TextStyle(fontWeight: FontWeight.bold))),
+                            if (_videoThumbnail != null)
+                              TextButton(
+                                onPressed: () => setState(() => _videoThumbnail = null),
+                                child: const Text('حذف', style: TextStyle(color: Colors.red)),
+                              )
+                            else
+                              TextButton.icon(
+                                onPressed: _pickVideoThumbnail,
+                                icon: const Icon(Icons.image_search, size: 18),
+                                label: const Text('اختيار', style: TextStyle(fontSize: 12)),
+                              ),
+                          ]),
+                          if (_videoThumbnail != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: _buildImgPreview(_videoThumbnail!.bytes, _videoThumbnail!.url, height: 150),
+                            ),
+                        ]),
+                      ),
+                      
+                      // showVideoInFeed switch
+                      SwitchListTile(
+                        title: const Text('عرض هذا الفيديو كإعلان خلاصة'),
+                        subtitle: const Text('سيظهر هذا الفيديو كإعلان متحرك صامت في خلاصة المتجر'),
+                        value: _showVideoInFeed,
+                        activeColor: _teal,
+                        onChanged: (v) => setState(() => _showVideoInFeed = v),
+                      ),
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
