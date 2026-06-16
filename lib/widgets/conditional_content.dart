@@ -286,10 +286,14 @@ class ConditionalContentSection extends StatelessWidget {
       if (p['condition'] == 'hypertension') { out.add(const _Topic('🩺', 'ارتفاع الضغط في الحمل', 'htn', Color(0xFF7E57C2))); }
       if (p['condition'] == 'nausea') { out.add(const _Topic('🤢', 'غثيان الحمل', 'nausea', Color(0xFF66BB6A))); }
       if (p['firstPregnancy'] == true) { out.add(const _Topic('🌸', 'دليل الحمل الأول', 'firstPreg', Color(0xFFEC407A))); }
+      // الاستعداد للولادة القيصرية — تظهر في الحمل عند تسجيل خطة قيصرية (الشهر الثامن)
+      if (d['birthType'] == 'cesarean') { out.add(const _Topic('🏥', 'الاستعداد للولادة القيصرية', 'cesareanPrep', Color(0xFF5C6BC0))); }
     } else if (stage == 'baby') {
       final p = (d['babyProfile'] as Map?) ?? {};
       // الطفل الخديج (ولادة مبكرة قبل الأسبوع 37) — علامة على وثيقة المستخدمة
       if (d['pretermBirth'] == true) { out.add(const _Topic('👶', 'العناية بالطفل الخديج', 'preterm', Color(0xFFAB47BC))); }
+      // التعافي بعد الولادة القيصرية — تظهر في رعاية الطفل عند ولادة قيصرية
+      if (d['birthType'] == 'cesarean') { out.add(const _Topic('🏥', 'التعافي بعد الولادة القيصرية', 'cesarean', Color(0xFF5C6BC0))); }
       if (p['feeding'] == 'formula') { out.add(const _Topic('🍼', 'الرضاعة الصناعية', 'formula', Color(0xFF42A5F5))); }
       else if (p['feeding'] == 'mixed') { out.add(const _Topic('🍼', 'الرضاعة المختلطة', 'mixed', Color(0xFF26A69A))); }
       if (p['firstChild'] == true) out.add(const _Topic('🤱', 'طفلك الأول', 'firstChild', Color(0xFF7E57C2)));

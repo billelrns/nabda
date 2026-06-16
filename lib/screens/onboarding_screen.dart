@@ -59,6 +59,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   String _babyGender = 'male';     // male / female
   String _feeding = 'breast';      // breast / formula / mixed
   bool _firstChild = true;
+  String _babyBirthType = 'vaginal'; // vaginal / cesarean
   // تتبع الدورة → cycleProfile
   int _periodLength = 5;           // 2..10
   String _cycleRegular = 'yes';    // yes / no
@@ -180,8 +181,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         if (bn.isNotEmpty) data['babyName'] = bn;
       }
       if (stage == 'baby') {
-        data['babyProfile'] = {'gender': _babyGender, 'feeding': _feeding, 'firstChild': _firstChild};
+        data['babyProfile'] = {'gender': _babyGender, 'feeding': _feeding, 'firstChild': _firstChild, 'birthType': _babyBirthType};
         data['babyGender'] = _babyGender;
+        data['birthType'] = _babyBirthType; // لتفعيل محتوى التعافي بعد القيصرية
       }
       if (stage == 'cycle') {
         data['cycleProfile'] = {'periodLength': _periodLength, 'regular': _cycleRegular, 'trackingGoal': _trackingGoal};
@@ -1354,6 +1356,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             const {'breast': 'طبيعية', 'formula': 'صناعية', 'mixed': 'مختلطة'}, (v) => setState(() => _feeding = v))),
           _fertField('هل هو طفلك الأول؟', _dropStr<bool>(_firstChild,
             const {true: 'نعم', false: 'لا'}, (v) => setState(() => _firstChild = v))),
+          _fertField('نوع الولادة', _dropStr<String>(_babyBirthType,
+            const {'vaginal': 'طبيعية', 'cesarean': 'قيصرية'}, (v) => setState(() => _babyBirthType = v))),
           const SizedBox(height: 8),
         ]))),
       _saving ? const Center(child: CircularProgressIndicator(color: _pink))

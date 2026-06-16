@@ -23,9 +23,10 @@ class _EndPregnancyScreenState extends State<EndPregnancyScreen> {
 
   bool _busy = false;
   bool _showLossPath = false;
+  bool _showBirthPath = false;
 
   /// الأرشفة الصامتة + مسح بيانات الحمل النشطة + ضبط المرحلة التالية.
-  Future<void> _finish({required String outcome, String nextStage = 'cycle'}) async {
+  Future<void> _finish({required String outcome, String nextStage = 'cycle', String? birthType}) async {
     if (_busy) return;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -57,6 +58,7 @@ class _EndPregnancyScreenState extends State<EndPregnancyScreen> {
         'outcome': outcome, // 'birth' | 'loss' | 'unspecified'
         if (birthWeek != null) 'birthWeek': birthWeek,
         if (outcome == 'birth') 'pretermBirth': isPreterm,
+        if (birthType != null) 'birthType': birthType, // 'vaginal' | 'cesarean'
         'archivedAt': FieldValue.serverTimestamp(),
       });
 
@@ -71,6 +73,8 @@ class _EndPregnancyScreenState extends State<EndPregnancyScreen> {
         // علامات الولادة المبكرة لتفعيل محتوى «الطفل الخديج» في رعاية الطفل
         update['pretermBirth'] = isPreterm;
         if (birthWeek != null) update['birthWeek'] = birthWeek;
+        // نوع الولادة (يؤكّد أو يحدّث الخطة المسجّلة) لتفعيل محتوى «التعافي بعد القيصرية»
+        if (birthType != null) update['birthType'] = birthType;
       }
       // ملاحظة: لا نضبط lastPeriodStart عند الفقدان — تُسجّلها المستخدمة عند عودة دورتها.
       await userRef.set(update, SetOptions(merge: true));
@@ -124,7 +128,11 @@ class _EndPregnancyScreenState extends State<EndPregnancyScreen> {
           absorbing: _busy,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
-            child: _showLossPath ? _buildLossPath() : _buildOptions(),
+            child: _showLossPath
+                ? _buildLossPath()
+                : _showBirthPath
+                    ? _buildBirthTypePath()
+                    : _buildOptions(),
           ),
         ),
       ),
@@ -145,7 +153,7 @@ class _EndPregnancyScreenState extends State<EndPregnancyScreen> {
           title: 'وضعتُ مولودي',
           subtitle: 'الانتقال إلى متابعة رعاية الطفل',
           color: _pink,
-          onTap: () => _finish(outcome: 'birth'),
+          onTap: () => setState(() => _showBirthPath = true),
         ),
         _optionCard(
           emoji: '🌧️',
@@ -160,6 +168,56 @@ class _EndPregnancyScreenState extends State<EndPregnancyScreen> {
           subtitle: 'إيقاف متابعة الحمل والعودة لتتبّع الدورة',
           color: _teal,
           onTap: () => _finish(outcome: 'unspecified'),
+        ),
+        if (_busy) ...[
+          const SizedBox(height: 20),
+          const Center(child: CircularProgressIndicator(color: _teal)),
+        ],
+      ],
+    );
+  }
+
+  // ── مسار الولادة: اختيار نوع الولادة (لطيف واختياري) ──
+  Widget _buildBirthTypePath() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        const Text('مبروك قدوم صغيركِ 🤍',
+            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: _textPrimary)),
+        const SizedBox(height: 10),
+        const Text('كيف وضعتِ مولودكِ؟ هذا يساعدنا على تقديم محتوى تعافٍ مناسب لكِ. وكل خياراتكِ خاصّة بكِ.',
+            style: TextStyle(fontSize: 15, height: 1.7, color: _textSecondary)),
+        const SizedBox(height: 24),
+        _optionCard(
+          emoji: '🌸',
+          title: 'ولادة طبيعية',
+          subtitle: 'الانتقال إلى متابعة رعاية الطفل',
+          color: _pink,
+          onTap: () => _finish(outcome: 'birth', birthType: 'vaginal'),
+        ),
+        _optionCard(
+          emoji: '🏥',
+          title: 'ولادة قيصرية',
+          subtitle: 'سنعرض لكِ محتوى التعافي بعد القيصرية',
+          color: const Color(0xFF5C6BC0),
+          onTap: () => _finish(outcome: 'birth', birthType: 'cesarean'),
+        ),
+        _optionCard(
+          emoji: '•••',
+          title: 'أفضّل عدم التحديد',
+          subtitle: 'الانتقال إلى رعاية الطفل مباشرة',
+          color: _teal,
+          onTap: () => _finish(outcome: 'birth'),
+        ),
+        const SizedBox(height: 6),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _busy ? null : () => setState(() => _showBirthPath = false),
+            icon: const Icon(Icons.arrow_forward, size: 16, color: _textSecondary),
+            label: const Text('رجوع', style: TextStyle(color: _textSecondary)),
+          ),
         ),
         if (_busy) ...[
           const SizedBox(height: 20),

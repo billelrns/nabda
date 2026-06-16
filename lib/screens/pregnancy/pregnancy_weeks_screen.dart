@@ -760,6 +760,11 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                     const ConditionalContentSection(stage: 'pregnant', horizontal: true),
                     const SizedBox(height: 16),
 
+                    // ── بطاقة خطّة الولادة (الشهر الثامن، أسبوع ≥ 32) ──
+                    if (widget.currentWeek != null && widget.currentWeek! >= 32) ...[
+                      const _BirthPlanPrompt(),
+                    ],
+
                     // ── Articles Carousel ──
                     _buildArticlesCarousel(),
                     const SizedBox(height: 16),
@@ -3605,4 +3610,101 @@ class RealisticFetusIllustration extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant RealisticFetusIllustration old) => old.week != week;
+}
+
+/// بطاقة خطّة الولادة — تظهر في الشهر الثامن لتسجيل نوع الولادة المتوقّع
+/// بعد استشارة الطبيبة. تُخفى تلقائيًا متى سُجّل النوع، ويمكن تعديله لاحقًا.
+class _BirthPlanPrompt extends StatelessWidget {
+  const _BirthPlanPrompt();
+
+  static const Color _indigo = Color(0xFF5C6BC0);
+
+  Future<void> _set(BuildContext context, String type) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    await FirebaseFirestore.instance.collection('users').doc(uid).set(
+      {'birthType': type},
+      SetOptions(merge: true),
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(type == 'cesarean'
+            ? 'سجّلنا خطّة ولادة قيصرية — ستجدين محتوى الاستعداد بالأسفل 🤍'
+            : 'سجّلنا خطّة ولادة طبيعية 🤍'),
+        backgroundColor: const Color(0xFF00897B),
+      ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return const SizedBox.shrink();
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final d = snap.data!.data() as Map<String, dynamic>? ?? {};
+        // إن سُجّل النوع مسبقًا لا نُظهر البطاقة (المحتوى المشروط يظهر بدلًا منها)
+        if (d['birthType'] == 'vaginal' || d['birthType'] == 'cesarean') {
+          return const SizedBox.shrink();
+        }
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: _indigo.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _indigo.withValues(alpha: 0.25)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: const [
+                Text('🏥', style: TextStyle(fontSize: 22)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('خطّة الولادة',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF2D2D3A))),
+                ),
+              ]),
+              const SizedBox(height: 8),
+              const Text(
+                'مع اقتراب موعدك، هل تحدّثتِ مع طبيبتكِ عن نوع الولادة المتوقّع؟ تسجيله يتيح لنا تقديم محتوى استعداد مناسب لكِ. (اختياري ويمكن تغييره لاحقًا.)',
+                style: TextStyle(fontSize: 14, height: 1.7, color: Color(0xFF555B66)),
+              ),
+              const SizedBox(height: 14),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => _set(context, 'vaginal'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _indigo,
+                      side: const BorderSide(color: _indigo),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('طبيعية', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _set(context, 'cesarean'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _indigo,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('قيصرية', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
