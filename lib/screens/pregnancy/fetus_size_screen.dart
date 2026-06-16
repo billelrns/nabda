@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/pregnancy_week_articles.dart' show pregnancyMonthArForWeek;
 
 const Color _bg = Color(0xFFFFF5F7);
 const Color _card = Colors.white;
@@ -117,15 +118,16 @@ class _FetusSizeScreenState extends State<FetusSizeScreen> {
               const SizedBox(height: 16),
               Text('بحجم ${data.fruitName}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: data.bgColor)),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 8,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(color: trimesterColor.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-                    child: Text('الثلث $trimesterName', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: trimesterColor)),
+                    child: Text('الثلث $trimesterName · ${pregnancyMonthArForWeek(week)}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: trimesterColor)),
                   ),
-                  const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),

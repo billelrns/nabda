@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math';
+import '../../models/pregnancy_week_articles.dart' show pregnancyMonthArForWeek;
 
 // ─── Theme ───
 const Color _bg = Color(0xFFFFF5F7);
@@ -448,7 +449,7 @@ class _PregnancyCalendarScreenState extends State<PregnancyCalendarScreen> {
                   children: [
                     Text('الأسبوع $_currentWeek', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
                     const SizedBox(height: 4),
-                    Text('الثلث ${'الأول الثاني الثالث'.split(' ')[trimester - 1]}',
+                    Text('${pregnancyMonthArForWeek(_currentWeek)} · الثلث ${'الأول الثاني الثالث'.split(' ')[trimester - 1]}',
                       style: const TextStyle(fontSize: 14, color: Colors.white70)),
                   ],
                 ),
@@ -648,7 +649,7 @@ class _PregnancyCalendarScreenState extends State<PregnancyCalendarScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(color: _indigo.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                  child: Text('الأسبوع $week', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _indigo)),
+                  child: Text('الأسبوع $week · ${pregnancyMonthArForWeek(week)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _indigo)),
                 ),
             ],
           ),
