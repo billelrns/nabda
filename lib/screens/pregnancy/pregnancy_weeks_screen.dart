@@ -609,7 +609,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
               ],
               flexibleSpace: FlexibleSpaceBar(
                 title: Text(
-                  'الأسبوع ${a.week}',
+                  a.getMonthAr(),
                   style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 16),
                 ),
                 centerTitle: true,
@@ -1680,7 +1680,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$d يوم متبقي',
+                    '${pregnancyMonthArForWeek(w)} · $d يوم متبقي',
                     style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.85)),
                   ),
                 ],

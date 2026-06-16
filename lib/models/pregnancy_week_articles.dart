@@ -49,6 +49,44 @@ class PregnancyWeekArticle {
     if (week <= 27) return 'Second Trimester';
     return 'Third Trimester';
   }
+
+  /// الشهر الموافق لأسبوع الحمل (اصطلاح شائع في الجزائر/المغرب العربي).
+  int getMonth() {
+    if (week <= 4) return 1;
+    if (week <= 8) return 2;
+    if (week <= 13) return 3;
+    if (week <= 17) return 4;
+    if (week <= 22) return 5;
+    if (week <= 27) return 6;
+    if (week <= 31) return 7;
+    if (week <= 35) return 8;
+    return 9;
+  }
+
+  String getMonthAr() {
+    const ord = ['', 'الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس',
+        'السادس', 'السابع', 'الثامن', 'التاسع'];
+    return 'الشهر ${ord[getMonth()]}';
+  }
+}
+
+/// نسخة مستقلّة لحساب الشهر من رقم الأسبوع مباشرة (لمن لا يملك كائن المقال).
+int pregnancyMonthForWeek(int week) {
+  if (week <= 4) return 1;
+  if (week <= 8) return 2;
+  if (week <= 13) return 3;
+  if (week <= 17) return 4;
+  if (week <= 22) return 5;
+  if (week <= 27) return 6;
+  if (week <= 31) return 7;
+  if (week <= 35) return 8;
+  return 9;
+}
+
+String pregnancyMonthArForWeek(int week) {
+  const ord = ['', 'الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس',
+      'السادس', 'السابع', 'الثامن', 'التاسع'];
+  return 'الشهر ${ord[pregnancyMonthForWeek(week)]}';
 }
 
 final List<PregnancyWeekArticle> pregnancyWeekArticles = [
