@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/pregnancy_week_articles.dart';
+import 'end_pregnancy_screen.dart';
 import '../trackers/health_trackers_screen.dart';
 import '../../widgets/news_section.dart';
 import '../../widgets/personalized_tips.dart';
@@ -589,6 +590,21 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       }
                     }
                   },
+                ),
+                IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.more_horiz, size: 20),
+                  ),
+                  tooltip: 'تحديث حالة الحمل',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const EndPregnancyScreen()),
+                  ),
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(
