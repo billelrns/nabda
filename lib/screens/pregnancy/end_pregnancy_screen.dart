@@ -35,11 +35,28 @@ class _EndPregnancyScreenState extends State<EndPregnancyScreen> {
       final snap = await userRef.get();
       final d = snap.data() ?? {};
 
+      // حساب أسبوع الحمل عند الولادة لرصد الولادة المبكرة (قبل الأسبوع 37)
+      // نفس اصطلاح بقية التطبيق: الأسبوع = الأيام منذ بداية الحمل ÷ 7
+      int? birthWeek;
+      bool isPreterm = false;
+      if (outcome == 'birth') {
+        final startTs = d['pregnancyStartDate'];
+        if (startTs is Timestamp) {
+          final w = (DateTime.now().difference(startTs.toDate()).inDays / 7)
+              .floor()
+              .clamp(1, 42);
+          birthWeek = w;
+          isPreterm = w < 37;
+        }
+      }
+
       // أرشفة صامتة (لا حذف) — قد تكون مهمّة طبيًا وقد ترغب المستخدمة بتذكّرها
       await userRef.collection('pregnancyHistory').add({
         'startDate': d['pregnancyStartDate'],
         'endDate': FieldValue.serverTimestamp(),
         'outcome': outcome, // 'birth' | 'loss' | 'unspecified'
+        if (birthWeek != null) 'birthWeek': birthWeek,
+        if (outcome == 'birth') 'pretermBirth': isPreterm,
         'archivedAt': FieldValue.serverTimestamp(),
       });
 
@@ -51,6 +68,9 @@ class _EndPregnancyScreenState extends State<EndPregnancyScreen> {
       };
       if (outcome == 'birth') {
         update['babyBirthDate'] = FieldValue.serverTimestamp(); // قابل للتعديل لاحقًا
+        // علامات الولادة المبكرة لتفعيل محتوى «الطفل الخديج» في رعاية الطفل
+        update['pretermBirth'] = isPreterm;
+        if (birthWeek != null) update['birthWeek'] = birthWeek;
       }
       // ملاحظة: لا نضبط lastPeriodStart عند الفقدان — تُسجّلها المستخدمة عند عودة دورتها.
       await userRef.set(update, SetOptions(merge: true));

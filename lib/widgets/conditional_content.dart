@@ -288,6 +288,8 @@ class ConditionalContentSection extends StatelessWidget {
       if (p['firstPregnancy'] == true) { out.add(const _Topic('🌸', 'دليل الحمل الأول', 'firstPreg', Color(0xFFEC407A))); }
     } else if (stage == 'baby') {
       final p = (d['babyProfile'] as Map?) ?? {};
+      // الطفل الخديج (ولادة مبكرة قبل الأسبوع 37) — علامة على وثيقة المستخدمة
+      if (d['pretermBirth'] == true) { out.add(const _Topic('👶', 'العناية بالطفل الخديج', 'preterm', Color(0xFFAB47BC))); }
       if (p['feeding'] == 'formula') { out.add(const _Topic('🍼', 'الرضاعة الصناعية', 'formula', Color(0xFF42A5F5))); }
       else if (p['feeding'] == 'mixed') { out.add(const _Topic('🍼', 'الرضاعة المختلطة', 'mixed', Color(0xFF26A69A))); }
       if (p['firstChild'] == true) out.add(const _Topic('🤱', 'طفلك الأول', 'firstChild', Color(0xFF7E57C2)));
