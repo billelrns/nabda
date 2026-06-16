@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nabda_app/main.dart' show MainNav;
 
 /// شاشة تحديث حالة الحمل — تتعامل مع الولادة وفقدان الحمل بنبرة رحيمة.
 /// كل الخيارات خاصّة بالمستخدمة، بلا إجبار على ذكر السبب أو تاريخ،
@@ -53,6 +55,10 @@ class _EndPregnancyScreenState extends State<EndPregnancyScreen> {
       // ملاحظة: لا نضبط lastPeriodStart عند الفقدان — تُسجّلها المستخدمة عند عودة دورتها.
       await userRef.set(update, SetOptions(merge: true));
 
+      // مزامنة المرحلة محليًا حتى يهبط التنقّل على التبويب الصحيح فورًا
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('life_stage', stage);
+
       if (!mounted) return;
       final msg = outcome == 'birth'
           ? 'مبروك قدوم صغيركِ 🤍 انتقلنا إلى رعاية الطفل'
@@ -62,8 +68,12 @@ class _EndPregnancyScreenState extends State<EndPregnancyScreen> {
         backgroundColor: const Color(0xFF00897B),
         duration: const Duration(seconds: 3),
       ));
-      // العودة لجذر التنقّل (يلتقط lifeStage الجديد ويعرض التبويب المناسب)
-      Navigator.of(context).popUntil((r) => r.isFirst);
+      // استبدال شجرة التنقّل بـ MainNav جديدة تهبط على تبويب المرحلة الجديدة
+      // (الدورة عند الفقدان، الطفل عند الولادة) بدل البقاء على تبويب الحمل
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => MainNav()),
+        (r) => false,
+      );
     } catch (e) {
       if (mounted) {
         setState(() => _busy = false);
