@@ -1,11 +1,15 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'create_post_screen.dart';
+import '../messaging/chat_list_screen.dart';
 import 'post_detail_screen.dart';
 import 'leaderboard_screen.dart';
+import 'user_profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
+import '../../services/cohort_service.dart';
 import '../../services/community_engagement_service.dart';
 import '../../models/community_post_model.dart';
 
@@ -21,6 +25,71 @@ class _CommunityScreenState extends State<CommunityScreen> {
   String _selectedCategory = 'all';
   String? get _currentUserId => FirebaseAuth.instance.currentUser?.uid;
   int _mainTab = 0; // 0 = المنشورات, 1 = الترتيب
+
+  @override
+  void initState() {
+    super.initState();
+    _syncProfile(); // مزامنة كسولة: فوج شهر الولادة + بيانات الملفّ العامّ في users_directory
+  }
+
+  /// يقرأ مستند المستخدِمة مرّة واحدة، ثمّ:
+  /// 1) يزامن فوج شهر الولادة (idempotent).
+  /// 2) يعكس بيانات العرض العامّة (نقاط/شارات/عدّادات/صورة) إلى users_directory
+  ///    حتى تستطيع العضوات الأخريات رؤية ملفّها وترتيبها (مستند users محجوب بالخصوصية).
+  Future<void> _syncProfile() async {
+    final uid = _currentUserId;
+    if (uid == null) return;
+    try {
+      final snap = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (!snap.exists) return;
+      final d = snap.data()!;
+
+      // (1) الفوج
+      final preg = d['pregnancyStartDate'] ?? d['pregnancyStart'];
+      final key = CohortService().deriveCohortKey(
+        status: d['lifeStage'] as String? ?? '',
+        pregnancyStartDate: preg is Timestamp ? preg.toDate() : null,
+        babyBirthDate: d['babyBirthDate'] is Timestamp ? (d['babyBirthDate'] as Timestamp).toDate() : null,
+      );
+      await CohortService().syncUserCohort(uid, key);
+
+      // (2) مرآة الملفّ العامّ
+      final points = (d['communityPoints'] is int) ? d['communityPoints'] as int : 0;
+      final existing = (d['badges'] is List) ? List<String>.from(d['badges']) : <String>[];
+      final badges = <String>{...existing, ..._badgesForPoints(points)}.toList();
+      await FirebaseFirestore.instance.collection('users_directory').doc(uid).set({
+        'name': d['name'] ?? '',
+        'photoUrl': d['photoUrl'] ?? d['avatarUrl'] ?? '',
+        'bio': d['bio'] ?? '',
+        'communityPoints': points,
+        'postCount': d['postCount'] ?? 0,
+        'receivedLikes': d['receivedLikes'] ?? 0,
+        'commentCount': d['commentCount'] ?? 0,
+        'followersCount': d['followersCount'] ?? 0,
+        'followingCount': d['followingCount'] ?? 0,
+        'badges': badges,
+        'cohortKey': key,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (_) {/* صامت — لا يعطّل فتح المجتمع */}
+  }
+
+  /// الشارات المستحقّة حسب النقاط (مطابقة لعتبات CommunityEngagementService).
+  static List<String> _badgesForPoints(int p) {
+    final b = <String>[];
+    if (p >= 20) b.add('active');
+    if (p >= 50) b.add('helpful');
+    if (p >= 100) b.add('expert');
+    if (p >= 200) b.add('top_contributor');
+    return b;
+  }
+
+  /// يفتح ملفّ صاحبة المنشور (إلا منشورات الفريق أو المجهولة).
+  void _openProfile(CommunityPostModel post) {
+    if (post.userId == CommunityEngagementService.teamUserId || post.isAnonymous || post.userId.isEmpty) return;
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => UserProfileScreen(userId: post.userId)));
+  }
 
   static const Map<String, String> _categoryLabels = {
     'all': 'الكل',
@@ -50,6 +119,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline_rounded),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+              builder: (_) => const ChatListScreen())),
+            tooltip: 'الرسائل الخاصة',
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(42),
           child: Container(
@@ -57,15 +134,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
             child: Row(
               children: [
                 _mainTabButton('المنشورات', Icons.forum_outlined, 0),
-                _mainTabButton('الترتيب', Icons.emoji_events_outlined, 1),
+                _mainTabButton('ناديي', Icons.groups_outlined, 1),
+                _mainTabButton('الترتيب', Icons.emoji_events_outlined, 2),
               ],
             ),
           ),
         ),
       ),
-      floatingActionButton: _mainTab == 0
+      floatingActionButton: _mainTab == 0 || _mainTab == 1
         ? FloatingActionButton.extended(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostScreen())),
+            onPressed: () async {
+              String? cohortKey;
+              if (_mainTab == 1 && _currentUserId != null) {
+                final userSnap = await FirebaseFirestore.instance.collection('users').doc(_currentUserId!).get();
+                cohortKey = userSnap.data()?['cohortKey'] as String?;
+              }
+              if (mounted) {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => CreatePostScreen(cohortKey: cohortKey)));
+              }
+            },
             backgroundColor: const Color(0xFFE91E63),
             foregroundColor: Colors.white,
             icon: const Icon(Icons.edit_outlined),
@@ -79,7 +166,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
               Expanded(child: _buildPostFeed()),
             ],
           )
-        : const LeaderboardScreen(),
+        : _mainTab == 1
+            ? _buildCohortFeed()
+            : const LeaderboardScreen(),
     );
   }
 
@@ -270,12 +359,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              displayName,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: isTeamPost ? const Color(0xFF00897B) : null,
+                            GestureDetector(
+                              onTap: () => _openProfile(post),
+                              child: Text(
+                                displayName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: isTeamPost ? const Color(0xFF00897B) : null,
+                                ),
                               ),
                             ),
                             if (isTeamPost) ...[
@@ -428,6 +520,219 @@ class _CommunityScreenState extends State<CommunityScreen> {
       );
     } catch (_) {
       return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildCohortFeed() {
+    if (_currentUserId == null) {
+      return const Center(child: Text('يرجى تسجيل الدخول لعرض النادي الخاص بك'));
+    }
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance.collection('users').doc(_currentUserId).snapshots(),
+      builder: (context, userSnap) {
+        if (userSnap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF00897B)));
+        }
+        final userData = userSnap.data?.data();
+        final cohortKey = userData?['cohortKey'] as String?;
+
+        if (cohortKey == null || cohortKey.isEmpty) {
+          return _buildNoCohortState();
+        }
+
+        return Column(
+          children: [
+            _buildCohortHeaderCard(cohortKey),
+            Expanded(child: _buildCohortPostList(cohortKey)),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildNoCohortState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFE8EC),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.groups_outlined, size: 64, color: Color(0xFFE91E63)),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'نادي الولادة الخاص بكِ',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2D2D3A)),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'أندية أشهر الولادة مخصصة لربط الحوامل والأمهات اللواتي يمررن بنفس مرحلتكِ لمشاركة التجارب والنصائح اليومية.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600, height: 1.5, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'تفضلي بتحديد تاريخ بداية حملكِ أو تاريخ ولادة طفلكِ في حسابكِ للانضمام التلقائي للنادي الخاص بكِ.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade500, height: 1.5, fontSize: 13),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('حدّثي تاريخ بداية الحمل أو تاريخ الولادة من تبويب «حسابي» للانضمام التلقائي'),
+                    backgroundColor: Color(0xFF00897B),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE91E63),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('تحديث بيانات الحساب', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCohortHeaderCard(String cohortKey) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance.collection('cohort_members_count').doc(cohortKey).snapshots(),
+      builder: (context, countSnap) {
+        final count = countSnap.data?.data()?['memberCount'] ?? 1;
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF00897B), Color(0xFF00695C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF00897B).withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.groups_rounded, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _formatCohortName(cohortKey),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$count عضوة في هذا النادي',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.85),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCohortPostList(String cohortKey) {
+    return StreamBuilder<List<CommunityPostModel>>(
+      stream: _firestoreService.getPosts(cohortKey: cohortKey),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF00897B)));
+        }
+        if (snapshot.hasError) {
+          return const Center(child: Text('حدث خطأ في تحميل منشورات النادي'));
+        }
+        final posts = snapshot.data ?? [];
+        if (posts.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.chat_bubble_outline_rounded, size: 48, color: Colors.grey.shade400),
+                  const SizedBox(height: 12),
+                  const Text('لا توجد منشورات في النادي بعد', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('شاركي سؤالاً أو تجربة لتكوني أول من ينشط في النادي!', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                ],
+              ),
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+          itemCount: posts.length,
+          itemBuilder: (context, index) => _buildPostCard(posts[index]),
+        );
+      },
+    );
+  }
+
+  String _formatCohortName(String key) {
+    final parts = key.split('_');
+    if (parts.length < 3) return 'نادي الولادة';
+
+    final type = parts[0];
+    final year = parts[1];
+    final monthInt = int.tryParse(parts[2]) ?? 1;
+
+    const monthsAr = [
+      '', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+    final monthName = monthInt >= 1 && monthInt <= 12 ? monthsAr[monthInt] : '';
+
+    if (type == 'due') {
+      return 'نادي الولادة المتوقعة في $monthName $year';
+    } else {
+      return 'نادي مواليد $monthName $year';
     }
   }
 

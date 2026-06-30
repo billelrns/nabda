@@ -7,6 +7,7 @@ import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/community_engagement_service.dart';
 import '../../models/community_post_model.dart';
+import 'user_profile_screen.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
@@ -20,6 +21,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final AuthService _authService = AuthService();
   final TextEditingController _commentController = TextEditingController();
+  final FocusNode _commentFocus = FocusNode();
   bool _isSubmittingComment = false;
 
   String? get _currentUserId => FirebaseAuth.instance.currentUser?.uid;
@@ -42,6 +44,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   @override
   void dispose() {
     _commentController.dispose();
+    _commentFocus.dispose();
     super.dispose();
   }
 
@@ -56,7 +59,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     } catch (_) {}
   }
 
-  Future<void> _submitComment(CommunityPostModel post) async {
+  Future<void> _submitComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
@@ -79,7 +82,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         'createdAt': DateTime.now().toIso8601String(),
       };
 
-      await _firestoreService.addComment(post.id, comment);
+      await _firestoreService.addComment(widget.postId, comment);
       if (!mounted) return;
       _commentController.clear();
       FocusScope.of(context).unfocus();
@@ -141,39 +144,48 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        body: StreamBuilder<CommunityPostModel?>(
-          stream: _firestoreService.getPost(widget.postId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF00897B)),
-              );
-            }
-            final post = snapshot.data;
-            if (post == null) {
-              return const Center(
-                child: Text('لم يتم العثور على المنشور'),
-              );
-            }
-            return Column(
-              children: [
-                Expanded(
-                  child: ListView(
+        // حقل التعليق خارج الـStreamBuilder حتى لا يُعاد بناؤه مع تحديثات
+        // المنشور (وإلا فقد التركيز وأُغلقت لوحة المفاتيح).
+        body: Column(
+          children: [
+            Expanded(
+              child: StreamBuilder<CommunityPostModel?>(
+                stream: _firestoreService.getPost(widget.postId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Color(0xFF00897B)),
+                    );
+                  }
+                  final post = snapshot.data;
+                  if (post == null) {
+                    return const Center(
+                      child: Text('لم يتم العثور على المنشور'),
+                    );
+                  }
+                  return ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
                       _buildPostBody(post),
                       const SizedBox(height: 16),
                       _buildCommentsSection(post),
                     ],
-                  ),
-                ),
-                _buildCommentInput(post),
-              ],
-            );
-          },
+                  );
+                },
+              ),
+            ),
+            _buildCommentInput(),
+          ],
         ),
       ),
     );
+  }
+
+  /// يفتح ملفّ عضوة (إلا الفريق/المجهولة).
+  void _openProfile(String userId, {bool isTeam = false, bool isAnon = false}) {
+    if (isTeam || isAnon || userId.isEmpty || userId == CommunityEngagementService.teamUserId) return;
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => UserProfileScreen(userId: userId)));
   }
 
   Widget _buildPostBody(CommunityPostModel post) {
@@ -239,12 +251,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                displayName,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: isTeamPost ? const Color(0xFF00897B) : null,
+                              GestureDetector(
+                                onTap: () => _openProfile(post.userId, isTeam: isTeamPost, isAnon: post.isAnonymous),
+                                child: Text(
+                                  displayName,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: isTeamPost ? const Color(0xFF00897B) : null,
+                                  ),
                                 ),
                               ),
                               if (isTeamPost) ...[
@@ -463,12 +478,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               children: [
                 Row(
                   children: [
-                    Text(
+                    GestureDetector(
+                      onTap: () => _openProfile(comment['userId']?.toString() ?? '', isTeam: isTeamComment),
+                      child: Text(
                       isTeamComment ? CommunityEngagementService.teamName : author,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                         color: isTeamComment ? const Color(0xFF00897B) : null,
+                      ),
                       ),
                     ),
                     if (isTeamComment) ...[
@@ -502,7 +520,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  Widget _buildCommentInput(CommunityPostModel post) {
+  Widget _buildCommentInput() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -521,6 +539,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           Expanded(
             child: TextField(
               controller: _commentController,
+              focusNode: _commentFocus,
               textDirection: TextDirection.rtl,
               textAlign: TextAlign.right,
               maxLines: 3,
@@ -549,7 +568,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ),
                 )
               : InkWell(
-                  onTap: () => _submitComment(post),
+                  onTap: () => _submitComment(),
                   borderRadius: BorderRadius.circular(24),
                   child: Container(
                     width: 44,

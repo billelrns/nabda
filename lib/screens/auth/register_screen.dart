@@ -8,6 +8,7 @@ import 'dart:math';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_event.dart';
 import '../../blocs/auth/auth_state.dart';
+import '../../services/auth_service.dart';
 import '../onboarding_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -120,9 +121,11 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                 final prefs = await SharedPreferences.getInstance();
                 final user = FirebaseAuth.instance.currentUser;
                 if (user != null) {
+                  final email = _emailController.text.trim().toLowerCase();
                   final data = <String, dynamic>{
                     'displayName': _nameController.text.trim(),
-                    'email': _emailController.text.trim(),
+                    'email': email,
+                    'provider': 'email',
                     'lifeStage': prefs.getString('life_stage') ?? 'cycle',
                     'onboardingDone': true,
                     'createdAt': FieldValue.serverTimestamp(),
@@ -131,6 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                   final pregStart = prefs.getString('pregnancy_start');
                   if (pregStart != null) data['pregnancyStartDate'] = Timestamp.fromDate(DateTime.parse(pregStart));
                   await FirebaseFirestore.instance.collection('users').doc(user.uid).set(data, SetOptions(merge: true));
+                  await prefs.setBool('has_account', true);
                 }
               } catch (_) {}
               if (!context.mounted) return;

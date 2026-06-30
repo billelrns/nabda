@@ -8,6 +8,8 @@ import 'dart:math';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_event.dart';
 import '../../blocs/auth/auth_state.dart';
+import '../../services/auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -176,14 +178,14 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           ),
                           child: Column(
                             children: [
-                              // Email field
+                              // Identifier field (phone or email)
                               SlideTransition(
                                 position: _emailSlide,
                                 child: _buildTextField(
                                   controller: _emailController,
-                                  label: 'البريد الإلكتروني',
-                                  hint: 'example@gmail.com',
-                                  icon: Icons.email_rounded,
+                                  label: 'رقم الهاتف أو البريد الإلكتروني',
+                                  hint: '0555… أو example@gmail.com',
+                                  icon: Icons.alternate_email_rounded,
                                   keyboardType: TextInputType.emailAddress,
                                 ),
                               ),
@@ -331,6 +333,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   void _showForgotPassword() {
     final resetController = TextEditingController();
+    final authService = AuthService();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -348,27 +351,90 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             const SizedBox(height: 20),
             const Text('استعادة كلمة المرور', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('أدخلي بريدك الإلكتروني لإرسال رابط الاستعادة', style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+            Text('أدخلي رقم هاتفك أو بريدك الإلكتروني', style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
             const SizedBox(height: 24),
             TextField(
               controller: resetController,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
-                labelText: 'البريد الإلكتروني',
-                prefixIcon: const Icon(Icons.email_rounded, color: Color(0xFFE91E63)),
+                labelText: 'الهاتف أو البريد',
+                hintText: '0555… أو example@gmail.com',
+                prefixIcon: const Icon(Icons.alternate_email_rounded, color: Color(0xFFE91E63)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2)),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: const Color(0xFF25D366).withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+              child: Row(children: [
+                const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('للحسابات بالهاتف: نرسل طلبك للدعم عبر واتساب وستصلك كلمة مرور مؤقتة.', style: TextStyle(color: Colors.grey.shade700, fontSize: 12))),
+              ]),
+            ),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity, height: 52,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: () async {
-                  final email = resetController.text.trim();
-                  if (email.isEmpty) return;
+                  final identifier = resetController.text.trim();
+                  if (identifier.isEmpty) {
+                    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('أدخلي رقم هاتفك')));
+                    return;
+                  }
                   try {
-                    await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+                    // قراءة رقم دعم واتساب من Firestore، أو استعمال افتراضي
+                    String supportNumber = '213555000000';
+                    try {
+                      final doc = await FirebaseFirestore.instance
+                          .collection('app_config').doc('contact').get();
+                      final n = (doc.data()?['whatsappNumber'] as String?)?.trim();
+                      if (n != null && n.isNotEmpty) supportNumber = n;
+                    } catch (_) {}
+                    // تسجيل الطلب
+                    try {
+                      await FirebaseFirestore.instance
+                          .collection('password_reset_requests').add({
+                        'identifier': identifier,
+                        'method': 'whatsapp',
+                        'status': 'pending',
+                        'requestedAt': FieldValue.serverTimestamp(),
+                      });
+                    } catch (_) {}
+                    final msg = Uri.encodeComponent('السلام عليكم،\nأرغب في إعادة تعيين كلمة المرور لحسابي في تطبيق نبضة.\nرقمي/بريدي: $identifier\nشكراً.');
+                    final url = 'https://wa.me/$supportNumber?text=$msg';
+                    final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                    if (!ok && ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('تعذّر فتح واتساب')));
+                    if (ok && ctx.mounted) Navigator.pop(ctx);
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      final err = e.toString().replaceFirst('Exception: ', '');
+                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(err)));
+                    }
+                  }
+                },
+                icon: const Icon(Icons.chat_rounded, color: Colors.white),
+                label: const Text('أرسل الطلب عبر واتساب', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF25D366),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity, height: 48,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final identifier = resetController.text.trim();
+                  if (identifier.isEmpty || !AuthService.isEmail(identifier)) {
+                    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('هذا الخيار للبريد فقط')));
+                    return;
+                  }
+                  try {
+                    await authService.resetPassword(identifier);
                     if (ctx.mounted) Navigator.pop(ctx);
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -377,15 +443,14 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                     }
                   } catch (e) {
                     if (ctx.mounted) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+                      final err = e.toString().replaceFirst('Exception: ', '');
+                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(err)));
                     }
                   }
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE91E63),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: const Text('إرسال رابط الاستعادة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                icon: const Icon(Icons.mail_outline_rounded, color: Color(0xFFE91E63)),
+                label: const Text('أرسل رابط للبريد', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFE91E63)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
               ),
             ),
           ],

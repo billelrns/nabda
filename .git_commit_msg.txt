@@ -1,0 +1,53 @@
+feat: منظومة محتوى محسّنة + إصلاحات شاملة (24 يونيو 2026)
+
+## محتوى المقالات (المهمّ)
+
+- إعادة كتابة 82 نصاً عربياً فريداً للأسابيع 1-41 في pregnancy_week_articles.dart
+  (nutritionAr و tipsAr) — تم حلّ مشكلة التكرار الكارثية:
+  قبل: nutritionAr 11/41 فريد، tipsAr 8/41 فريد
+  بعد: nutritionAr 41/41 فريد، tipsAr 41/41 فريد
+
+- توحيد babySizeAr ↔ babySizeEn في 27 أسبوعاً
+  (إصلاح تضارب «حبة كرز / Grape» في الأسبوع 9 وأمثاله)
+
+- إضافة قسم جديد «الدين والأمومة» — lib/data/religious_articles.dart
+  11 مقالاً إسلامياً: أذكار حامل، أدعية ولادة، أحكام صلاة وصيام،
+  بركة الرضاعة، تربية المحبّة، تعليم الصلاة، أسماء أولاد،
+  أذكار الحفظ من العين، حقّ الأم في الإسلام
+
+- إضافة لمسة دينية إسلامية لـ64 مقالاً متخصّصاً
+  (55 عبارة موزّعة على 11 موضوعاً: توأم، سكري، PCOS، إلخ)
+
+- إضافة 66 مرجعاً طبياً موثّقاً في رؤوس المقالات المتخصّصة
+  المراجع: WHO, ACOG, NHS, ATA, ADA, NICE, Mayo Clinic
+
+- إنشاء brand.md (11 KB): هوية العلامة الكاملة + النبرة + الحدود
+- إنشاء article_template.md (9.6 KB): قالب موحّد + نظام تقييم /100
+  + checklist + 5 صياغات لكل قسم
+
+## المصادقة + WhatsApp Recovery
+
+- إضافة دعم استعادة كلمة المرور عبر WhatsApp في login_screen
+  (يقرأ رقم الدعم من Firestore app_config/contact.whatsappNumber)
+- إضافة شاشة _WhatsAppSupportScreen في لوحة الأدمن
+  (رقم دعم قابل للتعديل + قائمة طلبات الاستعادة مع زرّ «تم»)
+- قواعد Firestore جديدة لـ:
+  - password_reset_requests (إنشاء عام + قراءة/تحديث للأدمن)
+  - app_config (قراءة عامة + كتابة للأدمن)
+- إضافة دالة validateIdentifier في validators.dart
+
+## إصلاحات
+
+- إصلاح ملف pregnancy_news_articles.dart اليتيم (كان مقتطعاً)
+- استعادة admin_panel_screen.dart من اقتطاع (من 5582 إلى 5617 سطر)
+- إزالة import مكرّر لـ flutter/foundation في main.dart
+- إزالة import غير مستعمل لـ url_launcher في main.dart
+- توحيد API المصادقة على email-based (بعد قرار التصميم النهائي)
+
+## إحصائيات
+
+- 37,000+ حرف عربي أصلي مكتوب
+- 11 ملف جديد + 6 ملفات معدّلة جوهرياً
+- التقرير الكامل: outputs/تحليل_مقالات_نبضة.docx
+
+Refs: NABDA_PROJECT_HISTORY.md (المرحلة 17+)

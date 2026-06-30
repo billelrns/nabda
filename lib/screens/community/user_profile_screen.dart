@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'leaderboard_screen.dart';
 import 'post_detail_screen.dart';
+import '../messaging/chat_room_screen.dart';
+import '../../services/messaging_service.dart';
 
 // ─── Theme ───
 const Color _bg = Color(0xFFFAF5F5);
@@ -40,7 +42,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           elevation: 0,
           surfaceTintColor: Colors.transparent,
           title: StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance.collection('users').doc(widget.userId).snapshots(),
+            stream: FirebaseFirestore.instance.collection('users_directory').doc(widget.userId).snapshots(),
             builder: (_, snap) {
               if (!snap.hasData || !snap.data!.exists) return const Text('...');
               final d = snap.data!.data() as Map<String, dynamic>;
@@ -56,7 +58,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ],
         ),
         body: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').doc(widget.userId).snapshots(),
+          stream: FirebaseFirestore.instance.collection('users_directory').doc(widget.userId).snapshots(),
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator(color: _teal));
@@ -75,6 +77,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 _buildBio(d),
                 _buildMemberSince(d),
                 _buildStats(d),
+                _buildBadgesAndRank(d),
                 const SizedBox(height: 16),
                 _buildActivityTabs(),
                 _buildActivityContent(),
@@ -102,9 +105,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           CircleAvatar(
             radius: 42,
             backgroundColor: _teal.withOpacity(0.1),
-            backgroundImage: d['avatarUrl'] != null && (d['avatarUrl'] as String).isNotEmpty
-              ? NetworkImage(d['avatarUrl']) : null,
-            child: d['avatarUrl'] == null || (d['avatarUrl'] as String).isEmpty
+            backgroundImage: d['photoUrl'] != null && (d['photoUrl'] as String).isNotEmpty
+              ? NetworkImage(d['photoUrl']) : null,
+            child: d['photoUrl'] == null || (d['photoUrl'] as String).isEmpty
               ? Text(initial, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: _teal))
               : null,
           ),
@@ -126,9 +129,38 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('ميزة الرسائل قريباً'), backgroundColor: _teal));
+                    onTap: () async {
+                      final myUid = FirebaseAuth.instance.currentUser?.uid;
+                      if (myUid == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('يجب تسجيل الدخول أولاً'), backgroundColor: _teal),
+                        );
+                        return;
+                      }
+
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => const Center(
+                          child: CircularProgressIndicator(color: _teal),
+                        ),
+                      );
+
+                      try {
+                        final chatId = await MessagingService().getOrCreateChat(myUid, widget.userId);
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => ChatRoomScreen(chatId: chatId)));
+                        }
+                      } catch (_) {
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('حدث خطأ أثناء فتح المحادثة'), backgroundColor: Colors.red),
+                          );
+                        }
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -226,6 +258,80 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     ]);
   }
 
+  // ─── الشارات والترتيب العام ───
+  static const Map<String, (String, IconData, Color)> _badgeMeta = {
+    'official': ('حساب رسمي', Icons.verified, _teal),
+    'active': ('مساهمة نشطة', Icons.local_fire_department, Color(0xFFFF9800)),
+    'helpful': ('مفيدة', Icons.favorite, _pink),
+    'expert': ('خبيرة', Icons.workspace_premium, Color(0xFF9C27B0)),
+    'new_mom': ('أم جديدة', Icons.child_care, Color(0xFF2196F3)),
+    'top_contributor': ('أفضل مساهمة', Icons.emoji_events, Color(0xFFFFB300)),
+  };
+
+  /// ترتيب العضوة العام = عدد من يفوقها نقاطاً + 1 (عبر عدّاد تجميعي).
+  Future<int> _computeRank(int points) async {
+    try {
+      final agg = await FirebaseFirestore.instance
+          .collection('users_directory')
+          .where('communityPoints', isGreaterThan: points)
+          .count()
+          .get();
+      return (agg.count ?? 0) + 1;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Widget _buildBadgesAndRank(Map<String, dynamic> d) {
+    final badges = (d['badges'] is List) ? List<String>.from(d['badges']) : <String>[];
+    final points = (d['communityPoints'] is int) ? d['communityPoints'] as int : 0;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // الترتيب العام
+        Row(children: [
+          const Icon(Icons.emoji_events, color: Color(0xFFFFB300), size: 20),
+          const SizedBox(width: 8),
+          const Text('الترتيب العام', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _text1)),
+          const Spacer(),
+          FutureBuilder<int>(
+            future: _computeRank(points),
+            builder: (_, s) {
+              if (!s.hasData) return const Text('…', style: TextStyle(color: _text2));
+              final r = s.data!;
+              return Text(r > 0 ? '#$r' : '—',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _teal));
+            },
+          ),
+        ]),
+        const Divider(height: 22),
+        const Text('الشارات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _text1)),
+        const SizedBox(height: 10),
+        if (badges.isEmpty)
+          Text('لا شارات بعد — تُكتسَب بالمشاركة وكسب النقاط 💪',
+              style: TextStyle(fontSize: 12, color: _text2))
+        else
+          Wrap(spacing: 8, runSpacing: 8, children: badges.map(_badgeChip).toList()),
+      ]),
+    );
+  }
+
+  Widget _badgeChip(String key) {
+    final m = _badgeMeta[key];
+    if (m == null) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(color: m.$3.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(m.$2, size: 16, color: m.$3),
+        const SizedBox(width: 6),
+        Text(m.$1, style: TextStyle(color: m.$3, fontWeight: FontWeight.bold, fontSize: 12)),
+      ]),
+    );
+  }
+
   Widget _buildActivityTabs() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -304,16 +410,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           // Author row
           Row(children: [
             StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance.collection('users').doc(widget.userId).snapshots(),
+              stream: FirebaseFirestore.instance.collection('users_directory').doc(widget.userId).snapshots(),
               builder: (_, s) {
                 final userData = s.data?.data() as Map<String, dynamic>? ?? {};
                 final name = userData['name'] ?? '';
                 return Row(children: [
                   CircleAvatar(
                     radius: 16, backgroundColor: _teal.withOpacity(0.1),
-                    backgroundImage: userData['avatarUrl'] != null && (userData['avatarUrl'] as String).isNotEmpty
-                      ? NetworkImage(userData['avatarUrl']) : null,
-                    child: userData['avatarUrl'] == null || (userData['avatarUrl'] as String).isEmpty
+                    backgroundImage: userData['photoUrl'] != null && (userData['photoUrl'] as String).isNotEmpty
+                      ? NetworkImage(userData['photoUrl']) : null,
+                    child: userData['photoUrl'] == null || (userData['photoUrl'] as String).isEmpty
                       ? Text(name.isNotEmpty ? name[0] : '?', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _teal))
                       : null,
                   ),

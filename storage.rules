@@ -1,0 +1,89 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ─── Helper Functions ─────────────────────────────────────────
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    // طاقم نشط (يقرأ من Firestore: staff/{uid}.isActive)
+    function isStaff() {
+      return isAuth() &&
+        firestore.exists(/databases/(default)/documents/staff/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/staff/$(request.auth.uid)).data.isActive == true;
+    }
+
+    function isImage() {
+      return request.resource != null
+          && request.resource.contentType != null
+          && request.resource.contentType.matches('image/.*');
+    }
+
+    function maxBytes(n) {
+      return request.resource != null && request.resource.size < n;
+    }
+
+    // ─── صور البروفايل (المستخدمات) ───────────────────────────────
+    // المسار: profile_photos/{uid}.jpg
+    // القراءة: مصادَقة فقط (لعرض التعليقات/الملفّ الشخصي).
+    // الكتابة: صاحبة الحساب فقط، صورة فقط، حدّ أقصى 5MB.
+    match /profile_photos/{uid} {
+      allow read: if isAuth();
+      allow write: if isOwner(uid)
+                   && isImage()
+                   && maxBytes(5 * 1024 * 1024);
+      allow delete: if isOwner(uid);
+    }
+
+    // ─── صور المقالات ─────────────────────────────────────────────
+    // قراءة عامّة (المقالات مفتوحة للزوّار) — الطاقم فقط يكتب — 10MB.
+    match /articles/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff() && isImage() && maxBytes(10 * 1024 * 1024);
+    }
+
+    // ─── صور الإعلانات (Ads) ─────────────────────────────────────
+    match /ads/{file} {
+      allow read: if true;
+      allow write: if isStaff() && isImage() && maxBytes(10 * 1024 * 1024);
+    }
+
+    // ─── المحتوى المتخصّص (specialized) ──────────────────────────
+    match /specialized/{file} {
+      allow read: if true;
+      allow write: if isStaff() && isImage() && maxBytes(10 * 1024 * 1024);
+    }
+
+    // ─── صور المنتجات (Shop) ─────────────────────────────────────
+    match /products/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff() && isImage() && maxBytes(10 * 1024 * 1024);
+    }
+
+    // ─── المنشورات المجتمعية (صور تعليقات/منشورات) ───────────────
+    // قراءة: مصادَقة. كتابة: مصادَقة، صورة، 5MB. الحذف للطاقم أو صاحب الملفّ.
+    match /community/{userId}/{allPaths=**} {
+      allow read: if isAuth();
+      allow create: if isOwner(userId) && isImage() && maxBytes(5 * 1024 * 1024);
+      allow update: if isOwner(userId) && isImage() && maxBytes(5 * 1024 * 1024);
+      allow delete: if isOwner(userId) || isStaff();
+    }
+
+    // ─── ملفّات إداريّة عامّة (لوحة الأدمن) ──────────────────────
+    // كل ملفّات الأدمن (تحميلات، نسخ احتياطي مرئي، إلخ) محصورة بالطاقم.
+    match /admin/{allPaths=**} {
+      allow read, write: if isStaff();
+    }
+
+    // ─── منع كل شيء آخر ──────────────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

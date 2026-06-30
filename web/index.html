@@ -18,29 +18,73 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="لوحة تحكم نبضة — إدارة المتجر والمحتوى والطلبات">
+  <meta name="description" content="نبضة — تطبيق صحة المرأة العربية: متابعة الحمل والدورة ورعاية الطفل ومجتمع الأمهات">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="لوحة نبضة">
+  <meta name="apple-mobile-web-app-title" content="نبضة">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>لوحة تحكم نبضة</title>
+  <!-- ─── تحميل مسبق لخطّ Almarai (يحلّ مشكلة □□□ عند أوّل تحميل) ─── -->
+  <!-- preconnect: يبدأ TCP/TLS handshake مع خوادم Google Fonts باكرًا. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- display=swap: يعرض الخطّ الاحتياطي فورًا ثم يستبدله بـ Almarai عند الجهوزية. -->
+  <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+
+  <title>نبضة — صحة المرأة العربية</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <!-- ─── شاشة تحميل: شعار نبضة (صورة 3D) ينبض كقلب حقيقي ─── -->
+  <!-- الصورة كاملةً تنبض بإيقاع قلب الإنسان (نبضتان قويّتان ثمّ راحة).         -->
+  <style>
+    html, body { margin: 0; padding: 0; background: #FFF8FB; }
+    #nabda-loader {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #FFF8FB;
+      z-index: 9999;
+      transition: opacity 0.35s ease-out;
+    }
+    #nabda-loader.hidden { opacity: 0; pointer-events: none; }
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+    /* الصورة كاملةً تنبض بإيقاع قلب حقيقي */
+    .nabda-logo-img {
+      width: 220px; height: 220px;
+      object-fit: contain; display: block;
+      animation: heartbeat 1.2s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    /* إيقاع قلب: نبضة قويّة → ارتداد → نبضة ثانية أخفّ → راحة */
+    @keyframes heartbeat {
+      0%   { transform: scale(0.94); }
+      14%  { transform: scale(1.10); }
+      28%  { transform: scale(0.96); }
+      42%  { transform: scale(1.06); }
+      70%  { transform: scale(0.94); }
+      100% { transform: scale(0.94); }
+    }
+  </style>
+
+  <div id="nabda-loader">
+    <img class="nabda-logo-img" src="nabda_heart.png" alt="نبضة" />
+  </div>
+  <script>
+    // إخفاء الدوّار فور رسم Flutter لأوّل إطار.
+    window.addEventListener('flutter-first-frame', function () {
+      var el = document.getElementById('nabda-loader');
+      if (!el) return;
+      el.classList.add('hidden');
+      setTimeout(function () { el.remove(); }, 400);
+    });
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

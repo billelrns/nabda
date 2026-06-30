@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -14,6 +15,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import 'firebase_options.dart';
@@ -26,6 +28,8 @@ import 'services/country_currency_service.dart';
 import 'services/notification_service.dart';
 import 'services/admin_service.dart';
 import 'services/dynamic_content_service.dart';
+import 'data/baby_care_age_articles.dart';
+import 'services/auth_service.dart';
 import 'screens/admin/admin_panel_screen.dart';
 import 'config/theme.dart';
 import 'screens/onboarding_screen.dart' show OnboardingScreen, PrivacyPolicyPage, TermsOfServicePage;
@@ -46,8 +50,12 @@ import 'screens/pregnancy/share_progress_screen.dart';
 import 'widgets/personalized_tips.dart';
 import 'widgets/cycle_calendar.dart';
 import 'widgets/conditional_content.dart';
+import 'models/pregnancy_week_articles.dart' show pregnancyMonthArForWeek;
 import 'widgets/cycle_analysis_screen.dart';
 import 'widgets/cycle_phase_wheel.dart';
+import 'web/web_home.dart';
+import 'web/web_pregnancy.dart';
+import 'web/web_public_home.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -215,6 +223,24 @@ void main() async {
 
   await localeNotifier.loadSavedLocale();
   CountryCurrencyService().initialize();
+
+  // ✅ تحميل مسبق لخطّ Almarai (يحلّ مشكلة □□□ على Flutter Web)
+  // CanvasKit لا يقرأ خطوط CSS من المتصفّح، يجب تحميلها برمجيًا قبل أوّل إطار.
+  // نمنح مهلة 5 ثوان كحدّ أقصى — لو فشلت الشبكة نعرض بخطّ احتياطي ثم نُبدّله.
+  if (kIsWeb) {
+    try {
+      // تشغيل تحميل كل الأوزان المستخدمة في التطبيق.
+      GoogleFonts.almarai(fontWeight: FontWeight.w300);
+      GoogleFonts.almarai(fontWeight: FontWeight.w400);
+      GoogleFonts.almarai(fontWeight: FontWeight.w600);
+      GoogleFonts.almarai(fontWeight: FontWeight.w700);
+      GoogleFonts.almarai(fontWeight: FontWeight.w800);
+      await GoogleFonts.pendingFonts().timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // تجاهل: العرض سيتمّ بخطّ احتياطي، ثم يُبدَّل تلقائيًا عند وصول الخطّ.
+    }
+  }
+
   runApp(NabdaApp());
 }
 
@@ -264,13 +290,16 @@ class RootGate extends StatefulWidget {
 
 class _RootGateState extends State<RootGate> {
   // 0 = splash، 1 = intro، 2 = AuthGate
-  int _phase = 0;
+  // على الويب: تخطّي شاشة الشعار التمهيدية والذهاب مباشرةً إلى AuthGate
+  // (لا حاجة لـ splash في المتصفّح — الويب يعرض البوّابة فورًا).
+  // على الموبايل: نُبقي السلوك كما هو (splash → intro → auth).
+  int _phase = kIsWeb ? 2 : 0;
 
   Future<void> _afterSplash() async {
     final prefs = await SharedPreferences.getInstance();
     final introSeen = prefs.getBool('intro_seen') ?? false;
     if (!mounted) return;
-    setState(() => _phase = introSeen ? 2 : 1);
+    setState(() => _phase = (introSeen || kIsWeb) ? 2 : 1);
   }
 
   @override
@@ -286,6 +315,42 @@ class _RootGateState extends State<RootGate> {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════
+// 🔒 Migration: ضمان وجود وثيقة /users_directory/{uid} لكلّ مستخدمة.
+// تُستدعى من AuthGate بعد كلّ دخول. تكتب فقط إن لم تكن موجودة.
+// تستخرج الحقول الآمنة من /users/{uid} (بدون أيّ بيانات صحّية).
+// ════════════════════════════════════════════════════════════════════
+Future<void> _ensureUserDirectoryEntry(String uid, Map<String, dynamic> userData) async {
+  try {
+    final dirRef = FirebaseFirestore.instance.collection('users_directory').doc(uid);
+    final dir = await dirRef.get();
+    final user = FirebaseAuth.instance.currentUser;
+    if (dir.exists) {
+      // تحديث lastLoginAt فقط (لتتبّع آخر دخول للأدمن)
+      await dirRef.set({'lastLoginAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+      return;
+    }
+    // أوّل دخول بعد الفصل الأمني → أنشئ الوثيقة بحقول آمنة فقط.
+    await dirRef.set({
+      'name': userData['name'] ?? user?.displayName ?? '',
+      'displayName': userData['displayName'] ?? user?.displayName ?? '',
+      'email': userData['email'] ?? user?.email ?? '',
+      'provider': userData['provider'] ?? (user?.providerData.isNotEmpty == true
+          ? user!.providerData.first.providerId : 'unknown'),
+      'photoUrl': userData['photoUrl'] ?? user?.photoURL ?? '',
+      'role': userData['role'] ?? 'user',
+      'isBanned': userData['isBanned'] ?? false,
+      'createdAt': userData['createdAt'] ?? FieldValue.serverTimestamp(),
+      'lastLoginAt': FieldValue.serverTimestamp(),
+      'postsCount': userData['postsCount'] ?? 0,
+      'likesReceived': userData['likesReceived'] ?? 0,
+      'commentsCount': userData['commentsCount'] ?? 0,
+    });
+  } catch (_) {
+    // تجاهل أيّ خطأ — الدخول يجب ألّا يفشل بسبب فشل المزامنة.
+  }
+}
+
 // ==================== AUTH GATE ====================
 class AuthGate extends StatelessWidget {
   @override
@@ -296,6 +361,17 @@ class AuthGate extends StatelessWidget {
         if (snap.connectionState == ConnectionState.waiting)
           return Scaffold(body: Center(child: CircularProgressIndicator()));
         if (snap.hasData) {
+          // 🚧 معطّل مؤقّتًا أثناء العمل على الموقع — اضبطي على true لإعادة التفعيل.
+          //    عند التفعيل: مستخدمات Email/Password يجب أن يؤكّدن البريد قبل الدخول.
+          //    مستخدمات Google/Apple/Facebook لا يحتجن للتحقّق (المزوّد يضمنه).
+          const bool _enforceEmailVerification = false;
+          final user = snap.data!;
+          final isEmailPasswordUser =
+              user.providerData.any((p) => p.providerId == 'password');
+          if (_enforceEmailVerification && isEmailPasswordUser && !user.emailVerified) {
+            return const EmailVerificationScreen();
+          }
+
           AppNotifs.scheduleAll();
           AdminService().initialize();
           return StreamBuilder<DocumentSnapshot>(
@@ -306,6 +382,11 @@ class AuthGate extends StatelessWidget {
                 return Scaffold(body: Center(child: CircularProgressIndicator()));
               final ud = us.data!.data() as Map<String, dynamic>? ?? {};
               final done = ud['onboardingDone'] == true || ud['lifeStage'] != null;
+
+              // 🔒 Migration كسولة: تأكّدي أنّ /users_directory/{uid} موجود
+              //    (للمستخدمات اللواتي سجّلن قبل تطبيق الفصل الأمني)
+              _ensureUserDirectoryEntry(snap.data!.uid, ud);
+
               if (done) {
                 // Background sync to local SharedPreferences
                 SharedPreferences.getInstance().then((prefs) {
@@ -336,8 +417,377 @@ class AuthGate extends StatelessWidget {
             },
           );
         }
+        // الويب: صفحة عامّة للزوّار (مقالات + دخول/تسجيل). الموبايل: شاشة الدخول.
+        if (kIsWeb) {
+          return WebPublicHome(
+            articlesSection: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _HomeArticlesSection(),
+                const SizedBox(height: 8),
+                const _NewsSection(accentColor: Color(0xFFE91E63), sectionTitle: 'آخر الأخبار'),
+              ],
+            ),
+            onLogin: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => const _LoginThenPop(initialIsRegister: false))),
+            onSignup: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => const _LoginThenPop(initialIsRegister: true))),
+            onOpenSection: (key) => _openPublicSection(context, key),
+          );
+        }
         return LoginPage();
       },
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// شاشة فرض تحقّق البريد الإلكتروني (لحسابات Email/Password فقط)
+// تَعرض البريد، تتيح إعادة الإرسال، التحديث، وتسجيل الخروج.
+// تُحدّث ذاتها دوريًا للتقاط نجاح التحقّق من جلسة أخرى/المتصفّح.
+// ════════════════════════════════════════════════════════════════════
+class EmailVerificationScreen extends StatefulWidget {
+  const EmailVerificationScreen({Key? key}) : super(key: key);
+  @override
+  State<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
+}
+
+class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
+  bool _sending = false;
+  bool _checking = false;
+  DateTime? _lastSentAt;
+  Timer? _autoCheckTimer;
+  String? _info;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // تحقّق دوريّ كل 5 ثوان: يلتقط نجاح التحقّق دون تدخّل المستخدمة.
+    _autoCheckTimer = Timer.periodic(const Duration(seconds: 5), (_) => _checkVerified(silent: true));
+  }
+
+  @override
+  void dispose() {
+    _autoCheckTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _sendVerification() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    // منع الإرسال أكثر من مرّة كل 60 ثانية (تخفيف من إساءة الاستخدام)
+    if (_lastSentAt != null && DateTime.now().difference(_lastSentAt!).inSeconds < 60) {
+      final s = 60 - DateTime.now().difference(_lastSentAt!).inSeconds;
+      setState(() => _error = 'يرجى الانتظار $s ثانية قبل إعادة الإرسال');
+      return;
+    }
+    setState(() { _sending = true; _error = null; _info = null; });
+    try {
+      await user.sendEmailVerification();
+      _lastSentAt = DateTime.now();
+      if (mounted) setState(() => _info = 'تم إرسال رابط التحقّق إلى ${user.email}');
+    } catch (e) {
+      if (mounted) setState(() => _error = 'تعذّر الإرسال — حاولي بعد دقيقة');
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _checkVerified({bool silent = false}) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    if (!silent) setState(() { _checking = true; _error = null; _info = null; });
+    try {
+      await user.reload();
+      final fresh = FirebaseAuth.instance.currentUser;
+      if (fresh?.emailVerified == true) {
+        // أعد بثّ حالة المصادقة لتنتقل البوّابة تلقائيًا.
+        await FirebaseAuth.instance.userChanges().first;
+        if (mounted) setState(() {}); // إعادة بناء — AuthGate سيلتقط الحالة الجديدة
+        return;
+      }
+      if (!silent && mounted) setState(() => _info = 'لم يتمّ التحقّق بعد — افتحي رابط التأكيد في البريد');
+    } catch (e) {
+      if (!silent && mounted) setState(() => _error = 'تعذّر التحقّق — تحقّقي من اتصال الإنترنت');
+    } finally {
+      if (!silent && mounted) setState(() => _checking = false);
+    }
+  }
+
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final email = user?.email ?? '';
+    const pink = Color(0xFFE91E63);
+    const brand = Color(0xFFC2185B);
+    const bg = Color(0xFFFFF8FB);
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: bg,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Card(
+                  elevation: 6,
+                  shadowColor: pink.withOpacity(0.18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          width: 72, height: 72,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: pink.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Icon(Icons.mark_email_unread_rounded, size: 40, color: pink),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text('تأكيد البريد الإلكتروني',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 10),
+                        Text(
+                          'أرسلنا رابط تأكيد إلى:\n$email\n\nافتحي البريد واضغطي على الرابط لتفعيل حسابكِ.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 14, color: Colors.grey.shade700, height: 1.6),
+                        ),
+                        if (_info != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(children: [
+                              Icon(Icons.check_circle_outline, size: 18, color: Colors.green.shade600),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(_info!, style: TextStyle(color: Colors.green.shade800, fontSize: 13))),
+                            ]),
+                          ),
+                        ],
+                        if (_error != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(children: [
+                              Icon(Icons.error_outline, size: 18, color: Colors.red.shade400),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(_error!, style: TextStyle(color: Colors.red.shade700, fontSize: 13))),
+                            ]),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            onPressed: _checking ? null : () => _checkVerified(silent: false),
+                            icon: _checking
+                                ? const SizedBox(
+                                    width: 18, height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
+                                : const Icon(Icons.refresh_rounded),
+                            label: const Text('لقد فعّلتُ حسابي — تحقّقي',
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: pink,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          height: 46,
+                          child: OutlinedButton.icon(
+                            onPressed: _sending ? null : _sendVerification,
+                            icon: _sending
+                                ? const SizedBox(
+                                    width: 16, height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2.2, color: brand))
+                                : const Icon(Icons.send_rounded, size: 18),
+                            label: const Text('إعادة إرسال رابط التأكيد', style: TextStyle(fontSize: 14)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: brand,
+                              side: const BorderSide(color: pink),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        TextButton(
+                          onPressed: _signOut,
+                          child: Text('تسجيل الخروج',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// يفتح صفحة الدخول من الصفحة العامّة، ويُغلق نفسه تلقائيًا بعد نجاح الدخول
+// فتظهر البوّابة الجذرية بالداش بورد.
+class _LoginThenPop extends StatelessWidget {
+  /// الوضع الابتدائي لشاشة المصادقة (يُمرّر إلى LoginPage).
+  final bool? initialIsRegister;
+  const _LoginThenPop({this.initialIsRegister});
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snap) {
+        if (snap.hasData) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+          });
+        }
+        return LoginPage(initialIsRegister: initialIsRegister);
+      },
+    );
+  }
+}
+
+// ════════ أقسام عامّة للزوّار (مقالات/متجر مفتوحة) ════════
+void _openPublicSection(BuildContext context, String key) {
+  void goLogin() => Navigator.push(context, MaterialPageRoute(
+      builder: (_) => const _LoginThenPop(initialIsRegister: false)));
+  // التصميم الجديد للصفحة الرئيسية يفتح شاشة الدخول مباشرة عند الضغط على
+  // أيّ قسم (لا حاجة لـ WebPublicSection الذي كان يعرض مقالات/منتجات عامّة).
+  goLogin();
+}
+
+String _publicSectionTitle(String key) {
+  switch (key) {
+    case 'pregnancy': return 'الحمل';
+    case 'cycle': return 'الدورة';
+    case 'baby': return 'الطفل';
+    case 'shop': return 'المتجر';
+    case 'community': return 'المجتمع';
+    default: return 'نبضة';
+  }
+}
+
+Widget _publicSectionBody(String key, VoidCallback onLogin) {
+  switch (key) {
+    case 'cycle': return _CycleArticlesSection();
+    case 'baby': return _BabyArticlesSection();
+    case 'shop': return const _PublicShop();
+    case 'community':
+      return _PublicJoinPrompt(
+        emoji: '👥',
+        title: 'انضمّي إلى مجتمع الأمّهات',
+        sub: 'شاركي تجاربكِ واسألي أمّهات وخبيرات يفهمن رحلتكِ. سجّلي الدخول للمشاركة.',
+        onLogin: onLogin,
+      );
+    case 'pregnancy':
+    default:
+      return _HomeArticlesSection();
+  }
+}
+
+// شبكة منتجات عامّة (قراءة فقط للزوّار)
+class _PublicShop extends StatelessWidget {
+  const _PublicShop();
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('products').orderBy('createdAt', descending: true).limit(40).snapshots(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(color: Color(0xFFE91E63))));
+        }
+        final docs = snap.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('لا توجد منتجات بعد', style: TextStyle(color: Color(0xFF9B8F95)))));
+        }
+        return LayoutBuilder(builder: (context, c) {
+          final cols = c.maxWidth >= 900 ? 4 : (c.maxWidth >= 600 ? 3 : 2);
+          return GridView.count(
+            crossAxisCount: cols, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 16, crossAxisSpacing: 16, childAspectRatio: 0.72,
+            children: [for (final d in docs) _PublicProductCard(data: d.data() as Map<String, dynamic>)],
+          );
+        });
+      },
+    );
+  }
+}
+
+class _PublicProductCard extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _PublicProductCard({required this.data});
+  @override
+  Widget build(BuildContext context) {
+    final img = (data['imageUrl'] ?? '') as String;
+    Widget ph() => Container(height: 150, color: const Color(0xFFFCE4EC), alignment: Alignment.center, child: const Text('🛍️', style: TextStyle(fontSize: 36)));
+    return Container(
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFF0E4EA))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+          child: img.isNotEmpty ? Image.network(img, height: 150, fit: BoxFit.cover, errorBuilder: (_, __, ___) => ph()) : ph()),
+        Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text((data['name'] ?? '') as String, maxLines: 2, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20))),
+          const SizedBox(height: 6),
+          Text('${data['price'] ?? ''}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF00897B))),
+        ])),
+      ]),
+    );
+  }
+}
+
+class _PublicJoinPrompt extends StatelessWidget {
+  final String emoji, title, sub;
+  final VoidCallback onLogin;
+  const _PublicJoinPrompt({required this.emoji, required this.title, required this.sub, required this.onLogin});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: const Color(0xFFF0E4EA))),
+      child: Column(children: [
+        Text(emoji, style: const TextStyle(fontSize: 54)),
+        const SizedBox(height: 14),
+        Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20))),
+        const SizedBox(height: 8),
+        Text(sub, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, color: Color(0xFF4A434B), height: 1.6)),
+        const SizedBox(height: 22),
+        ElevatedButton(
+          onPressed: onLogin,
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE91E63), foregroundColor: Colors.white, elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999))),
+          child: const Text('تسجيل الدخول', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        ),
+      ]),
     );
   }
 }
@@ -1133,6 +1583,13 @@ class _RemindersPageState extends State<RemindersPage> {
 
 // ==================== LOGIN PAGE ====================
 class LoginPage extends StatefulWidget {
+  /// الوضع الابتدائي للشاشة:
+  ///   - null → اعتمدي على SharedPreferences (السلوك القديم).
+  ///   - true → افتحي مباشرةً على «إنشاء حساب».
+  ///   - false → افتحي مباشرةً على «تسجيل الدخول».
+  final bool? initialIsRegister;
+  const LoginPage({Key? key, this.initialIsRegister}) : super(key: key);
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -1144,11 +1601,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final nameC = TextEditingController();
   bool loading = false;
   String msg = '';
-  bool isRegister = false;
+  late bool isRegister;
   bool obscurePass = true;
   bool obscureConfirm = true;
   bool acceptTerms = false;
   int passwordStrength = 0;
+  final AuthService _authSvc = AuthService();
 
   late AnimationController _bgController;
   late AnimationController _formController;
@@ -1163,6 +1621,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    // إن مرّر المستدعي وضعًا صريحًا (من زرّ "حساب جديد" أو "تسجيل الدخول")
+    // نلتزم به ولا نسمح لـ _loadAuthMode بتغييره.
+    isRegister = widget.initialIsRegister ?? false;
     passC.addListener(_calcStrength);
 
     _bgController = AnimationController(vsync: this, duration: const Duration(seconds: 20))..repeat();
@@ -1189,7 +1650,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   // أول استخدام (لا يوجد حساب على الجهاز) → ابدئي بوضع «إنشاء حساب»؛
   // العائدات (سبق لهنّ الدخول) → وضع «تسجيل الدخول».
+  // ⚠️ إذا مرّر المستدعي وضعًا صريحًا (initialIsRegister != null)
+  //    فلا نتدخّل ونحترم اختياره (مثلاً زرّ "حساب جديد" يجب أن يفتح register
+  //    حتى لو كان للجهاز حساب سابق).
   Future<void> _loadAuthMode() async {
+    if (widget.initialIsRegister != null) return;
     final prefs = await SharedPreferences.getInstance();
     final hasAccount = prefs.getBool('has_account') ?? false;
     if (!hasAccount && mounted && !isRegister) {
@@ -1236,14 +1701,22 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     }
     setState(() { loading = true; msg = ''; });
     try {
+      final email = emailC.text.trim().toLowerCase();
+      if (!AuthService.isEmail(email) ||
+          !RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$').hasMatch(email)) {
+        setState(() { loading = false; msg = 'صيغة البريد الإلكتروني غير صحيحة'; });
+        return;
+      }
       if (isRegister) {
         var cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: emailC.text.trim(), password: passC.text);
+          email: email, password: passC.text);
         if (nameC.text.isNotEmpty) await cred.user?.updateDisplayName(nameC.text.trim());
+        try { await cred.user?.sendEmailVerification(); } catch (_) {}
         await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
           'name': nameC.text.trim(),
           'displayName': nameC.text.trim(),
-          'email': emailC.text.trim(),
+          'provider': 'email',
+          'email': email,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
           'termsAccepted': true,
@@ -1253,21 +1726,70 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           'babyName': '',
           'babyBirthDate': null,
         });
+        // 🔒 نسخة عامّة آمنة للأدمن (بدون أيّ بيانات صحّية)
+        await FirebaseFirestore.instance.collection('users_directory').doc(cred.user!.uid).set({
+          'name': nameC.text.trim(),
+          'displayName': nameC.text.trim(),
+          'email': email,
+          'provider': 'email',
+          'photoUrl': '',
+          'role': 'user',
+          'isBanned': false,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'lastLoginAt': FieldValue.serverTimestamp(),
+          'postsCount': 0,
+          'likesReceived': 0,
+          'commentsCount': 0,
+        });
       } else {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: emailC.text.trim(), password: passC.text);
+          email: email, password: passC.text);
+        // تحديث lastLoginAt في الدليل العامّ
+        await FirebaseFirestore.instance.collection('users_directory')
+            .doc(FirebaseAuth.instance.currentUser!.uid)
+            .set({'lastLoginAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
       }
       // نجح الدخول/التسجيل: علّمي الجهاز أنّ لديه حساباً (العودة لاحقاً بوضع الدخول)
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_account', true);
-    } catch (e) {
-      String error = e.toString().split(']').last.trim();
-      if (error.contains('user-not-found')) error = '\u0644\u0627 \u064A\u0648\u062C\u062F \u062D\u0633\u0627\u0628 \u0628\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F';
-      else if (error.contains('wrong-password') || error.contains('invalid-credential')) error = '\u0627\u0644\u0628\u0631\u064A\u062F \u0623\u0648 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629';
-      else if (error.contains('email-already-in-use')) error = '\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0627\u0644\u0641\u0639\u0644';
-      else if (error.contains('weak-password')) error = '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0636\u0639\u064A\u0641\u0629 \u062C\u062F\u0627\u064B';
-      else error = '\u062D\u062F\u062B \u062E\u0637\u0623 \u063A\u064A\u0631 \u0645\u062A\u0648\u0642\u0639';
+    } on FirebaseAuthException catch (e) {
+      String error;
+      switch (e.code) {
+        case 'user-not-found':
+          error = '\u0644\u0627 \u064A\u0648\u062C\u062F \u062D\u0633\u0627\u0628 \u0628\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F';
+          break;
+        case 'wrong-password':
+        case 'invalid-credential':
+          error = '\u0627\u0644\u0628\u0631\u064A\u062F \u0623\u0648 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629';
+          break;
+        case 'invalid-email':
+          error = '\u0635\u064A\u063A\u0629 \u0627\u0644\u0628\u0631\u064A\u062F \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629';
+          break;
+        case 'email-already-in-use':
+          error = '\u0647\u0630\u0627 \u0627\u0644\u0628\u0631\u064A\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0627\u0644\u0641\u0639\u0644';
+          break;
+        case 'weak-password':
+          error = '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0636\u0639\u064A\u0641\u0629 \u062C\u062F\u0627\u064B (6 \u0623\u062D\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644)';
+          break;
+        case 'user-disabled':
+          error = '\u0647\u0630\u0627 \u0627\u0644\u062D\u0633\u0627\u0628 \u0645\u0648\u0642\u0648\u0641';
+          break;
+        case 'too-many-requests':
+          error = '\u0645\u062D\u0627\u0648\u0644\u0627\u062A \u0643\u062B\u064A\u0631\u0629\u060C \u0627\u0646\u062A\u0638\u0631\u064A \u0642\u0644\u064A\u0644\u0627\u064B \u062B\u0645 \u062D\u0627\u0648\u0644\u064A \u0645\u062C\u062F\u062F\u0627\u064B';
+          break;
+        case 'network-request-failed':
+          error = '\u0641\u0634\u0644 \u0627\u0644\u0627\u062A\u0635\u0627\u0644 \u2014 \u062A\u0623\u0643\u062F\u064A \u0645\u0646 \u0627\u0644\u0625\u0646\u062A\u0631\u0646\u062A';
+          break;
+        case 'operation-not-allowed':
+          error = '\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0628\u0627\u0644\u0628\u0631\u064A\u062F/\u0627\u0644\u0647\u0627\u062A\u0641 \u0645\u0639\u0637\u0651\u0644 \u0641\u064A Firebase';
+          break;
+        default:
+          error = '\u062E\u0637\u0623 Firebase: ${e.code}\n${e.message ?? ""}';
+      }
       setState(() { msg = error; });
+    } catch (e) {
+      setState(() { msg = '\u062D\u062F\u062B \u062E\u0637\u0623: ${e.toString()}'; });
     }
     if (mounted) setState(() { loading = false; });
   }
@@ -1286,24 +1808,32 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             const SizedBox(height: 20),
             const Text('\u0627\u0633\u062A\u0639\u0627\u062F\u0629 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('\u0623\u062F\u062E\u0644\u064A \u0628\u0631\u064A\u062F\u0643 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A \u0644\u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u062F\u0629', style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+            Text('\u0623\u062F\u062E\u0644\u064A \u0628\u0631\u064A\u062F\u0643 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A \u0644\u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u062A\u0639\u064A\u064A\u0646', style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
             const SizedBox(height: 24),
             TextField(controller: resetC, keyboardType: TextInputType.emailAddress, textDirection: TextDirection.ltr,
-              decoration: InputDecoration(labelText: '\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A', prefixIcon: const Icon(Icons.email_rounded, color: Color(0xFFE91E63)),
+              decoration: InputDecoration(labelText: '\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A', hintText: 'example@gmail.com', prefixIcon: const Icon(Icons.email_rounded, color: Color(0xFFE91E63)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2)))),
             const SizedBox(height: 20),
-            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+            SizedBox(width: double.infinity, height: 48, child: OutlinedButton.icon(
               onPressed: () async {
-                if (resetC.text.trim().isEmpty) return;
+                final id = resetC.text.trim();
+                if (id.isEmpty || !AuthService.isEmail(id)) {
+                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('\u0647\u0630\u0627 \u0627\u0644\u062E\u064A\u0627\u0631 \u0644\u0644\u0628\u0631\u064A\u062F \u0641\u0642\u0637')));
+                  return;
+                }
                 try {
-                  await FirebaseAuth.instance.sendPasswordResetEmail(email: resetC.text.trim());
+                  await AuthService().resetPassword(id);
                   if (ctx.mounted) Navigator.pop(ctx);
                   if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('\u062A\u0645 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u062F\u0629 \u0625\u0644\u0649 \u0628\u0631\u064A\u062F\u0643'), backgroundColor: const Color(0xFF00897B), behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))));
-                } catch (e) { if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('\u062E\u0637\u0623: $e'))); }
+                } catch (e) {
+                  final err = e.toString().replaceFirst('Exception: ', '');
+                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(err)));
+                }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE91E63), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-              child: const Text('\u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u062F\u0629', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)))),
+              icon: const Icon(Icons.mail_outline_rounded, color: Color(0xFFE91E63)),
+              label: const Text('\u0623\u0631\u0633\u0644 \u0631\u0627\u0628\u0637 \u0644\u0644\u0628\u0631\u064A\u062F', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.bold)),
+              style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFE91E63)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))))),
           ]),
         ),
       ),
@@ -1376,7 +1906,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             SlideTransition(position: _field1Slide, child: _styledField(nameC, '\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644', '\u0641\u0627\u0637\u0645\u0629', Icons.person_rounded)),
                             const SizedBox(height: 14),
                           ],
-                          // Email
+                          // Identifier (phone or email)
                           SlideTransition(position: isRegister ? _field2Slide : _field1Slide,
                             child: _styledField(emailC, '\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A', 'example@gmail.com', Icons.email_rounded, keyboardType: TextInputType.emailAddress, isLtr: true)),
                           const SizedBox(height: 14),
@@ -1438,6 +1968,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       Expanded(child: Divider(color: Colors.grey.shade300)),
                     ])),
                     const SizedBox(height: 16),
+                    // Social sign-in
+                    FadeTransition(opacity: _formFade, child: _socialButtons()),
+                    const SizedBox(height: 16),
                     // Toggle
                     FadeTransition(opacity: _formFade, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Text(isRegister ? '\u0644\u062F\u064A\u0643 \u062D\u0633\u0627\u0628 \u0628\u0627\u0644\u0641\u0639\u0644\u061F ' : '\u0644\u064A\u0633 \u0644\u062F\u064A\u0643 \u062D\u0633\u0627\u0628\u061F ', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
@@ -1484,6 +2017,75 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  // ─── الدخول الاجتماعي (Google / Facebook / Apple) ───
+  Future<void> _socialSignIn(Future<UserCredential> Function() fn) async {
+    setState(() { loading = true; msg = ''; });
+    try {
+      await fn();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_account', true);
+      // AuthGate يلتقط تغيّر حالة المصادقة ويُكمل التوجيه.
+    } on FirebaseAuthException catch (e) {
+      String error;
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          error = 'هذا البريد مسجّل بطريقة دخول أخرى. سجّلي الدخول بها أولاً.';
+          break;
+        case 'operation-not-allowed':
+          error = 'طريقة الدخول هذه غير مُفعّلة بعد على الخادم';
+          break;
+        case 'popup-closed-by-user':
+        case 'cancelled-popup-request':
+        case 'web-context-canceled':
+        case 'canceled':
+          error = ''; // ألغت المستخدمة العملية
+          break;
+        default:
+          error = 'تعذّر تسجيل الدخول (${e.code})';
+      }
+      if (mounted) setState(() => msg = error);
+    } catch (_) {
+      if (mounted) setState(() => msg = 'تعذّر تسجيل الدخول، حاولي مجدداً');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Widget _socialButtons() {
+    final showApple = kIsWeb || Theme.of(context).platform == TargetPlatform.iOS;
+    return Column(children: [
+      _socialBtn('المتابعة بحساب Google', Colors.white, const Color(0xFF2D2D3A),
+        Icons.g_mobiledata_rounded, const Color(0xFF4285F4),
+        () => _socialSignIn(_authSvc.signInWithGoogle), border: true),
+      const SizedBox(height: 10),
+      _socialBtn('المتابعة بفيسبوك', const Color(0xFF1877F2), Colors.white,
+        Icons.facebook, Colors.white,
+        () => _socialSignIn(_authSvc.signInWithFacebook)),
+      if (showApple) ...[
+        const SizedBox(height: 10),
+        _socialBtn('المتابعة بـ Apple', Colors.black, Colors.white,
+          Icons.apple, Colors.white,
+          () => _socialSignIn(_authSvc.signInWithApple)),
+      ],
+    ]);
+  }
+
+  Widget _socialBtn(String label, Color bg, Color fg, IconData icon,
+      Color iconColor, VoidCallback onTap, {bool border = false}) {
+    return SizedBox(width: double.infinity, height: 50, child: ElevatedButton(
+      onPressed: loading ? null : onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: bg, foregroundColor: fg, elevation: border ? 0 : 2,
+        side: border ? BorderSide(color: Colors.grey.shade300) : BorderSide.none,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(icon, color: iconColor, size: 24),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 15)),
+      ]),
+    ));
   }
 
   Widget _buildPasswordStrength() {
@@ -1606,8 +2208,101 @@ class _MainNavState extends State<MainNav> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: AppLocalizations.textDir,
-      child: Scaffold(
-        body: Stack(
+      child: LayoutBuilder(
+        builder: (context, constraints) => (kIsWeb && constraints.maxWidth >= 900)
+            ? _buildWideLayout(context)
+            : _buildNarrowLayout(context),
+      ),
+    );
+  }
+
+  // التخطيط الضيّق (هاتف): المحتوى + شريط التنقّل السفلي
+  Widget _buildNarrowLayout(BuildContext context) {
+    return Scaffold(
+      body: _buildContent(context),
+      bottomNavigationBar: _buildBottomNav(context),
+    );
+  }
+
+  // التخطيط الواسع (سطح المكتب): شريط جانبي يمينًا + محتوى موسّط بعرض محدود
+  Widget _buildWideLayout(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFF8FB),
+      body: Row(
+        children: [
+          Expanded(child: _webContent(context)),
+          _buildSidebar(context),
+        ],
+      ),
+    );
+  }
+
+  // اختيار محتوى الويب حسب التبويب (web only)
+  Widget _webContent(BuildContext context) {
+    switch (_index) {
+      case 0:
+        return WebHomeDashboard(
+          userDoc: DB.userDoc,
+          onTab: goToTab,
+          onCommunity: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const CommunityScreen())),
+          onHealth: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const HealthTrackersScreen())),
+          onProfile: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => ProfilePage())),
+          onOpenArticle: (a) => _openWebArticle(context, a),
+          articlesSection: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _HomeArticlesSection(),
+              const SizedBox(height: 8),
+              const _NewsSection(accentColor: Color(0xFFE91E63), sectionTitle: 'آخر الأخبار'),
+            ],
+          ),
+        );
+      case 2:
+        return WebPregnancyPage(
+          userDoc: DB.userDoc,
+          onTab: goToTab,
+          onProfile: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => ProfilePage())),
+          onOpenArticle: (a) => _openWebArticle(context, a),
+          articlesSection: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const ConditionalContentSection(stage: 'pregnant'),
+              const SizedBox(height: 8),
+              _HomeArticlesSection(),
+            ],
+          ),
+        );
+      default:
+        // باقي التبويبات: شاشات التطبيق الحقيقية كاملة (كل المحتوى + ترابط lifeStage)
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: _buildContent(context),
+          ),
+        );
+    }
+  }
+
+  // فتح مقال حقيقي من تصميم الويب في صفحة تفاصيل المقال
+  void _openWebArticle(BuildContext context, Map<String, String> a) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => _ArticleDetailPage(
+      title: a['title'] ?? '',
+      body: a['content'] ?? '',
+      color: const Color(0xFFE91E63),
+      imageUrl: a['image'] ?? '',
+      section: a['section'] ?? '',
+    )));
+  }
+
+  // المحتوى المشترك: الصفحات + زر الحساب أعلى اليمين
+  Widget _buildContent(BuildContext context) {
+    return Stack(
           children: [
             IndexedStack(index: _index, children: _pages),
             // Profile circle button at top
@@ -1653,8 +2348,12 @@ class _MainNavState extends State<MainNav> {
               ),
             ),
           ],
-        ),
-        bottomNavigationBar: Container(
+        );
+  }
+
+  // الشريط السفلي (هاتف)
+  Widget _buildBottomNav(BuildContext context) {
+    return Container(
           margin: const EdgeInsets.only(left: 14, right: 14, bottom: 16),
           height: 68,
           decoration: BoxDecoration(
@@ -1751,8 +2450,172 @@ class _MainNavState extends State<MainNav> {
               );
             }),
           ),
+        );
+  }
+
+  // ── الشريط الجانبي (سطح المكتب) — يسارًا، بأيقونات إيموجي ملوّنة كالتصميم ──
+  Widget _buildSidebar(BuildContext context) {
+    const brand = Color(0xFFC2185B);
+    const line = Color(0xFFF0E4EA);
+    return Container(
+      width: 272,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(right: BorderSide(color: line)),
+      ),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 14),
+              child: Row(children: const [
+                _SidebarLogo(),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                    Text('نبضة', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: brand, height: 1)),
+                    SizedBox(height: 2),
+                    Text('كل نبضة حب', style: TextStyle(fontSize: 11, color: Color(0xFF9B8F95))),
+                  ]),
+                ),
+              ]),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: InkWell(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage())),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8FB),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: line),
+                  ),
+                  child: Row(children: [
+                    const CircleAvatar(radius: 20, backgroundColor: Color(0xFFFCE4EC),
+                      child: Text('👩🏻', style: TextStyle(fontSize: 20))),
+                    const SizedBox(width: 10),
+                    Expanded(child: StreamBuilder<DocumentSnapshot>(
+                      stream: DB.userDoc.snapshots(),
+                      builder: (context, snap) {
+                        final d = (snap.data?.data() as Map<String, dynamic>?) ?? {};
+                        final nm = (d['displayName'] ?? d['name'] ?? '') as String;
+                        return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                          Text(nm.isEmpty ? 'حسابي' : nm, maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1F1A20))),
+                          Text(_stageLabel(d['lifeStage'] as String?),
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF9B8F95))),
+                        ]);
+                      },
+                    )),
+                    const Icon(Icons.chevron_left, size: 18, color: Color(0xFF9B8F95)),
+                  ]),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                children: [
+                  _navItem(context, '🏠', AppLocalizations.t('home'), tabIndex: 0),
+                  _navItem(context, '👥', 'المجتمع',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()))),
+                  _navItem(context, '🛍️', AppLocalizations.t('shop'), tabIndex: 4),
+                  _navItem(context, '✨', 'الدعم الذكي', onTap: () => _soon(context)),
+                  _sidebarDivider(line),
+                  _navItem(context, '🤰', 'متابعة الحمل', tabIndex: 2),
+                  _navItem(context, '📅', 'متابعة الدورة', tabIndex: 1),
+                  _navItem(context, '👶', 'رعاية الطفل', tabIndex: 3),
+                  _navItem(context, '💕', 'الخصوبة', onTap: () => _soon(context)),
+                  _navItem(context, '🩺', 'الأطباء', onTap: () => _soon(context)),
+                  _navItem(context, '📈', 'صحتي',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthTrackersScreen()))),
+                  // ❌ أُزيلت "حسابي" و"الإعدادات" — مكرّرتان مع بطاقة البروفايل العلويّة.
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _sidebarDivider(Color line) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Divider(height: 1, color: line),
+      );
+
+  String _stageLabel(String? s) {
+    switch (s) {
+      case 'pregnant':
+        return 'متابعة الحمل';
+      case 'cycle':
+        return 'متابعة الدورة';
+      case 'planning':
+        return 'تخطيط للحمل';
+      case 'baby':
+        return 'رعاية الطفل';
+      default:
+        return 'مرحبًا بكِ';
+    }
+  }
+
+  void _soon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('هذا القسم قريبًا على الويب'),
+      duration: Duration(seconds: 2),
+    ));
+  }
+
+  // عنصر تنقّل بأيقونة إيموجي ملوّنة
+  Widget _navItem(BuildContext context, String emoji, String label, {int? tabIndex, VoidCallback? onTap}) {
+    final active = tabIndex != null && _index == tabIndex;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Material(
+        color: active ? const Color(0xFFE91E63) : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () {
+            if (tabIndex != null) {
+              setState(() => _index = tabIndex);
+            } else if (onTap != null) {
+              onTap();
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            child: Row(children: [
+              Text(emoji, style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: 12),
+              Text(label, style: TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w700,
+                color: active ? Colors.white : const Color(0xFF4A434B))),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// شعار نبضة الصغير للشريط الجانبي
+class _SidebarLogo extends StatelessWidget {
+  const _SidebarLogo();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36, height: 36,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFFF5252)]),
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 20),
     );
   }
 }
@@ -2277,7 +3140,7 @@ const SizedBox(height: 30),
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text('الأسبوع $week من $total', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _pink)),
+                        Text('الأسبوع $week · ${pregnancyMonthArForWeek(week)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _pink)),
                       ]),
                     ),
                     const SizedBox(height: 8),
@@ -3729,9 +4592,23 @@ class _PregnancyPageState extends State<PregnancyPage> {
 
   // ── المستخدمة أكدت أن الطفل وُلد: إنهاء وضع الحمل وعودة الدورة ──
   Future<void> _confirmBirth() async {
-    await DB.userDoc.set({'pregnancyStartDate': null, 'postTermAck': null}, SetOptions(merge: true));
+    final snap = await DB.userDoc.get();
+    final d = snap.data() as Map<String, dynamic>? ?? {};
+    // أرشفة صامتة لسجلّ الحمل (ولادة)
+    await DB.userDoc.collection('pregnancyHistory').add({
+      'startDate': d['pregnancyStartDate'],
+      'endDate': FieldValue.serverTimestamp(),
+      'outcome': 'birth',
+      'archivedAt': FieldValue.serverTimestamp(),
+    });
+    await DB.userDoc.set({
+      'pregnancyStartDate': null,
+      'postTermAck': null,
+      'lifeStage': 'baby',
+      'babyBirthDate': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('مبروك! 🎉 تم إنهاء وضع الحمل وستعود متابعة الدورة'), backgroundColor: Color(0xFF00897B)),
+      const SnackBar(content: Text('مبروك قدوم صغيركِ 🤍 انتقلنا إلى رعاية الطفل'), backgroundColor: Color(0xFF00897B)),
     );
   }
 
@@ -5369,7 +6246,13 @@ class _BabyArticlesSection extends StatelessWidget {
   /// Returns filtered articles: age-matched categories + general health (always shown).
   Map<String, List<Map<String, String>>> _filteredArticles() {
     final result = <String, List<Map<String, String>>>{};
-    for (final entry in _babyArticles.entries) {
+    
+    // دمج المقالات القديمة مع المقالات الجديدة لكل شهر وسنة
+    final allArticles = <String, List<Map<String, String>>>{};
+    allArticles.addAll(_babyArticles);
+    allArticles.addAll(babyCareAgeArticles);
+
+    for (final entry in allArticles.entries) {
       // Always show 'صحة الطفل العامة' regardless of age
       if (entry.key == 'صحة الطفل العامة') {
         result[entry.key] = entry.value;
@@ -7769,7 +8652,51 @@ class _AIChatPageState extends State<AIChatPage> {
     return 'شكراً على سؤالك! هذا الموضوع يحتاج استشارة طبية متخصصة. أنصحك بمراجعة طبيبتك للحصول على إجابة دقيقة ومخصصة لحالتك.\n\nيمكنك سؤالي عن:\n• آلام الدورة وانتظامها\n• أعراض الحمل والتغذية\n• الرضاعة ورعاية الطفل\n• التطعيمات والفيتامينات';
   }
 
+  // ─── حدّ يوميّ للمستخدمة (تخفيف من إساءة الاستخدام/الفاتورة) ────
+  // 50 سؤالًا/يوم — كافٍ للاستخدام الطبيعي، يمنع الاستهلاك الجائر.
+  static const int _aiDailyLimit = 50;
+
+  /// يفحص الحصّة اليوميّة في Firestore (ai_quota/{uid}) ويزيد العدّاد.
+  /// يُرجع true إذا الحصّة متوفّرة، false إذا انتهت.
+  Future<bool> _checkAndConsumeQuota() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return false;
+    final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
+    final ref = FirebaseFirestore.instance.collection('ai_quota').doc(uid);
+    try {
+      return await FirebaseFirestore.instance.runTransaction<bool>((tx) async {
+        final snap = await tx.get(ref);
+        int count = 0;
+        if (snap.exists) {
+          final data = snap.data()!;
+          if (data['date'] == today) {
+            count = (data['count'] as num?)?.toInt() ?? 0;
+          }
+        }
+        if (count >= _aiDailyLimit) return false;
+        tx.set(ref, {
+          'date': today,
+          'count': count + 1,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        return true;
+      });
+    } catch (_) {
+      // فشل الشبكة/Firestore → اسمحي بالاستدعاء (fail-open)؛
+      // حماية إضافيّة موجودة عبر تقييد المفتاح في Cloud Console.
+      return true;
+    }
+  }
+
   Future<String> _callGemini(String userMessage) async {
+    // 🚦 فحص الحصّة قبل أيّ استدعاء — يحمي من إساءة الاستخدام.
+    final allowed = await _checkAndConsumeQuota();
+    if (!allowed) {
+      return 'لقد وصلتِ إلى الحدّ اليوميّ ($_aiDailyLimit سؤال). يُرجى المحاولة غدًا.\n\n'
+             'في غضون ذلك، يمكنني الإجابة من قاعدة معرفتي المحلّيّة:\n\n'
+             + _getSmartReply(userMessage);
+    }
+
     _chatHistory.add({'role': 'user', 'parts': [{'text': userMessage}]});
 
     final sysText = 'أنت مساعد صحي ذكي اسمك نبضة، متخصص في صحة المرأة. أجب دائماً بالعربية. تخصصاتك: الدورة، الحمل، الولادة، رعاية الطفل، التغذية. أجب بإيجاز. إذا تطلب السؤال تشخيصاً طبياً انصحي بزيارة الطبيب.';

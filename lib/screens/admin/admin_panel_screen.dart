@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -131,6 +132,16 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 onTap: () => _push(_AdsManagementScreen()),
               ),
 
+            // WhatsApp Support + Password Reset Requests (owner/admin only)
+            if (_admin.hasPermission(Permission.manageCoupons))
+              _ModuleCard(
+                title: 'دعم واتساب وطلبات الاستعادة',
+                subtitle: 'رقم الدعم + طلبات إعادة تعيين كلمات المرور',
+                emoji: '\u{1F4AC}',
+                color: const Color(0xFF25D366),
+                onTap: () => _push(_WhatsAppSupportScreen()),
+              ),
+
             // Users
             if (_admin.hasPermission(Permission.viewUsers))
               _ModuleCard(
@@ -196,7 +207,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   Widget _buildStatsRow() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').snapshots(),
+      // 🔒 خصوصيّة: نستخدم users_directory (آمن) بدل users (يحوي بيانات صحّية)
+      stream: FirebaseFirestore.instance.collection('users_directory').snapshots(),
       builder: (context, usersSnap) {
         final userCount = usersSnap.data?.docs.length ?? 0;
         return StreamBuilder<QuerySnapshot>(
@@ -296,7 +308,8 @@ class _DashboardScreen extends StatelessWidget {
       body: ListView(padding: const EdgeInsets.all(16), children: [
         // Users count
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').snapshots(),
+          // 🔒 خصوصيّة: users_directory بدل users
+          stream: FirebaseFirestore.instance.collection('users_directory').snapshots(),
           builder: (_, snap) {
             final count = snap.data?.docs.length ?? 0;
             return _DashCard(title: 'إجمالي المستخدمات', value: '$count', icon: Icons.people, color: const Color(0xFF42A5F5));
@@ -3802,7 +3815,8 @@ class _UsersManagementScreenState extends State<_UsersManagementScreen> {
         ),
         // Users list
         Expanded(child: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').orderBy('createdAt', descending: true).snapshots(),
+          // 🔒 خصوصيّة: users_directory (آمن — لا يحوي بيانات صحّية)
+          stream: FirebaseFirestore.instance.collection('users_directory').orderBy('createdAt', descending: true).snapshots(),
           builder: (context, snap) {
             if (!snap.hasData || snap.data!.docs.isEmpty) {
               return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -3986,7 +4000,8 @@ class _UserProfileAdminScreenState extends State<_UserProfileAdminScreen> {
         backgroundColor: _card, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent,
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').doc(widget.userId).snapshots(),
+        // 🔒 خصوصيّة: نقرأ من users_directory بدل users (لا بيانات صحّية)
+        stream: FirebaseFirestore.instance.collection('users_directory').doc(widget.userId).snapshots(),
         builder: (context, snap) {
           if (snap.hasData && snap.data!.exists) {
             _data = snap.data!.data() as Map<String, dynamic>;
@@ -4136,7 +4151,16 @@ class _UserProfileAdminScreenState extends State<_UserProfileAdminScreen> {
                         ),
                       );
                       if (confirm == true) {
-                        await FirebaseFirestore.instance.collection('users').doc(widget.userId).update({'isBanned': !isBanned});
+                        // 🔒 تحديث الحظر في الموقعَين (users للحقيقة، users_directory للأدمن)
+                        final ts = FieldValue.serverTimestamp();
+                        await Future.wait([
+                          FirebaseFirestore.instance.collection('users').doc(widget.userId).update({
+                            'isBanned': !isBanned, 'updatedAt': ts,
+                          }),
+                          FirebaseFirestore.instance.collection('users_directory').doc(widget.userId).set({
+                            'isBanned': !isBanned, 'updatedAt': ts,
+                          }, SetOptions(merge: true)),
+                        ]);
                       }
                     },
                   ),
@@ -4210,24 +4234,37 @@ class _UserProfileAdminScreenState extends State<_UserProfileAdminScreen> {
       title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
       onTap: () async {
         Navigator.pop(ctx);
-        await FirebaseFirestore.instance.collection('users').doc(widget.userId).update({'role': role});
-        // Also update staff collection if promoting
-        if (role != 'user') {
-          await FirebaseFirestore.instance.collection('staff').doc(widget.userId).set({
-            'email': _data['email'] ?? '',
-            'name': _data['name'] ?? '',
-            'role': role,
-            'isActive': true,
-            'createdAt': FieldValue.serverTimestamp(),
-            'createdBy': FirebaseAuth.instance.currentUser?.uid ?? '',
-          }, SetOptions(merge: true));
-        } else {
-          // Demoting: remove from staff
-          await FirebaseFirestore.instance.collection('staff').doc(widget.userId).delete();
-        }
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('تم تغيير الدور إلى: $label ✓'), backgroundColor: _teal));
+        try {
+          // مصدر الحقيقة للصلاحيات = staff/ — اكتبه أولًا
+          if (role != 'user') {
+            await FirebaseFirestore.instance.collection('staff').doc(widget.userId).set({
+              'email': _data['email'] ?? '',
+              'name': _data['name'] ?? '',
+              'role': role,
+              'isActive': true,
+              'createdAt': FieldValue.serverTimestamp(),
+              'createdBy': FirebaseAuth.instance.currentUser?.uid ?? '',
+            }, SetOptions(merge: true));
+          } else {
+            // تنزيل: احذف من staff
+            await FirebaseFirestore.instance.collection('staff').doc(widget.userId).delete();
+          }
+          // 🔒 تحديث الدور في الموقعَين (users + users_directory)
+          final ts = FieldValue.serverTimestamp();
+          await Future.wait([
+            FirebaseFirestore.instance.collection('users').doc(widget.userId).update({'role': role, 'updatedAt': ts}),
+            FirebaseFirestore.instance.collection('users_directory').doc(widget.userId).set({'role': role, 'updatedAt': ts}, SetOptions(merge: true)),
+          ]);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('تم تغيير الدور إلى: $label ✓'), backgroundColor: _teal));
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: const Text('فشل تغيير الدور — تأكّدي أنّكِ مالكة وأنّ قواعد Firestore منشورة'),
+              backgroundColor: Colors.red));
+          }
         }
       },
     );
@@ -5310,8 +5347,8 @@ class _AdsManagementScreenState extends State<_AdsManagementScreen> {
 // ═══════════════════════════════════════════════
 
 const _specTopicKeys = [
-  'twins', 'diabetes', 'htn', 'nausea', 'firstPreg',
-  'formula', 'mixed', 'firstChild', 'irregular', 'pcos', 'thyroid',
+  'twins', 'diabetes', 'htn', 'nausea', 'firstPreg', 'cesareanPrep',
+  'formula', 'mixed', 'firstChild', 'preterm', 'cesarean', 'irregular', 'pcos', 'thyroid',
 ];
 const _specTopicLabels = {
   'twins': 'الحمل بتوأم',
@@ -5322,6 +5359,9 @@ const _specTopicLabels = {
   'formula': 'الرضاعة الصناعية',
   'mixed': 'الرضاعة المختلطة',
   'firstChild': 'طفلك الأول',
+  'preterm': 'العناية بالطفل الخديج',
+  'cesareanPrep': 'الاستعداد للولادة القيصرية',
+  'cesarean': 'التعافي بعد الولادة القيصرية',
   'irregular': 'الدورة غير المنتظمة',
   'pcos': 'تكيّس المبايض',
   'thyroid': 'الغدة الدرقية',
@@ -5612,6 +5652,223 @@ class _SpecializedArticlesTabState extends State<_SpecializedArticlesTab> {
           ),
         );
       },
+    );
+  }
+}
+
+
+// =============================================================================
+// WhatsApp Support + Password Reset Requests Screen
+// =============================================================================
+class _WhatsAppSupportScreen extends StatefulWidget {
+  @override
+  State<_WhatsAppSupportScreen> createState() => _WhatsAppSupportScreenState();
+}
+
+class _WhatsAppSupportScreenState extends State<_WhatsAppSupportScreen> {
+  final _numberC = TextEditingController();
+  bool _loading = true;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _numberC.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('app_config').doc('contact').get();
+      _numberC.text = (doc.data()?['whatsappNumber'] as String?) ?? '';
+    } catch (_) {}
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _save() async {
+    final n = _numberC.text.trim();
+    if (n.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('أدخلي رقم واتساب الدعم')));
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await FirebaseFirestore.instance.collection('app_config').doc('contact').set({
+        'whatsappNumber': n,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ رقم الدعم')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+    }
+    if (mounted) setState(() => _saving = false);
+  }
+
+  Future<void> _openWhatsApp(String phone, String userIdentifier) async {
+    final msg = Uri.encodeComponent('مرحباً، بخصوص طلب إعادة تعيين كلمة المرور لحسابك ($userIdentifier).');
+    final uri = Uri.parse('https://wa.me/$phone?text=$msg');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _markResolved(String docId) async {
+    try {
+      await FirebaseFirestore.instance.collection('password_reset_requests').doc(docId).update({
+        'status': 'resolved',
+        'resolvedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+    }
+  }
+
+  Future<void> _delete(String docId) async {
+    try {
+      await FirebaseFirestore.instance.collection('password_reset_requests').doc(docId).delete();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('💬 دعم واتساب', style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: const Color(0xFF25D366),
+          foregroundColor: Colors.white,
+        ),
+        body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(children: [
+              // Support number config
+              Card(
+                margin: const EdgeInsets.all(12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('رقم واتساب الدعم', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 8),
+                    Text('بصيغة دولية بلا + ولا 00. مثال: 213555123456', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _numberC,
+                      keyboardType: TextInputType.phone,
+                      textDirection: TextDirection.ltr,
+                      decoration: InputDecoration(
+                        labelText: 'رقم الواتساب',
+                        hintText: '213555123456',
+                        prefixIcon: const Icon(Icons.chat_rounded, color: Color(0xFF25D366)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _saving ? null : _save,
+                        icon: _saving
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.save, color: Colors.white),
+                        label: const Text('حفظ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+              // Requests list
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Row(children: const [
+                  Icon(Icons.lock_reset_rounded, color: Color(0xFF00897B)),
+                  SizedBox(width: 8),
+                  Text('طلبات إعادة تعيين كلمة المرور', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                ]),
+              ),
+              const SizedBox(height: 4),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('password_reset_requests')
+                      .orderBy('requestedAt', descending: true).limit(100).snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(child: Padding(padding: const EdgeInsets.all(24),
+                        child: Text('خطأ: ${snapshot.error}', textAlign: TextAlign.center, style: const TextStyle(color: Colors.red))));
+                    }
+                    final docs = snapshot.data?.docs ?? [];
+                    if (docs.isEmpty) {
+                      return const Center(child: Text('لا توجد طلبات حالياً', style: TextStyle(color: Colors.grey)));
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: docs.length,
+                      itemBuilder: (context, i) {
+                        final d = docs[i].data() as Map<String, dynamic>;
+                        final id = docs[i].id;
+                        final identifier = d['identifier'] as String? ?? '';
+                        final phone = d['phone'] as String? ?? '';
+                        final name = d['displayName'] as String? ?? '';
+                        final status = d['status'] as String? ?? 'pending';
+                        final ts = d['requestedAt'];
+                        String when = '';
+                        if (ts is Timestamp) {
+                          final dt = ts.toDate();
+                          when = '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                        }
+                        final isResolved = status == 'resolved';
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: isResolved ? Colors.green.shade100 : Colors.orange.shade100,
+                              child: Icon(isResolved ? Icons.check_rounded : Icons.lock_clock_rounded,
+                                color: isResolved ? Colors.green : Colors.orange),
+                            ),
+                            title: Text(name.isEmpty ? identifier : name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(identifier, style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+                              if (when.isNotEmpty) Text(when, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                            ]),
+                            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                              if (phone.isNotEmpty)
+                                IconButton(
+                                  icon: const Icon(Icons.chat_rounded, color: Color(0xFF25D366)),
+                                  tooltip: 'فتح واتساب',
+                                  onPressed: () => _openWhatsApp(phone, identifier),
+                                ),
+                              if (!isResolved)
+                                IconButton(
+                                  icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                                  tooltip: 'تم',
+                                  onPressed: () => _markResolved(id),
+                                ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                tooltip: 'حذف',
+                                onPressed: () => _delete(id),
+                              ),
+                            ]),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ]),
+      ),
     );
   }
 }

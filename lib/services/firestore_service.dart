@@ -133,19 +133,30 @@ class FirestoreService {
     }
   }
 
-  Stream<List<CommunityPostModel>> getPosts({String? category}) {
-    Query query = _firestore
-        .collection('community_posts')
-        .orderBy('createdAt', descending: true);
+  Stream<List<CommunityPostModel>> getPosts({String? category, String? cohortKey}) {
+    Query query = _firestore.collection('community_posts');
+
+    if (cohortKey != null && cohortKey.isNotEmpty) {
+      query = query.where('cohortKey', isEqualTo: cohortKey);
+    }
+
+    query = query.orderBy('createdAt', descending: true);
 
     if (category != null && category.isNotEmpty) {
       query = query.where('category', isEqualTo: category);
     }
 
     return query.snapshots().map((snapshot) {
-      return snapshot.docs
+      var list = snapshot.docs
           .map((doc) => CommunityPostModel.fromJson(doc.data() as Map<String, dynamic>))
           .toList();
+
+      // إذا لم يتم طلب نادٍ خاص (cohortKey = null)، نستبعد منشورات الأندية من التغذية العامة
+      if (cohortKey == null || cohortKey.isEmpty) {
+        list = list.where((post) => post.cohortKey == null || post.cohortKey!.isEmpty).toList();
+      }
+
+      return list;
     });
   }
 
@@ -176,11 +187,14 @@ class FirestoreService {
         await _firestore.collection('users').doc(userId).set({
           'communityPoints': FieldValue.increment(-1),
         }, SetOptions(merge: true));
+        // نقاط صاحبة المنشور: قد تُرفض (مستند مستخدِمة أخرى) — لا تُفشِل الإعجاب
         if (postOwnerId != null && postOwnerId != userId) {
-          await _firestore.collection('users').doc(postOwnerId).set({
-            'receivedLikes': FieldValue.increment(-1),
-            'communityPoints': FieldValue.increment(-1),
-          }, SetOptions(merge: true));
+          try {
+            await _firestore.collection('users').doc(postOwnerId).set({
+              'receivedLikes': FieldValue.increment(-1),
+              'communityPoints': FieldValue.increment(-1),
+            }, SetOptions(merge: true));
+          } catch (_) {}
         }
       } else {
         likedBy.add(userId);
@@ -192,11 +206,14 @@ class FirestoreService {
         await _firestore.collection('users').doc(userId).set({
           'communityPoints': FieldValue.increment(1),
         }, SetOptions(merge: true));
+        // نقاط صاحبة المنشور: قد تُرفض (مستند مستخدِمة أخرى) — لا تُفشِل الإعجاب
         if (postOwnerId != null && postOwnerId != userId) {
-          await _firestore.collection('users').doc(postOwnerId).set({
-            'receivedLikes': FieldValue.increment(1),
-            'communityPoints': FieldValue.increment(1),
-          }, SetOptions(merge: true));
+          try {
+            await _firestore.collection('users').doc(postOwnerId).set({
+              'receivedLikes': FieldValue.increment(1),
+              'communityPoints': FieldValue.increment(1),
+            }, SetOptions(merge: true));
+          } catch (_) {}
         }
       }
     } catch (e) {

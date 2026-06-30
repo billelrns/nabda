@@ -29,8 +29,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(const AuthError('فشل تسجيل الدخول'));
       }
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(AuthError(_cleanError(e)));
     }
+  }
+
+  String _cleanError(Object e) {
+    final s = e.toString();
+    return s.startsWith('Exception: ') ? s.substring(11) : s;
   }
 
   Future<void> _onRegisterRequested(
@@ -56,7 +61,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(const AuthError('فشل إنشاء الحساب'));
       }
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(AuthError(_cleanError(e)));
     }
   }
 
@@ -95,7 +100,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final currentUser = authService.currentUser;
       if (currentUser != null) {
         await authService.updateUserProfile(
-          uid: currentUser.uid,
           name: event.name,
           avatar: event.avatar,
           language: event.language,

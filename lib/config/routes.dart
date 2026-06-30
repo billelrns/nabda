@@ -24,6 +24,8 @@ import '../screens/shop/cart_screen.dart';
 import '../screens/baby_names/baby_names_screen.dart';
 import '../screens/health/medication_tracker_screen.dart';
 import '../screens/health/health_measurements_screen.dart';
+import '../screens/messaging/chat_list_screen.dart';
+import '../screens/messaging/chat_room_screen.dart';
 import '../services/admin_service.dart';
 
 class AppRoutes {
@@ -52,6 +54,7 @@ class AppRoutes {
   static const String privacy = '/privacy';
   static const String medicationTracker = '/medications';
   static const String healthMeasurements = '/health-measurements';
+  static const String chats = '/chats';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -167,6 +170,16 @@ class AppRoutes {
       GoRoute(
         path: healthMeasurements,
         builder: (context, state) => const HealthMeasurementsScreen(),
+      ),
+      GoRoute(
+        path: chats,
+        builder: (context, state) => const ChatListScreen(),
+      ),
+      GoRoute(
+        path: '/chat/:chatId',
+        builder: (context, state) => ChatRoomScreen(
+          chatId: state.pathParameters['chatId']!,
+        ),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

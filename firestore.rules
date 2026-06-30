@@ -34,6 +34,9 @@ service cloud.firestore {
     }
 
     // ─── المستخدمون ───────────────────────────────────────────────
+    // 🔒 خصوصيّة: /users/{uid} يحتوي بيانات صحّيّة حسّاسة (الدورة، الحمل، الطفل).
+    //            الأدمن لا يستطيع قراءتها — فقط تعديل حقلَي isBanned/role.
+    //            للعرض في لوحة الأدمن: استخدم /users_directory/{uid} (آمن).
     match /users/{userId} {
       // كل مستخدم يقرأ ويعدّل بياناته فقط
       allow read: if isAuthenticated() && isOwner(userId);
@@ -41,14 +44,42 @@ service cloud.firestore {
       allow update: if isAuthenticated() && isOwner(userId);
       allow delete: if false; // لا أحد يحذف حسابه من الكلاينت
 
-      // الأدمن يستطيع قراءة بيانات المستخدمين
-      allow read: if isActiveStaff();
+      // ❌ أُزيلت قراءة الأدمن — اُستبدلت بـ /users_directory/{uid}
+
+      // الأدمن (المالك أو المشرف) يستطيع فقط حظر/إلغاء حظر، أو تغيير الدور.
+      // لا يستطيع تعديل أيّ حقل آخر، ولا يستطيع القراءة.
+      allow update: if isOwnerOrSupervisor()
+        && request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['isBanned', 'role', 'bannedAt', 'bannedReason', 'updatedAt']);
 
       // كل المجموعات الفرعية للمستخدم (babies, baby_logs, cycle_logs,
-      // weight_tracker, vaccines, logs...) يملكها صاحب الحساب فقط
+      // weight_tracker, vaccines, logs، private...) يملكها صاحب الحساب فقط
       match /{subCollection=**} {
         allow read, write: if isAuthenticated() && isOwner(userId);
       }
+    }
+
+    // ─── دليل المستخدمين للأدمن (آمن — حقول إداريّة فقط) ─────────
+    // يحتوي: name, email, photoUrl, role, isBanned, createdAt, lastLoginAt,
+    //        postsCount, likesReceived, commentsCount
+    // لا يحتوي: أيّ بيانات صحّية (دورة، حمل، طفل، ولادة، خصوبة).
+    // المالك يكتب فيه عند التسجيل/تحديث البروفايل، الأدمن يقرأ ويحدّث الحظر/الدور.
+    match /users_directory/{userId} {
+      // قراءة عامّة للمسجَّلات: الدليل آمن (الاسم/الصورة فقط، لا بيانات صحّية)
+      // لازم لعرض أسماء/صور المحادِثات وبطاقات المجتمع.
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated()
+        && isOwner(userId)
+        && !request.resource.data.keys().hasAny([
+             'cycleLength', 'lastPeriodStart', 'pregnancyStartDate',
+             'babyName', 'babyBirthDate', 'pregnancyEndDate',
+             'lastOvulation', 'symptoms', 'mood', 'health'
+           ]);
+      // الأدمن يحدّث الحظر/الدور فقط
+      allow update: if isOwnerOrSupervisor()
+        && request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['isBanned', 'role', 'bannedAt', 'bannedReason', 'updatedAt']);
+      allow delete: if false;
     }
 
     // ─── الدورة الشهرية ───────────────────────────────────────────
@@ -103,9 +134,13 @@ service cloud.firestore {
         isOwner(request.resource.data.userId) &&
         request.resource.data.content.size() <= 2000; // حد أقصى للنص
 
-      // التعديل: صاحب المنشور فقط، أو الأدمن
-      allow update: if isAuthenticated() &&
-        (isOwner(resource.data.userId) || isOwnerOrSupervisor());
+      // التعديل: صاحب المنشور/الأدمن (تعديل كامل)، أو أي مستخدِمة للتفاعل فقط
+      // (إعجاب/تعليق) دون المساس بالعنوان أو المحتوى أو المالك.
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.userId) || isOwnerOrSupervisor()
+        || request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['likes', 'likedBy', 'comments', 'updatedAt'])
+      );
 
       // الحذف: صاحب المنشور أو الأدمن
       allow delete: if isAuthenticated() &&
@@ -134,8 +169,8 @@ service cloud.firestore {
 
     // ─── المنتجات ─────────────────────────────────────────────────
     match /products/{productId} {
-      // القراءة للجميع المسجلين
-      allow read: if isAuthenticated();
+      // القراءة عامّة (المتجر مفتوح للزوّار)
+      allow read: if true;
       // الإنشاء والتعديل الكامل للموظفين فقط
       allow create: if isActiveStaff();
       allow update: if isActiveStaff()
@@ -150,26 +185,26 @@ service cloud.firestore {
 
     // ─── المقالات ─────────────────────────────────────────────────
     match /articles/{articleId} {
-      allow read: if isAuthenticated();
+      allow read: if true; // المقالات مفتوحة للزوّار
       allow create, update: if isActiveStaff();
       allow delete: if isOwnerOrSupervisor();
     }
 
     // ─── المحتوى الديناميكي ───────────────────────────────────────
     match /dynamic_products/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if true; // المتجر مفتوح للزوّار
       allow write: if isActiveStaff();
     }
 
     match /dynamic_articles/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if true; // المقالات مفتوحة للزوّار
       allow write: if isActiveStaff();
     }
 
     // ─── المقالات المتخصّصة (specialized_articles) ────────────────
     match /specialized_articles/{docId} {
-      // المستخدمات المسجّلات يقرأن المقالات
-      allow read: if isAuthenticated();
+      // المقالات المتخصّصة مفتوحة للزوّار
+      allow read: if true;
       // الأدمن (كل الموظفين النشطين) يضيف ويعدّل
       allow create, update: if isActiveStaff();
       // الحذف للمالك أو المشرف فقط
@@ -188,7 +223,65 @@ service cloud.firestore {
       allow write: if isOwnerOrSupervisor();
     }
 
-    // ─── رفض أي شيء آخر ──────────────────────────────────────────
+    // ─── إعدادات التطبيق (رقم دعم واتساب وغيره) ───────────────────
+    // قراءة عامة (يحتاجها مستخدم غير مسجّل عند نسيت كلمة المرور)
+    // كتابة للأدمن فقط
+    match /app_config/{docId} {
+      allow read: if true;
+      allow write: if isOwnerOrSupervisor();
+    }
+
+    // ─── حصّة المحادثة الذكيّة (Rate Limiting) ─────────────────────
+    // كل مستخدمة لها وثيقة واحدة فيها {date: YYYY-MM-DD, count: N}
+    // الكتابة محدودة بصاحبة الحساب فقط، count لا يزيد عن 200/يوم
+    match /ai_quota/{userId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated()
+        && isOwner(userId)
+        && request.resource.data.count is int
+        && request.resource.data.count <= 200;
+    }
+
+    // ─── طلبات إعادة تعيين كلمة المرور ────────────────────────────
+    // الإنشاء عام (مستخدم غير مسجّل لأنه نسي كلمة المرور)
+    // القراءة والتحديث والحذف للأدمن فقط
+    match /password_reset_requests/{reqId} {
+      allow create: if request.resource.data.identifier is string
+                    && request.resource.data.identifier.size() > 0
+                    && request.resource.data.identifier.size() < 100;
+      allow read, update, delete: if isOwnerOrSupervisor();
+    }
+
+    // ─── مجموعات أعداد الأعضاء للأفواج ───────────────────────────────
+    match /cohort_members_count/{cohortKey} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ─── المحادثات المباشرة ثنائية الأطراف ──────────────────────────
+    match /direct_chats/{chatId} {
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.participants;
+      allow update: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/direct_chats/$(chatId)).data.participants;
+        allow create: if isAuthenticated() 
+          && request.auth.uid in get(/databases/$(database)/documents/direct_chats/$(chatId)).data.participants
+          && request.auth.uid == request.resource.data.senderId
+          && get(/databases/$(database)/documents/direct_chats/$(chatId)).data.blockedBy.size() == 0;
+        allow update, delete: if false;
+      }
+    }
+
+    // ─── البلاغات والشكاوى ──────────────────────────────────────────
+    match /reports/{reportId} {
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.reporterUid;
+      allow read, update, delete: if isOwnerOrSupervisor();
+    }
+
+    // ─── رفض أي شيء الآخر ──────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }

@@ -330,15 +330,18 @@ class CountryCurrencyService extends ChangeNotifier {
   }
 
   // ─── Auto-detect country from IP ───
+  // نستخدم ipapi.co (HTTPS مجّاني) بدل ip-api.com (HTTP فقط مجّانًا)
+  // لأنّ المتصفّحات على HTTPS ترفض استدعاءات HTTP المختلطة.
   Future<void> _detectCountryByIP() async {
     try {
       final response = await http.get(
-        Uri.parse('http://ip-api.com/json/?fields=countryCode'),
+        Uri.parse('https://ipapi.co/json/'),
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final detectedCode = data['countryCode'] as String?;
+        // ipapi.co يُرجع country_code بدل countryCode
+        final detectedCode = (data['country_code'] ?? data['country'] ?? data['countryCode']) as String?;
         if (detectedCode != null) {
           _currentCountry = supportedCountries.firstWhere(
             (c) => c.code == detectedCode,

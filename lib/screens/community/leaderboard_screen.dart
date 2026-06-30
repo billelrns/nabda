@@ -74,7 +74,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
   Widget _buildPodium() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('users')
+      stream: FirebaseFirestore.instance.collection('users_directory')
         .orderBy('communityPoints', descending: true).limit(3).snapshots(),
       builder: (context, snap) {
         if (!snap.hasData || snap.data!.docs.isEmpty) {
@@ -135,9 +135,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
           child: CircleAvatar(
             radius: size / 2 - 3,
             backgroundColor: borderColor.withOpacity(0.1),
-            backgroundImage: user['avatarUrl'] != null && (user['avatarUrl'] as String).isNotEmpty
-              ? NetworkImage(user['avatarUrl']) : null,
-            child: user['avatarUrl'] == null || (user['avatarUrl'] as String).isEmpty
+            backgroundImage: user['photoUrl'] != null && (user['photoUrl'] as String).isNotEmpty
+              ? NetworkImage(user['photoUrl']) : null,
+            child: user['photoUrl'] == null || (user['photoUrl'] as String).isEmpty
               ? Text(initial, style: TextStyle(fontSize: size * 0.35, fontWeight: FontWeight.bold, color: borderColor))
               : null,
           ),
@@ -249,26 +249,31 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
   }
 
   Widget _rankList({required bool newOnly}) {
-    Query query = FirebaseFirestore.instance.collection('users')
+    // القراءة من الدليل العامّ الآمن (users محجوب بقواعد الخصوصية).
+    final Query query = FirebaseFirestore.instance.collection('users_directory')
       .orderBy(_firestoreField(), descending: true).limit(50);
-    if (newOnly) {
-      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-      query = query.where('createdAt', isGreaterThan: Timestamp.fromDate(thirtyDaysAgo));
-    }
     return StreamBuilder<QuerySnapshot>(
       stream: query.snapshots(),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: _teal));
         }
-        if (!snap.hasData || snap.data!.docs.isEmpty) {
+        var docs = snap.data?.docs ?? [];
+        // فلترة «الجدد» محليّاً (آخر 30 يوماً) لتفادي فهرس مركّب.
+        if (newOnly) {
+          final cut = Timestamp.fromDate(DateTime.now().subtract(const Duration(days: 30)));
+          docs = docs.where((d) {
+            final c = (d.data() as Map<String, dynamic>)['createdAt'];
+            return c is Timestamp && c.compareTo(cut) > 0;
+          }).toList();
+        }
+        if (docs.isEmpty) {
           return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(Icons.emoji_events_outlined, size: 60, color: _text2.withOpacity(0.3)),
             const SizedBox(height: 12),
             Text('لا توجد بيانات بعد', style: TextStyle(color: _text2)),
           ]));
         }
-        final docs = snap.data!.docs;
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           itemCount: docs.length,
@@ -297,9 +302,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                     style: TextStyle(fontSize: rank <= 3 ? 18 : 14, fontWeight: FontWeight.bold, color: rankColor))),
                   CircleAvatar(
                     radius: 22, backgroundColor: _teal.withOpacity(0.1),
-                    backgroundImage: d['avatarUrl'] != null && (d['avatarUrl'] as String).isNotEmpty
-                      ? NetworkImage(d['avatarUrl']) : null,
-                    child: d['avatarUrl'] == null || (d['avatarUrl'] as String).isEmpty
+                    backgroundImage: d['photoUrl'] != null && (d['photoUrl'] as String).isNotEmpty
+                      ? NetworkImage(d['photoUrl']) : null,
+                    child: d['photoUrl'] == null || (d['photoUrl'] as String).isEmpty
                       ? Text(initial, style: TextStyle(fontWeight: FontWeight.bold, color: _teal, fontSize: 16)) : null,
                   ),
                   const SizedBox(width: 12),
@@ -387,16 +392,18 @@ class FollowButton extends StatelessWidget {
           onTap: () async {
             final ref = FirebaseFirestore.instance.collection('users').doc(uid).collection('following').doc(targetUserId);
             final targetRef = FirebaseFirestore.instance.collection('users').doc(targetUserId).collection('followers').doc(uid);
+            // كتابة مستند الطرف الآخر قد تُرفض بقواعد الخصوصية — نجعلها غير قاتلة
+            // حتى تبقى متابعتي (الجهة الخاصّة بي) فعّالة دون كسر.
             if (isFollowing) {
               await ref.delete();
-              await targetRef.delete();
-              await FirebaseFirestore.instance.collection('users').doc(uid).update({'followingCount': FieldValue.increment(-1)});
-              await FirebaseFirestore.instance.collection('users').doc(targetUserId).update({'followersCount': FieldValue.increment(-1)});
+              try { await targetRef.delete(); } catch (_) {}
+              try { await FirebaseFirestore.instance.collection('users').doc(uid).update({'followingCount': FieldValue.increment(-1)}); } catch (_) {}
+              try { await FirebaseFirestore.instance.collection('users').doc(targetUserId).update({'followersCount': FieldValue.increment(-1)}); } catch (_) {}
             } else {
               await ref.set({'followedAt': FieldValue.serverTimestamp()});
-              await targetRef.set({'followedAt': FieldValue.serverTimestamp()});
-              await FirebaseFirestore.instance.collection('users').doc(uid).update({'followingCount': FieldValue.increment(1)});
-              await FirebaseFirestore.instance.collection('users').doc(targetUserId).update({'followersCount': FieldValue.increment(1)});
+              try { await targetRef.set({'followedAt': FieldValue.serverTimestamp()}); } catch (_) {}
+              try { await FirebaseFirestore.instance.collection('users').doc(uid).update({'followingCount': FieldValue.increment(1)}); } catch (_) {}
+              try { await FirebaseFirestore.instance.collection('users').doc(targetUserId).update({'followersCount': FieldValue.increment(1)}); } catch (_) {}
             }
           },
           child: Container(

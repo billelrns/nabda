@@ -12,7 +12,8 @@ import '../../models/community_post_model.dart';
 const int _maxImageBytes = 500 * 1024; // 500 KB
 
 class CreatePostScreen extends StatefulWidget {
-  const CreatePostScreen({Key? key}) : super(key: key);
+  final String? cohortKey;
+  const CreatePostScreen({Key? key, this.cohortKey}) : super(key: key);
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -119,6 +120,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         imageUrl: imageBase64,
         isAnonymous: _isAnonymous,
         createdAt: DateTime.now(),
+        cohortKey: widget.cohortKey,
+        isPublic: widget.cohortKey == null,
       );
 
       await _firestoreService.addPost(post);
@@ -243,66 +246,68 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               const SizedBox(height: 12),
               _buildImageSection(),
               const SizedBox(height: 20),
-              const Padding(
-                padding: EdgeInsets.only(right: 4, bottom: 10),
-                child: Text(
-                  'اختاري الفئة',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.right,
+              if (widget.cohortKey == null) ...[
+                const Padding(
+                  padding: EdgeInsets.only(right: 4, bottom: 10),
+                  child: Text(
+                    'اختاري الفئة',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.right,
+                  ),
                 ),
-              ),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 2.8,
-                children: _categoryLabels.entries.map((entry) {
-                  final isSelected = _selectedCategory == entry.key;
-                  final color = _categoryColors[entry.key]!;
-                  return InkWell(
-                    onTap: () =>
-                        setState(() => _selectedCategory = entry.key),
-                    borderRadius: BorderRadius.circular(12),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? color
-                            : color.withOpacity(0.07),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 2.8,
+                  children: _categoryLabels.entries.map((entry) {
+                    final isSelected = _selectedCategory == entry.key;
+                    final color = _categoryColors[entry.key]!;
+                    return InkWell(
+                      onTap: () =>
+                          setState(() => _selectedCategory = entry.key),
+                      borderRadius: BorderRadius.circular(12),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
                           color: isSelected
                               ? color
-                              : color.withOpacity(0.25),
-                          width: isSelected ? 1.5 : 1,
+                              : color.withOpacity(0.07),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? color
+                                : color.withOpacity(0.25),
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _categoryIcons[entry.key],
+                              color: isSelected ? Colors.white : color,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              entry.value,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : color,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _categoryIcons[entry.key],
-                            color: isSelected ? Colors.white : color,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            entry.value,
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : color,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
               Card(
                 elevation: 1,
                 shape: RoundedRectangleBorder(

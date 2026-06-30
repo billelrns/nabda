@@ -1,4 +1,26 @@
 class AppValidators {
+  // التحقق من المعرّف الهجين: بريد صالح أو رقم هاتف ≥ 9 أرقام
+  static String? validateIdentifier(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'الرجاء إدخال رقم الهاتف أو البريد الإلكتروني';
+    }
+    final v = value.trim();
+    if (v.contains('@')) {
+      final emailRegex = RegExp(
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+      );
+      if (!emailRegex.hasMatch(v)) {
+        return 'البريد الإلكتروني غير صحيح';
+      }
+      return null;
+    }
+    final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length < 9) {
+      return 'رقم الهاتف غير صحيح';
+    }
+    return null;
+  }
+
   // Validate email
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {

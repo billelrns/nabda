@@ -1,8 +1,21 @@
 [
   {
-    "origin": ["*"],
+    "origin": [
+      "https://nabda.online",
+      "https://www.nabda.online",
+      "https://nabda-app-ca864.web.app",
+      "https://nabda-app-ca864.firebaseapp.com",
+      "http://localhost:*",
+      "http://127.0.0.1:*"
+    ],
     "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "x-goog-resumable"]
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "Content-Length",
+      "User-Agent",
+      "x-goog-resumable"
+    ]
   }
 ]

@@ -15,6 +15,9 @@ class CommunityPostModel {
   final DateTime createdAt;
   final DateTime? updatedAt;
 
+  final String? cohortKey;
+  final bool isPublic;
+
   CommunityPostModel({
     required this.id,
     required this.userId,
@@ -29,6 +32,8 @@ class CommunityPostModel {
     this.isAnonymous = false,
     required this.createdAt,
     this.updatedAt,
+    this.cohortKey,
+    this.isPublic = true,
   });
 
   CommunityPostModel copyWith({
@@ -45,6 +50,8 @@ class CommunityPostModel {
     bool? isAnonymous,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? cohortKey,
+    bool? isPublic,
   }) {
     return CommunityPostModel(
       id: id ?? this.id,
@@ -60,6 +67,8 @@ class CommunityPostModel {
       isAnonymous: isAnonymous ?? this.isAnonymous,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      cohortKey: cohortKey ?? this.cohortKey,
+      isPublic: isPublic ?? this.isPublic,
     );
   }
 
@@ -78,6 +87,8 @@ class CommunityPostModel {
       'isAnonymous': isAnonymous,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+      'cohortKey': cohortKey,
+      'isPublic': isPublic,
     };
   }
 
@@ -136,6 +147,8 @@ class CommunityPostModel {
       updatedAt: json['updatedAt'] is Timestamp
           ? (json['updatedAt'] as Timestamp).toDate()
           : null,
+      cohortKey: json['cohortKey'] as String?,
+      isPublic: json['isPublic'] ?? true,
     );
   }
 }
