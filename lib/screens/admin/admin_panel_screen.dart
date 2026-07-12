@@ -1147,8 +1147,24 @@ class _AddProductScreenState extends State<_AddProductScreen> {
   final _stockC = TextEditingController();
   final _descC = TextEditingController();
   final _emojiC = TextEditingController(text: '🛍️');
+  final _slugC = TextEditingController(); // مختصر رابط المنتج (URL slug)
   String _category = 'ملابس الحمل';
   bool get _isEditing => widget.docId != null;
+
+  /// توليد slug تلقائي من اسم المنتج أو الوصف (يتحوّل مسافات إلى شرطات)
+  /// يدعم العربيّة عبر URL encoding عند العرض.
+  String _autoGenerateSlug(String source) {
+    if (source.trim().isEmpty) return '';
+    final cleaned = source
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '-') // مسافات → شرطات
+        .replaceAll(RegExp(r'[^\p{L}\p{N}\-]', unicode: true), '') // إزالة الرموز
+        .replaceAll(RegExp(r'-+'), '-')  // شرطات متكرّرة → واحدة
+        .replaceAll(RegExp(r'^-|-$'), ''); // إزالة الشرطات من البداية/النهاية
+    // قصّ لأقصى 60 حرف (باستخدام طول النصّ المُنظّف، لا الأصلي)
+    return cleaned.length > 60 ? cleaned.substring(0, 60) : cleaned;
+  }
 
   // Multiple product images (gallery)
   final List<_ArticleImage> _productImages = [];
@@ -1232,6 +1248,7 @@ class _AddProductScreenState extends State<_AddProductScreen> {
       _weightC.text = d['weight'] != null ? d['weight'].toString() : '';
       _costPriceC.text = d['costPrice'] ?? '';
       _stockC.text = d['stock'] != null ? d['stock'].toString() : '';
+      _slugC.text = d['slug'] ?? '';
       _displayType = d['displayType'] ?? 'product';
 
       // Cover image
@@ -1334,6 +1351,7 @@ class _AddProductScreenState extends State<_AddProductScreen> {
     _stockC.dispose();
     _descC.dispose();
     _emojiC.dispose();
+    _slugC.dispose();
     _thankYouTextC.dispose();
     _customShippingPriceC.dispose();
     _customShippingPickupPriceC.dispose();
@@ -1345,6 +1363,14 @@ class _AddProductScreenState extends State<_AddProductScreen> {
     try {
       return await _picker.pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
     } catch (e) { return null; }
+  }
+
+  /// اختيار عدّة صور دفعة واحدة (يدعم Ctrl+Click / Shift+Click على الويب)
+  Future<List<XFile>> _pickMultiImages() async {
+    try {
+      final list = await _picker.pickMultiImage(maxWidth: 1200, imageQuality: 85);
+      return list;
+    } catch (e) { return []; }
   }
 
   Future<Uint8List?> _readFileBytes(XFile file) async {
@@ -1368,18 +1394,43 @@ class _AddProductScreenState extends State<_AddProductScreen> {
   }
 
   Future<void> _addProductImage() async {
-    final f = await _pickImage();
-    if (f != null) {
+    // اختيار عدّة صور دفعة واحدة (يدعم Ctrl/Shift click)
+    final files = await _pickMultiImages();
+    if (files.isEmpty) return;
+    int added = 0;
+    for (final f in files) {
       final b = await _readFileBytes(f);
-      if (b != null) setState(() => _productImages.add(_ArticleImage(file: f, bytes: b)));
+      if (b != null && mounted) {
+        setState(() => _productImages.add(_ArticleImage(file: f, bytes: b)));
+        added++;
+      }
+    }
+    if (mounted && added > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('تمّت إضافة $added صورة ✓'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ));
     }
   }
 
   Future<void> _addDescImage() async {
-    final f = await _pickImage();
-    if (f != null) {
+    final files = await _pickMultiImages();
+    if (files.isEmpty) return;
+    int added = 0;
+    for (final f in files) {
       final b = await _readFileBytes(f);
-      if (b != null) setState(() => _descImages.add(_ArticleImage(file: f, bytes: b)));
+      if (b != null && mounted) {
+        setState(() => _descImages.add(_ArticleImage(file: f, bytes: b)));
+        added++;
+      }
+    }
+    if (mounted && added > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('تمّت إضافة $added صورة للوصف ✓'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ));
     }
   }
 
@@ -1513,6 +1564,20 @@ class _AddProductScreenState extends State<_AddProductScreen> {
         }
       }
 
+      // مختصر الرابط (slug): يستخدمه إن أدخله الأدمن، وإلا يُولّده تلقائيًّا
+      String finalSlug = _slugC.text.trim();
+      if (finalSlug.isEmpty) {
+        // أولاً من الاسم المختصر، وإلا من الاسم الكامل، وإلا من الوصف المختصر
+        final source = _shortNameC.text.trim().isNotEmpty
+            ? _shortNameC.text.trim()
+            : (_nameC.text.trim().isNotEmpty
+                ? _nameC.text.trim()
+                : _shortDescC.text.trim());
+        finalSlug = _autoGenerateSlug(source);
+      } else {
+        finalSlug = _autoGenerateSlug(finalSlug);
+      }
+
       final data = <String, dynamic>{
         'name': _nameC.text.trim(),
         'price': _priceC.text.trim(),
@@ -1520,10 +1585,11 @@ class _AddProductScreenState extends State<_AddProductScreen> {
         'description': _descC.text.trim(),
         'emoji': _emojiC.text.trim(),
         'category': _category,
+        'slug': finalSlug, // 🔗 مختصر رابط المنتج
         'imageUrl': productImageUrls.isNotEmpty ? productImageUrls.first : '', // backward compat
         'imageUrls': productImageUrls,
         'descImages': descImageUrls,
-        
+
         // New Dukan-style fields
         'shortName': _shortNameC.text.trim(),
         'shortDescription': _shortDescC.text.trim(),
@@ -1629,6 +1695,15 @@ class _AddProductScreenState extends State<_AddProductScreen> {
                     children: [
                       _field(_nameC, 'اسم المنتج', Icons.shopping_bag),
                       _field(_shortNameC, 'الاسم المختصر (مثال: حذاء رياضي)', Icons.short_text),
+                      // 🔗 مختصر رابط المنتج (اختياري) — يظهر في URL: nabda.online/shop/{slug}
+                      _field(_slugC, 'مختصر رابط المنتج (اختياري — مثال: shoes-2024)', Icons.link),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                        child: Text(
+                          'اتركيه فارغًا لتوليده تلقائيًّا من اسم المنتج',
+                          style: TextStyle(fontSize: 11, color: _text2, fontStyle: FontStyle.italic),
+                        ),
+                      ),
                       _field(_shortDescC, 'الوصف المختصر (يظهر تحت السعر)', Icons.textsms_outlined),
                       _field(_weightC, 'الوزن بالجرام (مثال: 1000)', Icons.scale_outlined, type: TextInputType.number),
                       _field(_stockC, 'المخزون الكلي (بدون خيارات)', Icons.inventory_2_outlined, type: TextInputType.number),

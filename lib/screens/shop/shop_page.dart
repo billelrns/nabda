@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/country_currency_service.dart';
 import '../../services/cart_service.dart';
+import '../../web/url_helper.dart';
 import 'cart_screen.dart';
 import 'landing_product_screen.dart';
 import '../../widgets/feed_video_ad.dart';
@@ -1619,7 +1620,22 @@ class _ProductDetailPageState extends State<_ProductDetailPage> {
   final _pageController = PageController();
 
   @override
-  void dispose() { _pageController.dispose(); super.dispose(); }
+  void initState() {
+    super.initState();
+    // 🔗 تحديث URL: nabda.online/shop/{slug} — للمشاركة والحفظ
+    final slug = (widget.d['slug'] as String?)?.trim();
+    final id = widget.d['id']?.toString() ?? '';
+    final key = (slug != null && slug.isNotEmpty) ? slug : id;
+    if (key.isNotEmpty) setWebPath('/shop/$key');
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    // إعادة URL إلى /shop عند مغادرة الصفحة
+    setWebPath('/shop');
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -7,6 +7,24 @@ import 'dart:html' as html;
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
+import 'url_helper.dart';
+
+/// خريطة تحويل مسار URL إلى action (deep linking)
+String? _pathToAction(String path) {
+  switch (path) {
+    case '/shop': return 'shop';
+    case '/community': return 'community';
+    case '/pregnancy': return 'pregnancy';
+    case '/baby': return 'baby';
+    case '/cycle': return 'cycle';
+    case '/baby-names':
+    case '/babyNames': return 'babyNames';
+    case '/login': return 'login';
+    case '/signup':
+    case '/register': return 'signup';
+    default: return null; // '/' أو مسار غير معروف → الصفحة الرئيسيّة
+  }
+}
 
 bool _viewFactoryRegistered = false;
 void _registerLandingIframeFactory() {
@@ -50,6 +68,25 @@ class _WebPublicHomeState extends State<WebPublicHome> {
     super.initState();
     _registerLandingIframeFactory();
 
+    // 🌐 Deep linking: قراءة URL عند تحميل الصفحة، وفتح القسم المناسب تلقائيًّا.
+    // مثال: إذا فتحت nabda.online/shop مباشرة → يفتح المتجر تلقائيًّا.
+    final initialPath = getInitialPath();
+    if (initialPath != null && initialPath != '/') {
+      final action = _pathToAction(initialPath);
+      if (action != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (action == 'login') {
+            widget.onLogin();
+          } else if (action == 'signup') {
+            widget.onSignup();
+          } else {
+            widget.onOpenSection(action);
+          }
+        });
+      }
+    }
+
     _msgSub = html.window.onMessage.listen((event) {
       final data = event.data;
       if (data is! Map) return;
@@ -68,6 +105,8 @@ class _WebPublicHomeState extends State<WebPublicHome> {
         case 'cycle':
         case 'community':
         case 'shop':
+        case 'babyNames':
+        case 'baby-names':
           widget.onOpenSection(action);
           break;
         default:
