@@ -23,6 +23,9 @@ import 'screens/community/community_screen.dart';
 import 'screens/pregnancy/pregnancy_weeks_screen.dart';
 import 'screens/shop/shop_page.dart';
 import 'widgets/news_section.dart';
+import 'widgets/nabda_ui.dart';
+import 'widgets/nabda_animated_logo.dart';
+import 'utils/article_images.dart';
 import 'screens/fertility/fertility_screen.dart';
 import 'services/country_currency_service.dart';
 import 'services/notification_service.dart';
@@ -2548,6 +2551,49 @@ class _MainNavState extends State<MainNav> {
                 AppLocalizations.t('baby'),
                 AppLocalizations.t('shop'),
               ];
+              // أيقونات 3D — «الرئيسية» تستخدم شعار القلبين النابض الحي
+              const navAssets = [
+                null,
+                'assets/icons_3d/icon_cycle.png',
+                'assets/icons_3d/icon_pregnancy.png',
+                'assets/icons_3d/icon_nav_baby.png',
+                'assets/icons_3d/icon_shop.png',
+              ];
+              Widget navIcon() {
+                if (navAssets[i] == null) {
+                  return SizedBox(
+                    width: 34,
+                    height: 34,
+                    child: OverflowBox(
+                      maxWidth: 46,
+                      maxHeight: 46,
+                      child: const NabdaBeatingHearts(size: 46),
+                    ),
+                  );
+                }
+                // الأيقونة تطفو أكبر من الشريط لوضوح تام
+                return SizedBox(
+                  width: 34,
+                  height: 34,
+                  child: OverflowBox(
+                    maxWidth: 52,
+                    maxHeight: 52,
+                    child: Image.asset(
+                      navAssets[i]!,
+                      width: 52,
+                      height: 52,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Icon(
+                        isActive ? activeIcons[i] : icons[i],
+                        color: isActive
+                            ? Colors.white
+                            : const Color(0xFF8E8295),
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                );
+              }
               return GestureDetector(
                 onTap: () => setState(() => _index = i),
                 behavior: HitTestBehavior.opaque,
@@ -2566,15 +2612,15 @@ class _MainNavState extends State<MainNav> {
                             end: Alignment.bottomRight,
                             colors: [
                               Color(0xFFFF6BA3),
-                              Color(0xFFFF4F93),
-                              Color(0xFFE53B7E),
+                              kNabdaPink,
+                              kNabdaPinkDeep,
                             ],
                           )
                         : null,
                     boxShadow: isActive
                         ? [
                             BoxShadow(
-                              color: const Color(0xFFFF4F93).withOpacity(0.40),
+                              color: kNabdaPinkDeep.withOpacity(0.40),
                               blurRadius: 18,
                               offset: const Offset(0, 8),
                             ),
@@ -2584,11 +2630,9 @@ class _MainNavState extends State<MainNav> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        isActive ? activeIcons[i] : icons[i],
-                        color: isActive ? Colors.white : const Color(0xFF8E8295),
-                        size: 22,
-                      ),
+                      isActive
+                          ? NabdaPulse(child: navIcon())
+                          : Opacity(opacity: 0.82, child: navIcon()),
                       if (isActive) ...[
                         const SizedBox(width: 6),
                         Text(
@@ -2768,7 +2812,7 @@ class _SidebarLogo extends StatelessWidget {
     return Container(
       width: 36, height: 36,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFFF5252)]),
+        gradient: LinearGradient(colors: [kNabdaPink, kNabdaPinkDeep]),
         shape: BoxShape.circle,
       ),
       child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 20),
@@ -3067,8 +3111,9 @@ const SizedBox(height: 30),
 
   // ─────────── Top bar icon button ───────────
   Widget _topBarIconBtn({required IconData icon, required Color color, bool showDot = false, VoidCallback? onTap}) {
-    return GestureDetector(
+    return NabdaPressable(
       onTap: onTap,
+      pressedScale: 0.90,
       child: Stack(
         children: [
           Container(
@@ -3326,7 +3371,7 @@ const SizedBox(height: 30),
             padding: const EdgeInsets.all(1),
             child: Row(
               children: [
-                _metricCell(fetusSize, 'حجم الجنين', true, false),
+                _metricCell(fetusSize, 'حجم الجنين', true, false, animateEmoji: true),
                 _metricCell('${(week * 1.3).toStringAsFixed(0)} سم', 'الطول', false, false),
                 _metricCell('${(week * 28).toStringAsFixed(0)} غ', 'الوزن', false, true),
               ],
@@ -3362,7 +3407,45 @@ const SizedBox(height: 30),
     );
   }
 
-  Widget _metricCell(String value, String label, bool isFirst, bool isLast) {
+  Widget _metricCell(String value, String label, bool isFirst, bool isLast,
+      {bool animateEmoji = false}) {
+    // فصل الإيموجي عن النص لتحريكه في مكانه (الصيغة: "إيموجي اسم")
+    Widget valueWidget;
+    final parts = value.trim().split(' ');
+    if (animateEmoji && parts.length >= 2) {
+      final emoji = parts.first;
+      final name = parts.sublist(1).join(' ');
+      valueWidget = Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // الفاكهة كبيرة وتطفو وتقفز عند اللمس — في مكانها
+          NabdaBouncyIcon(
+            child: SizedBox(
+              width: 26,
+              height: 26,
+              child: OverflowBox(
+                maxWidth: 44,
+                maxHeight: 44,
+                child: Text(emoji, style: const TextStyle(fontSize: 30)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(name,
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w800, color: _ink),
+                overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      );
+    } else {
+      valueWidget = Text(value,
+          style: const TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w800, color: _ink),
+          textAlign: TextAlign.center);
+    }
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
@@ -3375,7 +3458,7 @@ const SizedBox(height: 30),
         ),
         child: Column(
           children: [
-            Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _ink), textAlign: TextAlign.center),
+            valueWidget,
             const SizedBox(height: 2),
             Text(label, style: const TextStyle(fontSize: 10.5, color: _ink3, fontWeight: FontWeight.w600)),
           ],
@@ -3449,7 +3532,8 @@ const SizedBox(height: 30),
     }
 
     final weightCard = _QAData(Icons.monitor_weight, 'تتبّع الوزن', weightVal, weightMeta,
-        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackerScreen())));
+        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackerScreen())),
+        asset: 'assets/icons_3d/icon_weight.png');
 
     // ── منطق التنسيق: الحمل والدورة لا يظهران معاً ──
     final bool isPregnant = _pregnancyWeek > 0;
@@ -3458,24 +3542,29 @@ const SizedBox(height: 30),
       final int daysLeft = ((40 - _pregnancyWeek) * 7).clamp(0, 280);
       cards = [
         _QAData(Icons.pregnant_woman, 'متابعة الحمل', 'الأسبوع $_pregnancyWeek', 'من 40 أسبوعاً',
-          [const Color(0xFFFF6BA3), _pink], () => widget.onCardTap?.call(2)),
+          [const Color(0xFFFF6BA3), _pink], () => widget.onCardTap?.call(2),
+          asset: 'assets/icons_3d/icon_pregnancy.png'),
         _QAData(Icons.timer, 'العدّ التنازلي', '$daysLeft يوم', 'حتى الولادة',
-          [_peach, const Color(0xFFFF8852)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => DueDateCountdownScreen()))),
+          [_peach, const Color(0xFFFF8852)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => DueDateCountdownScreen())),
+          asset: 'assets/icons_3d/icon_countdown.png'),
         weightCard,
         // الدورة متوقفة طبيعياً أثناء الحمل
         _QAData(Icons.water_drop, 'متابعة الدورة', 'متوقفة', 'أثناء الحمل',
-          [_lavender2, const Color(0xFF9B6FE1)], () => widget.onCardTap?.call(1)),
+          [_lavender2, const Color(0xFF9B6FE1)], () => widget.onCardTap?.call(1),
+          asset: 'assets/icons_3d/icon_cycle.png'),
       ];
     } else {
       cards = [
         _QAData(Icons.water_drop, 'متابعة الدورة',
           hasCycle ? 'اليوم $cycleDay' : 'إعدادي ملفّكِ',
           hasCycle ? 'باقٍ $nextPeriod يوم' : '',
-          [_lavender2, const Color(0xFF9B6FE1)], () => widget.onCardTap?.call(1)),
+          [_lavender2, const Color(0xFF9B6FE1)], () => widget.onCardTap?.call(1),
+          asset: 'assets/icons_3d/icon_cycle.png'),
         weightCard,
         // دعوة لتفعيل متابعة الحمل عند الحاجة
         _QAData(Icons.pregnant_woman, 'متابعة الحمل', 'غير مفعّلة', 'فعّليها هنا',
-          [const Color(0xFFFF6BA3), _pink], () => widget.onCardTap?.call(2)),
+          [const Color(0xFFFF6BA3), _pink], () => widget.onCardTap?.call(2),
+          asset: 'assets/icons_3d/icon_pregnancy.png'),
       ];
     }
 
@@ -3497,7 +3586,7 @@ const SizedBox(height: 30),
 
   // بطاقة مدمجة أفقية (أصغر مساحة) مع قيمة حقيقية
   Widget _buildQACard(_QAData d) {
-    return GestureDetector(
+    return NabdaPressable(
       onTap: d.onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -3513,14 +3602,38 @@ const SizedBox(height: 30),
         ),
         child: Row(
           children: [
-            Container(
-              width: 38, height: 38,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: LinearGradient(colors: d.gradColors),
-              ),
-              child: Icon(d.icon, color: Colors.white, size: 19),
-            ),
+            d.asset != null
+                ? NabdaBouncyIcon(
+                    onTap: d.onTap,
+                    // الأيقونة أكبر من مساحتها فتطفو خارج إطار البطاقة
+                    child: SizedBox(
+                      width: 54,
+                      height: 54,
+                      child: OverflowBox(
+                        maxWidth: 84,
+                        maxHeight: 84,
+                        child: Image.asset(
+                          d.asset!,
+                          width: 84,
+                          height: 84,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => GlossyIconBubble(
+                            size: 44,
+                            radius: 12,
+                            colors: d.gradColors,
+                            child:
+                                Icon(d.icon, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : GlossyIconBubble(
+                    size: 38,
+                    radius: 12,
+                    colors: d.gradColors,
+                    child: Icon(d.icon, color: Colors.white, size: 19),
+                  ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -3711,17 +3824,23 @@ const SizedBox(height: 30),
   Widget _buildExploreGrid() {
     final items = [
       _QAData(Icons.restaurant_menu, 'التغذية', 'وصفات للثلث الثاني', '',
-        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => NutritionScreen()))),
+        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => NutritionScreen())),
+        asset: 'assets/icons_3d/icon_nutrition.png'),
       _QAData(Icons.favorite, 'التمارين', 'يوغا • مشي • كيغل', '',
-        [const Color(0xFFFF6BA3), const Color(0xFFE53B7E)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => ExercisesScreen()))),
+        [const Color(0xFFFF6BA3), const Color(0xFFE53B7E)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => ExercisesScreen())),
+        asset: 'assets/icons_3d/icon_exercise.png'),
       _QAData(Icons.calendar_month, 'تقويم الحمل', '40 أسبوع كاملاً', '',
-        [_lavender2, const Color(0xFF9B6FE1)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyCalendarScreen()))),
+        [_lavender2, const Color(0xFF9B6FE1)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyCalendarScreen())),
+        asset: 'assets/icons_3d/icon_calendar.png'),
       _QAData(Icons.card_travel, 'حقيبة الولادة', '12 من 24 مكتمل', '',
-        [_peach, const Color(0xFFFF8852)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => HospitalBagScreen()))),
+        [_peach, const Color(0xFFFF8852)], () => Navigator.push(context, MaterialPageRoute(builder: (_) => HospitalBagScreen())),
+        asset: 'assets/icons_3d/icon_hospital_bag.png'),
       _QAData(Icons.auto_stories, 'يوميات الحمل', 'آخر مذكّرة قبل يومين', '',
-        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyJournalScreen()))),
+        [_teal, _tealDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyJournalScreen())),
+        asset: 'assets/icons_3d/icon_journal.png'),
       _QAData(Icons.emoji_events, 'الإنجازات', '7 شارات', '',
-        [_gold, _goldDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsScreen()))),
+        [_gold, _goldDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsScreen())),
+        asset: 'assets/icons_3d/icon_achievements.png'),
     ];
 
     return Column(
@@ -3742,25 +3861,33 @@ const SizedBox(height: 30),
   Widget _buildChipRow() {
     final chips = [
       // ملاحظة: "المساعد الذكي" مُتاح من البطاقة الكبيرة أعلاه، فأُزيل من هنا لتجنّب التكرار
-      _ChipData('👶', 'رعاية الطفل', const Color(0xFFFFD9E5), () => widget.onCardTap?.call(3)),
-      _ChipData('👥', 'مجتمع الأمهات', _sky, () => Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityScreen()))),
-      _ChipData('💚', 'العادات الصحية', _teal50, () => Navigator.push(context, MaterialPageRoute(builder: (_) => HealthTrackersScreen()))),
-      _ChipData('📖', 'مراحل الحمل', _peach50, () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyWeeksScreen()))),
-      _ChipData('🍼', 'أسماء المواليد', const Color(0xFFFFF8E0), () => Navigator.push(context, MaterialPageRoute(builder: (_) => BabyNamesScreen()))),
-      _ChipData('↗️', 'شاركي تقدّمكِ', const Color(0xFFFFD9E5), () => Navigator.push(context, MaterialPageRoute(builder: (_) => ShareProgressScreen()))),
-      _ChipData('📏', 'حجم الجنين', _lavender, () => Navigator.push(context, MaterialPageRoute(builder: (_) => FetusSizeScreen()))),
+      _ChipData('👶', 'رعاية الطفل', const Color(0xFFFFD9E5), () => widget.onCardTap?.call(3),
+          asset: 'assets/icons_3d/icon_baby_care.png'),
+      _ChipData('👥', 'مجتمع الأمهات', _sky, () => Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityScreen())),
+          asset: 'assets/icons_3d/icon_community.png'),
+      _ChipData('💚', 'العادات الصحية', _teal50, () => Navigator.push(context, MaterialPageRoute(builder: (_) => HealthTrackersScreen())),
+          asset: 'assets/icons_3d/icon_habits.png'),
+      _ChipData('📖', 'مراحل الحمل', _peach50, () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyWeeksScreen())),
+          asset: 'assets/icons_3d/icon_stages.png'),
+      _ChipData('🍼', 'أسماء المواليد', const Color(0xFFFFF8E0), () => Navigator.push(context, MaterialPageRoute(builder: (_) => BabyNamesScreen())),
+          asset: 'assets/icons_3d/icon_baby_names.png'),
+      _ChipData('↗️', 'شاركي تقدّمكِ', const Color(0xFFFFD9E5), () => Navigator.push(context, MaterialPageRoute(builder: (_) => ShareProgressScreen())),
+          asset: 'assets/icons_3d/icon_share.png'),
+      _ChipData('📏', 'حجم الجنين', _lavender, () => Navigator.push(context, MaterialPageRoute(builder: (_) => FetusSizeScreen())),
+          asset: 'assets/icons_3d/icon_pregnancy.png'),
     ];
 
     return SizedBox(
-      height: 48,
+      height: 64,
       child: ListView.separated(
+        clipBehavior: Clip.none,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: chips.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final c = chips[i];
-          return GestureDetector(
+          return NabdaPressable(
             onTap: c.onTap,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -3776,11 +3903,35 @@ const SizedBox(height: 30),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 26, height: 26,
-                    decoration: BoxDecoration(color: c.bgColor, borderRadius: BorderRadius.circular(9)),
-                    child: Center(child: Text(c.emoji, style: const TextStyle(fontSize: 14))),
-                  ),
+                  c.asset != null
+                      ? SizedBox(
+                          width: 36,
+                          height: 36,
+                          child: OverflowBox(
+                            maxWidth: 56,
+                            maxHeight: 56,
+                            child: Image.asset(
+                              c.asset!,
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) =>
+                                  GlossyIconBubble.tinted(
+                                base: c.bgColor,
+                                size: 26,
+                                radius: 9,
+                                child: Text(c.emoji,
+                                    style: const TextStyle(fontSize: 14)),
+                              ),
+                            ),
+                          ),
+                        )
+                      : GlossyIconBubble.tinted(
+                          base: c.bgColor,
+                          size: 26,
+                          radius: 9,
+                          child: Text(c.emoji, style: const TextStyle(fontSize: 14)),
+                        ),
                   const SizedBox(width: 8),
                   Text(c.label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
                 ],
@@ -3895,7 +4046,8 @@ class _QAData {
   final String title, subtitle, meta;
   final List<Color> gradColors;
   final VoidCallback? onTap;
-  _QAData(this.icon, this.title, this.subtitle, this.meta, this.gradColors, this.onTap);
+  final String? asset; // أيقونة 3D اختيارية (تحل محل IconData عند توفرها)
+  _QAData(this.icon, this.title, this.subtitle, this.meta, this.gradColors, this.onTap, {this.asset});
 }
 
 class _TipData {
@@ -3909,7 +4061,8 @@ class _ChipData {
   final String emoji, label;
   final Color bgColor;
   final VoidCallback? onTap;
-  _ChipData(this.emoji, this.label, this.bgColor, this.onTap);
+  final String? asset; // أيقونة 3D اختيارية
+  _ChipData(this.emoji, this.label, this.bgColor, this.onTap, {this.asset});
 }
 
 // ── Tracker Ring Painter ──
@@ -6054,9 +6207,7 @@ class _FirestoreArticlesSection extends StatelessWidget {
           if (hasImage)
             ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              child: Image.network(resolvedImage, height: 100, width: 260, fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(height: 100, color: cardColor.withOpacity(0.08),
-                  child: Center(child: Icon(Icons.image, color: cardColor.withOpacity(0.3), size: 36)))),
+              child: ArticleImage(title: title, section: type, networkUrl: resolvedImage, height: 100, width: 260),
             )
           else
             Container(
@@ -6175,7 +6326,7 @@ class _CycleArticlesSection extends StatelessWidget {
                         width: 200, margin: EdgeInsets.only(left: 12),
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white, boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))]),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          ClipRRect(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(d['image']!, height: 110, width: 200, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(height: 110, color: color.withOpacity(0.1), child: Icon(Icons.article, color: color, size: 40)))),
+                          ClipRRect(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), child: ArticleImage(title: d['title']!, section: 'cycle', networkUrl: d['image'], height: 110, width: 200)),
                           Padding(padding: EdgeInsets.all(10), child: Text(d['title']!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis, textDirection: TextDirection.rtl)),
                         ]),
                       ),
@@ -6237,10 +6388,16 @@ class _BabyArticlesSection extends StatelessWidget {
         'content': 'المغص من أكثر المشكلات شيوعاً عند الرضع في الأشهر الثلاثة الأولى ويصيب ما يقارب عشرين إلى خمسة وعشرين بالمئة من المواليد. يتميز بنوبات بكاء شديد ومستمر لأكثر من ثلاث ساعات يومياً لأكثر من ثلاثة أيام في الأسبوع ولمدة تزيد عن ثلاثة أسابيع عند رضيع سليم ويتغذى جيداً. يبدأ المغص عادة في الأسبوع الثاني أو الثالث ويبلغ ذروته في الأسبوع السادس ثم يتحسن تدريجياً ويختفي غالباً بحلول الشهر الثالث أو الرابع.\n\nالسبب الدقيق للمغص غير معروف تماماً لكن النظريات تشمل عدم نضج الجهاز الهضمي وابتلاع الهواء أثناء الرضاعة وحساسية بعض الأطعمة في حليب الأم والتحفيز الزائد للجهاز العصبي. نوبات المغص تحدث غالباً في المساء وتبدأ فجأة حيث يشد الرضيع ساقيه نحو بطنه ويقبض يديه ويحمر وجهه من شدة البكاء.\n\nلتهدئة الرضيع المصاب بالمغص جربي عدة تقنيات منها حمل الطفل على بطنه على ساعدك أو على ركبتيك مع تدليك ظهره بلطف. الحركة الإيقاعية مثل الهز اللطيف أو المشي به أو وضعه في كرسي هزاز تساعد كثيراً. الأصوات الرتيبة مثل صوت المكنسة أو المجفف أو تطبيقات الضوضاء البيضاء تهدئ الجهاز العصبي. تدليك بطن الرضيع بحركات دائرية لطيفة في اتجاه عقارب الساعة يساعد على تخفيف الغازات.\n\nإذا كنتِ ترضعين طبيعياً جربي تقليل منتجات الألبان والكافيين والبصل والبروكلي من غذائك لأسبوعين لمراقبة التحسن. تأكدي من تجشؤ الطفل بعد كل رضعة لإخراج الهواء المبتلع. استشيري الطبيب إذا رافق البكاء قيء شديد أو إسهال مدمم أو حمى أو رفض تام للرضاعة لاستبعاد أسباب أخرى. تذكري أن المغص مرحلة مؤقتة وستمر وأن طفلك سليم ولا يعاني من ألم دائم.',
       },
       {
-        'title': 'الحمام الأول والعناية اليومية بالمولود',
+        'title': 'التسمية في اليوم السابع وسنن الولادة المباركة',
+        'image': 'https://images.unsplash.com/photo-1519689373023-dd07c7988603?w=600&q=80',
+        'ageMin': '0', 'ageMax': '90',
+        'content': 'من السنن المؤكدة في الإسلام إظهار الفرح بمقدم المولود الجديد عبر خطوات مباركة في اليوم السابع من ولادته. تشمل هذه السنن تسمية المولود باختيار اسم حسن، وحلق شعره للذكر والتصدق بوزنه فضة. كذلك ذبح العقيقة، وهي شاتان عن الغلام وشاة واحدة عن البنت، ويؤكل منها ويُهدى ويتصدق. العقيقة هي فداء للمولود وشكر لله على نعمة الذرية. من المستحب أيضاً تحنيك المولود بالتمر عند ولادته، والدعاء له بالبركة والتقوى. إن البدء بهذه السنن النبوية يضع الطفل في بيئة إيمانية تحفظه وتبارك في نموه الجسدي والروحي.',
+      },
+      {
+        'title': 'أحب الأسماء إلى الله تعالى وسنن الأنبياء',
         'image': 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=600&q=80',
         'ageMin': '0', 'ageMax': '90',
-        'content': 'الحمام الأول للمولود تجربة مميزة تتطلب تحضيراً جيداً ومعرفة بالخطوات الصحيحة لضمان سلامة الطفل وراحته. يُنصح بتأخير الحمام الأول الكامل حتى سقوط جذع الحبل السري والاكتفاء قبل ذلك بالتنظيف بالإسفنجة. جهزي كل ما تحتاجينه قبل البدء وتشمل القائمة حوض استحمام صغير وماء فاتر بدرجة حرارة سبعة وثلاثين درجة ومنشفة ناعمة وغسول لطيف خالٍ من العطور وحفاض نظيف وملابس.\n\nاختبري حرارة الماء بمرفقك أو بميزان حرارة مخصص قبل وضع الطفل فيه. لا تضعي أكثر من خمسة إلى ثمانية سنتيمترات من الماء في الحوض. أمسكي المولود بيد واحدة تدعم رأسه ورقبته وباليد الأخرى نظفي جسمه بلطف. ابدئي بالوجه بقطعة قماش مبللة بالماء فقط ثم الرأس ثم الجسم من الأعلى للأسفل واتركي منطقة الحفاض للآخر.\n\nلا تحتاجين لاستحمام المولود يومياً فمرتين إلى ثلاث مرات أسبوعياً كافية تماماً. الاستحمام المفرط يزيل الزيوت الطبيعية التي تحمي بشرته الرقيقة ويسبب الجفاف والتهيج. في الأيام التي لا يستحم فيها نظفي وجهه ويديه ومنطقة الحفاض بقطعة قماش مبللة فقط.\n\nالعناية اليومية تشمل أيضاً تنظيف ثنيات الرقبة وخلف الأذنين حيث يتجمع الحليب والعرق وتقليم الأظافر عندما تطول باستخدام مقص أظافر مخصص للأطفال ويفضل ذلك أثناء نوم الطفل. نظفي أنف المولود بقطرات ملحية عند الاحتقان ونظفي عينيه بقطن مبلل بالماء المعقم من الداخل للخارج. رطبي بشرته بكريم لطيف خاصة في الطقس الجاف واختاري ملابس قطنية ناعمة تناسب حرارة الجو.',
+        'content': 'ثبت عن النبي ﷺ في الحديث الصحيح أنه قال: «إن أحب أسمائكم إلى الله عبد الله وعبد الرحمن». هذه الأسماء تمثل قمة العبودية والاعتراف برحمة الله وألوهيته. تليها في الفضل الأسماء المعبدة لأي اسم من أسماء الله الحسنى مثل (عبد الخالق، عبد العزيز، عبد اللطيف). ثم تأتي أسماء الأنبياء والمرسلين عليهم الصلاة والسلام، وعلى رأسها اسم نبينا (محمد) و(أحمد)، ثم (إبراهيم، يوسف، موسى، عيسى). التسمية بأسماء الأنبياء هي إحياء لذكراهم واقتداء بسيرتهم العطرة، وتعبير عن الانتماء للأمة الإسلامية وتاريخها المشرق. اختيار هذه الأسماء يمنح الطفل قدوة صالحة منذ نعومة أظفاره ليقتفي أثر الصالحين.',
       },
     ],
     'الرضيع (3-6 أشهر)': [
@@ -6498,7 +6655,7 @@ class _BabyArticlesSection extends StatelessWidget {
                         width: 200, margin: EdgeInsets.only(left: 12),
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white, boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 3))]),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          ClipRRect(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(d['image']!, height: 110, width: 200, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(height: 110, color: color.withOpacity(0.1), child: Icon(Icons.article, color: color, size: 40)))),
+                          ClipRRect(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), child: ArticleImage(title: d['title']!, section: 'baby', networkUrl: d['image'], height: 110, width: 200)),
                           Padding(padding: EdgeInsets.all(10), child: Text(d['title']!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis, textDirection: TextDirection.rtl)),
                         ]),
                       ),
@@ -6558,6 +6715,14 @@ class _HomeArticlesSection extends StatelessWidget {
      'content': 'جسمك يتغير بشكل مذهل خلال الحمل ومعرفة هذه التغيرات يساعدك على التعامل معها بثقة. في الثلث الأول تشعرين بالغثيان والإرهاق وتورم الثديين بسبب ارتفاع الهرمونات. البطن لا يظهر بعد لكن الرحم يبدأ بالنمو.\n\nفي الثلث الثاني تتحسن الطاقة ويبدأ البطن بالبروز وتشعرين بحركة الجنين. قد تظهر خطوط التمدد والكلف وآلام الظهر. في الثلث الأخير يكبر البطن بشكل ملحوظ وتزداد الحاجة للتبول والحموضة وصعوبة النوم. انقباضات براكستون هيكس التدريبية طبيعية. استمتعي بكل مرحلة فكل تغيير يقربك من لقاء طفلك.'},
     {'title': 'متى تتصلين بالطبيبة فوراً', 'category': 'نصائح طبية', 'image': 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&q=80',
      'content': 'رغم أن معظم الحمل يمر بسلام هناك علامات تحذيرية تستدعي الاتصال بطبيبتك أو التوجه للطوارئ فوراً. نزيف مهبلي بأي كمية خاصة في الثلث الأول والأخير وتسرب سائل مائي من المهبل وانخفاض ملحوظ في حركة الجنين.\n\nعلامات أخرى تشمل صداع شديد مع تغيرات في الرؤية وتورم مفاجئ في الوجه واليدين وألم شديد في البطن لا يزول وحمى أعلى من ثمان وثلاثين درجة وحرقة أو ألم عند التبول. ثقي بغريزتك وإذا شعرت بأن شيئاً غير طبيعي لا تترددي في الاتصال حتى لو كان الوقت متأخراً.'},
+    {'title': 'القواعد الشرعية في تسمية المولود الجديد', 'category': 'أسماء المواليد', 'image': 'https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=400&q=80',
+     'content': 'إن تسمية المولود في الإسلام ليست مجرد مسألة اختيار لفظي، بل هي مسؤولية دينية وأخلاقية تقع على عاتق الوالدين. الاسم هو رفيق الإنسان في الدنيا والآخرة، حيث ينادى به يوم القيامة كما ورد في الحديث الشريف. تتلخص القواعد الشرعية في وجوب اختيار اسم يحمل معنى حسناً ومحموداً، وتجنب التسمية بأسماء تعبد لغير الله كـ (عبد الكعبة) أو (عبد النبي)، أو الأسماء الخاصة بذات الله سبحانه وتعالى مثل (الرحمن) أو (القدوس) بدون تعبيد. كما يُسنّ تسمية المولود في اليوم السابع من ولادته، وهو الوقت المفضل لذبح العقيقة وحلق رأس المولود والتصدق بوزنه فضة. إن الحرص على اتباع الهدي النبوي في التسمية يورث البركة والصلاح للطفل في حياته ومستقبله.'},
+    {'title': 'الدليل النفسي لاختيار اسم الطفل وأثره على شخصيته', 'category': 'أسماء المواليد', 'image': 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=400&q=80',
+     'content': 'يؤكد علماء النفس أن الاسم ليس مجرد بطاقة هوية، بل هو عامل أساسي في تشكيل الصورة الذاتية للطفل وثقته بنفسه. الطفل يستمع لاسمه آلاف المرات في طفولته، وينعكس معنى الاسم إيجاباً أو سلباً على سلوكه. الأسماء ذات المعاني القوية والمبهجة مثل (سعيد، أمين, جميل، فرح) تبعث في النفس طاقة إيجابية وتشجع الطفل على التحلي بهذه الصفات. بينما الأسماء الغريبة أو الصعبة قد تعرض الطفل لمواقف محرجة أو تساؤلات مستمرة تضعف من ثقته بنفسه وتجعله يميل للانطواء. اختيار الاسم هو الخطوة الأولى في بناء الصحة النفسية لطفلك، فاجعلها خطوة مدروسة ومليئة بالحب.'},
+    {'title': 'أفكار لاختيار أسماء توائم متناسقة وعصرية', 'category': 'أسماء المواليد', 'image': 'https://images.unsplash.com/photo-1519689373023-dd07c7988603?w=600&q=80',
+     'content': 'تعد ولادة التوائم حدثاً استثنائياً مفرحاً، وتسميتهم تمثل تحدياً جميلاً للوالدين للحصول على أسماء متناغمة لفظياً أو معنوياً. هناك عدة طرق لتنسيق أسماء التوائم: أولاً، التنسيق الصوتي والموسيقي من خلال اختيار أسماء تبدأ بنفس الحرف ولها نفس الوزن والقافية مثل (يوسف وياسين) أو (لين وليان). ثانياً، التنسيق المعنوي من خلال اختيار أسماء تكمل بعضها في المعنى مثل (بشرى وسارة) أو (شمس وقمر). ثالثاً، التنسيق التاريخي الإسلامي مثل تسمية (حسن وحسين) أو (عمر وعلي). احرص على أن يكون لكل اسم معناه الخاص والمستقل لكي يشعر كل طفل بهويته الخاصة عند الكبر.'},
+    {'title': 'كيف تتجنب تنمر الأقران بسبب اسم طفلك؟', 'category': 'أسماء المواليد', 'image': 'https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=400&q=80',
+     'content': 'التنمر في المدارس من المشكلات الشائعة التي تؤرق الوالدين، وللأسف يكون الاسم أحياناً مادة خصبة للسخرية بين الأطفال إذا كان غريباً أو يحمل جناساً لفظياً مع كلمات مضحكة. لتفادي ذلك، احرص على اختيار اسم سهل النطق والكتابة، وخالٍ من الغرابة الزائدة. تجنب الأسماء التي يسهل تحريفها إلى ألقاب ساخرة، واختبر وقع الاسم على السمع وتكراره بين أصدقائك قبل الاستقرار عليه. الاسم المتوازن الذي يجمع بين الأصالة والعصرية يحمي طفلك من الحرج الاجتماعي ويمنحه حضوراً واثقاً ومحترماً بين زملائه وأقرانه في المدرسة والنادي.'},
   ];
 
   static const _categories = <Map<String, dynamic>>[
@@ -6567,6 +6732,7 @@ class _HomeArticlesSection extends StatelessWidget {
     {'name': 'أمومة وطفولة', 'icon': IconData(57534, fontFamily: 'MaterialIcons'), 'color': 0xFF2196F3},
     {'name': 'علاقات أسرية', 'icon': IconData(59020, fontFamily: 'MaterialIcons'), 'color': 0xFF3F51B5},
     {'name': 'نصائح طبية', 'icon': IconData(58674, fontFamily: 'MaterialIcons'), 'color': 0xFFF44336},
+    {'name': 'أسماء المواليد', 'icon': IconData(58329, fontFamily: 'MaterialIcons'), 'color': 0xFF7C4DFF},
   ];
 
   @override
@@ -6652,17 +6818,7 @@ class _HomeArticlesSection extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     ClipRRect(
                       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                      child: Image.network(imgUrl, height: 120, width: 200, fit: BoxFit.cover,
-                        loadingBuilder: (c, child, progress) => progress == null ? child
-                          : Container(height: 120, width: 200, color: color.withOpacity(0.05),
-                              child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: color))),
-                        errorBuilder: (c, e, s) => Container(height: 120, width: 200,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]),
-                          ),
-                          child: Icon(icon, size: 40, color: color.withOpacity(0.4)),
-                        ),
-                      ),
+                      child: ArticleImage(title: articleTitle, section: 'home', networkUrl: imgUrl, height: 120, width: 200),
                     ),
                     Expanded(
                       child: Padding(
@@ -7150,10 +7306,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
               ),
               // Header image
               if (hasHeaderImage)
-                Image.network(_imageUrl, height: 220, width: double.infinity, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(height: 220,
-                    decoration: BoxDecoration(gradient: LinearGradient(colors: [widget.color.withOpacity(0.2), widget.color.withOpacity(0.05)])),
-                    child: Center(child: Icon(Icons.image, color: widget.color.withOpacity(0.3), size: 60)))),
+                ArticleImage(title: widget.title, section: widget.section, networkUrl: _imageUrl, height: 220, width: double.infinity),
               Padding(
                 padding: EdgeInsets.all(20),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

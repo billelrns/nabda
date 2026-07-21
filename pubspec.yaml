@@ -47,6 +47,11 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/intro/
+    - assets/icons_3d/
     - assets/images/fetus/
+    - assets/images/fetus_hd/
+    - assets/images/articles/
+    - assets/images/article_pics/
     - assets/images/pregnancy_news/
     - assets/data/algeria_cities.json

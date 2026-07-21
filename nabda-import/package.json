@@ -1,0 +1,15 @@
+{
+  "name": "nabda-import",
+  "version": "1.0.0",
+  "description": "استيراد منتجات المتاجر ورفعها إلى Firestore لتطبيق نبضة",
+  "main": "import.js",
+  "type": "commonjs",
+  "scripts": {
+    "import": "node import.js",
+    "preview": "node import.js --dry"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  },
+  "engines": { "node": ">=18" }
+}
