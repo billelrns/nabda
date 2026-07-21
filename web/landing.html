@@ -16,49 +16,74 @@
   @keyframes nb-beat{0%,100%{transform:scale(1)}14%{transform:scale(1.18)}28%{transform:scale(1)}42%{transform:scale(1.12)}70%{transform:scale(1)}}
   @keyframes nb-up{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
   .nb-up{animation:nb-up .5s ease both}
-  .nb-feat4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  button{font-family:inherit}
+
   .nb-strip{display:grid;grid-template-columns:auto repeat(4,1fr);gap:8px;align-items:center}
-  .nb-hero{display:grid;grid-template-columns:1.05fr 1fr;gap:36px;align-items:center}
   .nb-j4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
   .nb-prod{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-  .nb-tools{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
-  .nb-names{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  .nb-months{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+  .nb-tools{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+  .nb-names{display:grid;grid-template-columns:1fr 1fr;gap:22px}
   .nb-foot{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:24px}
   .nb-art4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-  button{font-family:inherit}
+
+  /* Tool cards — مطابقة للتصميم الأصلي */
+  .nb-tool{background:linear-gradient(180deg,#ffffff,#FFF9FC);border:1px solid #F4E3EB;border-radius:26px;padding:26px 18px 22px;text-align:center;box-shadow:0 12px 30px rgba(244,63,126,.07);cursor:pointer;display:flex;flex-direction:column;align-items:center;transition:transform .2s, box-shadow .2s}
+  .nb-tool:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(244,63,126,.14)}
+  .nb-tool-icon{width:112px;height:112px;border-radius:28px;background-size:cover;background-position:center;background-repeat:no-repeat;margin:0 auto 16px;box-shadow:0 8px 20px rgba(244,63,126,.1)}
+  .nb-tool-title{font-size:16px;font-weight:800;margin-bottom:8px;color:#1F1A20;line-height:1.35}
+  .nb-tool-desc{font-size:12.5px;color:#8F8795;line-height:1.75;margin-bottom:18px}
+  .nb-tool-btn{margin-top:auto;width:42px;height:42px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;box-shadow:0 8px 16px rgba(0,0,0,.14);padding-bottom:2px;transition:.2s}
+  .nb-tool:hover .nb-tool-btn{transform:scale(1.08)}
+
+  /* Hero carousel */
+  .nb-slider{position:relative;height:520px}
+  .nb-slide{position:absolute;inset:0;transition:opacity .8s ease;opacity:0;pointer-events:none;z-index:1}
+  .nb-slide.on{opacity:1;pointer-events:auto;z-index:2}
+  .nb-slide-img{position:absolute;inset:0;background-size:cover;background-position:center}
+  /* التدرّج: منطقة معتمة على اليسار (خلف النصّ) وشفافة تمامًا على اليمين (الصورة واضحة) */
+  .nb-slide-grad{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.96) 0%,rgba(255,255,255,.85) 35%,rgba(255,255,255,.35) 65%,rgba(255,255,255,0) 100%)}
+  /* تثبيت لوحة النصّ على اليسار */
+  .nb-slide-panel{position:absolute;top:0;bottom:0;left:0;z-index:3;max-width:560px;padding:70px 60px 90px;display:flex;flex-direction:column;justify-content:center}
+  .nb-slide-badge{display:inline-flex}
+  .nb-slide-title{font-size:44px}
+  .nb-slide-btns{display:flex;gap:12px;flex-wrap:wrap}
+  .nb-dot{height:9px;border-radius:999px;cursor:pointer;transition:.3s;width:9px;background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.06)}
+  .nb-dot.on{width:30px;background:#F43F7E}
+  .nb-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:6;width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.9);color:#F43F7E;font-size:24px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(244,63,126,.2)}
+
   @media(max-width:900px){
-    .nb-feat4{grid-template-columns:repeat(2,1fr)}
     .nb-strip{grid-template-columns:1fr 1fr}
-    .nb-hero{grid-template-columns:1fr}
     .nb-j4{grid-template-columns:1fr 1fr}
     .nb-prod{grid-template-columns:1fr 1fr}
     .nb-tools{grid-template-columns:repeat(2,1fr)}
     .nb-names{grid-template-columns:1fr}
-    .nb-months{grid-template-columns:repeat(3,1fr)}
     .nb-foot{grid-template-columns:1fr 1fr}
     .nb-art4{grid-template-columns:1fr 1fr}
+    .nb-tool-icon{width:80px;height:80px}
     .nb-hide-m{display:none!important}
+    .nb-slider{height:auto;min-height:520px}
+    .nb-slide-panel{padding:36px 24px 90px;max-width:100%}
+    .nb-slide-grad{background:linear-gradient(180deg,rgba(255,255,255,.96) 0%,rgba(255,255,255,.85) 40%,rgba(255,255,255,.55) 85%,rgba(255,255,255,.35) 100%)}
+    .nb-slide-title{font-size:30px}
   }
 </style>
 <script>
-  // قنوات الاتصال مع تطبيق Flutter (في الإطار الأب)
   function nb(action){
+    // المتجر → صفحة HTML مستقلّة (لتصميم أغنى)
+    if (action === 'shop') {
+      try { parent.location.href = '/shop'; return; } catch(e){}
+    }
     try{ parent.postMessage({type:'nabda',action:action},'*'); }catch(e){}
   }
 </script>
 </head>
 <body>
 
-<!-- ============ LANDING ============ -->
 <!-- floating glass nav -->
 <div style="position:sticky;top:0;z-index:40;padding:18px 24px 0">
-  <div style="max-width:1280px;margin:0 auto;background:rgba(255,255,255,.72);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.9);border-radius:24px;box-shadow:0 10px 34px rgba(244,63,126,.1);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+  <div style="max-width:1280px;margin:0 auto;background:rgba(255,255,255,.35);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.5);border-radius:24px;box-shadow:0 10px 34px rgba(244,63,126,.1);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px">
     <div style="display:flex;align-items:center;gap:10px">
-      <div style="animation:nb-beat 2.4s ease-in-out infinite">
-        <svg width="34" height="34" viewBox="0 0 24 24"><defs><linearGradient id="hgN" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F43F7E"/><stop offset="1" stop-color="#FF6B9A"/></linearGradient></defs><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#hgN)"/></svg>
-      </div>
-      <span style="font-size:25px;font-weight:800;color:#F43F7E">نبضة</span>
+      <img src="landing-assets/logo-heart.png" alt="نبضة" style="display:block;animation:nb-beat 2.2s ease-in-out infinite;height:50px"/>
     </div>
     <div class="nb-hide-m" style="display:flex;align-items:center;gap:22px;font-size:14.5px;color:#4A434B;font-weight:700">
       <span style="color:#F43F7E;cursor:pointer">الرئيسية</span>
@@ -69,45 +94,70 @@
       <span style="cursor:pointer" onclick="nb('shop')">المتجر</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-      <button onclick="nb('login')" style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#F43F7E,#FF6B9A);color:#fff;border:none;border-radius:999px;padding:11px 22px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 8px 20px rgba(244,63,126,.3)">تسجيل الدخول</button>
+      <button onclick="nb('login')" style="background:linear-gradient(135deg,#F43F7E,#FF6B9A);color:#fff;border:none;border-radius:999px;padding:11px 22px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 8px 20px rgba(244,63,126,.3)">تسجيل الدخول</button>
       <button onclick="nb('signup')" class="nb-hide-m" style="background:#fff;color:#F43F7E;border:1.5px solid #F8D7E5;border-radius:999px;padding:10px 20px;font-weight:800;font-size:14px;cursor:pointer">إنشاء حساب جديد</button>
     </div>
   </div>
 </div>
 
-<!-- HERO -->
-<div style="max-width:1280px;margin:0 auto;padding:34px 24px 10px">
-  <div class="nb-hero">
-    <div>
-      <div class="nb-up" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.7);border:1px solid #F8D7E5;color:#E0883B;border-radius:999px;padding:8px 16px;font-weight:800;font-size:13px;margin-bottom:22px">✨ تطبيق صحة المرأة العربية الأول</div>
-      <h1 class="nb-up" style="font-size:52px;line-height:1.22;font-weight:800;letter-spacing:-1px;margin-bottom:20px">رحلتُكِ إلى الأمومة<br><span style="color:#F43F7E">تبدأ من هنا</span> <span style="color:#F43F7E">💗</span></h1>
-      <p class="nb-up" style="font-size:18px;color:#6b6168;max-width:480px;margin-bottom:34px;line-height:1.9">تابعي حملكِ أسبوعاً بأسبوع، تتبّعي دورتكِ الشهرية، اعتني بطفلكِ، وكوني جزءاً من مجتمع نسائي داعم وملهم.</p>
-      <div class="nb-up nb-feat4">
-        <div style="text-align:center"><div style="width:60px;height:60px;border-radius:50%;background:#fff;border:1px solid #F8D7E5;box-shadow:0 6px 16px rgba(244,63,126,.1);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 10px">🤰</div><div style="font-weight:800;font-size:14px">متابعة الحمل</div><div style="font-size:12px;color:#9b8f95;margin-top:2px">أسبوعاً بأسبوع</div></div>
-        <div style="text-align:center"><div style="width:60px;height:60px;border-radius:50%;background:#fff;border:1px solid #F8D7E5;box-shadow:0 6px 16px rgba(244,63,126,.1);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 10px">📅</div><div style="font-weight:800;font-size:14px">تتبع الدورة</div><div style="font-size:12px;color:#9b8f95;margin-top:2px">فهم جسمكِ</div></div>
-        <div style="text-align:center"><div style="width:60px;height:60px;border-radius:50%;background:#fff;border:1px solid #F8D7E5;box-shadow:0 6px 16px rgba(244,63,126,.1);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 10px">🍼</div><div style="font-weight:800;font-size:14px">رعاية الطفل</div><div style="font-size:12px;color:#9b8f95;margin-top:2px">نمو وتطوّر</div></div>
-        <div style="text-align:center"><div style="width:60px;height:60px;border-radius:50%;background:#fff;border:1px solid #F8D7E5;box-shadow:0 6px 16px rgba(244,63,126,.1);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 10px">👩‍👩‍👧</div><div style="font-weight:800;font-size:14px">مجتمع داعم</div><div style="font-size:12px;color:#9b8f95;margin-top:2px">أمهات مثلكِ</div></div>
-      </div>
-      <div class="nb-up" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:34px">
-        <button onclick="nb('signup')" style="background:linear-gradient(135deg,#F43F7E,#FF6B9A);color:#fff;border:none;border-radius:999px;padding:15px 32px;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 12px 28px rgba(244,63,126,.32)">ابدئي رحلتكِ مجاناً</button>
-        <button onclick="nb('login')" style="background:#fff;color:#F43F7E;border:1.5px solid #F8D7E5;border-radius:999px;padding:13px 28px;font-weight:800;font-size:16px;cursor:pointer">تسجيل الدخول</button>
-      </div>
+<!-- HERO CAROUSEL -->
+<div style="max-width:1280px;margin:20px auto 0;padding:0 24px">
+  <div style="position:relative;border-radius:30px;overflow:hidden;box-shadow:0 24px 60px rgba(244,63,126,.16);background:#FFF7FA">
+    <div class="nb-slider" id="nb-slider">
+      <!-- Slides added by JS -->
     </div>
-    <div style="position:relative">
-      <div style="position:relative;border-radius:30px;overflow:hidden;background:linear-gradient(160deg,#FCE4EC,#F8D7E5);box-shadow:0 24px 60px rgba(244,63,126,.18)">
-        <img src="landing-assets/mom.png" style="width:100%;height:520px;display:block;object-fit:contain;object-position:50% 100%" alt="صورة الأم الحامل"/>
-      </div>
-      <div class="nb-hide-m" style="position:absolute;bottom:30px;right:-28px;width:230px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border:1px solid #fff;border-radius:22px;padding:18px;box-shadow:0 18px 44px rgba(244,63,126,.22)">
-        <div style="margin-bottom:12px"><div style="font-size:20px;font-weight:800;color:#F43F7E">الأسبوع ٢٤</div><div style="font-size:12px;color:#9b8f95">الثلث الثاني</div></div>
-        <div style="width:118px;height:118px;margin:0 auto;border-radius:50%;background:conic-gradient(#F43F7E 60%,#F8D7E5 60%);display:flex;align-items:center;justify-content:center">
-          <div style="width:98px;height:98px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:46px">🍈</div>
-        </div>
-        <div style="text-align:center;margin-top:12px"><div style="font-size:13px;color:#9b8f95">حجم طفلكِ</div><div style="font-weight:800;font-size:15px">قَدْ شمّامة صغيرة</div></div>
-        <div style="margin-top:12px;background:#FDEFF4;border-radius:12px;padding:8px;text-align:center;font-size:13px;font-weight:800;color:#F43F7E">تبقّى ١١٢ يوماً للولادة</div>
-      </div>
-    </div>
+    <!-- في RTL: الأيسر = التالي (اتّجاه القراءة)، الأيمن = السابق -->
+    <button class="nb-arrow nb-hide-m" style="left:16px" onclick="nbNext()">‹</button>
+    <button class="nb-arrow nb-hide-m" style="right:16px" onclick="nbPrev()">›</button>
+    <div id="nb-dots" style="position:absolute;bottom:18px;left:0;right:0;z-index:6;display:flex;gap:8px;justify-content:center"></div>
   </div>
 </div>
+
+<script>
+  const NB_SLIDES = [
+    { img:'landing-assets/slide-pregnancy.png', tag:'✨ تطبيق صحة المرأة العربية الأول', title:'رحلتُكِ إلى الأمومة تبدأ من هنا', desc:'تابعي حملكِ أسبوعاً بأسبوع مع نصائح مخصّصة وعدّ تنازلي للولادة.', cta:'ابدئي رحلتكِ' },
+    { img:'landing-assets/slide-cycle.png', tag:'📅 تتبع الدورة الشهرية', title:'افهمي جسمكِ بشكل أعمق', desc:'تقويم ذكي يتوقّع دورتكِ وأيام الخصوبة ويحلّل أعراضكِ بدقة.', cta:'تتبّعي دورتكِ' },
+    { img:'landing-assets/slide-baby.png', tag:'👶 رعاية الطفل', title:'رافقي نموّ طفلكِ يوماً بيوم', desc:'جدول التطعيمات، مراحل النمو، ونصائح العناية بطفلكِ من أول يوم.', cta:'اكتشفي المزيد' },
+    { img:'landing-assets/slide-store.png', tag:'🛍️ متجر نبضة', title:'كل ما يحتاجه طفلكِ في مكان واحد', desc:'منتجات مختارة بعناية للأم والطفل من أفضل العلامات الموثوقة.', cta:'تسوّقي الآن' },
+    { img:'landing-assets/slide-community.png', tag:'👩‍👩‍👧 مجتمع الأمهات', title:'لستِ وحدكِ في هذه الرحلة', desc:'شاركي تجاربكِ واسألي خبيرات وأمهات يفهمن ما تمرّين به.', cta:'انضمّي للمجتمع' }
+  ];
+  let nbCur = 0;
+  const nbSlider = document.getElementById('nb-slider');
+  const nbDotsEl = document.getElementById('nb-dots');
+  NB_SLIDES.forEach((sl, i) => {
+    const d = document.createElement('div');
+    d.className = 'nb-slide' + (i===0?' on':'');
+    d.innerHTML = `
+      <div class="nb-slide-img" style="background-image:url('${sl.img}')"></div>
+      <div class="nb-slide-grad"></div>
+      <div class="nb-slide-panel">
+        <div class="nb-slide-badge" style="align-items:center;gap:8px;background:rgba(255,255,255,.82);border:1px solid #F8D7E5;color:#C2185B;border-radius:999px;padding:7px 15px;font-weight:800;font-size:13px;margin-bottom:18px">${sl.tag}</div>
+        <h1 class="nb-slide-title" style="line-height:1.25;font-weight:800;letter-spacing:-1px;margin-bottom:16px;color:#1F1A20">${sl.title}</h1>
+        <p class="nb-slide-desc" style="font-size:17px;color:#5E5568;line-height:1.85;margin-bottom:26px">${sl.desc}</p>
+        <div class="nb-slide-btns">
+          <button onclick="nb('signup')" style="background:linear-gradient(135deg,#F43F7E,#FF6B9A);color:#fff;border:none;border-radius:999px;padding:14px 30px;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 12px 28px rgba(244,63,126,.32)">${sl.cta}</button>
+          <button onclick="nb('login')" style="background:rgba(255,255,255,.9);color:#F43F7E;border:1.5px solid #F8D7E5;border-radius:999px;padding:12px 26px;font-weight:800;font-size:15px;cursor:pointer">تسجيل الدخول</button>
+        </div>
+      </div>`;
+    nbSlider.appendChild(d);
+    const dot = document.createElement('div');
+    dot.className = 'nb-dot' + (i===0?' on':'');
+    dot.onclick = () => nbGo(i);
+    nbDotsEl.appendChild(dot);
+  });
+  function nbGo(i){
+    const slides = nbSlider.querySelectorAll('.nb-slide');
+    const dots = nbDotsEl.querySelectorAll('.nb-dot');
+    slides[nbCur].classList.remove('on');
+    dots[nbCur].classList.remove('on');
+    nbCur = (i + NB_SLIDES.length) % NB_SLIDES.length;
+    slides[nbCur].classList.add('on');
+    dots[nbCur].classList.add('on');
+  }
+  function nbNext(){ nbGo(nbCur + 1); }
+  function nbPrev(){ nbGo(nbCur - 1); }
+  setInterval(nbNext, 5500);
+</script>
 
 <!-- FEATURE STRIP -->
 <div style="max-width:1280px;margin:46px auto 0;padding:0 24px">
@@ -139,11 +189,11 @@
   </div>
   <div class="nb-j4">
     <div onclick="nb('pregnancy')" style="background:#fff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.07);cursor:pointer">
-      <img src="landing-assets/pregnancy.png" alt="الحمل" style="width:100%;height:170px;display:block;object-fit:cover"/>
+      <img src="landing-assets/slide-pregnancy.png" alt="الحمل" style="width:100%;height:170px;display:block;object-fit:cover"/>
       <div style="padding:18px"><div style="font-weight:800;font-size:17px;margin-bottom:6px">الحمل</div><div style="font-size:13px;color:#8F8795;line-height:1.7">من علامات الخصوبة إلى موعد الولادة، رافقي حملكِ خطوة بخطوة بثقة واطمئنان.</div></div>
     </div>
     <div onclick="nb('baby')" style="background:#fff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.07);cursor:pointer">
-      <img src="landing-assets/baby.png" alt="المولود والطفل" style="width:100%;height:170px;display:block;object-fit:cover"/>
+      <img src="landing-assets/slide-baby.png" alt="المولود والطفل" style="width:100%;height:170px;display:block;object-fit:cover"/>
       <div style="padding:18px"><div style="font-weight:800;font-size:17px;margin-bottom:6px">المولود والطفل</div><div style="font-size:13px;color:#8F8795;line-height:1.7">أفضل ما في الأمومة المبكرة: تغذية، رضاعة، نوم، ورعاية يوماً بيوم.</div></div>
     </div>
     <div onclick="nb('baby')" style="background:#fff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.07);cursor:pointer">
@@ -151,7 +201,7 @@
       <div style="padding:18px"><div style="font-weight:800;font-size:17px;margin-bottom:6px">الطفل الصغير</div><div style="font-size:13px;color:#8F8795;line-height:1.7">اكتشفي مراحل النمو الجديدة لطفلكِ وكيفية دعمه في التعلّم والتطوّر.</div></div>
     </div>
     <div onclick="nb('cycle')" style="background:#fff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.07);cursor:pointer">
-      <img src="landing-assets/fertility.png" alt="الخصوبة والتخطيط" style="width:100%;height:170px;display:block;object-fit:cover"/>
+      <img src="landing-assets/slide-cycle.png" alt="الخصوبة والتخطيط" style="width:100%;height:170px;display:block;object-fit:cover"/>
       <div style="padding:18px"><div style="font-weight:800;font-size:17px;margin-bottom:6px">الخصوبة والتخطيط</div><div style="font-size:13px;color:#8F8795;line-height:1.7">خطّطي لحملكِ بثقة مع حاسبة الإباضة ونصائح الخصوبة المخصّصة لكِ.</div></div>
     </div>
   </div>
@@ -203,21 +253,87 @@
   </div>
 </div>
 
+<!-- BABY NAMES -->
+<div style="max-width:1280px;margin:54px auto 0;padding:0 24px">
+  <div style="text-align:center;margin-bottom:8px">
+    <h2 style="font-size:30px;font-weight:800;display:inline-flex;align-items:center;gap:10px">أسماء المواليد من أ إلى ي <span style="color:#F43F7E">💗</span></h2>
+  </div>
+  <div style="max-width:480px;margin:14px auto 26px;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #F8D7E5;border-radius:999px;padding:11px 20px;box-shadow:0 6px 18px rgba(244,63,126,.06)">
+    <span style="color:#8F8795">🔍</span>
+    <input placeholder="ابحثي عن اسم..." style="flex:1;border:none;background:transparent;font-family:inherit;font-size:14px;outline:none;color:#5E5568" />
+  </div>
+  <div class="nb-names">
+    <!-- BOYS card -->
+    <div style="border-radius:22px;background:url('landing-assets/bg-boy.png') left center/cover, #E3F2FD;padding:24px 24px 24px 42%;box-shadow:0 12px 34px rgba(244,63,126,.06);min-height:360px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:20px">👦</div>
+        <h3 style="font-size:18px;font-weight:800;color:#1F1A20">أسماء الأولاد</h3>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div onclick="nb('babyNames')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:10px 14px;cursor:pointer;transition:.2s">
+          <span style="width:34px;height:34px;border-radius:10px;background:#E3F2FD;color:#1976D2;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">أ</span>
+          <span style="font-size:14px;font-weight:700;color:#5E5568">أسماء أولاد تبدأ بحرف أ</span>
+        </div>
+        <div onclick="nb('babyNames')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:10px 14px;cursor:pointer;transition:.2s">
+          <span style="width:34px;height:34px;border-radius:10px;background:#E3F2FD;color:#1976D2;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">ب</span>
+          <span style="font-size:14px;font-weight:700;color:#5E5568">أسماء أولاد تبدأ بحرف ب</span>
+        </div>
+        <div onclick="nb('babyNames')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:10px 14px;cursor:pointer;transition:.2s">
+          <span style="width:34px;height:34px;border-radius:10px;background:#E3F2FD;color:#1976D2;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">ع</span>
+          <span style="font-size:14px;font-weight:700;color:#5E5568">أسماء أولاد تبدأ بحرف ع</span>
+        </div>
+        <div onclick="nb('babyNames')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:10px 14px;cursor:pointer;transition:.2s">
+          <span style="width:34px;height:34px;border-radius:10px;background:#E3F2FD;color:#1976D2;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">م</span>
+          <span style="font-size:14px;font-weight:700;color:#5E5568">أسماء أولاد تبدأ بحرف م</span>
+        </div>
+      </div>
+    </div>
+    <!-- GIRLS card -->
+    <div style="border-radius:22px;background:url('landing-assets/bg-girl.png') left center/cover, #FCE4EC;padding:24px 24px 24px 42%;box-shadow:0 12px 34px rgba(244,63,126,.06);min-height:360px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:20px">👧</div>
+        <h3 style="font-size:18px;font-weight:800;color:#1F1A20">أسماء البنات</h3>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div onclick="nb('babyNames')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:10px 14px;cursor:pointer;transition:.2s">
+          <span style="width:34px;height:34px;border-radius:10px;background:#FDE8EF;color:#C2185B;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">أ</span>
+          <span style="font-size:14px;font-weight:700;color:#5E5568">أسماء بنات تبدأ بحرف أ</span>
+        </div>
+        <div onclick="nb('babyNames')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:10px 14px;cursor:pointer;transition:.2s">
+          <span style="width:34px;height:34px;border-radius:10px;background:#FDE8EF;color:#C2185B;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">ب</span>
+          <span style="font-size:14px;font-weight:700;color:#5E5568">أسماء بنات تبدأ بحرف ب</span>
+        </div>
+        <div onclick="nb('babyNames')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:10px 14px;cursor:pointer;transition:.2s">
+          <span style="width:34px;height:34px;border-radius:10px;background:#FDE8EF;color:#C2185B;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">ج</span>
+          <span style="font-size:14px;font-weight:700;color:#5E5568">أسماء بنات تبدأ بحرف ج</span>
+        </div>
+        <div onclick="nb('babyNames')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:10px 14px;cursor:pointer;transition:.2s">
+          <span style="width:34px;height:34px;border-radius:10px;background:#FDE8EF;color:#C2185B;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">ر</span>
+          <span style="font-size:14px;font-weight:700;color:#5E5568">أسماء بنات تبدأ بحرف ر</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:20px">
+    <button onclick="nb('babyNames')" style="background:#fff;border:1px solid #F8D7E5;color:#F43F7E;border-radius:999px;padding:11px 28px;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer">عرض جميع الأسماء ▾</button>
+  </div>
+</div>
+
 <!-- TOOLS -->
 <div style="max-width:1280px;margin:54px auto 0;padding:0 24px">
   <div style="text-align:center;margin-bottom:8px"><h2 style="font-size:30px;font-weight:800">الأدوات والمميزات</h2></div>
   <div style="text-align:center;color:#8F8795;font-size:15px;margin-bottom:26px">كل ما تحتاجينه في مكان واحد</div>
   <div class="nb-tools">
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:20px;padding:22px 12px;text-align:center;box-shadow:0 8px 22px rgba(244,63,126,.05);cursor:pointer"><div style="width:56px;height:56px;border-radius:16px;background:#EDE7F6;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">📆</div><div style="font-size:13px;font-weight:800">حاسبة موعد الولادة</div></div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:20px;padding:22px 12px;text-align:center;box-shadow:0 8px 22px rgba(244,63,126,.05);cursor:pointer"><div style="width:56px;height:56px;border-radius:16px;background:#FDE8EF;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">🌸</div><div style="font-size:13px;font-weight:800">حاسبة الإباضة</div></div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:20px;padding:22px 12px;text-align:center;box-shadow:0 8px 22px rgba(244,63,126,.05);cursor:pointer"><div style="width:56px;height:56px;border-radius:16px;background:#FFF3E0;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">📋</div><div style="font-size:13px;font-weight:800">سجل المولود</div></div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:20px;padding:22px 12px;text-align:center;box-shadow:0 8px 22px rgba(244,63,126,.05);cursor:pointer"><div style="width:56px;height:56px;border-radius:16px;background:#E0F2F1;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">💉</div><div style="font-size:13px;font-weight:800">تتبع تطعيمات الطفل</div></div>
-    <div onclick="nb('shop')" style="background:#fff;border:1px solid #F8E1EA;border-radius:20px;padding:22px 12px;text-align:center;box-shadow:0 8px 22px rgba(244,63,126,.05);cursor:pointer"><div style="width:56px;height:56px;border-radius:16px;background:#FCE4EC;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">🛍️</div><div style="font-size:13px;font-weight:800">منتجات الطفل</div></div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:20px;padding:22px 12px;text-align:center;box-shadow:0 8px 22px rgba(244,63,126,.05);cursor:pointer"><div style="width:56px;height:56px;border-radius:16px;background:#FFF3E0;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">🍼</div><div style="font-size:13px;font-weight:800">تتبع الرضاعة</div></div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:20px;padding:22px 12px;text-align:center;box-shadow:0 8px 22px rgba(244,63,126,.05);cursor:pointer"><div style="width:56px;height:56px;border-radius:16px;background:#FDE8EF;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">⚖️</div><div style="font-size:13px;font-weight:800">حاسبة زيادة الوزن</div></div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:20px;padding:22px 12px;text-align:center;box-shadow:0 8px 22px rgba(244,63,126,.05);cursor:pointer"><div style="width:56px;height:56px;border-radius:16px;background:#EDE7F6;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">🔮</div><div style="font-size:13px;font-weight:800">توقع جنس الجنين (للتسلية)</div></div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:20px;padding:22px 12px;text-align:center;box-shadow:0 8px 22px rgba(244,63,126,.05);cursor:pointer"><div style="width:56px;height:56px;border-radius:16px;background:#E0F2F1;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">🩺</div><div style="font-size:13px;font-weight:800">حاسبة موعد فطام الطفل</div></div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:20px;padding:22px 12px;text-align:center;box-shadow:0 8px 22px rgba(244,63,126,.05);cursor:pointer"><div style="width:56px;height:56px;border-radius:16px;background:#FCE4EC;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">📈</div><div style="font-size:13px;font-weight:800">مخطط نمو الطفل</div></div>
+    <div onclick="nb('signup')" class="nb-tool"><div class="nb-tool-icon" style="background-image:url('landing-assets/ic-cal.png')"></div><div class="nb-tool-title">حاسبة موعد الولادة</div><div class="nb-tool-desc">احسبي موعد ولادتكِ المتوقع بدقة وسهولة</div><div class="nb-tool-btn" style="background:#B39DDB">‹</div></div>
+    <div onclick="nb('signup')" class="nb-tool"><div class="nb-tool-icon" style="background-image:url('landing-assets/ic-dumbbell.png')"></div><div class="nb-tool-title">حاسبة اللياقة</div><div class="nb-tool-desc">تمارين ولياقة آمنة تناسب مرحلتكِ</div><div class="nb-tool-btn" style="background:#F06292">‹</div></div>
+    <div onclick="nb('signup')" class="nb-tool"><div class="nb-tool-icon" style="background-image:url('landing-assets/ic-clip.png')"></div><div class="nb-tool-title">سجل المولود</div><div class="nb-tool-desc">سجّلي كل تفاصيل مولودكِ ونظّمي مذكراته</div><div class="nb-tool-btn" style="background:#FFB74D">‹</div></div>
+    <div onclick="nb('signup')" class="nb-tool"><div class="nb-tool-icon" style="background-image:url('landing-assets/ic-steth.png')"></div><div class="nb-tool-title">تتبع تطعيمات الطفل</div><div class="nb-tool-desc">جدول تطعيمات الطفل وتذكيرات بالمواعيد</div><div class="nb-tool-btn" style="background:#4DB6AC">‹</div></div>
+    <div onclick="nb('shop')" class="nb-tool"><div class="nb-tool-icon" style="background-image:url('landing-assets/ic-bag.png')"></div><div class="nb-tool-title">منتجات الطفل</div><div class="nb-tool-desc">اكتشفي أفضل منتجات الأطفال والأمهات</div><div class="nb-tool-btn" style="background:#B39DDB">‹</div></div>
+    <div onclick="nb('signup')" class="nb-tool"><div class="nb-tool-icon" style="background-image:url('landing-assets/ic-bottle.png')"></div><div class="nb-tool-title">تتبع الرضاعة</div><div class="nb-tool-desc">سجّلي مواعيد الرضاعة ومددها بسهولة</div><div class="nb-tool-btn" style="background:#64B5F6">‹</div></div>
+    <div onclick="nb('signup')" class="nb-tool"><div class="nb-tool-icon" style="background-image:url('landing-assets/ic-scale.png')"></div><div class="nb-tool-title">حاسبة زيادة الوزن</div><div class="nb-tool-desc">تابعي وزنكِ المثالي أثناء الحمل لصحة أفضل</div><div class="nb-tool-btn" style="background:#FFD54F">‹</div></div>
+    <div onclick="nb('signup')" class="nb-tool"><div class="nb-tool-icon" style="background-image:url('landing-assets/ic-mom.png')"></div><div class="nb-tool-title">توقع جنس الجنين</div><div class="nb-tool-desc">توقّعي جنس الجنين بطريقة التسلية الممتعة</div><div class="nb-tool-btn" style="background:#BA68C8">‹</div></div>
+    <div onclick="nb('signup')" class="nb-tool"><div class="nb-tool-icon" style="background-image:url('landing-assets/ic-test.png')"></div><div class="nb-tool-title">حاسبة موعد الفطام</div><div class="nb-tool-desc">حدّدي الوقت المناسب لفطام طفلكِ بسهولة</div><div class="nb-tool-btn" style="background:#64B5F6">‹</div></div>
+    <div onclick="nb('signup')" class="nb-tool"><div class="nb-tool-icon" style="background-image:url('landing-assets/ic-chart.png')"></div><div class="nb-tool-title">مخطط نمو الطفل</div><div class="nb-tool-desc">تابعي نمو طفلكِ خطوة بخطوة</div><div class="nb-tool-btn" style="background:#F06292">‹</div></div>
   </div>
 </div>
 
@@ -250,9 +366,10 @@
 <!-- APP DOWNLOAD -->
 <div style="max-width:1280px;margin:56px auto 0;padding:0 24px">
   <div style="position:relative;overflow:hidden;background:linear-gradient(120deg,#FF4F8B,#FF6B9A);border-radius:30px;padding:44px 40px;display:flex;align-items:center;gap:30px;box-shadow:0 24px 60px rgba(244,63,126,.3)">
-    <div style="position:absolute;top:-40px;left:10%;font-size:60px;opacity:.18">💗</div>
-    <div style="position:absolute;bottom:-20px;left:30%;font-size:40px;opacity:.18">💗</div>
-    <div style="flex:1;color:#fff;text-align:center">
+    <img src="landing-assets/hearts.png" alt="" style="position:absolute;top:-40px;left:-30px;width:200px;opacity:.32;pointer-events:none"/>
+    <img src="landing-assets/hearts.png" alt="" style="position:absolute;bottom:-60px;left:38%;width:150px;opacity:.24;pointer-events:none;transform:rotate(15deg)"/>
+    <img src="landing-assets/hearts.png" alt="" style="position:absolute;top:20px;right:-40px;width:180px;opacity:.22;pointer-events:none;transform:rotate(-20deg)"/>
+    <div style="flex:1;color:#fff;text-align:center;position:relative;z-index:2">
       <h2 style="font-size:34px;font-weight:800;margin-bottom:10px">حمّلي تطبيق نبضة الآن</h2>
       <p style="font-size:17px;opacity:.94;margin-bottom:6px">رفيقتكِ في كل لحظة من رحلتكِ</p>
       <p style="font-size:14px;opacity:.85;margin-bottom:24px">متوفر على iOS و Android — بنفس حسابكِ على كل الأجهزة</p>
@@ -270,8 +387,7 @@
     <div class="nb-foot">
       <div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <svg width="30" height="30" viewBox="0 0 24 24"><defs><linearGradient id="hgF" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F43F7E"/><stop offset="1" stop-color="#FF6B9A"/></linearGradient></defs><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#hgF)"/></svg>
-          <span style="font-size:24px;font-weight:800;color:#F43F7E">نبضة</span>
+          <img src="landing-assets/logo-heart.png" alt="نبضة" style="height:40px"/>
         </div>
         <p style="font-size:13.5px;color:#8F8795;line-height:1.9;max-width:240px">كل نبضة حب، نهتمّ بكِ ونرافقكِ في رحلتكِ من أول نبضة قلب إلى أولى خطوات طفلكِ.</p>
         <div style="display:flex;gap:10px;margin-top:16px">

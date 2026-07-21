@@ -56,6 +56,7 @@ import 'widgets/cycle_phase_wheel.dart';
 import 'web/web_home.dart';
 import 'web/web_pregnancy.dart';
 import 'web/web_public_home.dart';
+import 'web/url_helper.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -675,13 +676,168 @@ class _LoginThenPop extends StatelessWidget {
   }
 }
 
-// ════════ أقسام عامّة للزوّار (مقالات/متجر مفتوحة) ════════
+// ════════ أقسام عامّة للزوّار (مقالات/متجر/أسماء مفتوحة بدون تسجيل) ════════
+// خريطة تحويل مفاتيح الأقسام إلى مسارات URL (للويب فقط)
+String _sectionToUrlPath(String key) {
+  switch (key) {
+    case 'babyNames':
+    case 'baby-names': return '/baby-names';
+    case 'pregnancy': return '/pregnancy';
+    case 'baby': return '/baby';
+    case 'cycle': return '/cycle';
+    case 'community': return '/community';
+    case 'shop': return '/shop';
+    default: return '/';
+  }
+}
+
 void _openPublicSection(BuildContext context, String key) {
   void goLogin() => Navigator.push(context, MaterialPageRoute(
       builder: (_) => const _LoginThenPop(initialIsRegister: false)));
-  // التصميم الجديد للصفحة الرئيسية يفتح شاشة الدخول مباشرة عند الضغط على
-  // أيّ قسم (لا حاجة لـ WebPublicSection الذي كان يعرض مقالات/منتجات عامّة).
-  goLogin();
+  void goSignup() => Navigator.push(context, MaterialPageRoute(
+      builder: (_) => const _LoginThenPop(initialIsRegister: true)));
+
+  // 🌐 تحديث URL على المتصفّح (ويب فقط) — مثل nabda.online/shop
+  setWebPath(_sectionToUrlPath(key));
+
+  // أسماء المواليد → شاشة أسماء الأطفال
+  if (key == 'babyNames' || key == 'baby-names') {
+    Navigator.push(context, MaterialPageRoute(
+        builder: (_) => const BabyNamesScreen()))
+        .then((_) => resetWebPath());
+    return;
+  }
+
+  // بقيّة الأقسام (الحمل/الطفل/الدورة/المجتمع/المتجر) → صفحة قسم عامّة
+  Navigator.push(context, MaterialPageRoute(builder: (_) => WebPublicSection(
+    title: _publicSectionTitle(key),
+    body: _publicSectionBody(key, goLogin),
+    onLogin: goLogin,
+    onSignup: goSignup,
+  ))).then((_) => resetWebPath()); // إعادة URL إلى / عند العودة
+}
+
+// ═══════ Wrapper page للأقسام العامّة للزوّار ═══════
+// شريط علوي زجاجي (شعار + أزرار دخول/تسجيل) + محتوى القسم + رابط عودة.
+class WebPublicSection extends StatelessWidget {
+  final String title;
+  final Widget body;
+  final VoidCallback onLogin;
+  final VoidCallback onSignup;
+  const WebPublicSection({
+    Key? key,
+    required this.title,
+    required this.body,
+    required this.onLogin,
+    required this.onSignup,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    const pink = Color(0xFFF43F7E);
+    const bg = Color(0xFFFFF8FB);
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: bg,
+        body: SingleChildScrollView(
+          child: Column(children: [
+            // Header
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1180),
+                  child: Row(children: [
+                    // Back button + Logo
+                    IconButton(
+                      icon: const Icon(Icons.arrow_forward_rounded, color: pink),
+                      onPressed: () => Navigator.of(context).pop(),
+                      tooltip: 'الرئيسية',
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 34, height: 34,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(colors: [Color(0xFFF43F7E), Color(0xFFFF6B9A)]),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text('نبضة',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: pink)),
+                    const SizedBox(width: 24),
+                    Expanded(child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20)),
+                    )),
+                    // Auth buttons
+                    OutlinedButton(
+                      onPressed: onLogin,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: pink,
+                        side: const BorderSide(color: Color(0xFFF8D7E5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      ),
+                      child: const Text('تسجيل الدخول', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: onSignup,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: pink, foregroundColor: Colors.white, elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                      ),
+                      child: const Text('حساب جديد', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+            // Body
+            Container(
+              constraints: const BoxConstraints(maxWidth: 1180),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: body,
+            ),
+            // CTA to signup at bottom
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+              constraints: const BoxConstraints(maxWidth: 1180),
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFFF43F7E), Color(0xFFFF6B9A)]),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(children: [
+                const Text('استمتعي بتجربة كاملة مع نبضة',
+                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                const Text('سجّلي الآن لحفظ تفضيلاتكِ ومتابعة رحلتكِ',
+                  style: TextStyle(color: Colors.white, fontSize: 14)),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: onSignup,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white, foregroundColor: pink,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  ),
+                  child: const Text('ابدئي رحلتكِ مجانًا',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                ),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
 }
 
 String _publicSectionTitle(String key) {
