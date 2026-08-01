@@ -38,6 +38,7 @@ import 'screens/intro_screen.dart';
 import 'screens/baby_names/baby_names_screen.dart';
 import 'screens/trackers/weight_tracker_screen.dart';
 import 'screens/trackers/health_trackers_screen.dart';
+import 'screens/doctors/doctors_list_screen.dart';
 import 'screens/pregnancy/pregnancy_calendar_screen.dart';
 import 'screens/pregnancy/pregnancy_journal_screen.dart';
 import 'screens/pregnancy/fetus_size_screen.dart';
@@ -2686,7 +2687,8 @@ class _MainNavState extends State<MainNav> {
                   _navItem(context, '📅', 'متابعة الدورة', tabIndex: 1),
                   _navItem(context, '👶', 'رعاية الطفل', tabIndex: 3),
                   _navItem(context, '💕', 'الخصوبة', onTap: () => _soon(context)),
-                  _navItem(context, '🩺', 'الأطباء', onTap: () => _soon(context)),
+                  _navItem(context, '🩺', 'الأطباء',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DoctorsListScreen()))),
                   _navItem(context, '📈', 'صحتي',
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthTrackersScreen()))),
                   // ❌ أُزيلت "حسابي" و"الإعدادات" — مكرّرتان مع بطاقة البروفايل العلويّة.

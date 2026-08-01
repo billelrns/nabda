@@ -1,0 +1,2238 @@
+[
+  {
+    "id": "node_1866344067",
+    "name": "Dr Amhis - Gynecologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.747872,
+    "lon": 3.0402552,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_2311172500",
+    "name": "Gynécologue",
+    "name_ar": "طبيب نسائي",
+    "name_fr": null,
+    "lat": 36.7396712,
+    "lon": 3.2749207,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_2446201080",
+    "name": "الطبيب يونسي",
+    "name_ar": "الطبيب يونسي",
+    "name_fr": "Younsi",
+    "lat": 34.6620168,
+    "lon": 3.2466877,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology;obstetrics"
+    }
+  },
+  {
+    "id": "node_2479537633",
+    "name": "Gynécologue Hamani",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.6423437,
+    "lon": 2.6951588,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_2501099412",
+    "name": "Gynécologue Sakri",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.6412623,
+    "lon": 2.6915867,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_2501099430",
+    "name": "عيادة/طبيب غير مسمى",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.6434155,
+    "lon": 2.6940966,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_3088894802",
+    "name": "Gynécologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.4870303,
+    "lon": 2.8255963,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_3152575982",
+    "name": "عيادة طب نساء",
+    "name_ar": "عيادة طب نساء",
+    "name_fr": "Gynécologue",
+    "lat": 34.4319458,
+    "lon": 5.069505,
+    "phone": "غير متوفر",
+    "city": "اولاد جلال",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "operator": "Dr. Fouzia Chellali"
+    }
+  },
+  {
+    "id": "node_3152575983",
+    "name": "عيادة طب نساء",
+    "name_ar": "عيادة طب نساء",
+    "name_fr": "Gynécologue",
+    "lat": 34.432671,
+    "lon": 5.0705937,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_3152856242",
+    "name": "Polyclinique Boudjemaa Mansouri",
+    "name_ar": "العيادة المتعددة الخدمات بودجمعة منصوري",
+    "name_fr": "Polyclinique Boudjemaa Mansouri",
+    "lat": 36.5993334,
+    "lon": 2.1798315,
+    "phone": "غير متوفر",
+    "city": "Cherchell",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "healthcare:speciality": "pediatrics;obstetrics;gynaecology",
+      "opening_hours": "24/7"
+    }
+  },
+  {
+    "id": "node_3229633226",
+    "name": "متخصصة في امراض النساء و التوليد",
+    "name_ar": "متخصصة في امراض النساء و التوليد",
+    "name_fr": "Gynécologue",
+    "lat": 34.4222722,
+    "lon": 5.0560936,
+    "phone": "+21333664160",
+    "city": "غير محدد",
+    "street": "شارع لخليفة غضاب",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "operator": "الحكيمة رحيمين"
+    }
+  },
+  {
+    "id": "node_3318730965",
+    "name": "Dr Sadoun gynécologue طبيبة نسائية الدكتورة سعدون",
+    "name_ar": "طبيبة نسائية الدكتورة سعدون",
+    "name_fr": "Dr Sadoun gynécologue",
+    "lat": 36.7134008,
+    "lon": 3.2128917,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "operator": "سعدون"
+    }
+  },
+  {
+    "id": "node_3443936866",
+    "name": "بدراوي أمراض النساء و التوليد",
+    "name_ar": "أمراض النساء و التوليد بدراوي",
+    "name_fr": "BADRAOUI Génycologue",
+    "lat": 34.6735287,
+    "lon": 3.2469211,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_3446424808",
+    "name": "Médecin gynecologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.641873,
+    "lon": 2.7724219,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_3448558601",
+    "name": "الحكيمة غلاب س ز أمراض النساء و التوليد",
+    "name_ar": "الحكيمة غلاب س ز أمراض النساء و التوليد",
+    "name_fr": "Ghalab S, Gynéchologue.",
+    "lat": 34.6699725,
+    "lon": 3.2484805,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_3579822493",
+    "name": "Gynécologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7896556,
+    "lon": 3.060749,
+    "phone": "021969828",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_3848702672",
+    "name": "Cabinet Medicale Gynecologue Femme",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.5232161,
+    "lon": 2.8616706,
+    "phone": "غير متوفر",
+    "city": "Beni Mered",
+    "street": "Rue du 1er Novembre",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_3882283677",
+    "name": "طبيبة نساء الحكيمة سقومة",
+    "name_ar": "طبيبة نساء الحكيمة سقومة",
+    "name_fr": null,
+    "lat": 34.3955524,
+    "lon": 4.996878,
+    "phone": "غير متوفر",
+    "city": "سيدي خالد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_3899501681",
+    "name": "متخصصة في امراض النساء و التوليد",
+    "name_ar": "متخصصة في امراض النساء و التوليد",
+    "name_fr": "Gynécologue",
+    "lat": 34.4316176,
+    "lon": 5.0675411,
+    "phone": "+21333664160",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "operator": "الحكبمة س- سعودي"
+    }
+  },
+  {
+    "id": "node_4115153706",
+    "name": "الطبيبة النسائية الدكتورة لبعل",
+    "name_ar": "الطبيبة النسائية الدكتورة لبعل",
+    "name_fr": "Dr labaal gynécologue",
+    "lat": 35.5560516,
+    "lon": 6.1767966,
+    "phone": "غير متوفر",
+    "city": "باتنة",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "healthcare:speciality": "gynaecology",
+      "operator": "الدكتورة رشيدة لبعل"
+    }
+  },
+  {
+    "id": "node_4170340589",
+    "name": "service gynécologie obstétrique (durando)",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7917843,
+    "lon": 3.0534912,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_4254337797",
+    "name": "Gynecologue - Obstétricien",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7279471,
+    "lon": 3.0773447,
+    "phone": "05 52432329",
+    "city": "Vieux Kouba",
+    "street": "Rue Agoulmine Nacer",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "opening_hours": "Sa-Th 09:00-20:00; Fr 15:00-20:00"
+    }
+  },
+  {
+    "id": "node_4257997689",
+    "name": "مستشفى الأمومة والتوليد",
+    "name_ar": "مستشفى الأمومة والتوليد",
+    "name_fr": "Hôpital de maternité et d'obstétrique",
+    "lat": 35.7951245,
+    "lon": 7.3942211,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital"
+    }
+  },
+  {
+    "id": "node_4268625108",
+    "name": "عيادة/طبيب غير مسمى",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7197623,
+    "lon": 3.1944599,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "opening_hours": "We-Th, Sa-Mo 09:00-16:00; Tu, Fr 09:00-12:00"
+    }
+  },
+  {
+    "id": "node_4278517892",
+    "name": "Genyco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7413871,
+    "lon": 3.3411937,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_4290897896",
+    "name": "مستشفى الأمومة والتوليد",
+    "name_ar": "مستشفى الأمومة والتوليد",
+    "name_fr": "Hôpital de maternité et d'obstétrique",
+    "lat": 35.7950066,
+    "lon": 7.3941655,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital"
+    }
+  },
+  {
+    "id": "node_4303213189",
+    "name": "Dr Mansouri Gynecologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7258682,
+    "lon": 3.3328769,
+    "phone": "+213661544324",
+    "city": "غير محدد",
+    "street": "Colonel Lotfi Aissat Mustapha Reghaia",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "opening_hours": "24/7"
+    }
+  },
+  {
+    "id": "node_4365384295",
+    "name": "عيادة طب النساء و التوليد الدكتور رزاڨ كمال",
+    "name_ar": "عيادة طب النساء و التوليد الدكتور رزاڨ كمال",
+    "name_fr": "Cabinet gynécologique dr REZZAG KAMEL",
+    "lat": 35.2094206,
+    "lon": 4.1818351,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_4381977791",
+    "name": "طبيبة نساء - طب عام",
+    "name_ar": "طبيبة نساء - طب عام",
+    "name_fr": "Médecin général",
+    "lat": 35.9750753,
+    "lon": 5.8115806,
+    "phone": "غير متوفر",
+    "city": "حمام السخنة",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic"
+    }
+  },
+  {
+    "id": "node_4415665585",
+    "name": "طبيبة نسائية",
+    "name_ar": "طبيبة نسائية",
+    "name_fr": "Gynécologue",
+    "lat": 35.3671657,
+    "lon": 1.3198078,
+    "phone": "غير متوفر",
+    "city": "تيارت",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_4435073396",
+    "name": "عيادة/طبيب غير مسمى",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 35.703241,
+    "lon": -0.6446197,
+    "phone": "غير متوفر",
+    "city": "وهران",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_4444480792",
+    "name": "Dr.Belbachir Gynécologue",
+    "name_ar": "طبيبة نسائية الدكتورة بلبشير",
+    "name_fr": "Dr.Belbachir Gynécologue",
+    "lat": 34.9061605,
+    "lon": -1.0339302,
+    "phone": "0540101771",
+    "city": "غير محدد",
+    "street": "Rue Kerrass Aoued",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "opening_hours": "Sa-Th 09:00-16:00",
+      "operator": "الدكتورة بلبشير"
+    }
+  },
+  {
+    "id": "node_4505292891",
+    "name": "عيادة أمراض النساء و التوليد زوليخة",
+    "name_ar": "عيادة أمراض النساء و التوليد زوليخة",
+    "name_fr": "Clinique Zoulikha",
+    "lat": 36.4715508,
+    "lon": 2.8180141,
+    "phone": "غير متوفر",
+    "city": "Blida",
+    "street": "Rue El Bey Khaled",
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "opening_hours": "24/7"
+    }
+  },
+  {
+    "id": "node_4542066002",
+    "name": "أمراض النساء والتوليد",
+    "name_ar": "أمراض النساء والتوليد",
+    "name_fr": "Gynécologue",
+    "lat": 36.2607573,
+    "lon": 6.7032878,
+    "phone": "غير متوفر",
+    "city": "الخروب",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_4562133291",
+    "name": "عيادة/طبيب غير مسمى",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7550725,
+    "lon": 2.8881848,
+    "phone": "غير متوفر",
+    "city": "سطاوالي",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_4595905243",
+    "name": "Médecin gynecologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.6348268,
+    "lon": 2.7644474,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_4617339161",
+    "name": "المؤسسة الاستشفائية المتخصصة عبد الله نواورية البوني أمراض النساء والتوليد جراحة الأطفال جراحة التوليد",
+    "name_ar": "المؤسسة الاستشفائية المتخصصة عبد الله نواورية البوني أمراض النساء والتوليد جراحة الأطفال جراحة التوليد",
+    "name_fr": "Abdellah Nouaria El-Bouni",
+    "lat": 36.8562889,
+    "lon": 7.7372108,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "healthcare:speciality": "gynaecology;paediatrics"
+    }
+  },
+  {
+    "id": "node_4728650389",
+    "name": "المؤسسة الإستشفائية المتخصصة في طب النساء و التوليد",
+    "name_ar": "مصلحة الاستعمالات الطبية بشير بن ناصر",
+    "name_fr": "Établissement hospitalière spécialisé en gynécologie obstétrique",
+    "lat": 34.8497377,
+    "lon": 5.7419969,
+    "phone": "غير متوفر",
+    "city": "Biskra",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_4794878627",
+    "name": "Dr Latri Cherifa;الدكتورة العطري شريفة",
+    "name_ar": "الدكتورة العطري شريفة",
+    "name_fr": "Dr Latri Cherifa",
+    "lat": 36.1969273,
+    "lon": 5.4067221,
+    "phone": "+213 36 51 29 49",
+    "city": "سطيف",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_4816418125",
+    "name": "Gynecologie et Obstétrique \"Dr. Kebbar\"",
+    "name_ar": null,
+    "name_fr": "Gynecologie et Obstétrique \"Dr. Kebbar\"",
+    "lat": 36.9051694,
+    "lon": 7.7567862,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_4816432522",
+    "name": "Gynecologie et Obstétrique \"Dr. Nezzar\"",
+    "name_ar": null,
+    "name_fr": "Gynecologie et Obstétrique \"Dr. Nezzar\"",
+    "lat": 36.9040989,
+    "lon": 7.7562234,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_4929668523",
+    "name": "Kerkouche Gynecologue كركوش طب النساء",
+    "name_ar": "كركوش طب النساء",
+    "name_fr": "Kerkouche Gynecologue",
+    "lat": 36.7538461,
+    "lon": 3.0638245,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_4977658124",
+    "name": "الطبيبة مصمودي لطب النساء",
+    "name_ar": "الطبيبة مصمودي لطب النساء",
+    "name_fr": "Masmoudi",
+    "lat": 31.9528233,
+    "lon": 5.3267828,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic"
+    }
+  },
+  {
+    "id": "node_5104210324",
+    "name": "طبيبة النساء جابر.س",
+    "name_ar": "طبيبة النساء جابر.س",
+    "name_fr": "Dr Djaber .s Gynécologie Obstétrique.",
+    "lat": 36.2598238,
+    "lon": 2.2313731,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_5104210428",
+    "name": "طبيبة النساء بن يحي .أ",
+    "name_ar": "طبيبة النساء بن يحي .أ",
+    "name_fr": "Dr Benyahia .A Gynécologue.",
+    "lat": 36.2600855,
+    "lon": 2.2325044,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "opening_hours": "Sa-We 08:00-16:00"
+    }
+  },
+  {
+    "id": "node_5226088331",
+    "name": "sage femme cherrak djemaa",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 30.5859465,
+    "lon": 2.8815539,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_5265574521",
+    "name": "طبيبة امراض نساء و توليد",
+    "name_ar": "طبيبة امراض نساء و توليد",
+    "name_fr": "Gynécologue",
+    "lat": 35.7060269,
+    "lon": -0.5614669,
+    "phone": "0661216821",
+    "city": "غير محدد",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic"
+    }
+  },
+  {
+    "id": "node_5347052530",
+    "name": "عيادة الأمير",
+    "name_ar": "عيادة الأمير",
+    "name_fr": null,
+    "lat": 35.8014142,
+    "lon": 7.392083,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "description": "العيادة الطبية الامير",
+      "healthcare": "hospital",
+      "healthcare:speciality": "gynaecology;internal;general",
+      "operator": "berkani"
+    }
+  },
+  {
+    "id": "node_5371044571",
+    "name": "عيادة الامل",
+    "name_ar": "عيادة الامل",
+    "name_fr": "Clinique El Amel",
+    "lat": 35.7959078,
+    "lon": 7.3826288,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_5420953122",
+    "name": "طبيب مختص في امراض نساء",
+    "name_ar": "طبيب مختص في امراض نساء",
+    "name_fr": "Un médecin spécialisé dans les maladies de la femme",
+    "lat": 36.1614152,
+    "lon": 0.9726299,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_5432744122",
+    "name": "أمراض نفسية+عيون+أطفال+نساءعامة",
+    "name_ar": "أمراض نفسية+عيون+أطفال+نساءعامة",
+    "name_fr": null,
+    "lat": 35.9287677,
+    "lon": 0.1047364,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_5571047920",
+    "name": "Dr Rahmani gynécologue",
+    "name_ar": "طبيب النساء رحماني",
+    "name_fr": null,
+    "lat": 31.5926433,
+    "lon": -2.2312727,
+    "phone": "غير متوفر",
+    "city": "Béchar",
+    "street": "cité 250 logt Badr",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_5576405921",
+    "name": "عيادة/طبيب غير مسمى",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.736043,
+    "lon": 3.0464371,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_5584943317",
+    "name": "عيادة/طبيب غير مسمى",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 35.8651813,
+    "lon": 7.0995993,
+    "phone": "غير متوفر",
+    "city": "Oum El Bouaghi",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_5652229324",
+    "name": "زلاقي طب أمراض النساء و التوليد",
+    "name_ar": "زلاقي طب أمراض النساء و التوليد",
+    "name_fr": null,
+    "lat": 36.7596443,
+    "lon": 3.0566456,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_5670918429",
+    "name": "غزراوي طب النساء و التوليد",
+    "name_ar": "غزراوي طب النساء و التوليد",
+    "name_fr": "Rhezraoui",
+    "lat": 36.7172692,
+    "lon": 3.0491159,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_5751465323",
+    "name": "طبيبة نساء شبيلي",
+    "name_ar": "طبيبة نساء شبيلي",
+    "name_fr": "Gynécologue Chbili",
+    "lat": 35.8742331,
+    "lon": 7.1238484,
+    "phone": "غير متوفر",
+    "city": "أم البواقي",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "operator": "شبيلي"
+    }
+  },
+  {
+    "id": "node_5830173985",
+    "name": "Dr Boudriche",
+    "name_ar": null,
+    "name_fr": "DS Marine, Bait Shop",
+    "lat": 36.8036581,
+    "lon": 2.9239865,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_6102582485",
+    "name": "Gyneco belboula",
+    "name_ar": null,
+    "name_fr": "Gyneco belboula",
+    "lat": 36.4852774,
+    "lon": 2.8088367,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_6189288086",
+    "name": "Gyneco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7679588,
+    "lon": 3.0331992,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_6189288087",
+    "name": "Epsp gynécologue pédiatrie",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7679829,
+    "lon": 3.031899,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "healthcare:speciality": "gynaecology;paediatrics"
+    }
+  },
+  {
+    "id": "node_6191607385",
+    "name": "Gyneco HAMITOUCHE",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7693836,
+    "lon": 3.027816,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_6196541587",
+    "name": "Gyneco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7190173,
+    "lon": 3.0502969,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_6196560585",
+    "name": "Gyneco ourahmoun",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.715219,
+    "lon": 3.0507016,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_6205558785",
+    "name": "Farsi drag gyneco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7138205,
+    "lon": 3.0481264,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_6213088385",
+    "name": "يسمين لطب النساء",
+    "name_ar": "يسمين لطب النساء",
+    "name_fr": "Yasmine",
+    "lat": 33.4845045,
+    "lon": 6.9013128,
+    "phone": "غير متوفر",
+    "city": "حساني عبد الكريم",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "opening_hours": "Mo-Su 09:00-18:00"
+    }
+  },
+  {
+    "id": "node_6213156785",
+    "name": "Bederina Gyneco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.6977296,
+    "lon": 3.0804105,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_6215507887",
+    "name": "Pediatre gyneco gastro",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7060063,
+    "lon": 3.0901652,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_6226801188",
+    "name": "Djazia gyneco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7226509,
+    "lon": 3.0882056,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic"
+    }
+  },
+  {
+    "id": "node_6227496886",
+    "name": "ROTABY gyneco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7277392,
+    "lon": 3.0903962,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic"
+    }
+  },
+  {
+    "id": "node_6239360486",
+    "name": "عيادة/طبيب غير مسمى",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.4544073,
+    "lon": 6.2669619,
+    "phone": "غير متوفر",
+    "city": "ميلة",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_6255612387",
+    "name": "Hamouda Gyneco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7347859,
+    "lon": 3.0765733,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_6263358489",
+    "name": "Amara Gyneco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7228224,
+    "lon": 3.1162608,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_6263370093",
+    "name": "Mahtali gyneco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7217619,
+    "lon": 3.117142,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_6274457185",
+    "name": "Ouhib Millane",
+    "name_ar": "وهب ملان",
+    "name_fr": "Ouhib Millane",
+    "lat": 36.7473493,
+    "lon": 5.0533303,
+    "phone": "غير متوفر",
+    "city": "Béjaïa",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "operator": "وهب ملان"
+    }
+  },
+  {
+    "id": "node_6276356785",
+    "name": "Oukaour gynécologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.747405,
+    "lon": 5.0508586,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_6356625885",
+    "name": "طبيبة النساء العجري زوجة عبد الرحيم",
+    "name_ar": "طبيبة النساء العجري زوجة عبد الرحيم",
+    "name_fr": null,
+    "lat": 36.0681814,
+    "lon": 4.7719765,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic"
+    }
+  },
+  {
+    "id": "node_6397285264",
+    "name": "médecin spécialiste en gynécologie obstétrique Dr Benseddik Fatima",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 34.8508065,
+    "lon": -1.7288337,
+    "phone": "غير متوفر",
+    "city": "Maghnia",
+    "street": "Rue didouch Morad",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "operator": "Dr Benseddik Fatima"
+    }
+  },
+  {
+    "id": "node_6407324186",
+    "name": "عيادة/طبيب غير مسمى",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 31.9587209,
+    "lon": 5.3369197,
+    "phone": "غير متوفر",
+    "city": "ورقلة",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_6454369090",
+    "name": "Dr LOUAHCHI Gynecologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.917622,
+    "lon": 3.8941501,
+    "phone": "024762825",
+    "city": "dellys",
+    "street": "cite 92 logts les jardins",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_6534802685",
+    "name": "Gyneco ABANE MENASRIA",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.6908022,
+    "lon": 3.0731377,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_6541911286",
+    "name": "Bouhalissa gyneco",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.723609,
+    "lon": 3.1038762,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_6549065293",
+    "name": "حجامة جراية للنساء",
+    "name_ar": "حجامة جراية للنساء",
+    "name_fr": "Hidjama",
+    "lat": 33.3214684,
+    "lon": 6.8929746,
+    "phone": "غير متوفر",
+    "city": "البياضة",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic"
+    }
+  },
+  {
+    "id": "node_6579743342",
+    "name": "Athmani",
+    "name_ar": "طبيبة نسائي عثماني ت",
+    "name_fr": "Athmani T Gynéco",
+    "lat": 36.7448515,
+    "lon": 5.0509062,
+    "phone": "غير متوفر",
+    "city": "Béjaïa",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "operator": "ت. عثماني"
+    }
+  },
+  {
+    "id": "node_6581208285",
+    "name": "عيادة/طبيب غير مسمى",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.8137672,
+    "lon": 5.770991,
+    "phone": "غير متوفر",
+    "city": "جيجل",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_6786334176",
+    "name": "أمراض النساء والتوليد - فداوي دلالو قروي",
+    "name_ar": "أمراض النساء والتوليد - فداوي دلالو قروي",
+    "name_fr": "Fadaoui Delalou Karoui",
+    "lat": 36.8066551,
+    "lon": 7.7406222,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_7006727586",
+    "name": "الحكيمة غماري سميرة- أخصائية في طب النساء",
+    "name_ar": "الحكيمة غماري سميرة- أخصائية في طب النساء",
+    "name_fr": "docteur GOUMARI SAMIRA- GYNECOLOGUE",
+    "lat": 34.7785157,
+    "lon": -0.5653872,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_7264358185",
+    "name": "Dr Djellouli gynécologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 34.7272652,
+    "lon": 5.3772439,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_7475347285",
+    "name": "طبيبة نساء منديل. س",
+    "name_ar": "طبيبة نساء منديل. س",
+    "name_fr": "mendil.s gynécologue",
+    "lat": 36.1554569,
+    "lon": 5.6865288,
+    "phone": "0554637034",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_7602180692",
+    "name": "طبيبة نساء بن سليمان",
+    "name_ar": "طبيبة نساء بن سليمان",
+    "name_fr": null,
+    "lat": 35.2039548,
+    "lon": 4.1683584,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_7625957571",
+    "name": "Clinique Ali Chérif Ahmed",
+    "name_ar": null,
+    "name_fr": "Clinique Ali Chérif Ahmed",
+    "lat": 31.6293212,
+    "lon": -2.2063529,
+    "phone": "0699908968",
+    "city": "Béchar",
+    "street": "Rue Houari Benahmed",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "healthcare": "hospital",
+      "healthcare:speciality": "general;gynaecology;paediatrics;radiology;cardiology;surgery",
+      "operator": "Ali Chérif Ahmed"
+    }
+  },
+  {
+    "id": "node_7971782486",
+    "name": "طبيبة النساء والتوليد",
+    "name_ar": "طبيبة النساء والتوليد",
+    "name_fr": "Gynécologue Obstétricien (Dr. Cherifi Nadia Hayet)",
+    "lat": 36.7340775,
+    "lon": 2.9937781,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": "Cité 527 logement AADL batiment 3,RDC, El Achour",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare:speciality": "gynaecology",
+      "opening_hours": "Sa-Th 09:00-14:30"
+    }
+  },
+  {
+    "id": "node_8033314586",
+    "name": "أمراض النساء والتوليد",
+    "name_ar": "أمراض النساء والتوليد",
+    "name_fr": "Gynécologue",
+    "lat": 36.9004295,
+    "lon": 7.7591568,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor"
+    }
+  },
+  {
+    "id": "node_8287429551",
+    "name": "NABI Hafida",
+    "name_ar": "نابي حفيظة",
+    "name_fr": null,
+    "lat": 35.7108073,
+    "lon": 4.5382494,
+    "phone": "+213 35 357048",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "opening_hours": "Su-Th 08:00-16:30"
+    }
+  },
+  {
+    "id": "node_9340875953",
+    "name": "Dr Mme Benammour Gynécologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 35.3019781,
+    "lon": -1.1409984,
+    "phone": "غير متوفر",
+    "city": "Aïn Témouchent",
+    "street": "Résidence Mouas, Rue Yousfi Mohamed",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "opening_hours": "Sa-Th 08:00-18:00"
+    }
+  },
+  {
+    "id": "node_9483433926",
+    "name": "عيادة متخصصة في طب و جراحة النساء و التوليد",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 34.4339986,
+    "lon": 5.0736411,
+    "phone": "+213543878242",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "operator": "Dr. Makri Amina"
+    }
+  },
+  {
+    "id": "node_10227856417",
+    "name": "Docteur Benzorguine Meriem épouse Sedrati",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.2306348,
+    "lon": 6.941609,
+    "phone": "+213 661 45 25 46",
+    "city": "Aïn Abid",
+    "street": "Rue Kenfoud Slimane",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "description": "Centre Excellence Endoscopy - Spécialiste Gynécologie et Endoscopie",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "opening_hours": "Mo-Su 08:00-16:00"
+    }
+  },
+  {
+    "id": "node_10237534810",
+    "name": "دكتورة طبجون Dr Tabdjoune",
+    "name_ar": "دكتورة طبجون",
+    "name_fr": "Dr Tabdjoune",
+    "lat": 35.4990889,
+    "lon": 6.9189882,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "node_10542609409",
+    "name": "طبيبة نساء و توليد",
+    "name_ar": "طبيبة نساء و توليد د.حيدر .ل",
+    "name_fr": null,
+    "lat": 36.6874276,
+    "lon": 3.3682992,
+    "phone": "+213773851120",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "opening_hours": "We-Th, Sa-Mo 08:00-16:00; Tu 08:00-13:00"
+    }
+  },
+  {
+    "id": "node_10685186505",
+    "name": "عيادة طب وجراحة امراض النساء والتوليد",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 35.1981164,
+    "lon": 4.1617443,
+    "phone": "0541483126",
+    "city": "غير محدد",
+    "street": "حي سيدي سليمان عميرات 14/924 بالقرب من ابتدائية الفاتح نوفمبر",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_11145818350",
+    "name": "Dr Bouarroudj Narimene Gynécologue - الدكتورة بوعروج نريمان أمراض النساء والتوليد",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.4560783,
+    "lon": 6.2607917,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_11256394431",
+    "name": "MAKRI Amina",
+    "name_ar": "مقري آمنة",
+    "name_fr": null,
+    "lat": 35.7288512,
+    "lon": 4.5415686,
+    "phone": "+213 6 55801055",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology",
+      "opening_hours": "Su-We 07:30-17:00;Th 07:30-12:00"
+    }
+  },
+  {
+    "id": "node_11381047670",
+    "name": "Dr Bouali gynecologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.1652029,
+    "lon": 6.1763563,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_12466846861",
+    "name": "طب النساء",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.778345,
+    "lon": 3.248502,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_13019237055",
+    "name": "Dr Baya gynecologist",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 35.3641972,
+    "lon": 1.314524,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "node_13040019631",
+    "name": "polyclinique",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 35.0558025,
+    "lon": 0.8855166,
+    "phone": "غير متوفر",
+    "city": "Aïn El Hadid ⵄⵉⵏ ⵍⴻⵃⴷⵉⴷ عين الحديد",
+    "street": "حي اوكيل محمد",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "hospital",
+      "healthcare:speciality": "general;paediatrics;dentistry;biology;gynaecology;radiology;orthodontics"
+    }
+  },
+  {
+    "id": "node_13337090629",
+    "name": "Etablissement Hospitalier Privé Hasnaoui",
+    "name_ar": null,
+    "name_fr": "Etablissement Hospitalier Privé Hasnaoui",
+    "lat": 35.1791318,
+    "lon": -0.631694,
+    "phone": "040 71 98 04",
+    "city": "Sidi Bel Abbès",
+    "street": "Bloc J05 Makam El Chahid",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "healthcare": "hospital",
+      "healthcare:speciality": "dermatology;paediatrics;cardiology;urology;imagerie;hepatology;cardiothoracic_surgery;surgery;vascular_surgery;gynaecology;trauma;orthopaedics",
+      "operator": "Groupe des Sociétés HASNAOUI",
+      "website": "https://ehp-hasnaoui.com"
+    }
+  },
+  {
+    "id": "node_13716271901",
+    "name": "سعودي إيمان - امراض النساء والتوليد",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 37.0050672,
+    "lon": 6.5595435,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  },
+  {
+    "id": "way_24505936",
+    "name": "EHS Sidi Mabrouk - Maternité",
+    "name_ar": null,
+    "name_fr": "Hôpital de Maternité Sidi Mabrouk",
+    "lat": 36.3629165,
+    "lon": 6.6391664,
+    "phone": "غير متوفر",
+    "city": "Constantine",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "healthcare:speciality": "obstetrics;gynaecology",
+      "opening_hours": "24/7"
+    }
+  },
+  {
+    "id": "way_38224201",
+    "name": "المركز الاستشفائي الجامعي بني مسوس",
+    "name_ar": "المركز الاستشفائي الجامعي بني مسوس",
+    "name_fr": "Hôpital de Beni Messous",
+    "lat": 36.7790264,
+    "lon": 2.9809669,
+    "phone": "غير متوفر",
+    "city": "Alger",
+    "street": "Boulevard Brahim Hadjeres",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "healthcare:speciality": "general;psychiatry;chiropractic;paediatrics;dentistry;vaccination;biology;radiology;orthopaedics;ophthalmology;intensive;emergency;gynaecology;dialysis;cardiology;surgery;dermatology;orthodontics;oncology;community;osteopathy;internal;maternity;physiatry"
+    }
+  },
+  {
+    "id": "way_216282117",
+    "name": "Gynecologie",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.7357601,
+    "lon": 3.1055094,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare": "doctor",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "way_222155068",
+    "name": "Hôpital de Boufarik",
+    "name_ar": "مستشفى بوفاريك",
+    "name_fr": "Hôpital de Boufarik",
+    "lat": 36.5768733,
+    "lon": 2.9093395,
+    "phone": "غير متوفر",
+    "city": "Boufarik",
+    "street": "Rue des frères Hamadouch",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare:speciality": "internal;infectious_diseases;gynaecology;surgery;paediatrics;emergency;anaesthetics;intensive",
+      "operator": "Ministère de la santé"
+    }
+  },
+  {
+    "id": "way_223396517",
+    "name": "Maternité Benatou Mira",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 35.193232,
+    "lon": -0.6193271,
+    "phone": "غير متوفر",
+    "city": "سيدي بلعباس",
+    "street": "Boulevard Abane Ramdane",
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "birthing_centre",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "way_259560962",
+    "name": "Maternité",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 35.3765233,
+    "lon": -0.9660443,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "way_305687419",
+    "name": "EPH Chaabane Hamdoun",
+    "name_ar": null,
+    "name_fr": "EPH Chaabane Hamdoun",
+    "lat": 34.8389655,
+    "lon": -1.7344991,
+    "phone": "غير متوفر",
+    "city": "Maghnia",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "healthcare:speciality": "surgery;internal_medicine;pediatrics;gynaecology;oncology",
+      "operator": "Ministère de la Santé"
+    }
+  },
+  {
+    "id": "way_310710574",
+    "name": "عيادة الولادة - سليمان عميرات",
+    "name_ar": "عيادة الولادة - سليمان عميرات",
+    "name_fr": null,
+    "lat": 35.8752702,
+    "lon": 7.1109083,
+    "phone": "غير متوفر",
+    "city": "Oum El Bouaghi",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare:speciality": "gynaecology;maternity;paediatrics"
+    }
+  },
+  {
+    "id": "way_357284638",
+    "name": "Hôpital Brahim Tirichine",
+    "name_ar": "مستشفى ابراهيم تيريشين",
+    "name_fr": "Hôpital Brahim Tirichine",
+    "lat": 36.4769883,
+    "lon": 2.8333158,
+    "phone": "غير متوفر",
+    "city": "Blida",
+    "street": "Avenue Kritli Mokhtar",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare:speciality": "pulmonology;rheumatology;internal;surgery;gynaecology;paediatrics;emergency;radiology;anatomy;pathology"
+    }
+  },
+  {
+    "id": "way_372356311",
+    "name": "مصلحة التوليد و أمراض النساء",
+    "name_ar": "مصلحة التوليد و أمراض النساء",
+    "name_fr": "Maternité",
+    "lat": 35.6951056,
+    "lon": -0.640434,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "way_726148774",
+    "name": "Maternité",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 35.3027382,
+    "lon": -1.1248767,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "clinic",
+    "is_gyn": true,
+    "tags": {
+      "healthcare": "clinic",
+      "healthcare:speciality": "gynaecology",
+      "operator": "Ministère de la Santé"
+    }
+  },
+  {
+    "id": "way_783012784",
+    "name": "مستشفى الأمومة والتوليد",
+    "name_ar": "مستشفى الأمومة والتوليد",
+    "name_fr": "Hôpital de maternité et d'obstétrique",
+    "lat": 35.7949972,
+    "lon": 7.3943559,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital"
+    }
+  },
+  {
+    "id": "way_783094022",
+    "name": "المؤسسة الإستشفائية المتخصصة في طب النساء و التوليد",
+    "name_ar": "المؤسسة الإستشفائية المتخصصة في طب النساء و التوليد",
+    "name_fr": null,
+    "lat": 34.8497932,
+    "lon": 5.7424728,
+    "phone": "غير متوفر",
+    "city": "Biskra",
+    "street": "route sidi okba",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital"
+    }
+  },
+  {
+    "id": "way_783867972",
+    "name": "الدكتور عبد اللطيف توفيق الامراض الباطنية وأمراض النساء",
+    "name_ar": "الدكتور عبد اللطيف توفيق الامراض الباطنية وأمراض النساء",
+    "name_fr": null,
+    "lat": 35.2371038,
+    "lon": 4.1593134,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital"
+    }
+  },
+  {
+    "id": "way_783900063",
+    "name": "Dr LOUAHCHI Gynecologue",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.9176274,
+    "lon": 3.8942038,
+    "phone": "غير متوفر",
+    "city": "غير محدد",
+    "street": null,
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital"
+    }
+  },
+  {
+    "id": "way_783902574",
+    "name": "EHS Les Pins (Les Planteurs)",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 35.7013266,
+    "lon": -0.6590343,
+    "phone": "غير متوفر",
+    "city": "oran",
+    "street": "les Planteurs",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "healthcare:speciality": "paediatrics;gynaecology;maternity",
+      "operator": "etatique"
+    }
+  },
+  {
+    "id": "way_1174125001",
+    "name": "Dr. Larbi Ismail (Gynécologue)",
+    "name_ar": null,
+    "name_fr": null,
+    "lat": 36.4739522,
+    "lon": 2.8195444,
+    "phone": "غير متوفر",
+    "city": "Blida",
+    "street": null,
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors",
+      "healthcare:speciality": "gynaecology"
+    }
+  },
+  {
+    "id": "way_1174840092",
+    "name": "مستشفى المجاهد بهون موسى",
+    "name_ar": "مستشفى المجاهد بهون موسى",
+    "name_fr": "Hôpital Bouhoun moussa",
+    "lat": 32.8552934,
+    "lon": 3.7456962,
+    "phone": "غير متوفر",
+    "city": "Berriane",
+    "street": "الطريق العابر للصحراء",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "healthcare:speciality": "radiology;emergency;surgery;vaccination;anaesthetics;gynaecology;neonatology"
+    }
+  },
+  {
+    "id": "way_1186195621",
+    "name": "الدكتور عبد اللطيف توفيق الامراض الباطنية وأمراض النساء",
+    "name_ar": "الدكتور عبد اللطيف توفيق الامراض الباطنية وأمراض النساء",
+    "name_fr": null,
+    "lat": 35.237178,
+    "lon": 4.1594349,
+    "phone": "0699164436",
+    "city": "غير محدد",
+    "street": "طريق سيدي عامر",
+    "type": "hospital",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare:speciality": "internal;gynaecology",
+      "opening_hours": "Sa-We 08:00-12:00, 14:00-16:00; Th 08:00-12:00"
+    }
+  },
+  {
+    "id": "way_1186196098",
+    "name": "طبيبة ثعابني أسيا نساءواطفال",
+    "name_ar": "طبيبة ثعابني أسيا نساءواطفال",
+    "name_fr": null,
+    "lat": 35.2549936,
+    "lon": 4.1765199,
+    "phone": "0674408421",
+    "city": "غير محدد",
+    "street": "طريق الجزائر غزة",
+    "type": "doctor",
+    "is_gyn": true,
+    "tags": {
+      "amenity": "doctors"
+    }
+  }
+]

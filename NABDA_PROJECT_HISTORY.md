@@ -3,6 +3,45 @@
 
 ---
 
+## جلسة يوليو–أغسطس 2026 — بناء المتجر (منتجات + تصميم + طلبات COD)
+
+**النموذج:** نبضة متجر وسيط/إعادة بيع (COD، 58 ولاية) — السعر يبقى كسعر المورّد والعمولة باتفاق، وللمستخدم موافقات الأصحاب على عرض منتجاتهم.
+
+### 1) خط أنابيب الاستيراد `nabda-import/`
+مجلد Node.js لجلب منتجات المتاجر وتحويلها لصيغة Firestore الخاصة بالتطبيق ورفعها:
+- `build-curated.js` — يبني `nabda-products.json` من بيانات منسّقة يدوياً (بدون scraping)، عبر `lib/mapper.js` (نفس مخطط `products`: name/price/oldPrice نصوص، imageUrls[]، category من 15 فئة عربية، slug، stock، costPrice…). `polish.js` يحسّن الأوصاف. `import.js` للجلب الحيّ (Shopify products.json / sitemap+JSON-LD / WooCommerce).
+- `upload.js` — يرفع إلى Firestore عبر `firebase-admin` (يتجنّب التكرار عبر slug). `fix-images.js` — ينقل الصور إلى Firebase Storage لتظهر بثبات.
+- الإعداد: `serviceAccountKey.json` + `ownerUid` في `config.js`. أوامر: `node build-curated.js && node upload.js && node fix-images.js`.
+
+### 2) جلب المنتجات (~17 متجر مورّد → 61 منتجاً منسّقاً، المجموع في Firestore ≈ 96)
+جُلبت منتجات الأمومة/الرضيع فقط (باستبعاد غير المتعلق) من منصّات متعددة:
+- **Shopify** (products.json أو صفحة المنتج): filaman, pb9d17, 89ker6 (Petit Trésor), zsstoore, anjim (ملابس مولود متعددة).
+- **YouCan**: rasmin, topofferdz.
+- **FlexDZ** (React SPA — استُخرجت عبر متصفح Chrome: النقر على بطاقات التصنيف ثم قراءة DOM): moumtazkids, coucoumaman, familykids, lemondedesbebes.
+- **LightFunnels/myecomsite** (SSR): deatheat/ALGO, tiflidz, sekoon, doumdoum.
+- **ayor.ai / okwin / justsell**: dukaa, babydola, lesaffaires, jeux88, cleopatre, gaminobebe.
+- استُبعد darelazizaboutique (ملابس رجالية). كل منتج بصورة/صور + سعر + وصف عربي مقنع + قسم صحيح.
+- **درس:** الأصناف الفارغة (ملابس الحمل، فيتامينات، كتب) لا تُعلَن أصلاً بنظام COD في الجزائر (تأكيد عبر Facebook Ad Library) — تُركت بوسم «قريباً».
+
+### 3) إعادة تصميم متجر التطبيق `lib/screens/shop/shop_page.dart`
+- هوية **وردية ذهبية فاخرة**، بطاقات منتجات بشارات خصم ذهبية.
+- أصبح **مدفوعاً بالكامل من Firestore** حسب حقل `category`؛ حُذف الكتالوج الوهمي المبرمَج (~300 منتج وهمي كانت تظهر)؛ الأقسام الفارغة تعرض **«قريباً»**.
+- شاشة القسم `_CategoryProductsScreen` أصبحت شبكة Firestore. تنطبق التعديلات على الجوال والويب (نفس `ShopPage`).
+
+### 4) إصلاح `lib/screens/doctors/doctors_list_screen.dart`
+كان تالفاً (ودجة `FlutterMap` مقطوعة أدّت لأخطاء متتالية منعت البناء) — أُعيد بناؤها (مركز/تكبير/TileLayer OSM/`MarkerLayer` عبر `_buildMapMarkers`) مع لفّ بطاقة التحكم والفلاتر في `Positioned`. `flutter analyze` = 0 أخطاء.
+
+### 5) الموقع `web/shop.html` + طلبات COD بلا تسجيل دخول
+- بطاقات المنتج: حُذف التصنيف والتقييم، وكُبّرت الصورة (200→270px).
+- صفحة المنتج: تحوّلت من **نافذة منبثقة** إلى **صفحة هبوط كاملة** برابط `/shop/{slug}`.
+- أُضيف **نموذج طلب COD مباشر** (الاسم، الهاتف، الولاية 58، البلدية، الكمية) يكتب إلى مجموعة `orders` دون تسجيل دخول (`status:'pending'`, `source:'website'`, حقول `phone`/`total` لتطابق لوحة الأدمن).
+- **`firestore.rules`:** سُمح بإنشاء طلبات الزوّار (COD) بتحقّق صارم من الحقول، والطاقم (`isActiveStaff`) يقرأ كل الطلبات — فظهرت طلبات الزوّار في «إدارة الطلبات».
+- النشر: `flutter build web && firebase deploy --only hosting,firestore:rules`.
+
+**ملاحظة تقنية:** مجلد المشروع مُزامَن عبر OneDrive — عند الحاجة لتشغيل ملف فوراً يُكتب عبر bash لتفادي تأخّر المزامنة.
+
+---
+
 ## معلومات المشروع الأساسية
 
 | العنصر | القيمة |

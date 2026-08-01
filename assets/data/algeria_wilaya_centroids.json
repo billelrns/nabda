@@ -1,0 +1,485 @@
+[
+  {
+    "wilaya_id": 1,
+    "wilaya_name_ar": "أدرار",
+    "wilaya_name_fr": "Adrar",
+    "lat": 28.542950624242426,
+    "lon": 0.39286560303030293
+  },
+  {
+    "wilaya_id": 2,
+    "wilaya_name_ar": "الشلف",
+    "wilaya_name_fr": "Chlef",
+    "lat": 36.2258655794872,
+    "lon": 1.3427998923076927
+  },
+  {
+    "wilaya_id": 3,
+    "wilaya_name_ar": "الأغواط",
+    "wilaya_name_fr": "Laghouat",
+    "lat": 33.747270383050854,
+    "lon": 2.8799211050847466
+  },
+  {
+    "wilaya_id": 4,
+    "wilaya_name_ar": "أم البواقي",
+    "wilaya_name_fr": "Oum El Bouaghi",
+    "lat": 35.79530989722223,
+    "lon": 7.190802244444445
+  },
+  {
+    "wilaya_id": 5,
+    "wilaya_name_ar": "باتنة",
+    "wilaya_name_fr": "Batna",
+    "lat": 35.576359774285706,
+    "lon": 5.929661068571428
+  },
+  {
+    "wilaya_id": 6,
+    "wilaya_name_ar": "بجاية",
+    "wilaya_name_fr": "Bejaia",
+    "lat": 36.54285056590909,
+    "lon": 4.633337714772727
+  },
+  {
+    "wilaya_id": 7,
+    "wilaya_name_ar": "بسكرة",
+    "wilaya_name_fr": "Biskra",
+    "lat": 34.87201580697674,
+    "lon": 5.649874293023257
+  },
+  {
+    "wilaya_id": 8,
+    "wilaya_name_ar": "بشار",
+    "wilaya_name_fr": "Bechar",
+    "lat": 31.56885936896552,
+    "lon": -2.229371727586207
+  },
+  {
+    "wilaya_id": 9,
+    "wilaya_name_ar": "البليدة",
+    "wilaya_name_fr": "Blida",
+    "lat": 36.512455687317086,
+    "lon": 2.765453996585364
+  },
+  {
+    "wilaya_id": 10,
+    "wilaya_name_ar": "البويرة",
+    "wilaya_name_fr": "Bouira",
+    "lat": 36.34019404262294,
+    "lon": 3.7978500032786893
+  },
+  {
+    "wilaya_id": 11,
+    "wilaya_name_ar": "تمنراست",
+    "wilaya_name_fr": "Tamanrasset",
+    "lat": 22.5716232,
+    "lon": 5.1990117666666675
+  },
+  {
+    "wilaya_id": 12,
+    "wilaya_name_ar": "تبسة",
+    "wilaya_name_fr": "Tebessa",
+    "lat": 35.39171078076923,
+    "lon": 7.662182996153846
+  },
+  {
+    "wilaya_id": 13,
+    "wilaya_name_ar": "تلمسان",
+    "wilaya_name_fr": "Tlemcen",
+    "lat": 34.9504967653846,
+    "lon": -1.4373525564102567
+  },
+  {
+    "wilaya_id": 14,
+    "wilaya_name_ar": "تيارت",
+    "wilaya_name_fr": "Tiaret",
+    "lat": 35.31631140365854,
+    "lon": 1.3490008597560976
+  },
+  {
+    "wilaya_id": 15,
+    "wilaya_name_ar": "تيزي وزو",
+    "wilaya_name_fr": "Tizi Ouzou",
+    "lat": 36.63968943503649,
+    "lon": 4.063185191240874
+  },
+  {
+    "wilaya_id": 16,
+    "wilaya_name_ar": "الجزائر",
+    "wilaya_name_fr": "Alger",
+    "lat": 36.697276391438386,
+    "lon": 3.175364216438357
+  },
+  {
+    "wilaya_id": 17,
+    "wilaya_name_ar": "الجلفة",
+    "wilaya_name_fr": "Djelfa",
+    "lat": 34.663677951351346,
+    "lon": 3.201825677477477
+  },
+  {
+    "wilaya_id": 18,
+    "wilaya_name_ar": "جيجل",
+    "wilaya_name_fr": "Jijel",
+    "lat": 36.68260984166667,
+    "lon": 5.107695399999999
+  },
+  {
+    "wilaya_id": 19,
+    "wilaya_name_ar": "سطيف",
+    "wilaya_name_fr": "Setif",
+    "lat": 36.10775875555555,
+    "lon": 4.673600835555556
+  },
+  {
+    "wilaya_id": 20,
+    "wilaya_name_ar": "سعيدة",
+    "wilaya_name_fr": "Saida",
+    "lat": 35.36352023076923,
+    "lon": 0.686280376923077
+  },
+  {
+    "wilaya_id": 21,
+    "wilaya_name_ar": "سكيكدة",
+    "wilaya_name_fr": "Skikda",
+    "lat": 36.774958840983615,
+    "lon": 5.908638524590161
+  },
+  {
+    "wilaya_id": 22,
+    "wilaya_name_ar": "سيدي بلعباس",
+    "wilaya_name_fr": "Sidi Bel Abbes",
+    "lat": 35.272986694339615,
+    "lon": 0.05376220188679247
+  },
+  {
+    "wilaya_id": 23,
+    "wilaya_name_ar": "عنابة",
+    "wilaya_name_fr": "Annaba",
+    "lat": 36.67407504931508,
+    "lon": 7.120331869863013
+  },
+  {
+    "wilaya_id": 24,
+    "wilaya_name_ar": "قالمة",
+    "wilaya_name_fr": "Guelma",
+    "lat": 36.13417191111111,
+    "lon": 6.325670604444446
+  },
+  {
+    "wilaya_id": 25,
+    "wilaya_name_ar": "قسنطينة",
+    "wilaya_name_fr": "Constantine",
+    "lat": 36.43142085175438,
+    "lon": 6.5407981175438605
+  },
+  {
+    "wilaya_id": 26,
+    "wilaya_name_ar": "المدية",
+    "wilaya_name_fr": "Medea",
+    "lat": 36.23043722692307,
+    "lon": 3.200676176923078
+  },
+  {
+    "wilaya_id": 27,
+    "wilaya_name_ar": "مستغانم",
+    "wilaya_name_fr": "Mostaganem",
+    "lat": 35.91725005520833,
+    "lon": 0.5794557822916668
+  },
+  {
+    "wilaya_id": 28,
+    "wilaya_name_ar": "المسيلة",
+    "wilaya_name_fr": "M'Sila",
+    "lat": 35.77701285111111,
+    "lon": 4.488883622222223
+  },
+  {
+    "wilaya_id": 29,
+    "wilaya_name_ar": "معسكر",
+    "wilaya_name_fr": "Mascara",
+    "lat": 35.995724790598295,
+    "lon": 1.0252350974358977
+  },
+  {
+    "wilaya_id": 30,
+    "wilaya_name_ar": "ورقلة",
+    "wilaya_name_fr": "Ouargla",
+    "lat": 32.08297325416667,
+    "lon": 5.548443054166668
+  },
+  {
+    "wilaya_id": 31,
+    "wilaya_name_ar": "وهران",
+    "wilaya_name_fr": "Oran",
+    "lat": 35.701335569142884,
+    "lon": -0.5835919337142861
+  },
+  {
+    "wilaya_id": 32,
+    "wilaya_name_ar": "البيض",
+    "wilaya_name_fr": "El Bayadh",
+    "lat": 34.551120235,
+    "lon": 1.8380282300000002
+  },
+  {
+    "wilaya_id": 33,
+    "wilaya_name_ar": "إليزي",
+    "wilaya_name_fr": "Illizi",
+    "lat": 27.319378575,
+    "lon": 8.8737664125
+  },
+  {
+    "wilaya_id": 34,
+    "wilaya_name_ar": "برج بوعريريج",
+    "wilaya_name_fr": "Bordj Bou Arreridj",
+    "lat": 36.17263618194443,
+    "lon": 5.390860661111111
+  },
+  {
+    "wilaya_id": 35,
+    "wilaya_name_ar": "بومرداس",
+    "wilaya_name_fr": "Boumerdes",
+    "lat": 36.68536832028986,
+    "lon": 3.438636017391304
+  },
+  {
+    "wilaya_id": 36,
+    "wilaya_name_ar": "الطارف",
+    "wilaya_name_fr": "El Tarf",
+    "lat": 36.768776676923075,
+    "lon": 7.782007673076921
+  },
+  {
+    "wilaya_id": 37,
+    "wilaya_name_ar": "تندوف",
+    "wilaya_name_fr": "Tindouf",
+    "lat": 27.51509848947369,
+    "lon": -7.970725889473685
+  },
+  {
+    "wilaya_id": 38,
+    "wilaya_name_ar": "تيسمسيلت",
+    "wilaya_name_fr": "Tissemsilt",
+    "lat": 35.66803927446809,
+    "lon": 3.667359304255319
+  },
+  {
+    "wilaya_id": 39,
+    "wilaya_name_ar": "الوادي",
+    "wilaya_name_fr": "El Oued",
+    "lat": 33.46815976567164,
+    "lon": 6.816769120895523
+  },
+  {
+    "wilaya_id": 40,
+    "wilaya_name_ar": "خنشلة",
+    "wilaya_name_fr": "Khenchela",
+    "lat": 35.56914187014925,
+    "lon": 6.15031619850746
+  },
+  {
+    "wilaya_id": 41,
+    "wilaya_name_ar": "سوق أهراس",
+    "wilaya_name_fr": "Souk Ahras",
+    "lat": 36.224282708,
+    "lon": 7.863890795999998
+  },
+  {
+    "wilaya_id": 42,
+    "wilaya_name_ar": "تيبازة",
+    "wilaya_name_fr": "Tipaza",
+    "lat": 36.32640954368931,
+    "lon": 2.2540310640776697
+  },
+  {
+    "wilaya_id": 43,
+    "wilaya_name_ar": "ميلة",
+    "wilaya_name_fr": "Mila",
+    "lat": 36.36759730208333,
+    "lon": 6.115524700000001
+  },
+  {
+    "wilaya_id": 44,
+    "wilaya_name_ar": "عين الدفلى",
+    "wilaya_name_fr": "Ain Defla",
+    "lat": 35.6745378225,
+    "lon": 2.0710260849999997
+  },
+  {
+    "wilaya_id": 45,
+    "wilaya_name_ar": "النعامة",
+    "wilaya_name_fr": "Naama",
+    "lat": 33.2471037,
+    "lon": -0.25193398181818183
+  },
+  {
+    "wilaya_id": 46,
+    "wilaya_name_ar": "عين تموشنت",
+    "wilaya_name_fr": "Ain Temouchent",
+    "lat": 35.3491442390625,
+    "lon": -1.0237377703125001
+  },
+  {
+    "wilaya_id": 47,
+    "wilaya_name_ar": "غرداية",
+    "wilaya_name_fr": "Ghardaia",
+    "lat": 32.47942020344828,
+    "lon": 3.735216237931034
+  },
+  {
+    "wilaya_id": 48,
+    "wilaya_name_ar": "غليزان",
+    "wilaya_name_fr": "Relizane",
+    "lat": 35.9178640425,
+    "lon": 1.3634325499999997
+  },
+  {
+    "wilaya_id": 49,
+    "wilaya_name_ar": "تيميمون",
+    "wilaya_name_fr": "Timimoun",
+    "lat": 29.521128275,
+    "lon": 0.4798395
+  },
+  {
+    "wilaya_id": 50,
+    "wilaya_name_ar": "برج باجي مختار",
+    "wilaya_name_fr": "Bordj Badji Mokhtar",
+    "lat": 21.158118175000002,
+    "lon": 1.2056925125
+  },
+  {
+    "wilaya_id": 51,
+    "wilaya_name_ar": "أولاد جلال",
+    "wilaya_name_fr": "Ouled Djellal",
+    "lat": 34.57097106875,
+    "lon": 5.221329067187499
+  },
+  {
+    "wilaya_id": 52,
+    "wilaya_name_ar": "بني عباس",
+    "wilaya_name_fr": "Beni Abbes",
+    "lat": 29.962245725,
+    "lon": -1.9844789
+  },
+  {
+    "wilaya_id": 53,
+    "wilaya_name_ar": "عين صالح",
+    "wilaya_name_fr": "In Salah",
+    "lat": 27.11565265,
+    "lon": 1.9884859333333333
+  },
+  {
+    "wilaya_id": 54,
+    "wilaya_name_ar": "عين قزام",
+    "wilaya_name_fr": "In Guezzam",
+    "lat": 19.5735393,
+    "lon": 5.7705549
+  },
+  {
+    "wilaya_id": 55,
+    "wilaya_name_ar": "تقرت",
+    "wilaya_name_fr": "Touggourt",
+    "lat": 33.717092853125,
+    "lon": 5.7664246468750004
+  },
+  {
+    "wilaya_id": 56,
+    "wilaya_name_ar": "جانت",
+    "wilaya_name_fr": "Djanet",
+    "lat": 24.519367900000002,
+    "lon": 9.494723933333333
+  },
+  {
+    "wilaya_id": 57,
+    "wilaya_name_ar": "المغير",
+    "wilaya_name_fr": "El M'Ghair",
+    "lat": 33.972342569999995,
+    "lon": 4.85011106
+  },
+  {
+    "wilaya_id": 58,
+    "wilaya_name_ar": "المنيعة",
+    "wilaya_name_fr": "El Meniaa",
+    "lat": 30.706714511764705,
+    "lon": 2.978599470588235
+  },
+  {
+    "wilaya_id": 59,
+    "wilaya_name_ar": "أفلو",
+    "wilaya_name_fr": "Aflou",
+    "lat": 33.4414966,
+    "lon": 3.2445047
+  },
+  {
+    "wilaya_id": 60,
+    "wilaya_name_ar": "الأبيض سيدي الشيخ",
+    "wilaya_name_fr": "El Abiodh Sidi Cheikh",
+    "lat": 33.12249328749999,
+    "lon": 0.7160860750000001
+  },
+  {
+    "wilaya_id": 61,
+    "wilaya_name_ar": "العريشة",
+    "wilaya_name_fr": "El Aricha",
+    "lat": 35.027680096153844,
+    "lon": -0.6662980961538462
+  },
+  {
+    "wilaya_id": 62,
+    "wilaya_name_ar": "القنطرة",
+    "wilaya_name_fr": "El Kantara",
+    "lat": 34.91072041111111,
+    "lon": 6.042564411111112
+  },
+  {
+    "wilaya_id": 63,
+    "wilaya_name_ar": "بريكة",
+    "wilaya_name_fr": "Barika",
+    "lat": 35.58752436086957,
+    "lon": 5.467791091304346
+  },
+  {
+    "wilaya_id": 64,
+    "wilaya_name_ar": "بوسعادة",
+    "wilaya_name_fr": "Bou Saada",
+    "lat": 35.83098047142856,
+    "lon": 4.027639480952381
+  },
+  {
+    "wilaya_id": 65,
+    "wilaya_name_ar": "بير العاتر",
+    "wilaya_name_fr": "Bir El Ater",
+    "lat": 36.743296779297594,
+    "lon": 3.033139579667284
+  },
+  {
+    "wilaya_id": 66,
+    "wilaya_name_ar": "قصر البخاري",
+    "wilaya_name_fr": "Ksar El Boukhari",
+    "lat": 36.00593895,
+    "lon": 4.290273659999999
+  },
+  {
+    "wilaya_id": 67,
+    "wilaya_name_ar": "قصر الشلالة",
+    "wilaya_name_fr": "Ksar Chellala",
+    "lat": 35.870904800000005,
+    "lon": 3.83106062
+  },
+  {
+    "wilaya_id": 68,
+    "wilaya_name_ar": "عين وسارة",
+    "wilaya_name_fr": "Ain Oussara",
+    "lat": 35.52354607142858,
+    "lon": 2.897878636507936
+  },
+  {
+    "wilaya_id": 69,
+    "wilaya_name_ar": "مسعد",
+    "wilaya_name_fr": "Messaad",
+    "lat": 35.04291537878787,
+    "lon": 4.054164554545454
+  }
+]

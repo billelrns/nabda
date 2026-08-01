@@ -83,6 +83,15 @@
       el.classList.add('hidden');
       setTimeout(function () { el.remove(); }, 400);
     });
+
+    // تنظيف وعزل الـ ServiceWorker القديم لضمان جلب التحديثات فوراً لجميع المستخدمين في المتصفح العادي
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(var registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
   </script>
 
   <script src="flutter_bootstrap.js" async></script>
