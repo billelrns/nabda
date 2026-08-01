@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../widgets/nabda_ui.dart';
+
 // ──────────────────────────────────────────────────────────
 //  Nabda Onboarding — Inspired by Healofy & WeMoms
 //  7-step flow: Welcome → Life Stage → Method → Date →
@@ -288,7 +290,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       decoration: isGradient && onPressed != null
           ? BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFE91E63), Color(0xFFFF5252)],
+                colors: [kNabdaPink, kNabdaPinkDeep],
               ),
               borderRadius: BorderRadius.circular(999),
               boxShadow: [
@@ -540,7 +542,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         ),
         child: Row(
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 36)),
+            GlossyIconBubble.tinted(
+              base: color,
+              size: 54,
+              radius: 16,
+              child: Text(emoji, style: const TextStyle(fontSize: 26)),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
