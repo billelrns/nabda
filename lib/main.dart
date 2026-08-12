@@ -246,6 +246,9 @@ void main() async {
     }
   }
 
+  // خريطة عنوان المقال → معرّفه (لالتقاط صور المقالات تلقائياً بأسماء الملفات)
+  await ArticleImages.preload();
+
   runApp(NabdaApp());
 }
 
@@ -8793,8 +8796,7 @@ class _NewsSection extends StatelessWidget {
         child: Row(children: [
           ClipRRect(
             borderRadius: const BorderRadius.horizontal(right: Radius.circular(16)),
-            child: Image.network(n['image']!, width: 100, height: 90, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(width: 100, height: 90, color: accentColor.withOpacity(0.1), child: Icon(Icons.newspaper, color: accentColor))),
+            child: ArticleImage(title: n['title'] ?? '', section: 'home', networkUrl: n['image'], width: 100, height: 90, fit: BoxFit.cover),
           ),
           Expanded(
             child: Padding(
@@ -8858,8 +8860,7 @@ class _AllNewsScreen extends StatelessWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                    child: Image.network(n['image']!, height: 160, width: double.infinity, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(height: 160, color: accentColor.withOpacity(0.1), child: Icon(Icons.newspaper, color: accentColor, size: 50))),
+                    child: ArticleImage(title: n['title'] ?? '', section: 'home', networkUrl: n['image'], height: 160, width: double.infinity, fit: BoxFit.cover),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(14),

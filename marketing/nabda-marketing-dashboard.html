@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>نبضة — لوحة قيادة التسويق (90 يوم)</title>
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pink:#E0195B; --pink2:#F0347C; --pink-l:#FCE4EC; --pink-xl:#FFF5F8;
+  --teal:#00897B; --teal-l:#E0F2F1;
+  --ink:#1A1A1A; --mut:#6B7280; --line:#E9E4E7; --bg:#FAF8F9; --card:#FFFFFF;
+  --ok:#16A34A; --warn:#F59E0B; --bad:#DC2626;
+  --r:16px; --sh:0 1px 3px rgba(20,10,15,.06),0 8px 24px rgba(224,25,91,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Almarai',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;font-size:15px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px 80px}
+
+/* HEADER */
+header{background:linear-gradient(135deg,var(--pink) 0%,var(--pink2) 55%,#FF5C9E 100%);color:#fff;padding:34px 0 74px;position:relative;overflow:hidden}
+header::after{content:"";position:absolute;inset:auto -10% -60px -10%;height:140px;background:var(--bg);border-radius:50% 50% 0 0}
+.hd{max-width:1280px;margin:0 auto;padding:0 20px;position:relative;z-index:2;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.hearts{width:52px;height:52px;flex:0 0 auto}
+.hearts .big{animation:b1 1s ease-in-out infinite}
+.hearts .sml{animation:b2 .43s ease-in-out infinite;transform-origin:26px 27px}
+@keyframes b1{0%,100%{transform:scale(1)}12%{transform:scale(1.09)}26%{transform:scale(1)}38%{transform:scale(1.05)}}
+@keyframes b2{0%,100%{transform:scale(1)}30%{transform:scale(1.18)}60%{transform:scale(1)}}
+h1{font-size:25px;font-weight:800;letter-spacing:-.4px}
+.sub{opacity:.92;font-size:13.5px;font-weight:300}
+.hspacer{flex:1}
+.daychip{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.32);padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;backdrop-filter:blur(6px)}
+
+/* CARDS */
+.grid{display:grid;gap:16px}
+.k4{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:-46px;position:relative;z-index:3}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+.kpi{padding:18px 20px;position:relative;overflow:hidden}
+.kpi.star{border:1.5px solid var(--pink);background:linear-gradient(180deg,var(--pink-xl),#fff)}
+.kpi .lbl{font-size:12.5px;color:var(--mut);font-weight:700;display:flex;align-items:center;gap:6px}
+.kpi .val{font-size:34px;font-weight:800;line-height:1.15;margin:4px 0 2px;color:var(--pink)}
+.kpi.tl .val{color:var(--teal)}
+.kpi .tgt{font-size:11.5px;color:var(--mut)}
+.bar{height:6px;background:var(--line);border-radius:99px;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--pink2));border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.kpi.tl .bar i{background:linear-gradient(90deg,var(--teal),#26A69A)}
+
+/* SECTION */
+section{margin-top:34px}
+h2{font-size:19px;font-weight:800;display:flex;align-items:center;gap:9px;margin-bottom:14px}
+h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--pink)}
+.hint{font-size:12.5px;color:var(--mut);font-weight:400;margin-right:auto}
+
+/* TABS */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{padding:9px 17px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;font:inherit;font-size:13.5px;font-weight:700;color:var(--mut);transition:.18s}
+.tab:hover{border-color:var(--pink);color:var(--pink)}
+.tab.on{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 4px 12px rgba(224,25,91,.28)}
+.pane{display:none} .pane.on{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* TIMELINE */
+.phases{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.ph{padding:16px 18px;border-radius:var(--r);border:1px solid var(--line);background:#fff;position:relative}
+.ph.now{border-color:var(--pink);box-shadow:0 0 0 3px var(--pink-l)}
+.ph .n{font-size:11.5px;font-weight:700;color:var(--mut);letter-spacing:.4px}
+.ph .t{font-size:16px;font-weight:800;margin:3px 0 6px}
+.ph .d{font-size:13px;color:var(--mut)}
+.ph .badge{position:absolute;top:14px;left:16px;background:var(--pink);color:#fff;font-size:10.5px;padding:3px 9px;border-radius:99px;font-weight:700}
+
+/* TASKS */
+.tasklist{display:flex;flex-direction:column;gap:8px}
+.task{display:flex;align-items:flex-start;gap:11px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;transition:.16s}
+.task:hover{border-color:var(--pink);background:var(--pink-xl)}
+.task.done{opacity:.5}
+.task.done .tx{text-decoration:line-through}
+.cb{width:20px;height:20px;border:2px solid var(--line);border-radius:6px;flex:0 0 auto;margin-top:2px;display:grid;place-items:center;transition:.16s;font-size:12px;color:#fff}
+.task.done .cb{background:var(--ok);border-color:var(--ok)}
+.tx{font-size:14px;font-weight:400}
+.tmeta{font-size:11.5px;color:var(--mut);margin-top:2px}
+
+/* TABLE */
+.tblwrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:var(--pink);color:#fff;padding:11px 12px;font-weight:700;text-align:right;font-size:12.5px;white-space:nowrap;position:sticky;top:0}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:nth-child(even) td{background:var(--pink-xl)}
+td input{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit;font-size:13px;text-align:center;background:#F8FAFF}
+td input:focus{outline:none;border-color:var(--pink);background:#fff}
+.pill{display:inline-block;padding:2.5px 10px;border-radius:99px;font-size:11.5px;font-weight:700}
+.p-t{background:var(--teal-l);color:var(--teal)}
+.p-p{background:var(--pink-l);color:var(--pink)}
+.p-g{background:#EEE;color:#555}
+
+/* SEARCH */
+.search{width:100%;padding:12px 16px;border:1px solid var(--line);border-radius:12px;font:inherit;font-size:14px;margin-bottom:12px;background:#fff}
+.search:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 3px var(--pink-l)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:6px 13px;border-radius:99px;border:1px solid var(--line);background:#fff;cursor:pointer;font:inherit;font-size:12.5px;font-weight:700;color:var(--mut)}
+.chip.on{background:var(--teal);border-color:var(--teal);color:#fff}
+
+/* NOTE */
+.note{padding:14px 18px;border-radius:12px;border-right:4px solid var(--warn);background:#FFFBEB;font-size:13.5px}
+.note.bad{border-right-color:var(--bad);background:#FEF2F2}
+.note.ok{border-right-color:var(--ok);background:#F0FDF4}
+.note b{display:block;margin-bottom:3px}
+
+/* BUDGET */
+.budget{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.bcard{padding:16px 18px;border-radius:var(--r);border:1px solid var(--line);background:#fff}
+.bcard .bt{font-size:14px;font-weight:800;margin-bottom:4px}
+.bcard .ba{font-size:24px;font-weight:800;color:var(--teal)}
+.bcard .bd{font-size:12.5px;color:var(--mut);margin-top:5px}
+
+footer{text-align:center;color:var(--mut);font-size:12.5px;margin-top:44px;padding-top:22px;border-top:1px solid var(--line)}
+.resetbtn{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 14px;font:inherit;font-size:12px;color:var(--mut);cursor:pointer;margin-top:10px}
+.resetbtn:hover{border-color:var(--bad);color:var(--bad)}
+@media(max-width:640px){h1{font-size:20px}.kpi .val{font-size:28px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd">
+    <svg class="hearts" viewBox="0 0 52 52" fill="none">
+      <path class="big" d="M26 47S4 33.5 4 19.5C4 11.5 10 6 17 6c4 0 7.5 2 9 5 1.5-3 5-5 9-5 7 0 13 5.5 13 13.5C48 33.5 26 47 26 47z" fill="#fff" opacity=".95"/>
+      <path class="sml" d="M26 34s-8-5-8-10c0-3 2.2-5 4.7-5 1.5 0 2.7.7 3.3 1.8.6-1.1 1.8-1.8 3.3-1.8 2.5 0 4.7 2 4.7 5 0 5-8 10-8 10z" fill="#E0195B"/>
+    </svg>
+    <div>
+      <h1>نبضة — لوحة قيادة التسويق</h1>
+      <div class="sub">خطة 90 يوماً · الجزائر أولاً · 5 أوت → 2 نوفمبر 2026</div>
+    </div>
+    <div class="hspacer"></div>
+    <div class="daychip" id="daychip">اليوم —</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- KPI CARDS -->
+  <div class="grid k4">
+    <div class="card kpi star">
+      <div class="lbl">⭐ الطلبات المؤكدة <span style="font-weight:400">(المؤشر الشمالي)</span></div>
+      <div class="val" id="k-orders">0</div>
+      <div class="tgt">الهدف التراكمي: <b id="k-orders-t">365</b></div>
+      <div class="bar"><i id="b-orders" style="width:0"></i></div>
+    </div>
+    <div class="card kpi tl">
+      <div class="lbl">📲 تحميلات التطبيق</div>
+      <div class="val" id="k-inst">0</div>
+      <div class="tgt">الهدف التراكمي: <b>7,200</b></div>
+      <div class="bar"><i id="b-inst" style="width:0"></i></div>
+    </div>
+    <div class="card kpi">
+      <div class="lbl">👥 أعضاء مجموعة فيسبوك</div>
+      <div class="val" id="k-grp">0</div>
+      <div class="tgt">الهدف: <b>4,000</b> — أهم أصل تملكه</div>
+      <div class="bar"><i id="b-grp" style="width:0"></i></div>
+    </div>
+    <div class="card kpi tl">
+      <div class="lbl">🎬 فيديوهات منشورة</div>
+      <div class="val" id="k-vid">0</div>
+      <div class="tgt">الهدف: <b>1,000</b> (≈ 11/يوم عبر المنصات)</div>
+      <div class="bar"><i id="b-vid" style="width:0"></i></div>
+    </div>
+  </div>
+
+  <!-- PHASES -->
+  <section>
+    <h2><span class="dot"></span> المراحل</h2>
+    <div class="phases" id="phases"></div>
+  </section>
+
+  <!-- TABS -->
+  <section>
+    <div class="tabs">
+      <button class="tab on" data-p="p1">✅ مهام هذا الأسبوع</button>
+      <button class="tab" data-p="p2">📊 المؤشرات الأسبوعية</button>
+      <button class="tab" data-p="p3">💡 بنك الأفكار</button>
+      <button class="tab" data-p="p4">🪝 قوالب الـ Hook</button>
+      <button class="tab" data-p="p5">💰 الميزانية</button>
+      <button class="tab" data-p="p6">⚠️ القواعد والمخاطر</button>
+    </div>
+
+    <!-- P1 TASKS -->
+    <div class="pane on" id="p1">
+      <div class="note ok" style="margin-bottom:14px">
+        <b>قاعدة يوم الإنتاج</b>
+        كل يوم أحد: 3 ساعات تصوير (25–30 فيديو) + ساعتان مونتاج = محتوى أسبوع كامل مجدول. لا تصوّر يومياً — ستتوقف خلال 3 أسابيع.
+      </div>
+      <div class="tabs" id="wknav" style="margin-bottom:14px"></div>
+      <div class="tasklist" id="tasks"></div>
+    </div>
+
+    <!-- P2 KPI -->
+    <div class="pane" id="p2">
+      <div class="note" style="margin-bottom:14px">
+        <b>املأ هذا كل يوم أحد — 5 دقائق</b>
+        الأرقام تُحفظ في متصفحك تلقائياً. المؤشر الوحيد الذي يهم فعلاً هو «الطلبات المؤكدة» — البقية مؤشرات قيادية.
+      </div>
+      <div class="tblwrap">
+        <table id="kpitbl">
+          <thead><tr>
+            <th>الأسبوع</th><th>التاريخ</th><th>🎬 فيديوهات</th><th>👁 مشاهدات</th>
+            <th>🎵 تيك توك</th><th>📸 إنستغرام</th><th>👥 المجموعة</th>
+            <th>📲 تحميلات</th><th>⭐ طلبات</th><th>💰 إنفاق (دج)</th><th>تكلفة/طلبية</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <button class="resetbtn" onclick="resetAll()">🗑 مسح كل البيانات المحفوظة</button>
+    </div>
+
+    <!-- P3 IDEAS -->
+    <div class="pane" id="p3">
+      <input class="search" id="q" placeholder="🔎 ابحث في الأفكار… (مثال: رضاعة، حقيبة، إباضة)">
+      <div class="chips" id="chips"></div>
+      <div class="tblwrap">
+        <table id="ideas"><thead><tr>
+          <th style="width:44px">#</th><th>المحور</th><th>الفكرة</th><th>الشريحة</th><th>المنصة</th><th>منتج مرتبط</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- P4 HOOKS -->
+    <div class="pane" id="p4">
+      <div class="note ok" style="margin-bottom:14px">
+        <b>قاعدة الـ 1.5 ثانية</b>
+        إذا لم يشدّ الفيديو المشاهدة في أول ثانية ونصف — خسرتها. الـ Hook أهم من الإضاءة والمونتاج والمنتج مجتمعين. وبالدارجة الجزائرية دائماً — لا فصحى.
+      </div>
+      <div class="tblwrap">
+        <table id="hooks"><thead><tr>
+          <th style="width:44px">#</th><th>النوع</th><th>القالب</th><th>مثال جاهز</th><th>لماذا يعمل</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- P5 BUDGET -->
+    <div class="pane" id="p5">
+      <div class="note bad" style="margin-bottom:16px">
+        <b>⚠️ الدفع لميتا من الجزائر</b>
+        بطاقات CIB والذهبية <b>مرفوضة</b> — ميتا تحاسب بالعملة الصعبة. الحل الأبسط: استعمال الحساب الإعلاني الموجود (Big Shopping Algérie BM). البدائل: بطاقة دولية (Wise / Payoneer)، أو وكالة جزائرية تبيع رصيداً بالدينار.
+        <b style="margin-top:8px">لا تقلّب طرق الدفع على نفس الحساب</b> — ميتا تربط ذلك بالاحتيال وتوقف الحساب نهائياً.
+      </div>
+      <div class="budget" id="budget"></div>
+      <div class="note" style="margin-top:16px">
+        <b>الاقتصاد الوحدوي — احسبه قبل أي دينار إعلاني</b>
+        الربح الصافي للطلبية = (سعر البيع − التكلفة) − توصيل المرتجعات − تكلفة الإعلان للطلبية.<br>
+        معدل تأكيد الدفع عند الاستلام في الجزائر: <b>50%–65%</b>. إذا كان ربحك الصافي أقل من <b>400 دج</b> للطلبية، الإعلان المدفوع لن يكون مربحاً — والمحتوى العضوي يصبح ضرورة لا خياراً.
+      </div>
+    </div>
+
+    <!-- P6 RULES -->
+    <div class="pane" id="p6">
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))" id="rules"></div>
+    </div>
+  </section>
+
+  <footer>
+    نبضة · خطة التسويق 2026 — البيانات محفوظة محلياً في متصفحك ولا تُرسل إلى أي مكان.
+  </footer>
+</div>
+
+<script>
+/* ---------- storage (safe fallback) ---------- */
+var MEM={};
+function save(k,v){try{localStorage.setItem('nabda_'+k,JSON.stringify(v))}catch(e){MEM[k]=v}}
+function load(k,d){try{var x=localStorage.getItem('nabda_'+k);return x?JSON.parse(x):(MEM[k]!==undefined?MEM[k]:d)}catch(e){return MEM[k]!==undefined?MEM[k]:d}}
+function resetAll(){if(!confirm('مسح كل البيانات المحفوظة؟'))return;try{Object.keys(localStorage).filter(function(k){return k.indexOf('nabda_')===0}).forEach(function(k){localStorage.removeItem(k)})}catch(e){}MEM={};location.reload()}
+
+/* ---------- dates ---------- */
+var START=new Date(2026,7,5);
+var today=new Date(); today.setHours(0,0,0,0);
+var dayNum=Math.floor((today-START)/86400000)+1;
+document.getElementById('daychip').textContent = dayNum<1 ? 'يبدأ قريباً' : (dayNum>90 ? 'انتهت الـ90 يوم' : 'اليوم '+dayNum+' من 90');
+function fmt(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')}
+function addD(n){var d=new Date(START);d.setDate(d.getDate()+n);return d}
+
+/* ---------- phases ---------- */
+var PHASES=[
+ {n:'أسبوع 0 · أيام 1–7',t:'التحضير',d:'لا تنشر شيئاً قبل إتمام قائمة التأسيس: الهوية، المجموعة، ASO، التتبع، وبنك 30 فيديو.',a:1,b:7},
+ {n:'المرحلة 1 · أيام 8–37',t:'التأسيس والإشارة الأولى',d:'إثبات أن المحتوى يعمل + أول 25 طلبية. لا توسّع بعد.',a:8,b:37},
+ {n:'المرحلة 2 · أيام 38–67',t:'الإثبات والتوسع',d:'مضاعفة الرابحين ×3، تشغيل المؤثرات و UGC، حملة العودة المدرسية.',a:38,b:67},
+ {n:'المرحلة 3 · أيام 68–90',t:'التحويل والمضاعفة',d:'أكتوبر الوردي، إعادة الاستهداف، برنامج الإحالة، 250 طلبية.',a:68,b:90}
+];
+document.getElementById('phases').innerHTML=PHASES.map(function(p){
+  var now=dayNum>=p.a&&dayNum<=p.b;
+  return '<div class="ph'+(now?' now':'')+'">'+(now?'<span class="badge">الآن</span>':'')+
+    '<div class="n">'+p.n+'</div><div class="t">'+p.t+'</div><div class="d">'+p.d+'</div></div>';
+}).join('');
+
+/* ---------- weekly tasks ---------- */
+var WEEKS=[
+ {w:1,title:'أسبوع 1 — التأسيس',ts:[
+  ['توحيد الاسم والصورة والـ Bio على تيك توك + إنستغرام + فيسبوك','هوية'],
+  ['إنشاء صفحة الرابط الواحد (Linktree): التطبيق / المتجر / واتساب / المجموعة','هوية'],
+  ['إنشاء مجموعة فيسبوك «نبضة | مجتمع الأمهات الجزائريات» + القواعد + منشور ترحيبي','أصل مملوك'],
+  ['إعداد WhatsApp Business: الكتالوج + الرد الآلي + قوائم البث','بيع'],
+  ['تحسين صفحة Google Play: العنوان + الوصف + 8 لقطات عربية بخلفية وردية','ASO'],
+  ['تركيب Meta Pixel + أحداث Firebase (install / signup / order) + روابط UTM','تتبع'],
+  ['الانضمام إلى 25 مجموعة أمهات جزائرية','توزيع'],
+  ['🎬 يوم الإنتاج: تصوير 30 فيديو دفعة واحدة','إنتاج']
+ ]},
+ {w:2,title:'أسبوع 2 — الإطلاق',ts:[
+  ['🚀 نشر أول 3 فيديوهات تيك توك — والاستمرار 3/يوم','محتوى'],
+  ['5 إجابات يومياً في مجموعات الأمهات — بدون أي رابط','ثقة'],
+  ['3 كاروسيل تعليمية على إنستغرام','محتوى'],
+  ['منشور فيسبوك يومي (نص طويل + صورة واحدة)','محتوى'],
+  ['دعوة 100 شخص لمجموعة نبضة','أصل مملوك'],
+  ['ستوري إنستغرام يومياً (استطلاع / صندوق أسئلة)','تفاعل'],
+  ['🎬 يوم الإنتاج الأسبوعي','إنتاج']
+ ]},
+ {w:3,title:'أسبوع 3 — التحليل وأول تعزيز',ts:[
+  ['تحليل: أي فيديو تجاوز 20 ألف مشاهدة؟ كرّر صيغته 5 مرات','تحليل'],
+  ['💰 أول تعزيز مدفوع: 1,500 دج على أفضل منشورين فقط','مدفوع'],
+  ['بدء الذكر العرضي لنبضة في المجموعات (مرة كل 5 إجابات)','توزيع'],
+  ['إذا لم يتجاوز أي فيديو 20 ألف بعد 40 فيديو → أعد كتابة كل الـ Hooks','تصحيح'],
+  ['🎬 يوم الإنتاج الأسبوعي','إنتاج']
+ ]},
+ {w:4,title:'أسبوع 4 — أول حملة بيع',ts:[
+  ['إطلاق عرض «أول 50 طلبية: توصيل مجاني»','بيع'],
+  ['البدء بالمنتجين المثبتين: واقي الحلمة السيليكون + مضخة الحليب','بيع'],
+  ['جمع أول 10 مراجعات + فيديو Unboxing من العميلات','دليل اجتماعي'],
+  ['إرسال رابط تقييم Google Play بعد كل توصيل ناجح','ASO'],
+  ['📊 مراجعة الشهر 1: احسب CPA ومعدل تأكيد COD','تحليل'],
+  ['🎬 يوم الإنتاج الأسبوعي','إنتاج']
+ ]},
+ {w:'5-8',title:'أسابيع 5–8 — التوسع (المرحلة 2)',ts:[
+  ['مضاعفة الرابحين: 5 نسخ من كل فيديو ناجح (نفس الصيغة، زاوية مختلفة)','مضاعفة'],
+  ['📩 التواصل مع 10 مؤثرات صغيرات (5–50 ألف) — منتج مجاني + عمولة','مؤثرات'],
+  ['طلب Unboxing من كل عميلة مقابل خصم 15% على الطلبية القادمة','UGC'],
+  ['إطلاق قناة يوتيوب شورتس (إعادة نشر — جهد صفر)','قناة'],
+  ['🎒 حملة العودة المدرسية: زاوية «الأم اللي راجعة للخدمة»','موسمي'],
+  ['🧪 أول اختبار إعلان تحويل: 500 دج/يوم × 7 أيام','مدفوع'],
+  ['📊 مراجعة الشهر 2: قرار زيادة الإعلان أو إيقافه','تحليل']
+ ]},
+ {w:'9-13',title:'أسابيع 9–13 — التحويل (المرحلة 3)',ts:[
+  ['🎀 إطلاق حملة أكتوبر الوردي — أكبر فرصة في الـ90 يوماً','حملة'],
+  ['سلسلة «الفحص الذاتي للثدي» خطوة بخطوة','حملة'],
+  ['شراكة مع طبيبة أو جمعية جزائرية (مصداقية مجانية)','شراكة'],
+  ['التزام علني: التبرع بمبلغ من كل طلبية خلال أكتوبر','حملة'],
+  ['تفعيل إعادة الاستهداف: زوار المتجر بلا طلب — أرخص إعلان ممكن','مدفوع'],
+  ['إطلاق برنامج الإحالة: 300 دج لكل عميلة على طلبيات كودها','نمو'],
+  ['حملة طلب التقييمات — الهدف 100 تقييم بـ4.5+','ASO'],
+  ['رسالة واتساب شهرية لكل قائمة (حوامل / أمهات جدد / زبائن)','احتفاظ'],
+  ['📊 المراجعة الكاملة + خطة الشهر 4 وقرار التوسع','تحليل']
+ ]}
+];
+var curW=load('curW',0);
+function renderNav(){
+  document.getElementById('wknav').innerHTML=WEEKS.map(function(w,i){
+    return '<button class="tab'+(i===curW?' on':'')+'" data-w="'+i+'">'+w.title.split('—')[0].trim()+'</button>';
+  }).join('');
+  document.querySelectorAll('#wknav .tab').forEach(function(b){
+    b.onclick=function(){curW=+b.dataset.w;save('curW',curW);renderNav();renderTasks()}
+  });
+}
+function renderTasks(){
+  var W=WEEKS[curW],done=load('done',{});
+  document.getElementById('tasks').innerHTML=W.ts.map(function(t,i){
+    var id='w'+curW+'t'+i,ok=done[id];
+    return '<div class="task'+(ok?' done':'')+'" data-id="'+id+'"><div class="cb">'+(ok?'✓':'')+'</div>'+
+      '<div><div class="tx">'+t[0]+'</div><div class="tmeta">'+t[1]+'</div></div></div>';
+  }).join('');
+  document.querySelectorAll('#tasks .task').forEach(function(el){
+    el.onclick=function(){var d=load('done',{});d[el.dataset.id]=!d[el.dataset.id];save('done',d);renderTasks()}
+  });
+}
+renderNav();renderTasks();
+
+/* ---------- KPI table ---------- */
+var COLS=['vid','views','tt','ig','grp','inst','ord','spend'];
+var TARGETS={ord:365,inst:7200,grp:4000,vid:1000};
+function renderKpi(){
+  var d=load('kpi',{}),tb=document.querySelector('#kpitbl tbody'),h='';
+  for(var w=1;w<=13;w++){
+    var r=d[w]||{};
+    var cpa=(r.ord>0&&r.spend>0)?Math.round(r.spend/r.ord).toLocaleString('en-US'):'—';
+    h+='<tr><td style="text-align:center;font-weight:700">'+w+'</td><td style="text-align:center;font-size:12px;color:#6B7280">'+fmt(addD((w-1)*7))+'</td>';
+    COLS.forEach(function(c){h+='<td><input type="number" min="0" data-w="'+w+'" data-c="'+c+'" value="'+(r[c]!==undefined?r[c]:'')+'" placeholder="0"></td>'});
+    h+='<td style="text-align:center;font-weight:700;color:#00897B">'+cpa+'</td></tr>';
+  }
+  tb.innerHTML=h;
+  tb.querySelectorAll('input').forEach(function(i){
+    i.oninput=function(){var dd=load('kpi',{});dd[i.dataset.w]=dd[i.dataset.w]||{};dd[i.dataset.w][i.dataset.c]=i.value===''?'':+i.value;save('kpi',dd);totals()}
+    i.onblur=renderKpi;
+  });
+  totals();
+}
+function totals(){
+  var d=load('kpi',{}),s={ord:0,inst:0,vid:0},g=0;
+  for(var w=1;w<=13;w++){var r=d[w]||{};s.ord+=+r.ord||0;s.inst+=+r.inst||0;s.vid+=+r.vid||0;if(+r.grp)g=+r.grp}
+  set('k-orders','b-orders',s.ord,TARGETS.ord);
+  set('k-inst','b-inst',s.inst,TARGETS.inst);
+  set('k-grp','b-grp',g,TARGETS.grp);
+  set('k-vid','b-vid',s.vid,TARGETS.vid);
+}
+function set(kid,bid,v,t){
+  document.getElementById(kid).textContent=v.toLocaleString('en-US');
+  document.getElementById(bid).style.width=Math.min(100,v/t*100)+'%';
+}
+renderKpi();
+
+/* ---------- ideas ---------- */
+var IDEAS=[
+['تعليم صحي','دورتك الشهرية: 4 مراحل واش يصرا في كل وحدة','متابِعة الدورة','IG كاروسيل','—'],
+['تعليم صحي','علامات الإباضة الـ5 اللي تقدري تلاحظيها بنفسك','تحاول الحمل','تيك توك','اختبار إباضة'],
+['تعليم صحي','الحمل أسبوع بأسبوع: الثلث الأول','حامل أول مرة','IG كاروسيل','فيتامينات'],
+['تعليم صحي','نقص الحديد في الحمل: الأعراض والحل','حامل','تيك توك','مكملات حديد'],
+['تعليم صحي','الغثيان الصباحي: 5 حلول مثبتة','حامل','تيك توك','—'],
+['تعليم صحي','النفاس: الجدول الزمني للتعافي','أم جديدة','فيسبوك','لوازم نفاس'],
+['تعليم صحي','جدول التطعيمات في الجزائر','أم جديدة','IG كاروسيل','—'],
+['تعليم صحي','الاكتئاب ما بعد الولادة: علامات لا تتجاهليها','أم جديدة','فيسبوك','—'],
+['تعليم صحي','الرضاعة الطبيعية: أول 48 ساعة','أم جديدة','تيك توك','واقي حلمة'],
+['تعليم صحي','الفحص الذاتي للثدي — خطوة بخطوة (أكتوبر)','الكل','IG كاروسيل','—'],
+['تعليم صحي','الحمل والصيام: القواعد الآمنة','حامل','فيسبوك','—'],
+['تعليم صحي','الدورة غير المنتظمة: 6 أسباب','متابِعة الدورة','تيك توك','—'],
+['تعليم صحي','تمارين آمنة في الحمل (بالفيديو)','حامل','ريلز','—'],
+['تعليم صحي','نوم الرضيع: بناء روتين في 7 أيام','أم جديدة','IG كاروسيل','—'],
+['حل مشكلة','تشققات الحلمة: الحل في 3 خطوات','أم جديدة','تيك توك','واقي حلمة سيليكون'],
+['حل مشكلة','احتقان الثدي: التخفيف الفوري','أم جديدة','تيك توك','مضخة حليب'],
+['حل مشكلة','بكاء الرضيع: 5 أسباب و5 حلول','أم جديدة','تيك توك','—'],
+['حل مشكلة','المغص عند الرضيع: واش يخدم فعلاً','أم جديدة','فيسبوك','قطرات مغص'],
+['حل مشكلة','آلام الظهر في الشهر السابع','حامل','تيك توك','حزام دعم الحمل'],
+['حل مشكلة','تسلخات الحفاض: الوقاية والعلاج','أم جديدة','IG','كريم حماية'],
+['حل مشكلة','الأرق في الحمل: وضعيات النوم','حامل','تيك توك','وسادة حمل'],
+['حل مشكلة','تساقط الشعر بعد الولادة','أم جديدة','تيك توك','مكملات'],
+['حل مشكلة','الرضاعة والخدمة: خطة عملية','أم عاملة','فيسبوك','مضخة + أكياس حفظ'],
+['حل مشكلة','علامات التمدد: الوقاية من الشهر الرابع','حامل','IG','زيت/كريم'],
+['منتجات','Unboxing طلبية نبضة كاملة','الكل','تيك توك','متعدد'],
+['منتجات','واقي الحلمة: المزيف vs الأصلي','أم جديدة','تيك توك','واقي حلمة'],
+['منتجات','مضخة الحليب: يدوية ولا كهربائية؟','أم جديدة','تيك توك','مضخة حليب'],
+['منتجات','حقيبة الولادة: القائمة الكاملة (جزء 1)','حامل','IG كاروسيل','حزمة الولادة'],
+['منتجات','حقيبة الولادة: القائمة الكاملة (جزء 2)','حامل','IG كاروسيل','حزمة الولادة'],
+['منتجات','الحفاضات: كيفاش تختاري المقاس','أم جديدة','تيك توك','حفاضات'],
+['منتجات','5 حوايج لازم تشريهم قبل الشهر 8','حامل','تيك توك','متعدد'],
+['منتجات','ملابس المولود: كم قطعة تحتاجين فعلاً؟','حامل','فيسبوك','ملابس مولود'],
+['منتجات','حمالة صدر الرضاعة: كيفاش تختاري','أم جديدة','IG','حمالة رضاعة'],
+['منتجات','مقارنة سعر: نبضة vs الصيدلية','الكل','تيك توك','متعدد'],
+['منتجات','أرخص 5 منتجات ضرورية للمولود','حامل','تيك توك','متعدد'],
+['منتجات','جهاز قياس الحرارة: أي نوع للرضيع؟','أم جديدة','تيك توك','ترمومتر'],
+['التطبيق','تسجيل شاشة: كيفاش تحسبي نهار الإباضة','متابِعة الدورة','تيك توك','—'],
+['التطبيق','سألت الـ AI تاع نبضة سؤال محرج — شوفي الجواب','الكل','تيك توك','—'],
+['التطبيق','متابعة الحمل أسبوع بأسبوع داخل التطبيق','حامل','ريلز','—'],
+['التطبيق','التذكيرات: التطبيق يقولك قبل ما تجيك','متابِعة الدورة','تيك توك','—'],
+['التطبيق','مجتمع نبضة: اسألي بلا خجل وبلا اسم','الكل','فيسبوك','—'],
+['التطبيق','الأطباء داخل التطبيق: كيفاش تستشيري','الكل','IG','—'],
+['التطبيق','المتجر داخل التطبيق: اطلبي وادفعي عند الاستلام','الكل','تيك توك','متعدد'],
+['التطبيق','3 مميزات ما تعرفيهاش في نبضة','الكل','ريلز','—'],
+['مجتمع/قصص','لماذا صنعت نبضة — القصة الكاملة','الكل','فيسبوك','—'],
+['مجتمع/قصص','قصة أم من وهران','الكل','تيك توك','—'],
+['مجتمع/قصص','مراجعة عميلة (لقطة شاشة)','الكل','IG ستوري','—'],
+['مجتمع/قصص','سؤال المجتمع: واش أصعب حاجة في الحمل؟','الكل','فيسبوك','—'],
+['مجتمع/قصص','من وراء الكواليس: تحضير الطلبيات','الكل','IG ستوري','—'],
+['مجتمع/قصص','رد على تعليق بفيديو','الكل','تيك توك','حسب السؤال'],
+['مجتمع/قصص','جلسة أسئلة وأجوبة مع قابلة','الكل','فيسبوك مباشر','—'],
+['مجتمع/قصص','تحدي: شاركي نصيحة لأم جديدة','الكل','IG','—'],
+['مجتمع/قصص','احتفال: وصلنا 1000 عضوة 🎉','الكل','كل المنصات','—'],
+['مجتمع/قصص','يوم في حياة أم جديدة في الجزائر','أم جديدة','تيك توك','متعدد'],
+['خرافات','الرضاعة تمنع الحمل؟','أم جديدة','تيك توك','—'],
+['خرافات','شكل البطن يحدد جنس المولود؟','حامل','تيك توك','—'],
+['خرافات','الحامل تاكل على اثنين؟','حامل','تيك توك','—'],
+['خرافات','الحرقة تعني شعر كثيف للمولود؟','حامل','تيك توك','—'],
+['خرافات','ما تقدريش تصبغي شعرك وأنت حامل؟','حامل','IG','—'],
+['خرافات','الحمام الساخن خطر على الحمل؟','حامل','تيك توك','—'],
+['موسمي','🎒 العودة المدرسية: الأم اللي راجعة للخدمة','أم عاملة','الكل','مضخة + أكياس'],
+['موسمي','🎀 أكتوبر الوردي: لماذا يهمك الفحص','الكل','الكل','—'],
+['موسمي','🎀 أكتوبر: قصة ناجية (بإذنها)','الكل','فيسبوك','—'],
+['موسمي','🎀 أكتوبر: نتبرع من كل طلبية','الكل','الكل','متعدد'],
+['موسمي','الشتاء: حماية الرضيع من البرد','أم جديدة','تيك توك','ملابس شتوية'],
+['موسمي','نهاية السنة: مراجعة صحتك النسائية','الكل','IG كاروسيل','—'],
+['عروض','توصيل مجاني لأول 50 طلبية','الكل','الكل','متعدد'],
+['عروض','حزمة حقيبة الولادة بسعر خاص','حامل','الكل','حزمة'],
+['عروض','كود إحالة: اربحي 300 دج','الكل','واتساب','متعدد']
+];
+var PILLARS=['الكل'].concat(IDEAS.map(function(i){return i[0]}).filter(function(v,i,a){return a.indexOf(v)===i}));
+var curP='الكل',curQ='';
+document.getElementById('chips').innerHTML=PILLARS.map(function(p,i){return '<button class="chip'+(i===0?' on':'')+'" data-p="'+p+'">'+p+'</button>'}).join('');
+document.querySelectorAll('#chips .chip').forEach(function(b){b.onclick=function(){curP=b.dataset.p;document.querySelectorAll('#chips .chip').forEach(function(x){x.classList.toggle('on',x===b)});drawIdeas()}});
+document.getElementById('q').oninput=function(){curQ=this.value.trim();drawIdeas()};
+function pcls(p){return p.indexOf('تيك')>-1?'p-p':(p.indexOf('IG')>-1||p.indexOf('ريلز')>-1?'p-t':'p-g')}
+function drawIdeas(){
+  var rows=IDEAS.filter(function(r){
+    return (curP==='الكل'||r[0]===curP) && (!curQ||r.join(' ').indexOf(curQ)>-1);
+  });
+  document.querySelector('#ideas tbody').innerHTML=rows.length?rows.map(function(r,i){
+    return '<tr><td style="text-align:center;color:#9CA3AF">'+(i+1)+'</td><td><span class="pill p-t">'+r[0]+'</span></td>'+
+    '<td style="font-weight:700">'+r[1]+'</td><td style="color:#6B7280">'+r[2]+'</td><td><span class="pill '+pcls(r[3])+'">'+r[3]+'</span></td>'+
+    '<td style="color:'+(r[4]==='—'?'#9CA3AF':'#00897B')+';font-weight:'+(r[4]==='—'?'400':'700')+'">'+r[4]+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;padding:30px;color:#9CA3AF">لا نتائج</td></tr>';
+}
+drawIdeas();
+
+/* ---------- hooks ---------- */
+var HOOKS=[
+['الخطأ الشائع','«[رقم] أخطاء تديرهم كل [شريحة] بلا ما تعرف»','«3 أخطاء تديرهم كل حامل جزائرية بلا ما تعرف»','الخوف من الخطأ أقوى من الرغبة في المكسب'],
+['الطمأنة','«واش راكِ تحسي بيه… راهو نورمال»','«الوجع في الجنب في الشهر الخامس؟ راهو نورمال»','يخاطب قلقاً حقيقياً موجوداً الآن'],
+['التحذير','«ما تشريش [منتج] قبل ما تشوفي هذا»','«ما تشريش مضخة حليب قبل ما تشوفي هذا»','يوقف السكرول فوراً'],
+['السرّ','«حتى واحد ما قالهالي هذي على [موضوع]»','«حتى واحد ما قالهالي هذي على النفاس»','حب الاطلاع على المخفي'],
+['POV','«POV: راكِ [وضعية] وما تعرفي والو»','«POV: راكِ حامل لأول مرة وما تعرفي والو»','تماهٍ فوري مع الشخصية'],
+['العدّ التنازلي','«[رقم] حوايج لازم [فعل] قبل [وقت]»','«5 حوايج لازم تشريهم قبل الشهر 8»','وعد بمعلومة محددة وقابلة للحفظ'],
+['خرافة vs حقيقة','«قالولك [خرافة]؟ الحقيقة هي…»','«قالولك الرضاعة تمنع الحمل؟ الحقيقة هي…»','الجدل يولّد تعليقات = وصول'],
+['المقارنة','«[أ] ولا [ب]؟ الفرق الحقيقي»','«مضخة يدوية ولا كهربائية؟ الفرق الحقيقي»','نية شراء عالية جداً'],
+['السؤال المباشر','«شكون فيكم [تجربة]؟»','«شكون فيكم عانت من تشققات الحلمة؟»','يستدعي تعليقاً = خوارزمية'],
+['قبل / بعد','«قبل ما نعرف [حل]… وبعد»','«قبل ما نعرف واقي الحلمة… وبعد»','دليل بصري على النتيجة'],
+['العدد الصادم','«[رقم]% من [شريحة] ما يعرفوش هذا»','«90% من الحوامل ما يعرفوش هذي العلامة»','الإحصائية تشدّ الانتباه'],
+['النداء المباشر','«إذا راكِ [وضعية]، هذا الفيديو ليكِ»','«إذا راكِ في الشهر السابع، هذا الفيديو ليكِ»','فلترة = جمهور مستهدف بدقة'],
+['قصة','«وحدة بعثتلي وقالتلي…»','«وحدة من سطيف بعثتلي: نحس روحي وحدي»','القصة تُتذكّر أضعاف ما تُتذكّر الحقيقة'],
+['تسجيل شاشة','«شوفي كيفاش [التطبيق] يدير [شيء]»','«شوفي كيفاش نبضة تقولك نهار الإباضة»','إثبات بصري = ثقة'],
+['الاعتراض','«تقولي [منتج] غالي؟ احسبي معايا»','«تقولي المضخة غالية؟ احسبي معايا»','يعالج أكبر مانع للشراء']
+];
+document.querySelector('#hooks tbody').innerHTML=HOOKS.map(function(h,i){
+  return '<tr><td style="text-align:center;color:#9CA3AF">'+(i+1)+'</td><td><span class="pill p-p">'+h[0]+'</span></td>'+
+  '<td style="color:#6B7280">'+h[1]+'</td><td style="font-weight:700">'+h[2]+'</td><td style="color:#6B7280;font-size:12.5px">'+h[3]+'</td></tr>';
+}).join('');
+
+/* ---------- budget ---------- */
+var BUD=[
+ ['تعزيز المنشورات الرابحة','70%','14,000 دج','لا تُنفق دينار على محتوى جديد. عزّز فقط ما تجاوز 5% تفاعل عضوياً — هذا يضاعف عائد كل دينار 5 إلى 10 مرات.'],
+ ['مؤثرات صغيرات','20%','4,000 دج','منتج مجاني + عمولة على كود خصم. لا تدفع نقداً مقدماً. استهدف 5–50 ألف متابعة جزائرية.'],
+ ['أدوات وأصول','10%','2,000 دج','CapCut Pro، خطوط، صور — أو صفر واستعمال المجاني وتحويل المبلغ للتعزيز.']
+];
+document.getElementById('budget').innerHTML=BUD.map(function(b){
+  return '<div class="bcard"><div class="bt">'+b[0]+' <span class="pill p-t">'+b[1]+'</span></div><div class="ba">'+b[2]+'</div><div class="bd">'+b[3]+'</div></div>';
+}).join('');
+
+/* ---------- rules ---------- */
+var RULES=[
+ ['🔥','الإرهاق — الخطر رقم 1','شخص واحد لا يستطيع التصوير يومياً. قاعدة يوم الإنتاج: كل أحد، 3 ساعات تصوير + ساعتان مونتاج = أسبوع كامل مجدول.','bad'],
+ ['💳','رفض الدفع لميتا','بطاقات CIB والذهبية مرفوضة. استعمل الـ BM الموجود ولا تقلّب طرق الدفع على نفس الحساب.','bad'],
+ ['📦','إلغاء الدفع عند الاستلام','معدل التأكيد 50–65%. الحل: مكالمة/واتساب تأكيد قبل الإرسال + صور حقيقية للمنتج، لا صور مضللة.','bad'],
+ ['📉','محتوى ينتشر بلا مبيعات','كل فيديو فيروسي يجب أن يتبعه فيديو «المنتج» خلال 24 ساعة، مع تعليق مثبّت فيه الرابط.',''],
+ ['🚫','حظر الحساب','لا سبام في الرسائل المباشرة · لا ادعاءات طبية · احتفظ بنسخة محلية من كل المحتوى.',''],
+ ['⚖️','المسؤولية القانونية','لا جرعات، لا تشخيص، لا وعود بالحمل. «استشيري طبيبتك» في كل موضوع حساس. هذا يحميك ويحمي العلامة.',''],
+ ['💡','نفاد الأفكار','تعليقات مجموعات الأمهات = بنك أفكار لا ينضب. كل سؤال متكرر = فيديو.','ok'],
+ ['🌍','التوسع المبكر','لا تتوسع قبل أن تثبت الجزائر ربحيتها. الجزائر مختبرك — كل Hook ينجح هنا يُنسخ لاحقاً بتكلفة صفر.','ok']
+];
+document.getElementById('rules').innerHTML=RULES.map(function(r){
+  return '<div class="note '+r[3]+'"><b>'+r[0]+' '+r[1]+'</b>'+r[2]+'</div>';
+}).join('');
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tabs .tab[data-p]').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.tabs .tab[data-p]').forEach(function(x){x.classList.toggle('on',x===b)});
+    document.querySelectorAll('.pane').forEach(function(p){p.classList.toggle('on',p.id===b.dataset.p)});
+  }
+});
+</script>
+</body>
+</html>

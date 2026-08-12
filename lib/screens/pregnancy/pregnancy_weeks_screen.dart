@@ -4,7 +4,6 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../widgets/nabda_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/pregnancy_week_articles.dart';
@@ -14,11 +13,14 @@ import '../../widgets/news_section.dart';
 import '../../widgets/personalized_tips.dart';
 import '../../widgets/conditional_content.dart';
 import '../../services/dynamic_content_service.dart';
+import '../../widgets/nabda_ui.dart';
+import '../../widgets/names_articles_carousel.dart';
+import '../../utils/article_images.dart';
 
 
 // ─── Fetus Image Helper ───
 String _fetusImagePath(int week) {
-  // المجموعة الجديدة الموحدة (شفافة الخلفية): كل الأسابيع 4..41 متوفرة
+  // المجموعة الموحدة الجديدة (خلفية شفافة): كل الأسابيع 4..41 متوفرة
   final w = week.clamp(4, 41);
   return 'assets/images/fetus_hd/week_$w.png';
 }
@@ -106,29 +108,7 @@ final List<_PregnancyArticle> _pregnancyArticles = [
     color: const Color(0xFF0097A7),
     bgColor: const Color(0xFFE0F7FA),
     image: 'https://images.unsplash.com/photo-1531353826977-0941b4779a1c?w=800&q=80',
-    content: 'النوم الجيد أثناء الح    content: 'فحوصات الحمل الدورية هي خط الدفاع الأول لضمان سلامتك وسلامة جنينك طوال أشهر الحمل. الالتزام بجدول الفحوصات يمكن الطبيبة من اكتشاف أي مشاكل مبكراً والتعامل معها قبل أن تتفاقم. في الثلث الأول من الحمل تبدأ الرحلة بفحص الدم الشامل الذي يكشف عن مستوى الهيموغلوبين ووظائف الكلى والكبد وفصيلة الدم والعامل الريسوسي. يُجرى فحص السكر الصيامي للكشف عن السكري الموجود مسبقاً وفحص الغدة الدرقية لأن اضطراباتها شائعة أثناء الحمل. أول أشعة تلفزيونية تكون عادة بين الأسبوع السادس والثامن لتأكيد الحمل داخل الرحم وسماع نبض الجنين لأول مرة وهي لحظة لا تُنسى. في الأسبوع الحادي عشر إلى الرابع عشر يُجرى فحص الشفافية القفوية لتقييم مخاطر متلازمة داون. في الثلث الثاني يأتي أهم فحص وهو السونار التفصيلي بين الأسبوع الثامن عشر والثاني والعشرين حيث يفحص الطبيب جميع أعضاء الجنين بالتفصيل من القلب والدماغ والكلى والعمود الفقري والأطراف ويتحقق من وضع المشيمة وكمية السائل الأمنيوسي. في هذا الفحص يمكنك أيضاً معرفة جنس المولود إن رغبتِ. بين الأسبوع الرابع والعشرين والثامن والعشرين يُجرى اختبار تحمل الجلوكوز للكشف عن سكري الحمل وهو فحص مهم جداً لأن سكري الحمل غير المعالج قد يسبب مضاعفات للأم والجنين. في الثلث الثالث تكثر المتابعات فتصبح كل أسبوعين ثم أسبوعياً مع اقتراب الولادة. يُراقب نمو الجنين وحركته ونبضه وكمية السائل ووضعيته. بين الأسبوع الخامس والثلاثين والسابع والثلاثين يُجرى فحص البكتيريا العقدية من المجموعة ب. يُقاس ضغط الدم في كل زيارة للكشف المبكر عن تسمم الحمل. لا تفوتي أي موعد متابعة مع طبيبتك واسأليها عن كل ما يقلقك. احتفظي بملف منظم لجميع نتائج فحوصاتك وأشعتك واحمليه معك في كل زيارة للطبيبة. دوني أسئلتك واستفساراتك قبل كل موعد لتتأكدي من أنك لن تنسي شيئاً مهماً. اسألي طبيبتك عن أي فحص لا تفهمينه ولا تخجلي من طلب التوضيح فصحتك وصحة طفلك تستحقان كل اهتمام. اعتبري كل زيارة فرصة للاطمئنان والتواصل مع طفلك لا مصدر قلق. تذكري أن التقنيات الطبية الحديثة تتيح متابعة دقيقة وآمنة لكل مراحل الحمل. ثقي بفريقك الطبي واستمتعي برؤية طفلك ينمو ويتطور مع كل فحص جديد فهذه لحظات ثمينة تستحق أن تعيشيها بفرح واطمئنان.',
-  ),
-  _PregnancyArticle(
-    title: 'خطوات عمل للاتفاق على الاسم',
-    subtitle: 'حل الخلافات حول اختيار الاسم',
-    category: 'الأسماء',
-    emoji: '🧭',
-    color: const Color(0xFF7C4DFF),
-    bgColor: const Color(0xFFF3E5F5),
-    image: 'https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=800&q=80',
-    content: 'كثيراً ما يحدث خلاف بين الزوجين حول تسمية المولود الجديد، حيث يفضل أحدهما الأسماء التقليدية بينما يميل الآخر للأسماء الحديثة. لحل هذا الخلاف، يُنصح باتباع خطوات عملية هادئة. ابدأ بكتابة قائمة تضم عشرة أسماء يفضلها كل طرف، ثم قوما بمراجعة القائمتين معاً واستبعاد الأسماء التي تلاقي اعتراضاً شديداً من الطرف الآخر. ابحثا عن نقطة تلاقٍ بأسماء تجمع بين الأصالة والسهولة اللفظية، وتذكرا أن الهدف هو إسعاد الأسرة واستقبال المولود بالحب والوئام وليس بالخلاف. التنازل المتبادل يثمر قراراً يرضي الطرفين ويبارك في حياة المولود.',
-  ),
-  _PregnancyArticle(
-    title: 'أثر الاسم على الرزق والبركة والتفاؤل',
-    subtitle: 'نظرة شرعية وتفاؤل بالخير',
-    category: 'الأسماء',
-    emoji: '⚖️',
-    color: const Color(0xFF00897B),
-    bgColor: const Color(0xFFE0F2F1),
-    image: 'https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=800&q=80',
-    content: 'يعتقد البعض خطأً أن هناك أسماء تجلب النحس أو تمنع الرزق، وهذا الاعتقاد يخالف العقيدة الإسلامية التي تؤمن بأن الأقدار والأرزاق بيد الله وحده سبحانه وتعالى. ومع ذلك، حث الإسلام على التفاؤل بالأسماء الحسنة (التفاؤل بالخير). كان النبي ﷺ يحب الفأل الحسن ويغير الأسماء السيئة لبعث الأمل في النفوس. تسمية الطفل باسم يحمل معاني البركة والرزق والحمد تنشئ طاقة من التفاؤل الإيجابي في الأسرة وتدعو للعمل الصالح والدعاء المستمر بالخير والبركة والنجاح المالي والروحي.',
-  ),
-];�نتِ تعانين من حرقة المعدة ارفعي رأسك بوسادة إضافية أو ارفعي مقدمة السرير قليلاً. تجنبي النوم على الظهر بعد الأسبوع العشرين لأن وزن الرحم يضغط على الوريد الأجوف السفلي مما يقلل تدفق الدم. إذا استيقظتِ ليلاً ولم تستطيعي العودة للنوم فلا تقلقي بل قومي بنشاط هادئ حتى تشعري بالنعاس مجدداً. جربي أيضاً تقنيات الاسترخاء التدريجي للعضلات قبل النوم حيث تشدين كل مجموعة عضلية لبضع ثوانٍ ثم ترخينها بدءاً من القدمين وصولاً للرأس. الروائح المهدئة مثل اللافندر يمكن أن تساعد في الاسترخاء ضعي بضع قطرات على وسادتك أو استخدمي موزعاً للزيوت العطرية في غرفة النوم. إذا كنتِ تعانين من تشنجات الساقين الليلية تناولي أطعمة غنية بالمغنيسيوم مثل الموز والمكسرات وافردي ساقيك قبل النوم. حافظي على نمط نوم منتظم حتى في عطلة نهاية الأسبوع. تذكري أن صعوبات النوم مؤقتة وستنتهي وأن جسمك يتكيف مع وضع استثنائي يستحق كل الصبر والرعاية.',
+    content: 'النوم الجيد أثناء الحمل من أكثر التحديات التي تواجه المرأة الحامل خاصة مع تقدم أشهر الحمل وزيادة حجم البطن والتغيرات الهرمونية والجسدية المتلاحقة. لكن بإمكانك تحسين جودة نومك بشكل ملحوظ باتباع مجموعة من النصائح المجربة والفعالة. النوم على الجانب الأيسر هو الوضعية المثلى أثناء الحمل لأنه يحسن تدفق الدم والمغذيات إلى المشيمة والجنين ويساعد الكلى على العمل بكفاءة أكبر في التخلص من السوائل والفضلات مما يقلل التورم في اليدين والقدمين والكاحلين. استخدمي وسادة خاصة بالحوامل أو ضعي وسادة بين ركبتيك لتخفيف الضغط على أسفل الظهر والوركين ووسادة صغيرة تحت البطن لتوفير دعم إضافي. تجنبي تناول وجبات ثقيلة أو حارة قبل النوم بساعتين على الأقل لتقليل الحموضة والارتجاع المريئي. قللي من شرب السوائل في المساء لتقليل عدد زيارات الحمام الليلية لكن احرصي على شرب كميات كافية خلال النهار. حافظي على درجة حرارة غرفة النوم معتدلة ومائلة للبرودة واستخدمي ملابس نوم قطنية خفيفة ومريحة. أنشئي روتيناً مسائياً مهدئاً قبل النوم مثل حمام دافئ أو قراءة كتاب خفيف أو تمارين تنفس واسترخاء. تجنبي استخدام الهاتف والشاشات قبل النوم بساعة لأن الضوء الأزرق يعطل إفراز هرمون الميلاتونين المسؤول عن النوم. إذا كنتِ تعانين من حرقة المعدة ارفعي رأسك بوسادة إضافية أو ارفعي مقدمة السرير قليلاً. تجنبي النوم على الظهر بعد الأسبوع العشرين لأن وزن الرحم يضغط على الوريد الأجوف السفلي مما يقلل تدفق الدم. إذا استيقظتِ ليلاً ولم تستطيعي العودة للنوم فلا تقلقي بل قومي بنشاط هادئ حتى تشعري بالنعاس مجدداً. جربي أيضاً تقنيات الاسترخاء التدريجي للعضلات قبل النوم حيث تشدين كل مجموعة عضلية لبضع ثوانٍ ثم ترخينها بدءاً من القدمين وصولاً للرأس. الروائح المهدئة مثل اللافندر يمكن أن تساعد في الاسترخاء ضعي بضع قطرات على وسادتك أو استخدمي موزعاً للزيوت العطرية في غرفة النوم. إذا كنتِ تعانين من تشنجات الساقين الليلية تناولي أطعمة غنية بالمغنيسيوم مثل الموز والمكسرات وافردي ساقيك قبل النوم. حافظي على نمط نوم منتظم حتى في عطلة نهاية الأسبوع. تذكري أن صعوبات النوم مؤقتة وستنتهي وأن جسمك يتكيف مع وضع استثنائي يستحق كل الصبر والرعاية.',
   ),
   _PregnancyArticle(
     title: 'العناية بالبشرة أثناء الحمل',
@@ -766,6 +746,10 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                     _buildArticlesCarousel(),
                     const SizedBox(height: 16),
 
+                    // ── دليل أسماء المواليد (يظهر في كل الأسابيع) ──
+                    const NamesArticlesCarousel(),
+                    const SizedBox(height: 16),
+
                     // Baby size card
                     _buildArticleCard(
                       '🍎 حجم الجنين',
@@ -972,8 +956,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                                       clipBehavior: Clip.antiAlias,
                                       child: (art['image'] ?? '').isNotEmpty
                                         ? Stack(fit: StackFit.expand, children: [
-                                            Image.network(art['image']!, fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) => Container(color: _teal.withOpacity(0.15), child: const Center(child: Text('📰', style: TextStyle(fontSize: 48))))),
+                                            ArticleImage(title: art['title'] ?? '', section: 'pregnancy', networkUrl: art['image'], fit: BoxFit.cover),
                                             Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.65)]))),
                                             Positioned(bottom: 12, right: 12, left: 12, child: Text(art['title'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis)),
                                           ])
@@ -1419,9 +1402,14 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: Image.network(item['image']!, width: 160, height: 100, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(height: 100, color: _teal.withOpacity(0.08),
-                        child: const Center(child: Icon(Icons.article, size: 40, color: _teal)))),
+                    child: ArticleImage(
+                      title: item['title'] ?? '',
+                      section: 'pregnancy',
+                      networkUrl: item['image'],
+                      width: 160,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
@@ -1517,23 +1505,12 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                           fit: StackFit.expand,
                           children: [
                             // Background image
-                            art.image.startsWith('http')
-                              ? Image.network(
-                                  art.image,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    color: art.color1.withOpacity(0.15),
-                                    child: Center(child: Text(art.emoji, style: const TextStyle(fontSize: 48))),
-                                  ),
-                                )
-                              : Image.asset(
-                                  art.image,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    color: art.color1.withOpacity(0.15),
-                                    child: Center(child: Text(art.emoji, style: const TextStyle(fontSize: 48))),
-                                  ),
-                                ),
+                            ArticleImage(
+                              title: art.title,
+                              section: 'pregnancy',
+                              networkUrl: art.image.startsWith('http') ? art.image : null,
+                              fit: BoxFit.cover,
+                            ),
                             // Gradient overlay
                             Container(
                               decoration: BoxDecoration(
@@ -2927,13 +2904,12 @@ class _DiscoverDetailScreen extends StatelessWidget {
                   ? Stack(
                       fit: StackFit.expand,
                       children: [
-                        article.image.startsWith('http')
-                          ? Image.network(article.image, fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(color: article.color1.withOpacity(0.1),
-                                child: Center(child: Text(article.emoji, style: const TextStyle(fontSize: 48)))))
-                          : Image.asset(article.image, fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(color: article.color1.withOpacity(0.1),
-                                child: Center(child: Text(article.emoji, style: const TextStyle(fontSize: 48))))),
+                        ArticleImage(
+                          title: article.title,
+                          section: 'pregnancy',
+                          networkUrl: article.image.startsWith('http') ? article.image : null,
+                          fit: BoxFit.cover,
+                        ),
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -3221,13 +3197,14 @@ class _CategoryArticlesScreen extends StatelessWidget {
                         ),
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child: art.image.isNotEmpty
-                        ? (art.image.startsWith('http')
-                          ? Image.network(art.image, fit: BoxFit.cover, width: 100, height: 110,
-                              errorBuilder: (_, __, ___) => Center(child: Text(art.emoji, style: const TextStyle(fontSize: 40))))
-                          : Image.asset(art.image, fit: BoxFit.cover, width: 100, height: 110,
-                              errorBuilder: (_, __, ___) => Center(child: Text(art.emoji, style: const TextStyle(fontSize: 40)))))
-                        : Center(child: Text(art.emoji, style: const TextStyle(fontSize: 40))),
+                      child: ArticleImage(
+                        title: art.title,
+                        section: 'pregnancy',
+                        networkUrl: art.image.startsWith('http') ? art.image : null,
+                        width: 100,
+                        height: 110,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     // Text section
                     Expanded(

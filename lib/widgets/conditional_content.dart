@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:nabda_app/data/specialized_articles.dart';
 import 'package:nabda_app/services/specialized_articles_service.dart';
 import 'news_section.dart';
+import '../utils/article_images.dart';
 
 /// أقسام محتوى متخصّص تظهر حسب ملف المستخدمة وداخل تبويبها الصحيح فقط.
 /// [stage] = مرحلة التبويب الذي أُدرج فيه القسم (pregnant/baby/cycle/planning)،
@@ -66,6 +67,7 @@ class ConditionalContentSection extends StatelessWidget {
     );
   }
 
+  // ignore: unused_element
   Widget _ph(_Topic t) => Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -181,10 +183,14 @@ class ConditionalContentSection extends StatelessWidget {
                                       topRight: Radius.circular(18),
                                       topLeft: Radius.circular(18),
                                     ),
-                                    child: image.isNotEmpty
-                                        ? Image.network(image, fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => _ph(t))
-                                        : _ph(t),
+                                    child: ArticleImage(
+                                      title: title,
+                                      section: 'health',
+                                      networkUrl: image.isNotEmpty ? image : null,
+                                      width: double.infinity,
+                                      height: 90,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                                 // Category badge
@@ -333,10 +339,14 @@ class _ArticleCard extends StatelessWidget {
         child: Row(children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: image.isNotEmpty
-              ? Image.network(image, width: 46, height: 46, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _ph(color))
-              : _ph(color),
+            child: ArticleImage(
+              title: title,
+              section: 'health',
+              networkUrl: image.isNotEmpty ? image : null,
+              width: 46,
+              height: 46,
+              fit: BoxFit.cover,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(child: Text(title,
@@ -347,6 +357,7 @@ class _ArticleCard extends StatelessWidget {
     );
   }
 
+  // ignore: unused_element
   static Widget _ph(Color c) => Container(
     width: 46, height: 46,
     decoration: BoxDecoration(shape: BoxShape.circle, color: c.withValues(alpha: 0.15)),
@@ -370,18 +381,18 @@ class _ArticlePage extends StatelessWidget {
         backgroundColor: Colors.white,
         body: CustomScrollView(slivers: [
           SliverAppBar(
-            expandedHeight: image.isNotEmpty ? 220 : 0,
+            expandedHeight: 220,
             pinned: true,
             backgroundColor: color,
             foregroundColor: Colors.white,
-            title: image.isEmpty
-              ? Text(title, style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)
-              : null,
-            flexibleSpace: image.isNotEmpty
-              ? FlexibleSpaceBar(
-                  background: Image.network(image, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(color: color.withValues(alpha: 0.2))))
-              : null,
+            flexibleSpace: FlexibleSpaceBar(
+              background: ArticleImage(
+                title: title,
+                section: 'health',
+                networkUrl: image.isNotEmpty ? image : null,
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
           SliverToBoxAdapter(
             child: Padding(

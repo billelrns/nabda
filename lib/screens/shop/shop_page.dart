@@ -484,6 +484,103 @@ class _ShopPageState extends State<ShopPage> {
     if (mounted) setState(() {});
   }
 
+  /// بطاقة منتج حقيقي من Firestore (بصورته) داخل أقسام المتجر
+  Widget _firestoreProductCard(
+      BuildContext context, Map<String, dynamic> d, Color catColor) {
+    final imgs = (d['imageUrls'] as List<dynamic>?) ?? [];
+    final img = imgs.isNotEmpty
+        ? imgs.first.toString()
+        : (d['imageUrl'] ?? '').toString();
+    final name = (d['name'] ?? '').toString();
+    final price = (d['price'] ?? '').toString();
+    final oldPrice = (d['oldPrice'] ?? '').toString();
+    return GestureDetector(
+      onTap: () => _showFirestoreProductDetail(context, d),
+      child: Container(
+        width: 160,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: _cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: img.isNotEmpty
+                      ? Image.network(img,
+                          height: 110,
+                          width: 160,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                              height: 110,
+                              width: 160,
+                              color: catColor.withOpacity(0.08),
+                              child: Icon(Icons.shopping_bag_outlined,
+                                  color: catColor, size: 36)))
+                      : Container(
+                          height: 110,
+                          width: 160,
+                          color: catColor.withOpacity(0.08),
+                          child: Icon(Icons.shopping_bag_outlined,
+                              color: catColor, size: 36)),
+                ),
+                if (oldPrice.isNotEmpty)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                          color: const Color(0xFFE91E63),
+                          borderRadius: BorderRadius.circular(8)),
+                      child: const Text('تخفيض',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+              ],
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.bold,
+                            color: _textPrimary)),
+                    const Spacer(),
+                    Text(price,
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: _teal)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showFirestoreProductDetail(BuildContext context, Map<String, dynamic> d) {
     if (d['displayType'] == 'landing') {
       Navigator.push(

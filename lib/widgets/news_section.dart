@@ -4,6 +4,7 @@ import '../services/dynamic_content_service.dart';
 import 'dart:math';
 import 'package:url_launcher/url_launcher.dart';
 import '../screens/shop/shop_page.dart';
+import '../utils/article_images.dart';
 
 /// Shared news section widget used across multiple pages (pregnancy, etc.)
 /// Now loads Firestore overrides to reflect admin edits.
@@ -225,8 +226,14 @@ class NewsSection extends StatelessWidget {
         child: Row(children: [
           ClipRRect(
             borderRadius: const BorderRadius.horizontal(right: Radius.circular(16)),
-            child: Image.network(n['image']!, width: 100, height: 90, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(width: 100, height: 90, color: accentColor.withOpacity(0.1), child: Icon(Icons.newspaper, color: accentColor))),
+            child: ArticleImage(
+              title: n['title'] ?? '',
+              section: 'home',
+              networkUrl: n['image'],
+              width: 100,
+              height: 90,
+              fit: BoxFit.cover,
+            ),
           ),
           Expanded(
             child: Padding(
@@ -309,8 +316,14 @@ class AllNewsScreen extends StatelessWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                        child: Image.network(n['image']!, height: 160, width: double.infinity, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(height: 160, color: accentColor.withOpacity(0.1), child: Icon(Icons.newspaper, color: accentColor, size: 50))),
+                        child: ArticleImage(
+                          title: n['title'] ?? '',
+                          section: 'home',
+                          networkUrl: n['image'],
+                          height: 160,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(14),

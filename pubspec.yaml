@@ -49,6 +49,8 @@ flutter:
   generate: true
 
   assets:
+    - assets/data/article_titles.json
+    - assets/data/news_images.json
     - assets/images/
     - assets/images/intro/
     - assets/icons_3d/

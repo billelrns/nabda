@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/dynamic_content_service.dart';
+import '../utils/article_images.dart';
 
 const _pink = Color(0xFFE91E63);
 const _pink2 = Color(0xFFFF5252);
@@ -278,9 +279,13 @@ class WebPregnancyPage extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
-            child: img.isEmpty
-                ? _imgFallback()
-                : Image.network(img, height: 130, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _imgFallback()),
+            child: ArticleImage(
+              title: (a['title'] ?? '').toString(),
+              section: 'pregnancy',
+              networkUrl: img,
+              height: 130,
+              fit: BoxFit.cover,
+            ),
           ),
           const SizedBox(height: 8),
           if (cat.isNotEmpty) ...[
