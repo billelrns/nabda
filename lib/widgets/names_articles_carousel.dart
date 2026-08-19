@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../data/names_articles_database.dart';
+import '../data/baby_names_database.dart';
+import '../screens/baby_names/baby_names_screen.dart';
 import '../utils/article_images.dart';
+import 'package:nabda_app/widgets/nabda_article_ad.dart';
+import 'package:nabda_app/widgets/article_engagement_bar.dart';
+
 
 /// كاروسال أفقي لمقالات «دليل أسماء المواليد» (50+ مقالاً)
 /// يظهر في صفحة الحمل لكل الأسابيع، ويفتح شاشة قراءة مريحة.
@@ -200,7 +205,121 @@ class NamesArticlesCarousel extends StatelessWidget {
               },
             ),
           ),
+          const SizedBox(height: 14),
+          // ── زر واضح: اختيار اسم المولود ──
+          const BabyNamesCta(),
         ],
+      ),
+    );
+  }
+}
+
+/// بطاقة/زر بارز يفتح مكتبة أسماء المواليد
+class BabyNamesCta extends StatelessWidget {
+  const BabyNamesCta({Key? key}) : super(key: key);
+
+  static const _pink = Color(0xFFE0195B);
+  static const _pinkSoft = Color(0xFFF0347C);
+
+  @override
+  Widget build(BuildContext context) {
+    final total = babyNamesDatabase.length;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const BabyNamesScreen()),
+          ),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              gradient: const LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [_pinkSoft, _pink],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: _pink.withOpacity(0.28),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.22),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Center(
+                      child: Text('👶', style: TextStyle(fontSize: 26)),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'اختاري اسم مولودكِ',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${total > 0 ? '+$total' : 'مئات'} اسم مع المعنى • بحث وتصفية • حفظ المفضّلة',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.92),
+                            fontSize: 11.5,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'ابدئي',
+                          style: TextStyle(
+                            color: _pink,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(width: 3),
+                        Icon(Icons.arrow_back_ios, size: 11, color: _pink),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -214,7 +333,8 @@ class NameArticleDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final paras = article.body.split('\n\n').where((p) => p.trim().isNotEmpty);
+    final paras = article.body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    final midPoint = (paras.length / 2).floor();
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -274,14 +394,52 @@ class NameArticleDetailScreen extends StatelessWidget {
                             color: Color(0xFF1F1A20),
                             height: 1.4)),
                     const SizedBox(height: 18),
-                    for (final p in paras) ...[
-                      Text(p.trim(),
+                    for (int i = 0; i < paras.length; i++) ...[
+                      Text(paras[i].trim(),
                           style: const TextStyle(
                               fontSize: 15.5,
                               height: 2.0,
                               color: Color(0xFF3A3340))),
                       const SizedBox(height: 16),
+                      if (i == 1 && paras.length > 3) ...[
+                        NabdaArticleAd(
+                          slot: 0,
+                          articleId: article.title,
+                          section: 'pregnancy',
+                          articleTitle: article.title,
+                          articleBody: article.body,
+                          color: const Color(0xFFE0195B),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (i == midPoint && paras.length > 5 && midPoint > 1) ...[
+                        NabdaArticleAd(
+                          slot: 1,
+                          articleId: article.title,
+                          section: 'pregnancy',
+                          articleTitle: article.title,
+                          articleBody: article.body,
+                          color: const Color(0xFFE0195B),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ],
+                    const SizedBox(height: 8),
+                    ArticleEngagementBar(
+                      articleId: article.title,
+                      articleTitle: article.title,
+                      section: 'pregnancy',
+                      color: const Color(0xFFE0195B),
+                    ),
+                    const SizedBox(height: 16),
+                    NabdaArticleAd(
+                      slot: 2,
+                      articleId: article.title,
+                      section: 'pregnancy',
+                      articleTitle: article.title,
+                      articleBody: article.body,
+                      color: const Color(0xFFE0195B),
+                    ),
                     const SizedBox(height: 30),
                   ],
                 ),
@@ -292,6 +450,7 @@ class NameArticleDetailScreen extends StatelessWidget {
       ),
     );
   }
+
 }
 
 /// شاشة كل مقالات الأسماء مع فلترة بالتصنيف

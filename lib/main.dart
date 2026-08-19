@@ -26,6 +26,13 @@ import 'widgets/news_section.dart';
 import 'widgets/nabda_ui.dart';
 import 'widgets/nabda_animated_logo.dart';
 import 'utils/article_images.dart';
+import 'utils/fetus_size.dart';
+import 'widgets/nabda_article_ad.dart';
+import 'widgets/article_engagement_bar.dart';
+
+import 'services/admob_service.dart';
+import 'services/pregnancy_dates_service.dart';
+import 'widgets/due_date_card.dart';
 import 'screens/fertility/fertility_screen.dart';
 import 'services/country_currency_service.dart';
 import 'services/notification_service.dart';
@@ -248,6 +255,7 @@ void main() async {
 
   // خريطة عنوان المقال → معرّفه (لالتقاط صور المقالات تلقائياً بأسماء الملفات)
   await ArticleImages.preload();
+  await AdMobService.init();
 
   runApp(NabdaApp());
 }
@@ -2871,14 +2879,8 @@ class _HomePageState extends State<HomePage> {
     if (user == null) return;
     final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     final data = doc.data() ?? {};
-    int week = 0;
-    final pregStart = data['pregnancyStartDate'] ?? data['pregnancyStart'];
-    if (pregStart != null) {
-      try {
-        final start = (pregStart as Timestamp).toDate();
-        week = (DateTime.now().difference(start).inDays / 7).floor().clamp(1, 42);
-      } catch (_) {}
-    }
+    // ── مصدر موحّد لتواريخ الحمل (نفس ما يستعمله التقويم وصفحة الحمل) ──
+    final int week = PregnancyDates.fromUserData(data).week;
     // ── جلب بيانات الوزن الحقيقية ──
     double? curWeight, preWeight;
     try {
@@ -2931,13 +2933,7 @@ class _HomePageState extends State<HomePage> {
               if (snapshot.hasData && snapshot.data!.exists) {
                 _userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
                 if (_userData['name'] != null) _userName = _userData['name'] as String;
-                final pregStart = _userData['pregnancyStartDate'] ?? _userData['pregnancyStart'];
-                if (pregStart != null) {
-                  try {
-                    final start = (pregStart as Timestamp).toDate();
-                    _pregnancyWeek = (DateTime.now().difference(start).inDays / 7).floor().clamp(1, 42);
-                  } catch (_) {}
-                }
+                _pregnancyWeek = PregnancyDates.fromUserData(_userData).week;
               }
               return CustomScrollView(
                 slivers: [
@@ -3174,17 +3170,22 @@ const SizedBox(height: 30),
           // Image side
           ClipRRect(
             borderRadius: BorderRadius.circular(24),
-            child: Image.network(
-              'https://images.unsplash.com/photo-1556760544-74068565f05c?w=600&q=85',
+            child: Image.asset(
+              'assets/images/hero_home.png',
               width: 130, height: 180,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, __, ___) => Image.asset(
+                'assets/images/intro/intro_welcome.png',
                 width: 130, height: 180,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: const LinearGradient(colors: [Color(0xFFFFD9E5), Color(0xFFFFB1CD)]),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 130, height: 180,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: const LinearGradient(colors: [Color(0xFFFFD9E5), Color(0xFFFFB1CD)]),
+                  ),
+                  child: const Icon(Icons.pregnant_woman, size: 60, color: Color(0xFFB6195F)),
                 ),
-                child: const Icon(Icons.pregnant_woman, size: 60, color: Color(0xFFB6195F)),
               ),
             ),
           ),
@@ -3256,16 +3257,8 @@ const SizedBox(height: 30),
     final pct = (week / total).clamp(0.0, 1.0);
     final remaining = total - week;
 
-    // Fetus size data
-    final fetusSizes = {
-      4: '🫐 توت', 8: '🫒 زيتونة', 12: '🍋 ليمونة', 16: '🍎 تفاحة', 20: '🍌 موزة',
-      24: '🌽 ذرة', 26: '🥦 قرنبيط', 28: '🍆 باذنجانة', 30: '🥥 جوز هند', 32: '🍈 شمام',
-      34: '🍍 أناناس', 36: '🥬 خس', 38: '🍉 بطيخة', 40: '🎃 يقطينة',
-    };
-    String fetusSize = '🫘 بذرة';
-    for (final entry in fetusSizes.entries) {
-      if (week >= entry.key) fetusSize = entry.value;
-    }
+    // حجم الجنين — مصدر موحّد مع قسم الحمل (lib/utils/fetus_size.dart)
+    final fetusSize = FetusSize.labeled(week);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -3294,31 +3287,17 @@ const SizedBox(height: 30),
                       size: const Size(130, 130),
                       painter: _TrackerRingPainter(pct),
                     ),
-                    // Baby emoji center
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 3600),
-                      builder: (_, v, child) {
-                        final yOffset = 3 * (0.5 - (0.5 * (1 + (2 * 3.14159 * v).remainder(6.28) < 3.14159 ? (2 * 3.14159 * v).remainder(3.14159) / 3.14159 : 1 - ((2 * 3.14159 * v).remainder(3.14159) / 3.14159)))).abs();
-                        return Transform.translate(
-                          offset: Offset(0, -yOffset),
-                          child: child,
-                        );
-                      },
-                      child: Container(
-                        width: 70, height: 70,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const RadialGradient(
-                            center: Alignment(-0.3, -0.4),
-                            colors: [Color(0xFFFFE6EF), Color(0xFFFFC0D6), Color(0xFFFF8DB7)],
-                            stops: [0, 0.6, 1],
-                          ),
-                          boxShadow: [
-                            BoxShadow(color: _pink.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 6)),
-                          ],
-                        ),
-                        child: const Center(child: Text('👶', style: TextStyle(fontSize: 34))),
+                    // الجنين الحقيقي يطفو داخل الرحم — نفس صورة قسم الحمل
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: _pink.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 6)),
+                        ],
+                      ),
+                      child: WombFloatingFetus(
+                        fetusAsset: 'assets/images/fetus_hd/week_${week.clamp(4, 41)}.png',
+                        size: 96,
                       ),
                     ),
                   ],
@@ -3382,7 +3361,10 @@ const SizedBox(height: 30),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
+          // تاريخ الولادة المتوقّع — قابل للتعديل مع سؤال المصدر
+          DueDateCard(color: _pink, compact: true, onChanged: _loadData),
+          const SizedBox(height: 12),
           // CTA button
           GestureDetector(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyWeeksScreen())),
@@ -7091,83 +7073,22 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
     ],
   };
 
-  static final Map<String, List<String>> _inlineImageSets = {
-    'حمل': [
-      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
-      'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=700&q=80',
-    ],
-    'حامل': [
-      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
-      'https://images.unsplash.com/photo-1509822929063-6b6cfc9b42f2?w=700&q=80',
-    ],
-    'طفل': [
-      'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=700&q=80',
-      'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=700&q=80',
-    ],
-    'رضاعة': [
-      'https://images.unsplash.com/photo-1584582397869-3e903bfe9985?w=700&q=80',
-      'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=700&q=80',
-    ],
-    'تغذية': [
-      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=700&q=80',
-      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=700&q=80',
-    ],
-    'غذاء': [
-      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=700&q=80',
-      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=700&q=80',
-    ],
-    'دورة': [
-      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=700&q=80',
-      'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=700&q=80',
-    ],
-    'رياضة': [
-      'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=700&q=80',
-      'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=700&q=80',
-    ],
-    'تمارين': [
-      'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=700&q=80',
-      'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=700&q=80',
-    ],
-    'نوم': [
-      'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=700&q=80',
-      'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=700&q=80',
-    ],
-    'فيتامين': [
-      'https://images.unsplash.com/photo-1505576399279-0d754c0fdc67?w=700&q=80',
-      'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=700&q=80',
-    ],
-    'نفسية': [
-      'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=700&q=80',
-      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=700&q=80',
-    ],
-    'طبيب': [
-      'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=700&q=80',
-      'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=700&q=80',
-    ],
-    'تطعيم': [
-      'https://images.unsplash.com/photo-1632053002928-1919605ee6f7?w=700&q=80',
-      'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=700&q=80',
-    ],
-    'بشرة': [
-      'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=700&q=80',
-      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=700&q=80',
-    ],
-    'ولادة': [
-      'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=700&q=80',
-      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
-    ],
-  };
+  /// مساحة إعلانية داخل المقال — AdMob ثم إعلاناتك ثم منتج مطابق للموضوع
+  Widget _adSlot(int slot) => NabdaArticleAd(
+        slot: slot,
+        articleId: widget.articleId ?? _title,
+        section: widget.section.isEmpty ? 'all' : widget.section,
+        articleTitle: _title,
+        articleBody: _body,
+        color: widget.color,
+      );
 
+  /// صور داخل نصّ المقال — أُزيلت كل الصور الجاهزة القديمة (Unsplash).
+  /// تبقى فقط الصور التي تضيفينها أنتِ من لوحة التحكم لهذا المقال تحديداً.
   List<String> _getInlineImages() {
-    // Use override content image if available
     if (_contentImageUrl.isNotEmpty) return [_contentImageUrl];
     if (widget.contentImages.isNotEmpty) return widget.contentImages;
-    for (final entry in _inlineImageSets.entries) {
-      if (_title.contains(entry.key)) return entry.value;
-    }
-    return [
-      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
-    ];
+    return const [];
   }
 
   @override
@@ -7371,7 +7292,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                           textAlign: TextAlign.justify,
                           style: TextStyle(fontSize: 16.5, height: 1.9, color: Color(0xFF3A343B), letterSpacing: 0.1)),
                       ));
-                      // First image after paragraph 2
+                      // صورة يدوية (من لوحة التحكم) بعد الفقرة الثانية
                       if (i == 1 && imgIdx < inlineImgs.length) {
                         widgets.add(Padding(
                           padding: EdgeInsets.only(bottom: 20),
@@ -7383,14 +7304,15 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                         ));
                         imgIdx++;
                       }
-                      // Google Ads placeholder at midpoint
-                      if (i == midPoint && paragraphs.length > 3) {
-                        widgets.add(Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: NabdaAd(slot: 0, groupId: 'newsdetail', place: 'news', color: Color(0xFFE91E63)),
-                        ));
+                      // ── مساحة إعلانية ① بعد الفقرة الثانية ──
+                      if (i == 1 && paragraphs.length > 3) {
+                        widgets.add(_adSlot(0));
                       }
-                      // Second image after midpoint+2
+                      // ── مساحة إعلانية ② في منتصف المقال ──
+                      if (i == midPoint && paragraphs.length > 5 && midPoint > 1) {
+                        widgets.add(_adSlot(1));
+                      }
+                      // صورة يدوية ثانية
                       if (i == midPoint + 2 && imgIdx < inlineImgs.length) {
                         widgets.add(Padding(
                           padding: EdgeInsets.only(bottom: 20),
@@ -7403,7 +7325,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                         imgIdx++;
                       }
                     }
-                    // Remaining images at end
+                    // الصور اليدوية المتبقية
                     while (imgIdx < inlineImgs.length) {
                       widgets.add(Padding(
                         padding: EdgeInsets.only(bottom: 20),
@@ -7415,7 +7337,17 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                       ));
                       imgIdx++;
                     }
+                    // ── شريط التفاعل (الإعجاب والمشاركة والحفظ) ──
+                    widgets.add(ArticleEngagementBar(
+                      articleId: widget.articleId ?? _title,
+                      articleTitle: _title,
+                      section: widget.section.isEmpty ? 'home' : widget.section,
+                      color: widget.color,
+                    ));
+                    // ── مساحة إعلانية ③ في نهاية المقال ──
+                    widgets.add(_adSlot(2));
                     return widgets;
+
                   }(),
                   SizedBox(height: 20),
                   Container(
@@ -7452,7 +7384,11 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                           .map((doc) => DynamicContentService.docToProduct(doc))
                           .toList();
                       final staticProducts = _productsBySection[widget.section] ?? _productsBySection['home']!;
-                      final allProducts = [...dynamicProducts, ...staticProducts];
+                      // ترتيب المنتجات حسب قربها من موضوع المقال
+                      final allProducts = NabdaAds.rankProducts<Map<String, String>>(
+                        <Map<String, String>>[...dynamicProducts, ...staticProducts],
+                        '$_title $_body',
+                      );
                       return SizedBox(
                     height: 200,
                     child: ListView.builder(

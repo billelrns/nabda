@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../widgets/news_section.dart';
+import '../../widgets/nabda_article_ad.dart';
+import '../../widgets/article_engagement_bar.dart';
+
 
 // ─── Colors ───
 const Color _bgColor = Color(0xFFFFF5F7);
@@ -915,7 +918,7 @@ class _DiscoverArticleDetailScreen extends StatelessWidget {
                     const SizedBox(height: 20),
 
                     // Content with paragraphs + ad space
-                    ..._buildParagraphs(article.content),
+                    ..._buildParagraphs(article.title, article.content, article.gradientStart),
                     const SizedBox(height: 20),
 
                     // Tip box
@@ -977,7 +980,7 @@ class _DiscoverArticleDetailScreen extends StatelessWidget {
     );
   }
 
-  static List<Widget> _buildParagraphs(String body) {
+  static List<Widget> _buildParagraphs(String title, String body, Color accentColor) {
     List<String> paragraphs;
     if (body.contains('\n\n')) {
       paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
@@ -1012,13 +1015,53 @@ class _DiscoverArticleDetailScreen extends StatelessWidget {
         child: Text(paragraphs[i].trim(), textAlign: TextAlign.justify,
           style: const TextStyle(fontSize: 16.5, height: 1.9, color: _textPrimary)),
       ));
-      if (i == midPoint && paragraphs.length > 3) {
-        widgets.add(const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: NabdaAd(slot: 0, groupId: 'discover', place: 'pregnancy', color: Color(0xFFE91E63)),
+      if (i == 1 && paragraphs.length > 3) {
+        widgets.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: NabdaArticleAd(
+            slot: 0,
+            articleId: title,
+            section: 'pregnancy',
+            articleTitle: title,
+            articleBody: body,
+            color: accentColor,
+          ),
+        ));
+      }
+      if (i == midPoint && paragraphs.length > 5 && midPoint > 1) {
+        widgets.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: NabdaArticleAd(
+            slot: 1,
+            articleId: title,
+            section: 'pregnancy',
+            articleTitle: title,
+            articleBody: body,
+            color: accentColor,
+          ),
         ));
       }
     }
+
+    widgets.add(ArticleEngagementBar(
+      articleId: title,
+      articleTitle: title,
+      section: 'pregnancy',
+      color: accentColor,
+    ));
+
+    widgets.add(Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: NabdaArticleAd(
+        slot: 2,
+        articleId: title,
+        section: 'pregnancy',
+        articleTitle: title,
+        articleBody: body,
+        color: accentColor,
+      ),
+    ));
+
     return widgets;
   }
 }

@@ -205,6 +205,17 @@ service cloud.firestore {
       allow delete: if isOwnerOrSupervisor();
     }
 
+    // ─── إحصائيات المقالات (التفاعل: إعجابات ومشاركات) ───────────
+    // القراءة عامّة (عرض عدد الإعجابات للزائرة)، الكتابة للمسجّلات فقط
+    // مع تقييد الحقول لمنع حقن بيانات عشوائية في المجموعة.
+    match /article_stats/{articleId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated()
+        && request.resource.data.keys().hasOnly(['likes', 'shares', 'title', 'section']);
+      allow delete: if isOwnerOrSupervisor();
+    }
+
+
     // ─── المحتوى الديناميكي ───────────────────────────────────────
     match /dynamic_products/{docId} {
       allow read: if true; // المتجر مفتوح للزوّار

@@ -38,6 +38,8 @@ dependencies:
   firebase_storage: ^12.4.0
   video_player: ^2.9.2
   visibility_detector: ^0.4.0+2
+  share_plus: ^10.1.4
+
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +60,7 @@ flutter:
     - assets/images/fetus_hd/
     - assets/images/articles/
     - assets/images/article_pics/
+    - assets/images/share_cards/
     - assets/images/pregnancy_news/
     - assets/data/algeria_cities.json
     - assets/data/algeria_doctors_clinics.json

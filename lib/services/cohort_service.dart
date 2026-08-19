@@ -8,16 +8,62 @@ class CohortService {
     required String status,
     DateTime? pregnancyStartDate,
     DateTime? babyBirthDate,
+    DateTime? dueDate,
   }) {
-    if (status == 'pregnant' && pregnancyStartDate != null) {
-      final edd = pregnancyStartDate.add(const Duration(days: 280));
+    // ① طفل مولود → نادي شهر الميلاد
+    if (babyBirthDate != null && (status == 'baby' || status == 'mother')) {
+      final monthStr = babyBirthDate.month.toString().padLeft(2, '0');
+      return 'born_${babyBirthDate.year}_$monthStr';
+    }
+    // ② حامل → نادي شهر الولادة المتوقّع
+    //    نعتمد تاريخ الولادة المحفوظ إن وُجد (أدقّ)، وإلا LMP + 280 يوماً.
+    //    لا نشترط status لأن بعض الحسابات القديمة لا تحمل lifeStage.
+    final edd = dueDate ??
+        (pregnancyStartDate != null
+            ? pregnancyStartDate.add(const Duration(days: 280))
+            : null);
+    if (edd != null) {
       final monthStr = edd.month.toString().padLeft(2, '0');
       return 'due_${edd.year}_$monthStr';
-    } else if ((status == 'baby' || status == 'mother') && babyBirthDate != null) {
+    }
+    if (babyBirthDate != null) {
       final monthStr = babyBirthDate.month.toString().padLeft(2, '0');
       return 'born_${babyBirthDate.year}_$monthStr';
     }
     return null;
+  }
+
+  /// اسم النادي بالعربية من مفتاحه — مثال: «مواليد جانفي 2027»
+  static const List<String> monthsAr = [
+    '', 'جانفي', 'فيفري', 'مارس', 'أفريل', 'ماي', 'جوان',
+    'جويلية', 'أوت', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+  ];
+
+  static String labelForKey(String key) {
+    final p = key.split('_');
+    if (p.length < 3) return 'نادي الولادة';
+    final year = p[1];
+    final m = int.tryParse(p[2]) ?? 0;
+    final month = (m >= 1 && m <= 12) ? monthsAr[m] : '';
+    return p[0] == 'born'
+        ? 'مواليد $month $year'
+        : 'مواليد $month $year';
+  }
+
+  /// قائمة أندية متاحة للتصفّح حول شهر معيّن (±[span] شهراً)
+  static List<String> nearbyKeys(String centerKey, {int span = 6}) {
+    final p = centerKey.split('_');
+    if (p.length < 3) return const [];
+    final prefix = p[0];
+    final year = int.tryParse(p[1]) ?? DateTime.now().year;
+    final month = int.tryParse(p[2]) ?? DateTime.now().month;
+    final center = DateTime(year, month);
+    final out = <String>[];
+    for (var i = -span; i <= span; i++) {
+      final d = DateTime(center.year, center.month + i);
+      out.add('${prefix}_${d.year}_${d.month.toString().padLeft(2, '0')}');
+    }
+    return out;
   }
 
   /// مزامنة فوج المستخدمة مع تحديث عداد الأعضاء بشكل تزامني آمن

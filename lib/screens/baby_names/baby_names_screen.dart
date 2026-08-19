@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/baby_names_database.dart';
 import '../../data/twin_names_database.dart';
 import '../../data/names_articles_database.dart';
+import '../../widgets/nabda_article_ad.dart';
+import '../../widgets/article_engagement_bar.dart';
+
 
 // ══════════════════════════════════════════════════════════════
 // Baby Names Screen — Inspired by WeMoms with Islamic names filter
@@ -1077,6 +1080,7 @@ class BabyNameArticleDetailScreen extends StatelessWidget {
     }
 
     final paragraphs = article.body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    final midPoint = (paragraphs.length / 2).floor();
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -1118,17 +1122,56 @@ class BabyNameArticleDetailScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1F1A20), height: 1.4),
               ),
               const Divider(height: 32, color: Color(0xFFFFF1F6)),
-              for (final p in paragraphs) ...[
+              for (int i = 0; i < paragraphs.length; i++) ...[
                 Text(
-                  p.trim(),
+                  paragraphs[i].trim(),
                   style: const TextStyle(fontSize: 16, height: 1.8, color: Color(0xFF4A434B)),
                 ),
                 const SizedBox(height: 18),
+                if (i == 1 && paragraphs.length > 3) ...[
+                  NabdaArticleAd(
+                    slot: 0,
+                    articleId: article.title,
+                    section: 'baby_names',
+                    articleTitle: article.title,
+                    articleBody: article.body,
+                    color: catColor,
+                  ),
+                  const SizedBox(height: 18),
+                ],
+                if (i == midPoint && paragraphs.length > 5 && midPoint > 1) ...[
+                  NabdaArticleAd(
+                    slot: 1,
+                    articleId: article.title,
+                    section: 'baby_names',
+                    articleTitle: article.title,
+                    articleBody: article.body,
+                    color: catColor,
+                  ),
+                  const SizedBox(height: 18),
+                ],
               ],
+              const SizedBox(height: 8),
+              ArticleEngagementBar(
+                articleId: article.title,
+                articleTitle: article.title,
+                section: 'baby_names',
+                color: catColor,
+              ),
+              const SizedBox(height: 18),
+              NabdaArticleAd(
+                slot: 2,
+                articleId: article.title,
+                section: 'baby_names',
+                articleTitle: article.title,
+                articleBody: article.body,
+                color: catColor,
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
 }

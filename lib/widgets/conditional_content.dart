@@ -5,6 +5,9 @@ import 'package:nabda_app/data/specialized_articles.dart';
 import 'package:nabda_app/services/specialized_articles_service.dart';
 import 'news_section.dart';
 import '../utils/article_images.dart';
+import 'nabda_article_ad.dart';
+import 'article_engagement_bar.dart';
+
 
 /// أقسام محتوى متخصّص تظهر حسب ملف المستخدمة وداخل تبويبها الصحيح فقط.
 /// [stage] = مرحلة التبويب الذي أُدرج فيه القسم (pregnant/baby/cycle/planning)،
@@ -375,6 +378,7 @@ class _ArticlePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    final midPoint = (paragraphs.length / 2).floor();
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -400,22 +404,52 @@ class _ArticlePage extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20), height: 1.5)),
                 const SizedBox(height: 16),
-                // إعلان/منتج أعلى المقال
-                NabdaAd(slot: 0, groupId: title, place: place, color: color),
-                const SizedBox(height: 18),
                 for (int i = 0; i < paragraphs.length; i++) ...[
                   Text(paragraphs[i].trim(), style: const TextStyle(fontSize: 16, height: 1.9, color: Color(0xFF333333))),
-                  if (i < paragraphs.length - 1) const SizedBox(height: 16),
-                  // إعلان/منتج وسط المقال
+                  const SizedBox(height: 16),
+                  // ===== AD SLOT 1 — بعد الفقرة الثانية =====
                   if (i == 1 && paragraphs.length > 3) ...[
-                    const SizedBox(height: 14),
-                    NabdaAd(slot: 1, groupId: title, place: place, color: color),
-                    const SizedBox(height: 14),
+                    NabdaArticleAd(
+                      slot: 0,
+                      articleId: title,
+                      section: place,
+                      articleTitle: title,
+                      articleBody: body,
+                      color: color,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  // ===== AD SLOT 2 — وسط المقال =====
+                  if (i == midPoint && paragraphs.length > 5 && midPoint > 1) ...[
+                    NabdaArticleAd(
+                      slot: 1,
+                      articleId: title,
+                      section: place,
+                      articleTitle: title,
+                      articleBody: body,
+                      color: color,
+                    ),
+                    const SizedBox(height: 16),
                   ],
                 ],
-                const SizedBox(height: 22),
-                // منتجات/إعلان أسفل المقال
-                NabdaAd(slot: 2, groupId: title, place: place, color: color),
+                const SizedBox(height: 8),
+                // ===== شريط التفاعل =====
+                ArticleEngagementBar(
+                  articleId: title,
+                  articleTitle: title,
+                  section: place,
+                  color: color,
+                ),
+                const SizedBox(height: 16),
+                // ===== AD SLOT 3 — أسفل المقال =====
+                NabdaArticleAd(
+                  slot: 2,
+                  articleId: title,
+                  section: place,
+                  articleTitle: title,
+                  articleBody: body,
+                  color: color,
+                ),
                 const SizedBox(height: 30),
               ]),
             ),

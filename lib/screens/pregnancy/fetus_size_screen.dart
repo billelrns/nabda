@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/pregnancy_week_articles.dart' show pregnancyMonthArForWeek;
+import '../../utils/fetus_size.dart';
 
 const Color _bg = Color(0xFFFFF5F7);
 const Color _card = Colors.white;
@@ -114,9 +115,10 @@ class _FetusSizeScreenState extends State<FetusSizeScreen> {
           ),
           child: Column(
             children: [
-              Text(data.emoji, style: const TextStyle(fontSize: 100)),
+              // الفاكهة والاسم من المصدر الموحّد — مطابقان تماماً لبقية الشاشات
+              Text(FetusSize.emoji(week), style: const TextStyle(fontSize: 100)),
               const SizedBox(height: 16),
-              Text('بحجم ${data.fruitName}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: data.bgColor)),
+              Text('بحجم ${FetusSize.name(week)}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: data.bgColor)),
               const SizedBox(height: 8),
               Wrap(
                 alignment: WrapAlignment.center,
