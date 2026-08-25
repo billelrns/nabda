@@ -1,3 +1,4 @@
+import '../../widgets/smart_articles_carousel.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:math';
@@ -820,6 +821,13 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                     const SizedBox(height: 24),
                     // محتوى مخصّص حسب ملف المستخدمة — يظهر قبل كل المقالات العامة
                     const PersonalizedTipsCard(stage: 'pregnant'),
+                    const SizedBox(height: 16),
+                    const SmartArticlesCarousel(
+                      categoryFilter: 'pregnancy',
+                      sectionTitle: 'مقالات الحمل والولادة التفاعلية',
+                      sectionSubtitle: 'دليل شامل وموثق من انغراس البويضة حتى الولادة',
+                    ),
+                    const SizedBox(height: 16),
                     // ─── Health Trackers Banner ───
                     GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthTrackersScreen())),

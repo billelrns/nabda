@@ -56,6 +56,8 @@ import 'widgets/conditional_content.dart';
 import 'models/pregnancy_week_articles.dart' show pregnancyMonthArForWeek;
 import 'widgets/cycle_analysis_screen.dart';
 import 'widgets/cycle_phase_wheel.dart';
+import 'widgets/smart_articles_carousel.dart';
+import 'screens/articles/smart_article_detail_screen.dart';
 import 'web/web_home.dart';
 import 'web/web_pregnancy.dart';
 import 'web/web_public_home.dart';
@@ -3089,6 +3091,13 @@ class _HomePageState extends State<HomePage> {
                           child: _HomeArticlesSection(),
                         ),
 
+                        // ════════════ SMART INTERACTIVE ARTICLES ════════════
+                        const SmartArticlesCarousel(
+                          sectionTitle: 'مقالات ذكية وإرشادية',
+                          sectionSubtitle: 'محتوى طبي تفاعلي موثق لتلبية جميع تساؤلاتكِ',
+                        ),
+                        const SizedBox(height: 16),
+
                         
                         // ════════════ LATEST NEWS ════════════
                         Padding(
@@ -5481,6 +5490,14 @@ class _BabyPageState extends State<BabyPage> {
                         const SizedBox(height: 8),
                         const PersonalizedTipsCard(stage: 'baby'),
                         const ConditionalContentSection(stage: 'baby'),
+
+                        const SizedBox(height: 14),
+                        const SmartArticlesCarousel(
+                          categoryFilter: 'baby',
+                          sectionTitle: 'مقالات رعاية الرضيع والطفل',
+                          sectionSubtitle: 'دليل الأمهات الجدد لنمو وتغذية ونوم الصغير',
+                        ),
+                        const SizedBox(height: 14),
 
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 BABY SELECTOR \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
                         if (babyDocs.isNotEmpty)

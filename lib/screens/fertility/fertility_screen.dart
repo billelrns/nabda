@@ -1,3 +1,4 @@
+import '../../widgets/smart_articles_carousel.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -166,7 +167,13 @@ class _FertilityScreenState extends State<FertilityScreen> {
       _knowledgeCard('🩺', 'متى أراجع أخصائي الخصوبة؟', 'علامات تستدعي زيارة الطبيب والفحوصات', _lav, () => _openArticle('متى تراجعين الأخصائي', _whenSpecialistText)),
       const SizedBox(height: 10),
       _knowledgeCard('📋', 'استبيان الخصوبة', 'أجيبي على أسئلة قصيرة لتوجيه مخصّص', _peach, _openQuestionnaire),
-      const SizedBox(height: 22),
+      const SizedBox(height: 18),
+      const SmartArticlesCarousel(
+        categoryFilter: 'fertility',
+        sectionTitle: 'مقالات الخصوبة والتبويض التفاعلية',
+        sectionSubtitle: 'طرق طبيعية مثبتة لتعزيز فرص الحمل والإنجاب',
+      ),
+      const SizedBox(height: 18),
       const ConditionalContentSection(stage: 'planning'),
       const SizedBox(height: 14),
       _sectionTitle('📚 مقالات مفيدة'),
