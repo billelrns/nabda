@@ -7,20 +7,13 @@ import 'cart_screen.dart';
 import 'landing_product_screen.dart';
 import '../../widgets/feed_video_ad.dart';
 
-// ─── Theme Colors — Rose-Gold Luxe ───
-const Color _bgColor = Color(0xFFFBF3F0);      // warm ivory / blush
+// ─── Theme Colors ───
+const Color _bgColor = Color(0xFFFFF5F7);
 const Color _cardColor = Colors.white;
-const Color _teal = Color(0xFF00897B);          // legacy (used by preserved widgets)
-const Color _pink = Color(0xFFE91E63);          // legacy accent
-const Color _textPrimary = Color(0xFF3A2E33);   // warm charcoal
-const Color _textSecondary = Color(0xFF9A8A8F); // muted mauve-grey
-
-// Luxe palette
-const Color _rose = Color(0xFFB76E79);          // rose gold (primary accent)
-const Color _roseDeep = Color(0xFF9C5460);      // deep rose
-const Color _gold = Color(0xFFC9A24B);          // soft gold
-const Color _goldLight = Color(0xFFE6C77E);     // light gold
-const Color _blush = Color(0xFFF3E1DD);         // blush surface
+const Color _teal = Color(0xFF00897B);
+const Color _pink = Color(0xFFE91E63);
+const Color _textPrimary = Color(0xFF2D2D3A);
+const Color _textSecondary = Color(0xFF6B7280);
 
 // ─── Product Model ───
 class _Product {
@@ -33,20 +26,13 @@ class _Product {
   const _Product({required this.name, required this.emoji, required this.price, this.oldPrice = '', this.rating = 4.5, required this.color});
 }
 
-// ─── Category Model (metadata only — products come from Firestore) ───
+// ─── Category Model ───
 class _ShopCategory {
   final String name;
   final String emoji;
   final Color color;
-  final List<Color> gradient;
   final List<_Product> products;
-  const _ShopCategory({
-    required this.name,
-    required this.emoji,
-    required this.color,
-    this.gradient = const [_rose, _roseDeep],
-    this.products = const [],
-  });
+  const _ShopCategory({required this.name, required this.emoji, required this.color, required this.products});
 }
 
 // ─── 15 Categories with 20+ Products Each ───
@@ -426,32 +412,6 @@ String _fmtPrice(String dzdPriceStr) {
   return svc.formatPrice(dzd);
 }
 
-// ─── Open a Firestore product's detail page (landing or standard) ───
-void _openFirestoreProduct(BuildContext context, Map<String, dynamic> d) {
-  if (d['displayType'] == 'landing') {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => LandingProductScreen(productData: d)));
-    return;
-  }
-  final List<String> allImages = [];
-  final imageUrls = d['imageUrls'] as List<dynamic>? ?? [];
-  if (imageUrls.isNotEmpty) {
-    for (final url in imageUrls) {
-      final s = url.toString();
-      if (s.isNotEmpty) allImages.add(s);
-    }
-  } else {
-    final oldUrl = d['imageUrl'] as String?;
-    if (oldUrl != null && oldUrl.isNotEmpty) allImages.add(oldUrl);
-  }
-  final descImages = (d['descImages'] as List<dynamic>?) ?? [];
-  Navigator.push(context, MaterialPageRoute(builder: (_) => Directionality(
-    textDirection: TextDirection.rtl,
-    child: _ProductDetailPage(d: d, allImages: allImages, descImages: descImages,
-      fmtPrice: _fmtPrice, teal: _roseDeep, bgColor: _bgColor, cardColor: _cardColor,
-      textPrimary: _textPrimary, textSecondary: _textSecondary),
-  )));
-}
-
 // ─── Shop Page Widget ───
 class ShopPage extends StatefulWidget {
   const ShopPage({Key? key}) : super(key: key);
@@ -661,7 +621,7 @@ class _ShopPageState extends State<ShopPage> {
                 expandedHeight: 140,
                 floating: false,
                 pinned: true,
-                backgroundColor: _roseDeep,
+                backgroundColor: _teal,
                 automaticallyImplyLeading: false,
                 flexibleSpace: FlexibleSpaceBar(
                   centerTitle: true,
@@ -670,24 +630,18 @@ class _ShopPageState extends State<ShopPage> {
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
                   ),
                   background: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.topRight,
-                        end: Alignment.bottomLeft,
-                        colors: [_gold, _rose, _roseDeep],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [_teal, _teal.withOpacity(0.85)],
                       ),
                     ),
-                    child: Stack(
-                      children: [
-                        Positioned(top: -20, left: -10, child: Container(width: 120, height: 120, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.08)))),
-                        Positioned(bottom: -30, right: 30, child: Container(width: 90, height: 90, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.06)))),
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 30),
-                            child: Icon(Icons.diamond_outlined, size: 46, color: Colors.white.withOpacity(0.25)),
-                          ),
-                        ),
-                      ],
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 30),
+                        child: Icon(Icons.store, size: 50, color: Colors.white.withOpacity(0.2)),
+                      ),
                     ),
                   ),
                 ),
@@ -936,9 +890,9 @@ class _ShopPageState extends State<ShopPage> {
                           ],
                         ),
                       ),
-                      // Product carousel — REAL products from Firestore (or "قريباً")
+                      // Product carousel — منتجات حقيقية من Firestore إن وُجدت لهذا القسم
                       SizedBox(
-                        height: 274,
+                        height: 220,
                         child: StreamBuilder<QuerySnapshot>(
                           stream: FirebaseFirestore.instance
                               .collection('products')
@@ -946,20 +900,113 @@ class _ShopPageState extends State<ShopPage> {
                               .limit(12)
                               .snapshots(),
                           builder: (context, catSnap) {
-                            final catDocs = catSnap.data?.docs ?? const [];
-                            if (catDocs.isEmpty) {
-                              return _comingSoonRow(cat);
+                            final realDocs = catSnap.data?.docs ?? [];
+                            if (realDocs.isNotEmpty) {
+                              return ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                reverse: true,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                itemCount: realDocs.length,
+                                itemBuilder: (context, i) {
+                                  final d = Map<String, dynamic>.from(
+                                      realDocs[i].data() as Map);
+                                  d['id'] = realDocs[i].id;
+                                  return _firestoreProductCard(context, d, cat.color);
+                                },
+                              );
                             }
                             return ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              reverse: true,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              itemCount: catDocs.length,
-                              itemBuilder: (context, i) {
-                                final d = Map<String, dynamic>.from(catDocs[i].data() as Map<String, dynamic>);
-                                d['id'] = catDocs[i].id;
-                                return _luxeProductCard(context, d, cat);
-                              },
+                          scrollDirection: Axis.horizontal,
+                          reverse: true,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: cat.products.length > 8 ? 8 : cat.products.length,
+                          itemBuilder: (context, i) {
+                            final p = cat.products[i];
+                            return GestureDetector(
+                              onTap: () => Navigator.push(context, MaterialPageRoute(
+                                builder: (_) => _ProductDetailScreen(product: p, categoryName: cat.name),
+                              )),
+                              child: Container(
+                                width: 160,
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                decoration: BoxDecoration(
+                                  color: _cardColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Product image area
+                                    Container(
+                                      height: 110,
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        color: p.color.withOpacity(0.08),
+                                        borderRadius: const BorderRadius.only(
+                                          topRight: Radius.circular(16),
+                                          topLeft: Radius.circular(16),
+                                        ),
+                                      ),
+                                      child: Stack(
+                                        children: [
+                                          Center(child: Text(p.emoji, style: const TextStyle(fontSize: 45))),
+                                          if (p.oldPrice.isNotEmpty)
+                                            Positioned(
+                                              top: 8,
+                                              right: 8,
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: _pink,
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: const Text('تخفيض', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    // Product info
+                                    Padding(
+                                      padding: const EdgeInsets.all(10),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            p.name,
+                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _textPrimary),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            children: [
+                                              Flexible(child: Text(_fmtPrice(p.price), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _teal), overflow: TextOverflow.ellipsis)),
+                                              if (p.oldPrice.isNotEmpty) ...[
+                                                const SizedBox(width: 4),
+                                                Flexible(child: Text(_fmtPrice(p.oldPrice), style: TextStyle(fontSize: 10, color: _textSecondary, decoration: TextDecoration.lineThrough), overflow: TextOverflow.ellipsis)),
+                                              ],
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.star, size: 13, color: Colors.amber[700]),
+                                              const SizedBox(width: 2),
+                                              Text('${p.rating}', style: TextStyle(fontSize: 11, color: _textSecondary)),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                             );
                           },
                         ),
@@ -1004,143 +1051,6 @@ class _ShopPageState extends State<ShopPage> {
       ),
     );
   }
-
-  // ─── Discount percentage from price / oldPrice ───
-  int _discountPct(String price, String oldPrice) {
-    final p = _parseDZD(price);
-    final o = _parseDZD(oldPrice);
-    if (o > 0 && p > 0 && o > p) return (((o - p) / o) * 100).round();
-    return 0;
-  }
-
-  // ─── Luxe product card (real Firestore product) ───
-  Widget _luxeProductCard(BuildContext context, Map<String, dynamic> d, _ShopCategory cat) {
-    final name = (d['name'] ?? '').toString();
-    final price = (d['price'] ?? '').toString();
-    final oldPrice = (d['oldPrice'] ?? '').toString();
-    final img = ((d['imageUrl'] ?? d['coverImage']) ?? '').toString();
-    final rating = d['rating'] ?? 4.5;
-    final pct = _discountPct(price, oldPrice);
-    return GestureDetector(
-      onTap: () => _showFirestoreProductDetail(context, d),
-      child: Container(
-        width: 170,
-        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        decoration: BoxDecoration(
-          color: _cardColor,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(color: _rose.withOpacity(0.10), blurRadius: 18, offset: const Offset(0, 8)),
-            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-                  child: Container(
-                    height: 120,
-                    width: double.infinity,
-                    color: _blush,
-                    child: img.isNotEmpty
-                        ? Image.network(img, height: 120, width: double.infinity, fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Center(child: Text(cat.emoji, style: const TextStyle(fontSize: 44))))
-                        : Center(child: Text(cat.emoji, style: const TextStyle(fontSize: 44))),
-                  ),
-                ),
-                if (pct > 0)
-                  Positioned(
-                    top: 10, right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [_gold, _goldLight]),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [BoxShadow(color: _gold.withOpacity(0.4), blurRadius: 6, offset: const Offset(0, 2))],
-                      ),
-                      child: Text('-$pct%', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _textPrimary, height: 1.25), maxLines: 2, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 6),
-                  Row(children: [
-                    Flexible(child: Text(_fmtPrice(price), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _roseDeep), overflow: TextOverflow.ellipsis)),
-                    if (oldPrice.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Flexible(child: Text(_fmtPrice(oldPrice), style: TextStyle(fontSize: 10.5, color: _textSecondary, decoration: TextDecoration.lineThrough), overflow: TextOverflow.ellipsis)),
-                    ],
-                  ]),
-                  const SizedBox(height: 6),
-                  Row(children: [
-                    const Icon(Icons.star_rounded, size: 15, color: _gold),
-                    const SizedBox(width: 3),
-                    Text('$rating', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textSecondary)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(gradient: const LinearGradient(colors: [_rose, _roseDeep]), borderRadius: BorderRadius.circular(10)),
-                      child: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
-                    ),
-                  ]),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── "قريباً" row for categories that have no real products yet ───
-  Widget _comingSoonRow(_ShopCategory cat) {
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [_blush, Colors.white], begin: Alignment.topRight, end: Alignment.bottomLeft),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _rose.withOpacity(0.12)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 54, height: 54,
-              decoration: BoxDecoration(gradient: LinearGradient(colors: cat.gradient), borderRadius: BorderRadius.circular(16)),
-              child: Center(child: Text(cat.emoji, style: const TextStyle(fontSize: 26))),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(cat.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary)),
-                  const SizedBox(height: 4),
-                  const Text('منتجات فاخرة تُضاف قريباً', style: TextStyle(fontSize: 12, color: _textSecondary)),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              decoration: BoxDecoration(gradient: const LinearGradient(colors: [_gold, _goldLight]), borderRadius: BorderRadius.circular(20)),
-              child: const Text('قريباً', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ─── Category Products Screen ───
@@ -1157,125 +1067,81 @@ class _CategoryProductsScreen extends StatelessWidget {
         appBar: AppBar(
           title: Text('${category.emoji} ${category.name}', style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 18)),
           backgroundColor: Colors.white,
-          foregroundColor: _roseDeep,
+          foregroundColor: _teal,
           elevation: 0,
           surfaceTintColor: Colors.transparent,
         ),
-        body: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('products')
-              .where('category', isEqualTo: category.name)
-              .snapshots(),
-          builder: (context, snap) {
-            final docs = snap.data?.docs ?? const [];
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: _rose));
-            }
-            if (docs.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(category.emoji, style: const TextStyle(fontSize: 60)),
-                    const SizedBox(height: 12),
-                    const Text('قريباً', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _roseDeep)),
-                    const SizedBox(height: 6),
-                    const Text('منتجات فاخرة تُضاف إلى هذا القسم قريباً', style: TextStyle(fontSize: 13, color: _textSecondary)),
-                  ],
+        body: GridView.builder(
+          padding: const EdgeInsets.all(12),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.7,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
+          itemCount: category.products.length,
+          itemBuilder: (context, i) {
+            final p = category.products[i];
+            return GestureDetector(
+              onTap: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => _ProductDetailScreen(product: p, categoryName: category.name),
+              )),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
                 ),
-              );
-            }
-            return GridView.builder(
-              padding: const EdgeInsets.all(14),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.62,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 14,
-              ),
-              itemCount: docs.length,
-              itemBuilder: (context, i) {
-                final d = Map<String, dynamic>.from(docs[i].data() as Map<String, dynamic>);
-                d['id'] = docs[i].id;
-                final name = (d['name'] ?? '').toString();
-                final price = (d['price'] ?? '').toString();
-                final oldPrice = (d['oldPrice'] ?? '').toString();
-                final img = ((d['imageUrl'] ?? d['coverImage']) ?? '').toString();
-                final rating = d['rating'] ?? 4.5;
-                final pd = _parseDZD(price), od = _parseDZD(oldPrice);
-                final pct = (od > 0 && pd > 0 && od > pd) ? (((od - pd) / od) * 100).round() : 0;
-                return GestureDetector(
-                  onTap: () => _openFirestoreProduct(context, d),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: _cardColor,
-                      borderRadius: BorderRadius.circular(22),
-                      boxShadow: [
-                        BoxShadow(color: _rose.withOpacity(0.10), blurRadius: 16, offset: const Offset(0, 6)),
-                        BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2)),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: p.color.withOpacity(0.08),
+                          borderRadius: const BorderRadius.only(topRight: Radius.circular(16), topLeft: Radius.circular(16)),
+                        ),
+                        child: Stack(
+                          children: [
+                            Center(child: Text(p.emoji, style: const TextStyle(fontSize: 45))),
+                            if (p.oldPrice.isNotEmpty)
+                              Positioned(
+                                top: 8, right: 8,
                                 child: Container(
-                                  width: double.infinity,
-                                  color: _blush,
-                                  child: img.isNotEmpty
-                                      ? Image.network(img, fit: BoxFit.cover, width: double.infinity,
-                                          errorBuilder: (_, __, ___) => Center(child: Text(category.emoji, style: const TextStyle(fontSize: 46))))
-                                      : Center(child: Text(category.emoji, style: const TextStyle(fontSize: 46))),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(color: _pink, borderRadius: BorderRadius.circular(6)),
+                                  child: const Text('تخفيض', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
                                 ),
                               ),
-                              if (pct > 0)
-                                Positioned(
-                                  top: 10, right: 10,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(gradient: const LinearGradient(colors: [_gold, _goldLight]), borderRadius: BorderRadius.circular(10)),
-                                    child: Text('-$pct%', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                                  ),
-                                ),
-                            ],
-                          ),
+                          ],
                         ),
-                        Expanded(
-                          flex: 2,
-                          child: Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(name, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _textPrimary, height: 1.25), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                const Spacer(),
-                                Row(children: [
-                                  Flexible(child: Text(_fmtPrice(price), style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: _roseDeep), overflow: TextOverflow.ellipsis)),
-                                  if (oldPrice.isNotEmpty) ...[
-                                    const SizedBox(width: 5),
-                                    Flexible(child: Text(_fmtPrice(oldPrice), style: TextStyle(fontSize: 10, color: _textSecondary, decoration: TextDecoration.lineThrough), overflow: TextOverflow.ellipsis)),
-                                  ],
-                                ]),
-                                const SizedBox(height: 4),
-                                Row(children: [
-                                  const Icon(Icons.star_rounded, size: 14, color: _gold),
-                                  const SizedBox(width: 2),
-                                  Text('$rating', style: const TextStyle(fontSize: 11, color: _textSecondary, fontWeight: FontWeight.w600)),
-                                ]),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                    Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(p.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
+                            const Spacer(),
+                            Text(_fmtPrice(p.price), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _teal)),
+                            if (p.oldPrice.isNotEmpty) Text(_fmtPrice(p.oldPrice), style: TextStyle(fontSize: 10, color: _textSecondary, decoration: TextDecoration.lineThrough)),
+                            Row(children: [
+                              Icon(Icons.star, size: 13, color: Colors.amber[700]),
+                              const SizedBox(width: 2),
+                              Text('${p.rating}', style: TextStyle(fontSize: 11, color: _textSecondary)),
+                            ]),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           },
         ),

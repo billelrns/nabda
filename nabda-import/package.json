@@ -1,17 +1,15 @@
 {
   "name": "nabda-import",
   "version": "1.0.0",
-  "private": true,
-  "description": "خط أنابيب استيراد منتجات المتاجر (Shopify / FlexDZ / Firas) إلى Firestore بصيغة نبضة",
+  "description": "استيراد منتجات المتاجر ورفعها إلى Firestore لتطبيق نبضة",
+  "main": "import.js",
   "type": "commonjs",
   "scripts": {
-    "fetch": "node import.js",
-    "upload": "node upload.js",
-    "images": "node fix-images.js",
-    "all": "node import.js && node upload.js && node fix-images.js",
-    "curated": "node build-curated.js && node polish.js"
+    "import": "node import.js",
+    "preview": "node import.js --dry"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0"
-  }
+  },
+  "engines": { "node": ">=18" }
 }

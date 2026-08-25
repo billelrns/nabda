@@ -109,7 +109,7 @@
   .prod-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
   .prod{background:#fff;border:1px solid #F8E1EA;border-radius:18px;overflow:hidden;box-shadow:0 8px 22px rgba(244,63,126,.06);cursor:pointer;transition:.2s;display:flex;flex-direction:column}
   .prod:hover{transform:translateY(-4px);box-shadow:0 20px 40px rgba(244,63,126,.15)}
-  .prod-img{background:#FFF7FA;height:270px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .prod-img{background:#FFF7FA;height:200px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
   .prod-img img{max-width:80%;max-height:80%;object-fit:contain}
   .prod-badge{position:absolute;top:12px;right:12px;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:800;color:#fff}
   .prod-info{padding:14px}
@@ -128,22 +128,10 @@
   .btn-cart:hover{transform:scale(1.02)}
 
   /* Product detail modal */
-  .modal-overlay{position:fixed;inset:0;background:#FBF3F0;display:none;z-index:100;overflow:auto;padding:0;animation:fade-in .2s ease}
-  .modal-overlay.on{display:block}
+  .modal-overlay{position:fixed;inset:0;background:rgba(31,26,32,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;animation:fade-in .25s ease}
+  .modal-overlay.on{display:flex}
   @keyframes fade-in{from{opacity:0}to{opacity:1}}
-  .modal{background:#fff;border-radius:24px;max-width:1040px;width:calc(100% - 32px);margin:70px auto 40px;overflow:visible;box-shadow:0 20px 60px rgba(244,63,126,.14);position:relative;animation:pop-in .25s ease}
-  /* Order form (COD, no login) */
-  .order-form{display:flex;flex-direction:column;gap:10px;background:#FFF7FA;border:1px solid #F8E1EA;border-radius:16px;padding:16px;margin-top:8px}
-  .order-form h3{font-size:16px;color:#F43F7E;font-weight:800;margin-bottom:2px}
-  .order-form input,.order-form select{width:100%;padding:12px 14px;border:1.5px solid #F0D7E2;border-radius:12px;font-family:inherit;font-size:14px;background:#fff;color:#1F1A20}
-  .order-form input:focus,.order-form select:focus{outline:none;border-color:#F43F7E}
-  .order-qty{display:flex;align-items:center;gap:10px;font-size:14px;color:#5E5568;font-weight:700}
-  .order-qty input{width:90px}
-  .order-submit{background:linear-gradient(135deg,#F43F7E,#FF6B9A);color:#fff;border:none;border-radius:14px;padding:15px;font-family:inherit;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 12px 28px rgba(244,63,126,.32);transition:.2s}
-  .order-submit:hover{transform:translateY(-2px)}
-  .order-submit:disabled{opacity:.6;cursor:default;transform:none}
-  #order-result .ok{background:#E6F7ED;color:#1B8A4B;border-radius:12px;padding:14px;font-weight:700;text-align:center;margin-top:10px}
-  #order-result .err{background:#FDE8EF;color:#C2185B;border-radius:12px;padding:14px;font-weight:700;text-align:center;margin-top:10px}
+  .modal{background:#fff;border-radius:24px;max-width:960px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 30px 80px rgba(31,26,32,.4);position:relative;animation:pop-in .3s ease}
   @keyframes pop-in{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
   .modal-close{position:absolute;top:16px;left:16px;width:40px;height:40px;border-radius:50%;background:#FFF7FA;border:1px solid #F8D7E5;color:#F43F7E;font-size:20px;font-weight:800;cursor:pointer;z-index:2;transition:.2s;display:flex;align-items:center;justify-content:center}
   .modal-close:hover{background:#FDE8EF;transform:rotate(90deg)}
@@ -447,13 +435,15 @@
         </div>
         <div class="prod-info">
           <div class="prod-name">${name}</div>
+          ${brand ? `<div class="prod-brand">${brand}</div>` : ''}
+          <div class="prod-rating">${rating} <span>⭐</span> ${reviews ? `<span>(${reviews})</span>` : ''}</div>
           <div class="prod-price">
             <span class="price-now">${price}</span>
             ${oldPrice ? `<span class="price-old">${formatPrice(oldPrice)}</span>` : ''}
           </div>
           <div class="prod-actions">
-            <button class="btn-fav" onclick="event.stopPropagation();openProductModal('${p.id}')" title="التفاصيل">🤍</button>
-            <button class="btn-cart" onclick="event.stopPropagation();openProductModal('${p.id}')">🛒 اطلبي</button>
+            <button class="btn-fav" onclick="event.stopPropagation();location.href='/login'">🤍</button>
+            <button class="btn-cart" onclick="event.stopPropagation();location.href='/login'">🛒</button>
           </div>
         </div>
       </div>`;
@@ -462,46 +452,6 @@
   // ─── نافذة تفاصيل المنتج (Modal) ───
   // helper: بحث المنتج بالـ slug أو الـ id
   const findProduct = (key) => allProducts.find(x => x.slug === key || x.id === key);
-
-  // قائمة الولايات الـ58 لنموذج الطلب
-  const WILAYAS = ['أدرار','الشلف','الأغواط','أم البواقي','باتنة','بجاية','بسكرة','بشار','البليدة','البويرة','تمنراست','تبسة','تلمسان','تيارت','تيزي وزو','الجزائر','الجلفة','جيجل','سطيف','سعيدة','سكيكدة','سيدي بلعباس','عنابة','قالمة','قسنطينة','المدية','مستغانم','المسيلة','معسكر','ورقلة','وهران','البيّض','إليزي','برج بوعريريج','بومرداس','الطارف','تندوف','تيسمسيلت','الوادي','خنشلة','سوق أهراس','تيبازة','ميلة','عين الدفلى','النعامة','عين تموشنت','غرداية','غليزان','تيميمون','برج باجي مختار','أولاد جلال','بني عباس','عين صالح','عين قزام','تقرت','جانت','المغير','المنيعة'];
-  const WILAYA_OPTIONS = '<option value="" disabled selected>اختاري الولاية</option>' +
-    WILAYAS.map((w,i) => `<option value="${String(i+1).padStart(2,'0')} - ${w}">${String(i+1).padStart(2,'0')} - ${w}</option>`).join('');
-
-  // إرسال طلب COD مباشرةً (بدون تسجيل دخول) إلى Firestore
-  window.submitOrder = function(e){
-    e.preventDefault();
-    const f = e.target;
-    const p = window.__cp || {};
-    const btn = f.querySelector('.order-submit');
-    const res = f.querySelector('#order-result');
-    const name = (f.cname.value || '').trim();
-    const phone = (f.cphone.value || '').trim();
-    if (name.length < 2 || phone.replace(/\D/g,'').length < 8) { res.innerHTML = '<div class="err">يرجى إدخال الاسم ورقم هاتف صحيح.</div>'; return false; }
-    const qty = Math.max(1, parseInt(f.cqty.value || '1', 10) || 1);
-    const unit = parseFloat(String(p.price || '').replace(/[^\d.]/g, '')) || 0;
-    const total = unit > 0 ? (String(Math.round(unit * qty)) + ' دج') : String(p.price || '');
-    const data = {
-      userId: null, source: 'website',
-      productId: p.id || '', productName: p.name || '', productSlug: p.slug || '',
-      price: String(p.price || ''),
-      customerName: name, customerPhone: phone, phone: phone,
-      wilaya: f.cwilaya.value || '', commune: (f.ccommune.value || '').trim(),
-      quantity: qty, total: total,
-      status: 'pending',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    btn.disabled = true; btn.textContent = 'جارٍ الإرسال...';
-    db.collection('orders').add(data).then(function(){
-      res.innerHTML = '<div class="ok">✅ تمّ استلام طلبكِ بنجاح! سنتصل بكِ هاتفياً لتأكيده قريباً.</div>';
-      f.cname.value = ''; f.cphone.value = ''; f.ccommune.value = '';
-      btn.disabled = false; btn.textContent = 'اطلبي الآن — الدفع عند الاستلام';
-    }).catch(function(){
-      res.innerHTML = '<div class="err">تعذّر إرسال الطلب، حاولي مجدداً أو تواصلي معنا.</div>';
-      btn.disabled = false; btn.textContent = 'اطلبي الآن — الدفع عند الاستلام';
-    });
-    return false;
-  };
 
   window.openProductModal = function(productIdOrSlug, updateUrl = true) {
     const p = findProduct(productIdOrSlug);
@@ -521,7 +471,7 @@
     const reviews = p.reviewCount || p.reviews || '';
     const img = p.imageUrl || p.image || '';
     const emoji = p.emoji || '🛍️';
-    const description = p.description || p.desc || 'منتج مميّز مختار بعناية لكِ ولطفلكِ. اطلبيه الآن — الدفع عند الاستلام.';
+    const description = p.description || p.desc || 'منتج مميّز مختار بعناية لكِ ولطفلكِ. تفاصيل كاملة وشراء آمن بعد تسجيل الدخول.';
 
     let discountPct = 0;
     if (oldPrice) {
@@ -547,16 +497,10 @@
           ${discountPct > 0 ? `<span class="modal-badge">وفّري ${discountPct}%</span>` : ''}
         </div>
         <div class="modal-desc">${description}</div>
-        <form class="order-form" onsubmit="return submitOrder(event)">
-          <h3>🛒 أكملي طلبكِ — الدفع عند الاستلام</h3>
-          <input name="cname" required placeholder="الاسم الكامل" autocomplete="name" />
-          <input name="cphone" required type="tel" inputmode="tel" placeholder="رقم الهاتف" autocomplete="tel" />
-          <select name="cwilaya" required>${WILAYA_OPTIONS}</select>
-          <input name="ccommune" placeholder="البلدية / العنوان (اختياري)" />
-          <div class="order-qty">الكمية <input name="cqty" type="number" min="1" value="1" /></div>
-          <button type="submit" class="order-submit">اطلبي الآن — الدفع عند الاستلام</button>
-          <div id="order-result"></div>
-        </form>
+        <div class="modal-actions">
+          <button class="modal-btn-fav" onclick="location.href='/login'" title="أضف للمفضّلة">🤍</button>
+          <button class="modal-btn-buy" onclick="location.href='/login'">🛒 اشتري الآن</button>
+        </div>
         <div class="modal-perks">
           <div class="modal-perk">🚚 شحن سريع</div>
           <div class="modal-perk">↩️ إرجاع سهل خلال 7 أيام</div>
@@ -565,10 +509,7 @@
         </div>
       </div>`;
 
-    window.__cp = { id: p.id || '', name: p.name || '', price: String(p.price || ''), slug: p.slug || '' };
-    const ov = document.getElementById('product-modal');
-    ov.classList.add('on');
-    ov.scrollTop = 0;
+    document.getElementById('product-modal').classList.add('on');
     document.body.style.overflow = 'hidden';
   };
   window.closeModal = function(updateUrl = true) {

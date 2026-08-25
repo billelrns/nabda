@@ -1,8 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
-
 import 'article_image_map.g.dart';
 
 /// ═══════════════════════════════════════════════════════════════════
@@ -176,54 +172,13 @@ class ArticleImages {
     }
   }
 
-  /// خريطة عنوان المقال → معرّفه (aNNN) تُحمَّل وقت التشغيل من article_titles.json
-  /// تسمح بالتقاط أي صورة جديدة تُضاف باسم المعرّف دون إعادة توليد أي كود.
-  static Map<String, String> _titleToId = const {};
-  static bool _loaded = false;
-
-  /// تُستدعى مرّة واحدة عند إقلاع التطبيق (اختيارية — النظام يعمل بدونها)
-  static Future<void> preload() async {
-    if (_loaded) return;
-    _loaded = true;
-    try {
-      final raw = await rootBundle.loadString('assets/data/article_titles.json');
-      final list = json.decode(raw) as List<dynamic>;
-      _titleToId = {
-        for (final e in list)
-          (e['title'] as String).trim(): e['id'] as String,
-      };
-    } catch (_) {
-      // الملف غير مضاف بعد → النظام يواصل بالخريطة المولّدة وصور الفئات
-    }
-    // خريطة مقالات الأخبار (عناوين آخر الأخبار → nNNN)
-    try {
-      final raw = await rootBundle.loadString('assets/data/news_images.json');
-      final m = json.decode(raw) as Map<String, dynamic>;
-      _titleToId = {
-        ..._titleToId,
-        for (final e in m.entries) e.key.trim(): e.value as String,
-      };
-    } catch (_) {}
-  }
-
   /// يعيد مسار الصورة المناسبة — صورة فريدة أولاً، ثم تطابق حسب القسم
   static String resolve(String title, {String section = ''}) {
-    final t = title.trim();
-
     // ① صورة Hook فريدة مولّدة بالذكاء الاصطناعي (أولوية قصوى)
-    final exact = kArticleImageMap[t];
+    final exact = kArticleImageMap[title.trim()];
     if (exact != null) return exact;
 
-    // ①-ب صورة باسم معرّف المقال (تلتقط أي صورة جديدة تلقائياً)
-    final id = _titleToId[t];
-    if (id != null) return 'assets/images/article_pics/$id.png';
-
     // ② تطابق كلمة مفتاحية حسب القسم
-    return categoryFor(title, section: section);
-  }
-
-  /// صورة الفئة الموضوعية فقط (بلا صور المقالات الفريدة) — تُستخدم كخطة بديلة
-  static String categoryFor(String title, {String section = ''}) {
     for (final e in _kwFor(section)) {
       if (title.contains(e.key)) return e.value;
     }
@@ -256,31 +211,23 @@ class ArticleImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final asset = ArticleImages.resolve(title, section: section);
-    // صورة الفئة الموضوعية كخطة بديلة إن كان ملف المعرّف غير موجود
-    final categoryAsset = ArticleImages.categoryFor(title, section: section);
     return Image.asset(
       asset,
       width: width,
       height: height,
       fit: fit,
-      errorBuilder: (_, __, ___) => Image.asset(
-        categoryAsset,
-        width: width,
-        height: height,
-        fit: fit,
-        errorBuilder: (_, __, ___) {
-          if (networkUrl != null && networkUrl!.isNotEmpty) {
-            return Image.network(
-              networkUrl!,
-              width: width,
-              height: height,
-              fit: fit,
-              errorBuilder: (_, __, ___) => _placeholder(),
-            );
-          }
-          return _placeholder();
-        },
-      ),
+      errorBuilder: (_, __, ___) {
+        if (networkUrl != null && networkUrl!.isNotEmpty) {
+          return Image.network(
+            networkUrl!,
+            width: width,
+            height: height,
+            fit: fit,
+            errorBuilder: (_, __, ___) => _placeholder(),
+          );
+        }
+        return _placeholder();
+      },
     );
   }
 

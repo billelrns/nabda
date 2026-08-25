@@ -10,8 +10,6 @@ import 'user_profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../services/cohort_service.dart';
-import '../../services/pregnancy_dates_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/community_engagement_service.dart';
 import '../../models/community_post_model.dart';
 
@@ -46,12 +44,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
       if (!snap.exists) return;
       final d = snap.data()!;
 
-      // (1) الفوج — من تواريخ الحمل الموحّدة
-      final pd = PregnancyDates.fromUserData(d);
+      // (1) الفوج
+      final preg = d['pregnancyStartDate'] ?? d['pregnancyStart'];
       final key = CohortService().deriveCohortKey(
         status: d['lifeStage'] as String? ?? '',
-        pregnancyStartDate: pd.effectiveStart,
-        dueDate: pd.effectiveDueDate,
+        pregnancyStartDate: preg is Timestamp ? preg.toDate() : null,
         babyBirthDate: d['babyBirthDate'] is Timestamp ? (d['babyBirthDate'] as Timestamp).toDate() : null,
       );
       await CohortService().syncUserCohort(uid, key);
@@ -544,16 +541,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
           return _buildNoCohortState();
         }
 
-        // رسالة الترحيب تظهر مرّة واحدة فقط عند أول دخول
-        _maybeShowClubIntro(cohortKey);
-
-        // النادي المعروض: نادي المستخدمة، أو الذي اختارت تصفّحه
-        final viewKey = _browsingCohortKey ?? cohortKey;
-
         return Column(
           children: [
-            _buildCohortHeaderCard(viewKey, myKey: cohortKey),
-            Expanded(child: _buildCohortPostList(viewKey)),
+            _buildCohortHeaderCard(cohortKey),
+            Expanded(child: _buildCohortPostList(cohortKey)),
           ],
         );
       },
@@ -617,203 +608,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  // ── تصفّح الأندية الأخرى + رسالة الترحيب لأول مرّة ──────────────
-  String? _browsingCohortKey;
-  bool _introChecked = false;
-
-  Future<void> _maybeShowClubIntro(String cohortKey) async {
-    if (_introChecked) return;
-    _introChecked = true;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool('club_intro_seen') == true) return;
-      if (!mounted) return;
-      await Future.delayed(const Duration(milliseconds: 350));
-      if (!mounted) return;
-      await showDialog(
-        context: context,
-        builder: (_) => Directionality(
-          textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFE8EC),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.groups_rounded, color: Color(0xFFE91E63), size: 22),
-                ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text('نادي الولادة الخاص بكِ',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'أندية أشهر الولادة مخصصة لربط الحوامل والأمهات اللواتي يمررن بنفس مرحلتكِ لمشاركة التجارب والنصائح اليومية.',
-                  style: TextStyle(height: 1.6, fontSize: 13.5, color: Colors.grey.shade700),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF00897B).withOpacity(0.07),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.auto_awesome, size: 18, color: Color(0xFF00897B)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'انضممتِ تلقائياً إلى «${CohortService.labelForKey(cohortKey)}» حسب تاريخ ولادتكِ المتوقّع.',
-                          style: const TextStyle(fontSize: 12.5, height: 1.5, color: Color(0xFF00695C), fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'يمكنكِ أيضاً تصفّح أندية الأشهر الأخرى للاطّلاع على منشوراتها من زر «تصفّح الأندية».',
-                  style: TextStyle(height: 1.6, fontSize: 12.5, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE91E63),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: const Text('فهمت، لنبدأ'),
-              ),
-            ],
-          ),
-        ),
-      );
-      await prefs.setBool('club_intro_seen', true);
-    } catch (_) {}
-  }
-
-  Future<void> _openClubPicker(String myKey) async {
-    final keys = CohortService.nearbyKeys(myKey, span: 6);
-    final picked = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: Container(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 42, height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const Text('تصفّح الأندية',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text('اطّلعي على منشورات أندية الأشهر الأخرى',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-              const SizedBox(height: 14),
-              Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: keys.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (_, i) {
-                    final k = keys[i];
-                    final isMine = k == myKey;
-                    final isCurrent = k == (_browsingCohortKey ?? myKey);
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () => Navigator.pop(context, k),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                        decoration: BoxDecoration(
-                          color: isCurrent
-                              ? const Color(0xFF00897B).withOpacity(0.09)
-                              : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isCurrent
-                                ? const Color(0xFF00897B).withOpacity(0.35)
-                                : Colors.grey.shade200,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.groups_rounded,
-                                size: 19,
-                                color: isCurrent ? const Color(0xFF00897B) : Colors.grey.shade500),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                CohortService.labelForKey(k),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
-                                  color: const Color(0xFF2D2D3A),
-                                ),
-                              ),
-                            ),
-                            if (isMine)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE91E63).withOpacity(0.10),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text('ناديكِ',
-                                    style: TextStyle(
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFFE91E63))),
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (picked != null && mounted) {
-      setState(() => _browsingCohortKey = picked == myKey ? null : picked);
-    }
-  }
-
-  Widget _buildCohortHeaderCard(String cohortKey, {required String myKey}) {
-    final isVisiting = cohortKey != myKey;
+  Widget _buildCohortHeaderCard(String cohortKey) {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance.collection('cohort_members_count').doc(cohortKey).snapshots(),
       builder: (context, countSnap) {
@@ -865,9 +660,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          isVisiting
-                              ? '$count عضوة · أنتِ تتصفّحين هذا النادي'
-                              : '$count عضوة في ناديكِ',
+                          '$count عضوة في هذا النادي',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.85),
                             fontSize: 12,
@@ -876,59 +669,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       ],
                     ),
                   ),
-                  // زر تصفّح الأندية
-                  InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => _openClubPicker(myKey),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.swap_horiz_rounded, color: Colors.white, size: 17),
-                          SizedBox(width: 5),
-                          Text('الأندية',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
-              if (isVisiting) ...[
-                const SizedBox(height: 12),
-                InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: () => setState(() => _browsingCohortKey = null),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 9),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.16),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.arrow_back_rounded, color: Colors.white, size: 15),
-                        SizedBox(width: 6),
-                        Text('العودة إلى ناديكِ',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         );
@@ -974,8 +716,24 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   String _formatCohortName(String key) {
-    // اسم موحّد: «مواليد جانفي 2027»
-    return CohortService.labelForKey(key);
+    final parts = key.split('_');
+    if (parts.length < 3) return 'نادي الولادة';
+
+    final type = parts[0];
+    final year = parts[1];
+    final monthInt = int.tryParse(parts[2]) ?? 1;
+
+    const monthsAr = [
+      '', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+    final monthName = monthInt >= 1 && monthInt <= 12 ? monthsAr[monthInt] : '';
+
+    if (type == 'due') {
+      return 'نادي الولادة المتوقعة في $monthName $year';
+    } else {
+      return 'نادي مواليد $monthName $year';
+    }
   }
 
   String _timeAgo(DateTime date) {

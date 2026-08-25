@@ -25,10 +25,7 @@ dependencies:
   go_router: ^14.0.0
   provider: ^6.1.5
   rxdart: ^0.28.0
-  sqflite: ^2.3.0                # Downgraded to match SDK 3.11.4
-  flutter_map: ^6.1.0
-  latlong2: ^0.9.0
-  geolocator: ^10.1.0
+  sqflite: ^2.4.3                # ⬆️ patch
   simple_gesture_detector: ^0.2.1
   http: ^1.2.1
   flutter_local_notifications: ^18.0.1
@@ -38,8 +35,6 @@ dependencies:
   firebase_storage: ^12.4.0
   video_player: ^2.9.2
   visibility_detector: ^0.4.0+2
-  share_plus: ^10.1.4
-
 
 dev_dependencies:
   flutter_test:
@@ -51,8 +46,6 @@ flutter:
   generate: true
 
   assets:
-    - assets/data/article_titles.json
-    - assets/data/news_images.json
     - assets/images/
     - assets/images/intro/
     - assets/icons_3d/
@@ -60,9 +53,5 @@ flutter:
     - assets/images/fetus_hd/
     - assets/images/articles/
     - assets/images/article_pics/
-    - assets/images/share_cards/
     - assets/images/pregnancy_news/
     - assets/data/algeria_cities.json
-    - assets/data/algeria_doctors_clinics.json
-    - assets/data/algeria_wilaya_centroids.json
-    - assets/data/arab_world_doctors.json

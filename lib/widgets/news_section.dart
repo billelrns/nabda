@@ -4,10 +4,6 @@ import '../services/dynamic_content_service.dart';
 import 'dart:math';
 import 'package:url_launcher/url_launcher.dart';
 import '../screens/shop/shop_page.dart';
-import '../utils/article_images.dart';
-import 'nabda_article_ad.dart';
-import 'article_engagement_bar.dart';
-
 
 /// Shared news section widget used across multiple pages (pregnancy, etc.)
 /// Now loads Firestore overrides to reflect admin edits.
@@ -229,14 +225,8 @@ class NewsSection extends StatelessWidget {
         child: Row(children: [
           ClipRRect(
             borderRadius: const BorderRadius.horizontal(right: Radius.circular(16)),
-            child: ArticleImage(
-              title: n['title'] ?? '',
-              section: 'home',
-              networkUrl: n['image'],
-              width: 100,
-              height: 90,
-              fit: BoxFit.cover,
-            ),
+            child: Image.network(n['image']!, width: 100, height: 90, fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(width: 100, height: 90, color: accentColor.withOpacity(0.1), child: Icon(Icons.newspaper, color: accentColor))),
           ),
           Expanded(
             child: Padding(
@@ -319,14 +309,8 @@ class AllNewsScreen extends StatelessWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                        child: ArticleImage(
-                          title: n['title'] ?? '',
-                          section: 'home',
-                          networkUrl: n['image'],
-                          height: 160,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
+                        child: Image.network(n['image']!, height: 160, width: double.infinity, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(height: 160, color: accentColor.withOpacity(0.1), child: Icon(Icons.newspaper, color: accentColor, size: 50))),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(14),
@@ -415,7 +399,6 @@ class _NewsDetailPageState extends State<_NewsDetailPage> {
   @override
   Widget build(BuildContext context) {
     final paragraphs = _body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
-    final midPoint = (paragraphs.length / 2).floor();
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -440,6 +423,9 @@ class _NewsDetailPageState extends State<_NewsDetailPage> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(_title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20), height: 1.5)),
                   const SizedBox(height: 16),
+                  // ===== AD SLOT 1 — إعلان أعلى المقال (استبدله بإعلان Google/AdMob) =====
+                  NabdaAd(slot: 0, groupId: _title, place: 'news', color: widget.color),
+                  const SizedBox(height: 18),
                   for (int i = 0; i < paragraphs.length; i++) ...[
                     if (_image2.isNotEmpty && paragraphs.length > 1 && i == paragraphs.length - 1) ...[
                       ClipRRect(
@@ -450,50 +436,17 @@ class _NewsDetailPageState extends State<_NewsDetailPage> {
                       const SizedBox(height: 18),
                     ],
                     Text(paragraphs[i].trim(), style: const TextStyle(fontSize: 16, height: 1.9, color: Color(0xFF333333))),
-                    const SizedBox(height: 16),
-                    // ===== AD SLOT 1 — إعلان بعد الفقرة الثانية =====
-                    if (i == 1 && paragraphs.length > 3) ...[
-                      NabdaArticleAd(
-                        slot: 0,
-                        articleId: _title,
-                        section: 'news',
-                        articleTitle: _title,
-                        articleBody: _body,
-                        color: widget.color,
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                    if (i < paragraphs.length - 1) const SizedBox(height: 16),
                     // ===== AD SLOT 2 — إعلان وسط المقال =====
-                    if (i == midPoint && paragraphs.length > 5 && midPoint > 1) ...[
-                      NabdaArticleAd(
-                        slot: 1,
-                        articleId: _title,
-                        section: 'news',
-                        articleTitle: _title,
-                        articleBody: _body,
-                        color: widget.color,
-                      ),
-                      const SizedBox(height: 16),
+                    if (i == 1 && paragraphs.length > 3) ...[
+                      const SizedBox(height: 14),
+                      NabdaAd(slot: 1, groupId: _title, place: 'news', color: widget.color),
+                      const SizedBox(height: 14),
                     ],
                   ],
-                  const SizedBox(height: 8),
-                  // ===== شريط التفاعل (الإعجاب والمشاركة والحفظ) =====
-                  ArticleEngagementBar(
-                    articleId: _title,
-                    articleTitle: _title,
-                    section: 'news',
-                    color: widget.color,
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 22),
                   // ===== AD SLOT 3 — إعلان أسفل المقال =====
-                  NabdaArticleAd(
-                    slot: 2,
-                    articleId: _title,
-                    section: 'news',
-                    articleTitle: _title,
-                    articleBody: _body,
-                    color: widget.color,
-                  ),
+                  NabdaAd(slot: 2, groupId: _title, place: 'news', color: widget.color),
                   const SizedBox(height: 30),
                 ]),
               ),
@@ -591,131 +544,9 @@ class NabdaAds {
     return order[slot % order.length];
   }
 
-  /// منتج عشوائي (يُستعمل عند غياب سياق المقال)
   static Map<String, dynamic>? pickProduct() {
     if (_products.isEmpty) return null;
     return _products[Random().nextInt(_products.length)];
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  مطابقة المنتج مع موضوع المقال
-  //  كل موضوع ← كلمات تظهر في المقال + كلمات تظهر في المنتج
-  // ═══════════════════════════════════════════════════════════════
-  static const Map<String, List<String>> _topicArticleWords = {
-    'breastfeeding': ['رضاعة', 'حليب', 'إرضاع', 'ثدي', 'شفط', 'مضخة'],
-    'bottle': ['حليب صناعي', 'رضاعة صناعية', 'زجاجة', 'ببرونة', 'تعقيم'],
-    'diaper': ['حفاض', 'حفاظ', 'تغيير الحفاض', 'طفح', 'مؤخرة'],
-    'sleep': ['نوم', 'سرير', 'مهد', 'قيلولة', 'أرق', 'روتين هادئ'],
-    'nutrition': ['تغذية', 'غذاء', 'طعام', 'أكل', 'وجبات', 'فطام', 'أطعمة'],
-    'vitamins': ['فيتامين', 'حديد', 'مكمّل', 'مكمل', 'حمض الفوليك', 'كالسيوم', 'أوميغا'],
-    'skincare': ['بشرة', 'تشقق', 'ترطيب', 'كريم', 'علامات التمدد', 'كلف'],
-    'maternity_wear': ['ملابس', 'أزياء', 'حزام', 'دعم البطن', 'حمالة'],
-    'monitoring': ['سونار', 'دوبلر', 'نبض', 'ضغط', 'سكري', 'قياس', 'جهاز', 'فحص'],
-    'birth_prep': ['حقيبة', 'ولادة', 'مخاض', 'قيصرية', 'المستشفى'],
-    'baby_care': ['استحمام', 'حمام', 'نظافة', 'تسنين', 'مغص', 'بكاء', 'عناية'],
-    'stroller': ['عربة', 'كرسي السيارة', 'حمالة الطفل', 'سفر', 'تنقل'],
-    'exercise': ['رياضة', 'تمارين', 'يوغا', 'مشي', 'كيغل', 'قاع الحوض'],
-    'mental': ['نفسية', 'اكتئاب', 'توتر', 'قلق', 'استرخاء', 'مزاج'],
-  };
-
-  static const Map<String, List<String>> _topicProductWords = {
-    'breastfeeding': ['رضاعة', 'حليب', 'مضخة', 'شفاط', 'وسادة رضاعة', 'ثدي', 'حلمة'],
-    'bottle': ['ببرونة', 'زجاجة', 'رضّاعة', 'معقم', 'حلمة', 'حليب'],
-    'diaper': ['حفاض', 'حفاظ', 'مناديل', 'كريم حفاض', 'طاولة تغيير'],
-    'sleep': ['سرير', 'مهد', 'وسادة', 'بطانية', 'كيس نوم', 'هزاز', 'مرجيحة'],
-    'nutrition': ['طعام', 'محضّرة', 'خلاط', 'كرسي طعام', 'أطباق', 'ملعقة', 'مريلة'],
-    'vitamins': ['فيتامين', 'مكمل', 'حديد', 'كالسيوم', 'أوميغا', 'حبوب'],
-    'skincare': ['كريم', 'زيت', 'مرطب', 'لوشن', 'بشرة', 'واقي'],
-    'maternity_wear': ['حزام', 'ملابس', 'حمالة', 'مشد', 'جوارب'],
-    'monitoring': ['جهاز', 'ميزان', 'دوبلر', 'ترمومتر', 'قياس', 'مراقبة', 'كاميرا'],
-    'birth_prep': ['حقيبة', 'طقم ولادة', 'فوطة', 'روب'],
-    'baby_care': ['حوض', 'استحمام', 'شامبو', 'عضاضة', 'مقص', 'شفاط أنف', 'مقياس حرارة'],
-    'stroller': ['عربة', 'كرسي سيارة', 'حمالة', 'شنطة'],
-    'exercise': ['كرة', 'مطاط', 'سجادة', 'يوغا', 'تمارين'],
-    'mental': ['شموع', 'عطر', 'مساج', 'استرخاء', 'شاي'],
-  };
-
-  static String _prodText(Map<String, dynamic> p) =>
-      '${p['name'] ?? p['title'] ?? ''} ${p['category'] ?? ''} ${p['description'] ?? ''} '
-      '${(p['tags'] is List) ? (p['tags'] as List).join(' ') : ''}';
-
-  /// مواضيع المقال المستخرجة من نصّه
-  static List<String> topicsOf(String contextText) {
-    final topics = <String>[];
-    _topicArticleWords.forEach((topic, words) {
-      for (final w in words) {
-        if (contextText.contains(w)) {
-          topics.add(topic);
-          break;
-        }
-      }
-    });
-    return topics;
-  }
-
-  /// نقاط تطابق منتج واحد مع مواضيع معيّنة
-  static int scoreProduct(Map<String, dynamic> p, List<String> topics) {
-    final ptext = _prodText(p);
-    int score = 0;
-    for (final topic in topics) {
-      for (final w in _topicProductWords[topic] ?? const <String>[]) {
-        if (ptext.contains(w)) score += 2;
-      }
-      if (ptext.contains(topic)) score += 3;
-    }
-    return score;
-  }
-
-  /// يرتّب قائمة منتجات بحسب قربها من موضوع المقال (الأعلى أولاً)
-  static List<T> rankProducts<T extends Map<String, dynamic>>(
-      List<T> products, String contextText) {
-    if (products.isEmpty) return products;
-    final topics = topicsOf(contextText);
-    if (topics.isEmpty) return products;
-    final scored = products
-        .map((p) => MapEntry(p, scoreProduct(p, topics)))
-        .toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    return scored.map((e) => e.key).toList();
-  }
-
-  /// يختار المنتج الأقرب لموضوع المقال؛ وعند غياب أي تطابق يعيد منتجاً عشوائياً
-  static Map<String, dynamic>? pickProductFor(String contextText) {
-    if (_products.isEmpty) return null;
-    final ctx = contextText.trim();
-    if (ctx.isEmpty) return pickProduct();
-
-    // ① استخرج مواضيع المقال
-    final topics = <String>[];
-    _topicArticleWords.forEach((topic, words) {
-      for (final w in words) {
-        if (ctx.contains(w)) {
-          topics.add(topic);
-          break;
-        }
-      }
-    });
-    if (topics.isEmpty) return pickProduct();
-
-    // ② أعطِ كل منتج نقاطاً
-    Map<String, dynamic>? best;
-    int bestScore = 0;
-    for (final p in _products) {
-      final ptext = _prodText(p);
-      int score = 0;
-      for (final topic in topics) {
-        for (final w in _topicProductWords[topic] ?? const <String>[]) {
-          if (ptext.contains(w)) score += 2;
-        }
-        // وسم صريح على المنتج يطابق الموضوع
-        if (ptext.contains(topic)) score += 3;
-      }
-      if (score > bestScore) {
-        bestScore = score;
-        best = p;
-      }
-    }
-    return best ?? pickProduct();
   }
 
   static void countImpression(String adId) {
@@ -735,9 +566,7 @@ class NabdaAd extends StatefulWidget {
   final String groupId; // معرّف المقال/الصفحة لمنع التكرار بين الفتحات
   final String place;   // الاستهداف: all/home/cycle/pregnancy/baby/news/article أو فئة
   final Color color;
-  /// نصّ المقال (عنوان + محتوى) لمطابقة المنتج المعروض بموضوعه
-  final String contextText;
-  const NabdaAd({Key? key, this.slot = 0, this.groupId = 'g', this.place = 'all', this.color = const Color(0xFFE91E63), this.contextText = ''}) : super(key: key);
+  const NabdaAd({Key? key, this.slot = 0, this.groupId = 'g', this.place = 'all', this.color = const Color(0xFFE91E63)}) : super(key: key);
   @override
   State<NabdaAd> createState() => _NabdaAdState();
 }
@@ -757,7 +586,7 @@ class _NabdaAdState extends State<NabdaAd> {
         if (mounted) setState(() { _ad = ad; _loading = false; });
         NabdaAds.countImpression(ad.id);
       } else {
-        final p = NabdaAds.pickProductFor(widget.contextText);
+        final p = NabdaAds.pickProduct();
         if (mounted) setState(() { _product = p; _loading = false; });
       }
     } catch (_) {

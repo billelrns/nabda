@@ -3,8 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math';
 import '../../models/pregnancy_week_articles.dart' show pregnancyMonthArForWeek;
-import '../../services/pregnancy_dates_service.dart';
-import '../../widgets/due_date_card.dart';
 
 // ─── Theme ───
 const Color _bg = Color(0xFFFFF5F7);
@@ -52,13 +50,38 @@ class _PregnancyCalendarScreenState extends State<PregnancyCalendarScreen> {
       final doc = await _userDoc.get();
       final data = doc.data() as Map<String, dynamic>? ?? {};
 
-      // ── مصدر موحّد لتواريخ الحمل (نفس ما تستعمله بقية الشاشات) ──
-      final pd = PregnancyDates.fromUserData(data);
+      // Try to get due date from various sources
+      final dueDateStr = data['dueDate'] as String?;
+      final lmpStr = data['lastPeriodDate'] as String?;
+      final week = (data['pregnancyWeek'] as num?)?.toInt() ??
+                   (data['weight_tracker_profile']?['current_week'] as num?)?.toInt() ?? 0;
+
+      DateTime? due;
+      DateTime? lmp;
+
+      if (dueDateStr != null && dueDateStr.isNotEmpty) {
+        due = DateTime.tryParse(dueDateStr);
+      }
+      if (lmpStr != null && lmpStr.isNotEmpty) {
+        lmp = DateTime.tryParse(lmpStr);
+      }
+
+      // Calculate due date from LMP if not set
+      if (due == null && lmp != null) {
+        due = lmp.add(const Duration(days: 280));
+      }
+
+      // Calculate from current week if nothing else
+      if (due == null && week > 0) {
+        final daysPregnant = week * 7;
+        lmp = DateTime.now().subtract(Duration(days: daysPregnant));
+        due = lmp.add(const Duration(days: 280));
+      }
 
       setState(() {
-        _dueDate = pd.effectiveDueDate;
-        _lmpDate = pd.effectiveStart;
-        _currentWeek = pd.week;
+        _dueDate = due;
+        _lmpDate = lmp;
+        _currentWeek = week > 0 ? week : (lmp != null ? DateTime.now().difference(lmp).inDays ~/ 7 : 0);
         _loaded = true;
       });
     } catch (_) {
@@ -362,8 +385,9 @@ class _PregnancyCalendarScreenState extends State<PregnancyCalendarScreen> {
                     builder: (context, child) => Localizations.override(context: context, locale: const Locale('en'), child: child!),
                   );
                   if (picked != null) {
-                    await PregnancyDates.saveLmp(picked);
-                    await _loadPregnancyData();
+                    final due = picked.add(const Duration(days: 280));
+                    await _userDoc.set({'lastPeriodDate': picked.toIso8601String(), 'dueDate': due.toIso8601String()}, SetOptions(merge: true));
+                    setState(() { _lmpDate = picked; _dueDate = due; _currentWeek = DateTime.now().difference(picked).inDays ~/ 7; });
                   }
                 },
                 icon: const Icon(Icons.calendar_today),
@@ -389,9 +413,6 @@ class _PregnancyCalendarScreenState extends State<PregnancyCalendarScreen> {
       children: [
         // Pregnancy info header
         _buildPregnancyHeader(daysRemaining),
-        const SizedBox(height: 12),
-        // تاريخ الولادة المتوقّع — قابل للتعديل مع سؤال المصدر
-        DueDateCard(color: _teal, onChanged: _loadPregnancyData),
         const SizedBox(height: 16),
         // Calendar widget
         _buildCalendarWidget(),

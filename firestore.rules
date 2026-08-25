@@ -157,26 +157,11 @@ service cloud.firestore {
 
     // ─── الطلبات ──────────────────────────────────────────────────
     match /orders/{orderId} {
-      // صاحب الطلب يقرأه، والطاقم (الأدمن) يقرأ كل الطلبات (بما فيها طلبات الزوّار)
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isActiveStaff();
-      // إنشاء طلب: إمّا مستخدمة مسجّلة، أو طلب زائر COD من الموقع (بحقول مطلوبة وحدود لمنع العبث)
-      allow create: if (isAuthenticated() && isOwner(request.resource.data.userId))
-        || (
-          request.resource.data.userId == null &&
-          request.resource.data.source == 'website' &&
-          request.resource.data.status == 'pending' &&
-          request.resource.data.customerName is string &&
-          request.resource.data.customerName.size() > 1 &&
-          request.resource.data.customerName.size() < 120 &&
-          request.resource.data.customerPhone is string &&
-          request.resource.data.customerPhone.size() >= 8 &&
-          request.resource.data.customerPhone.size() < 30 &&
-          request.resource.data.wilaya is string &&
-          request.resource.data.productId is string &&
-          request.resource.data.quantity is int &&
-          request.resource.data.quantity >= 1 &&
-          request.resource.data.quantity <= 50
-        );
+      // صاحب الطلب يقرأه فقط
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      // إنشاء طلب جديد
+      allow create: if isAuthenticated() &&
+        isOwner(request.resource.data.userId);
       // تحديث الحالة: الأدمن فقط
       allow update: if isOwnerOrSupervisor();
       allow delete: if false;
@@ -204,17 +189,6 @@ service cloud.firestore {
       allow create, update: if isActiveStaff();
       allow delete: if isOwnerOrSupervisor();
     }
-
-    // ─── إحصائيات المقالات (التفاعل: إعجابات ومشاركات) ───────────
-    // القراءة عامّة (عرض عدد الإعجابات للزائرة)، الكتابة للمسجّلات فقط
-    // مع تقييد الحقول لمنع حقن بيانات عشوائية في المجموعة.
-    match /article_stats/{articleId} {
-      allow read: if true;
-      allow create, update: if isAuthenticated()
-        && request.resource.data.keys().hasOnly(['likes', 'shares', 'title', 'section']);
-      allow delete: if isOwnerOrSupervisor();
-    }
-
 
     // ─── المحتوى الديناميكي ───────────────────────────────────────
     match /dynamic_products/{docId} {

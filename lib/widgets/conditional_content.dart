@@ -4,10 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:nabda_app/data/specialized_articles.dart';
 import 'package:nabda_app/services/specialized_articles_service.dart';
 import 'news_section.dart';
-import '../utils/article_images.dart';
-import 'nabda_article_ad.dart';
-import 'article_engagement_bar.dart';
-
 
 /// أقسام محتوى متخصّص تظهر حسب ملف المستخدمة وداخل تبويبها الصحيح فقط.
 /// [stage] = مرحلة التبويب الذي أُدرج فيه القسم (pregnant/baby/cycle/planning)،
@@ -70,7 +66,6 @@ class ConditionalContentSection extends StatelessWidget {
     );
   }
 
-  // ignore: unused_element
   Widget _ph(_Topic t) => Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -186,14 +181,10 @@ class ConditionalContentSection extends StatelessWidget {
                                       topRight: Radius.circular(18),
                                       topLeft: Radius.circular(18),
                                     ),
-                                    child: ArticleImage(
-                                      title: title,
-                                      section: 'health',
-                                      networkUrl: image.isNotEmpty ? image : null,
-                                      width: double.infinity,
-                                      height: 90,
-                                      fit: BoxFit.cover,
-                                    ),
+                                    child: image.isNotEmpty
+                                        ? Image.network(image, fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => _ph(t))
+                                        : _ph(t),
                                   ),
                                 ),
                                 // Category badge
@@ -342,14 +333,10 @@ class _ArticleCard extends StatelessWidget {
         child: Row(children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: ArticleImage(
-              title: title,
-              section: 'health',
-              networkUrl: image.isNotEmpty ? image : null,
-              width: 46,
-              height: 46,
-              fit: BoxFit.cover,
-            ),
+            child: image.isNotEmpty
+              ? Image.network(image, width: 46, height: 46, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _ph(color))
+              : _ph(color),
           ),
           const SizedBox(width: 12),
           Expanded(child: Text(title,
@@ -360,7 +347,6 @@ class _ArticleCard extends StatelessWidget {
     );
   }
 
-  // ignore: unused_element
   static Widget _ph(Color c) => Container(
     width: 46, height: 46,
     decoration: BoxDecoration(shape: BoxShape.circle, color: c.withValues(alpha: 0.15)),
@@ -378,25 +364,24 @@ class _ArticlePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
-    final midPoint = (paragraphs.length / 2).floor();
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: Colors.white,
         body: CustomScrollView(slivers: [
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: image.isNotEmpty ? 220 : 0,
             pinned: true,
             backgroundColor: color,
             foregroundColor: Colors.white,
-            flexibleSpace: FlexibleSpaceBar(
-              background: ArticleImage(
-                title: title,
-                section: 'health',
-                networkUrl: image.isNotEmpty ? image : null,
-                fit: BoxFit.cover,
-              ),
-            ),
+            title: image.isEmpty
+              ? Text(title, style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)
+              : null,
+            flexibleSpace: image.isNotEmpty
+              ? FlexibleSpaceBar(
+                  background: Image.network(image, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(color: color.withValues(alpha: 0.2))))
+              : null,
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -404,52 +389,22 @@ class _ArticlePage extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20), height: 1.5)),
                 const SizedBox(height: 16),
+                // إعلان/منتج أعلى المقال
+                NabdaAd(slot: 0, groupId: title, place: place, color: color),
+                const SizedBox(height: 18),
                 for (int i = 0; i < paragraphs.length; i++) ...[
                   Text(paragraphs[i].trim(), style: const TextStyle(fontSize: 16, height: 1.9, color: Color(0xFF333333))),
-                  const SizedBox(height: 16),
-                  // ===== AD SLOT 1 — بعد الفقرة الثانية =====
+                  if (i < paragraphs.length - 1) const SizedBox(height: 16),
+                  // إعلان/منتج وسط المقال
                   if (i == 1 && paragraphs.length > 3) ...[
-                    NabdaArticleAd(
-                      slot: 0,
-                      articleId: title,
-                      section: place,
-                      articleTitle: title,
-                      articleBody: body,
-                      color: color,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  // ===== AD SLOT 2 — وسط المقال =====
-                  if (i == midPoint && paragraphs.length > 5 && midPoint > 1) ...[
-                    NabdaArticleAd(
-                      slot: 1,
-                      articleId: title,
-                      section: place,
-                      articleTitle: title,
-                      articleBody: body,
-                      color: color,
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
+                    NabdaAd(slot: 1, groupId: title, place: place, color: color),
+                    const SizedBox(height: 14),
                   ],
                 ],
-                const SizedBox(height: 8),
-                // ===== شريط التفاعل =====
-                ArticleEngagementBar(
-                  articleId: title,
-                  articleTitle: title,
-                  section: place,
-                  color: color,
-                ),
-                const SizedBox(height: 16),
-                // ===== AD SLOT 3 — أسفل المقال =====
-                NabdaArticleAd(
-                  slot: 2,
-                  articleId: title,
-                  section: place,
-                  articleTitle: title,
-                  articleBody: body,
-                  color: color,
-                ),
+                const SizedBox(height: 22),
+                // منتجات/إعلان أسفل المقال
+                NabdaAd(slot: 2, groupId: title, place: place, color: color),
                 const SizedBox(height: 30),
               ]),
             ),

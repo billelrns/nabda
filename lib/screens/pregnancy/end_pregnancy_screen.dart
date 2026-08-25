@@ -3,8 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nabda_app/main.dart' show MainNav;
-import 'package:nabda_app/widgets/article_engagement_bar.dart';
-
 
 /// شاشة تحديث حالة الحمل — تتعامل مع الولادة وفقدان الحمل بنبرة رحيمة.
 /// كل الخيارات خاصّة بالمستخدمة، بلا إجبار على ذكر السبب أو تاريخ،
@@ -398,14 +396,6 @@ class _LossSupportArticleScreen extends StatelessWidget {
               const SizedBox(height: 16),
             ],
             const SizedBox(height: 8),
-            // ⚠️ استثناء إنساني إلزامي: ممنوع وضع أي إعلانات أو منتجات في هذه الشاشة مراعاة لمشاعر الحامل بعد فقدان الجنين.
-            const ArticleEngagementBar(
-              articleId: 'loss_support_article',
-              articleTitle: 'التعافي بعد فقدان الحمل',
-              section: 'pregnancy',
-              color: _teal,
-            ),
-            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(

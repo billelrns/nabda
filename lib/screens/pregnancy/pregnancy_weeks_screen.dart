@@ -14,14 +14,7 @@ import '../../widgets/personalized_tips.dart';
 import '../../widgets/conditional_content.dart';
 import '../../services/dynamic_content_service.dart';
 import '../../widgets/nabda_ui.dart';
-import '../../widgets/names_articles_carousel.dart';
 import '../../utils/article_images.dart';
-import '../../utils/fetus_size.dart';
-import '../../services/pregnancy_dates_service.dart';
-import '../../widgets/due_date_card.dart';
-import '../../widgets/nabda_article_ad.dart';
-import '../../widgets/article_engagement_bar.dart';
-
 
 
 // ─── Fetus Image Helper ───
@@ -148,11 +141,8 @@ final List<_PregnancyArticle> _pregnancyArticles = [
   ),
 ];
 
-// حجم الجنين — يُقرأ من المصدر الموحّد lib/utils/fetus_size.dart
-const Map<int, List<String>> _fruitData = FetusSize.byWeek;
-
-// (النسخة القديمة محفوظة للمرجع فقط)
-const Map<int, List<String>> _fruitDataLegacy = {
+// Fruit data mapping for all 40 weeks
+const Map<int, List<String>> _fruitData = {
   1: ['🌱', 'بذرة'],
   2: ['🟤', 'حبة سمسم'],
   3: ['⚪', 'كرة خلوية'],
@@ -355,7 +345,7 @@ class PregnancyWeeksScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${FetusSize.name(a.week)} (${a.babyLength})',
+                              '${a.babySizeAr} (${a.babyLength})',
                               style: const TextStyle(color: _textSecondary, fontSize: 12),
                             ),
                           ]),
@@ -378,125 +368,6 @@ class PregnancyWeeksScreen extends StatelessWidget {
           }),
         ],
       ),
-      ),
-    );
-  }
-}
-
-/// بطاقة مقال منسدلة — يظهر المحتوى عند النقر على العنوان
-class CollapsibleArticleCard extends StatefulWidget {
-  final String title;
-  final String category;
-  final Color accentColor;
-  final Color bgTint;
-  final Widget child;
-  final bool initiallyExpanded;
-
-  const CollapsibleArticleCard({
-    Key? key,
-    required this.title,
-    required this.category,
-    required this.accentColor,
-    required this.bgTint,
-    required this.child,
-    this.initiallyExpanded = false,
-  }) : super(key: key);
-
-  @override
-  State<CollapsibleArticleCard> createState() => _CollapsibleArticleCardState();
-}
-
-class _CollapsibleArticleCardState extends State<CollapsibleArticleCard>
-    with SingleTickerProviderStateMixin {
-  late bool _open;
-
-  @override
-  void initState() {
-    super.initState();
-    _open = widget.initiallyExpanded;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: _cardColor,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2)),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── العنوان (قابل للنقر) ──
-          Material(
-            color: widget.bgTint.withOpacity(0.5),
-            child: InkWell(
-              onTap: () => setState(() => _open = !_open),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: widget.accentColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        widget.category,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: widget.accentColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        widget.title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: widget.accentColor,
-                        ),
-                      ),
-                    ),
-                    AnimatedRotation(
-                      turns: _open ? 0.5 : 0.0,
-                      duration: const Duration(milliseconds: 220),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: widget.accentColor.withOpacity(0.10),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(Icons.keyboard_arrow_down_rounded,
-                            size: 20, color: widget.accentColor),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // ── المحتوى ──
-          AnimatedCrossFade(
-            firstChild: const SizedBox(width: double.infinity, height: 0),
-            secondChild: Padding(
-              padding: const EdgeInsets.all(16),
-              child: widget.child,
-            ),
-            crossFadeState:
-                _open ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 240),
-            sizeCurve: Curves.easeInOut,
-          ),
-        ],
       ),
     );
   }
@@ -583,8 +454,8 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
     }
   }
 
-  /// Splits long text into styled paragraphs with spacing, adding ads and engagement bar
-  Widget _buildParagraphedText(String text, String cardTitle, Color color) {
+  /// Splits long text into styled paragraphs with spacing
+  Widget _buildParagraphedText(String text) {
     List<String> paragraphs;
     if (text.contains('\n\n')) {
       paragraphs = text.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
@@ -604,44 +475,16 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
       }
       if (current.trim().isNotEmpty) paragraphs.add(current.trim());
     }
-
-    final children = <Widget>[];
-    final midPoint = (paragraphs.length / 2).floor();
-
-    for (int i = 0; i < paragraphs.length; i++) {
-      children.add(Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Text(paragraphs[i].trim(), textAlign: TextAlign.justify,
-          style: const TextStyle(fontSize: 14, height: 1.8, color: _textSecondary)),
-      ));
-
-      // إعلان واحد فقط داخل البطاقة المنسدلة — هذه الشاشة تحوي 4 بطاقات،
-      // فثلاثة مواضع في كل بطاقة تعني 12 إعلاناً في شاشة واحدة.
-      if (i == midPoint && paragraphs.length > 4 && midPoint > 1) {
-        children.add(Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: NabdaArticleAd(
-            slot: 0,
-            articleId: cardTitle,
-            section: 'pregnancy',
-            articleTitle: cardTitle,
-            articleBody: text,
-            color: color,
-          ),
-        ));
-      }
+    if (paragraphs.length <= 1) {
+      return Text(text, style: const TextStyle(fontSize: 14, height: 1.8, color: _textSecondary));
     }
-
-    children.add(ArticleEngagementBar(
-      articleId: cardTitle,
-      articleTitle: cardTitle,
-      section: 'pregnancy',
-      color: color,
-    ));
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: children,
+      children: paragraphs.map((p) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Text(p.trim(), textAlign: TextAlign.justify,
+          style: const TextStyle(fontSize: 14, height: 1.8, color: _textSecondary)),
+      )).toList(),
     );
   }
 
@@ -670,7 +513,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
           slivers: [
             // ─── Header with fetus illustration ───
             SliverAppBar(
-              expandedHeight: 400,
+              expandedHeight: 380,
               pinned: true,
               backgroundColor: Colors.white,
               foregroundColor: _teal,
@@ -722,8 +565,13 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       },
                     );
                     if (date != null) {
-                      // يحفظ LMP ويحسب تاريخ الولادة — نفس المصدر لكل الشاشات
-                      await PregnancyDates.saveLmp(date);
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user != null) {
+                        await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
+                          {'pregnancyStartDate': Timestamp.fromDate(date)},
+                          SetOptions(merge: true),
+                        );
+                      }
                     }
                   },
                 ),
@@ -764,11 +612,11 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 46),
+                      const SizedBox(height: 50),
                       // ── Circular progress ring with fetus ──
                       SizedBox(
-                        width: 250,
-                        height: 250,
+                        width: 190,
+                        height: 190,
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
@@ -781,8 +629,8 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                             ),
                             // Progress ring
                             SizedBox(
-                              width: 250,
-                              height: 250,
+                              width: 190,
+                              height: 190,
                               child: CustomPaint(
                                 painter: _ProgressRingPainter(
                                   progress: (a.week / 40).clamp(0.0, 1.0),
@@ -801,7 +649,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                               ),
                               child: WombFloatingFetus(
                                 fetusAsset: _fetusImagePath(a.week),
-                                size: 195,
+                                size: 145,
                               ),
                             ),
                             // Week badge
@@ -829,8 +677,39 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                           ],
                         ),
                       ),
-                      // (أُزيلت الفاكهة وشارة الثلث من هنا لتفادي تداخلها مع
-                      //  عنوان «الشهر ...» — تظهر في بطاقة الأرقام بالأسفل)
+                      const SizedBox(height: 16),
+                      // Fruit comparison
+                      if (_fruitData[a.week] != null) ...[
+                        Text(
+                          _fruitData[a.week]![0],
+                          style: const TextStyle(fontSize: 30),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'بحجم ${_fruitData[a.week]![1]}',
+                          style: const TextStyle(
+                            color: _textSecondary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _trimesterBg,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            a.getTrimesterAr(),
+                            style: TextStyle(
+                              color: color,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -851,10 +730,6 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
 
                     // ── Quick info row ──
                     _buildQuickInfoRow(a),
-                    const SizedBox(height: 12),
-
-                    // ── تاريخ الولادة المتوقّع (قابل للتعديل + مصدر التاريخ) ──
-                    DueDateCard(color: _pink, onChanged: () => setState(() {})),
                     const SizedBox(height: 16),
 
                     // محتوى مخصّص حسب ملف المستخدمة — يظهر بشكل كاروسال أفقي
@@ -870,11 +745,23 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                     _buildArticlesCarousel(),
                     const SizedBox(height: 16),
 
-                    // ── دليل أسماء المواليد (يظهر في كل الأسابيع) ──
-                    const NamesArticlesCarousel(),
-                    const SizedBox(height: 16),
-
-                    // (أُزيلت بطاقة «حجم الجنين» — مكرّرة مع صف الأرقام أعلى الصفحة)
+                    // Baby size card
+                    _buildArticleCard(
+                      '🍎 حجم الجنين',
+                      'عن البيبي',
+                      _teal,
+                      _lightTeal,
+                      child: Column(
+                        children: [
+                          _buildSizeRow('مثل', a.babySizeAr, Icons.circle),
+                          const Divider(height: 20, color: _divider),
+                          _buildSizeRow('الطول', a.babyLength, Icons.height),
+                          const Divider(height: 20, color: _divider),
+                          _buildSizeRow('الوزن', a.babyWeight, Icons.monitor_weight_outlined),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
 
                     // Echo card
                     _buildEchoCard(color),
@@ -886,7 +773,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       'عن البيبي',
                       _teal,
                       _lightTeal,
-                      child: _buildParagraphedText(a.fetalDevAr, 'تطور الجنين للأسبوع ${a.week}', _teal),
+                      child: _buildParagraphedText(a.fetalDevAr),
                     ),
                     const SizedBox(height: 14),
 
@@ -896,7 +783,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       'عن الأم',
                       _pink,
                       _softPink,
-                      child: _buildParagraphedText(a.symptomsAr, 'أعراض الأم للأسبوع ${a.week}', _pink),
+                      child: _buildParagraphedText(a.symptomsAr),
                     ),
                     const SizedBox(height: 14),
 
@@ -906,7 +793,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       'التغذية',
                       const Color(0xFF43A047),
                       const Color(0xFFE8F5E9),
-                      child: _buildParagraphedText(a.nutritionAr, 'التغذية للأسبوع ${a.week}', const Color(0xFF43A047)),
+                      child: _buildParagraphedText(a.nutritionAr),
                     ),
                     const SizedBox(height: 14),
 
@@ -916,7 +803,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       'نصائح نفسية',
                       const Color(0xFF5C6BC0),
                       const Color(0xFFE8EAF6),
-                      child: _buildParagraphedText(a.tipsAr, 'نصائح للأسبوع ${a.week}', const Color(0xFF5C6BC0)),
+                      child: _buildParagraphedText(a.tipsAr),
                     ),
                     const SizedBox(height: 14),
 
@@ -1064,7 +951,8 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                                       clipBehavior: Clip.antiAlias,
                                       child: (art['image'] ?? '').isNotEmpty
                                         ? Stack(fit: StackFit.expand, children: [
-                                            ArticleImage(title: art['title'] ?? '', section: 'pregnancy', networkUrl: art['image'], fit: BoxFit.cover),
+                                            Image.network(art['image']!, fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => Container(color: _teal.withOpacity(0.15), child: const Center(child: Text('📰', style: TextStyle(fontSize: 48))))),
                                             Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.65)]))),
                                             Positioned(bottom: 12, right: 12, left: 12, child: Text(art['title'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis)),
                                           ])
@@ -1510,14 +1398,9 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: ArticleImage(
-                      title: item['title'] ?? '',
-                      section: 'pregnancy',
-                      networkUrl: item['image'],
-                      width: 160,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
+                    child: Image.network(item['image']!, width: 160, height: 100, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(height: 100, color: _teal.withOpacity(0.08),
+                        child: const Center(child: Icon(Icons.article, size: 40, color: _teal)))),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
@@ -1613,12 +1496,21 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                           fit: StackFit.expand,
                           children: [
                             // Background image
-                            ArticleImage(
-                              title: art.title,
-                              section: 'pregnancy',
-                              networkUrl: art.image.startsWith('http') ? art.image : null,
-                              fit: BoxFit.cover,
-                            ),
+                            art.image.startsWith('http')
+                              ? ArticleImage(
+                                  title: art.title,
+                                  section: 'pregnancy',
+                                  networkUrl: art.image,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.asset(
+                                  art.image,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: art.color1.withOpacity(0.15),
+                                    child: Center(child: Text(art.emoji, style: const TextStyle(fontSize: 48))),
+                                  ),
+                                ),
                             // Gradient overlay
                             Container(
                               decoration: BoxDecoration(
@@ -1801,19 +1693,70 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
     Color accentColor,
     Color bgTint, {
     required Widget child,
-    bool initiallyExpanded = false,
   }) {
-    return CollapsibleArticleCard(
-      title: title,
-      category: category,
-      accentColor: accentColor,
-      bgTint: bgTint,
-      initiallyExpanded: initiallyExpanded,
-      child: child,
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Card header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: bgTint.withOpacity(0.5),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(18),
+                topLeft: Radius.circular(18),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: accentColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    category,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Card body
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: child,
+          ),
+        ],
+      ),
     );
   }
 
-  // ignore: unused_element
   Widget _buildSizeRow(String label, String value, IconData icon) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2347,7 +2290,7 @@ class _ArticleDetailScreen extends StatelessWidget {
                     Container(height: 1, color: _divider),
                     const SizedBox(height: 20),
                     // Content with paragraphs + ad space
-                    ..._buildArticleParagraphs(article.title, article.content, article.color),
+                    ..._buildArticleParagraphs(article.content, article.color),
                     const SizedBox(height: 20),
                     // Tip box
                     Container(
@@ -2400,7 +2343,7 @@ class _ArticleDetailScreen extends StatelessWidget {
     );
   }
 
-  static List<Widget> _buildArticleParagraphs(String title, String body, Color accentColor) {
+  static List<Widget> _buildArticleParagraphs(String body, Color accentColor) {
     List<String> paragraphs;
     if (body.contains('\n\n')) {
       paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
@@ -2435,53 +2378,13 @@ class _ArticleDetailScreen extends StatelessWidget {
         child: Text(paragraphs[i].trim(), textAlign: TextAlign.justify,
           style: const TextStyle(fontSize: 16.5, height: 1.9, color: _textPrimary)),
       ));
-      if (i == 1 && paragraphs.length > 3) {
-        widgets.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: NabdaArticleAd(
-            slot: 0,
-            articleId: title,
-            section: 'pregnancy',
-            articleTitle: title,
-            articleBody: body,
-            color: accentColor,
-          ),
-        ));
-      }
-      if (i == midPoint && paragraphs.length > 5 && midPoint > 1) {
-        widgets.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: NabdaArticleAd(
-            slot: 1,
-            articleId: title,
-            section: 'pregnancy',
-            articleTitle: title,
-            articleBody: body,
-            color: accentColor,
-          ),
+      if (i == midPoint && paragraphs.length > 3) {
+        widgets.add(const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: NabdaAd(slot: 0, groupId: 'pwk1', place: 'pregnancy', color: Color(0xFFE91E63)),
         ));
       }
     }
-
-    widgets.add(ArticleEngagementBar(
-      articleId: title,
-      articleTitle: title,
-      section: 'pregnancy',
-      color: accentColor,
-    ));
-
-    widgets.add(Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: NabdaArticleAd(
-        slot: 2,
-        articleId: title,
-        section: 'pregnancy',
-        articleTitle: title,
-        articleBody: body,
-        color: accentColor,
-      ),
-    ));
-
     return widgets;
   }
 }
@@ -3001,12 +2904,11 @@ class _DiscoverDetailScreen extends StatelessWidget {
                   ? Stack(
                       fit: StackFit.expand,
                       children: [
-                        ArticleImage(
-                          title: article.title,
-                          section: 'pregnancy',
-                          networkUrl: article.image.startsWith('http') ? article.image : null,
-                          fit: BoxFit.cover,
-                        ),
+                        article.image.startsWith('http')
+                          ? ArticleImage(title: article.title, section: 'pregnancy', networkUrl: article.image, fit: BoxFit.cover)
+                          : Image.asset(article.image, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(color: article.color1.withOpacity(0.1),
+                                child: Center(child: Text(article.emoji, style: const TextStyle(fontSize: 48))))),
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -3070,7 +2972,7 @@ class _DiscoverDetailScreen extends StatelessWidget {
                     Container(height: 1, color: const Color(0xFFEEEEEE)),
                     const SizedBox(height: 20),
                     // Content with paragraphs + ad space
-                    ..._buildDiscoverParagraphs(article.title, article.content, article.color1),
+                    ..._buildDiscoverParagraphs(article.content, article.color1),
                     const SizedBox(height: 20),
                     Container(
                       width: double.infinity,
@@ -3117,11 +3019,7 @@ class _DiscoverDetailScreen extends StatelessWidget {
                         final dynamicProducts = (prodSnap.data?.docs ?? [])
                             .map((doc) => DynamicContentService.docToProduct(doc))
                             .toList();
-                        // ترتيب المنتجات حسب قربها من موضوع المقال
-                        final allProducts = NabdaAds.rankProducts<Map<String, String>>(
-                          <Map<String, String>>[...dynamicProducts, ..._pregnancyProducts],
-                          '${article.title} ${article.content}',
-                        );
+                        final allProducts = [...dynamicProducts, ..._pregnancyProducts];
                         return SizedBox(
                       height: 200,
                       child: ListView.builder(
@@ -3186,7 +3084,7 @@ class _DiscoverDetailScreen extends StatelessWidget {
     {'name': 'فيتامينات ما قبل الولادة', 'image': 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80', 'price': '2800 د.ج', 'category': 'مكملات غذائية'},
   ];
 
-  static List<Widget> _buildDiscoverParagraphs(String title, String body, Color accentColor) {
+  static List<Widget> _buildDiscoverParagraphs(String body, Color accentColor) {
     List<String> paragraphs;
     if (body.contains('\n\n')) {
       paragraphs = body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
@@ -3221,53 +3119,13 @@ class _DiscoverDetailScreen extends StatelessWidget {
         child: Text(paragraphs[i].trim(), textAlign: TextAlign.justify,
           style: const TextStyle(fontSize: 16.5, height: 1.9, color: _textPrimary)),
       ));
-      if (i == 1 && paragraphs.length > 3) {
-        widgets.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: NabdaArticleAd(
-            slot: 0,
-            articleId: title,
-            section: 'pregnancy',
-            articleTitle: title,
-            articleBody: body,
-            color: accentColor,
-          ),
-        ));
-      }
-      if (i == midPoint && paragraphs.length > 5 && midPoint > 1) {
-        widgets.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: NabdaArticleAd(
-            slot: 1,
-            articleId: title,
-            section: 'pregnancy',
-            articleTitle: title,
-            articleBody: body,
-            color: accentColor,
-          ),
+      if (i == midPoint && paragraphs.length > 3) {
+        widgets.add(const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: NabdaAd(slot: 0, groupId: 'pwk2', place: 'pregnancy', color: Color(0xFFE91E63)),
         ));
       }
     }
-
-    widgets.add(ArticleEngagementBar(
-      articleId: title,
-      articleTitle: title,
-      section: 'pregnancy',
-      color: accentColor,
-    ));
-
-    widgets.add(Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: NabdaArticleAd(
-        slot: 2,
-        articleId: title,
-        section: 'pregnancy',
-        articleTitle: title,
-        articleBody: body,
-        color: accentColor,
-      ),
-    ));
-
     return widgets;
   }
 }
@@ -3338,14 +3196,13 @@ class _CategoryArticlesScreen extends StatelessWidget {
                         ),
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child: ArticleImage(
-                        title: art.title,
-                        section: 'pregnancy',
-                        networkUrl: art.image.startsWith('http') ? art.image : null,
-                        width: 100,
-                        height: 110,
-                        fit: BoxFit.cover,
-                      ),
+                      child: art.image.isNotEmpty
+                        ? (art.image.startsWith('http')
+                          ? Image.network(art.image, fit: BoxFit.cover, width: 100, height: 110,
+                              errorBuilder: (_, __, ___) => Center(child: Text(art.emoji, style: const TextStyle(fontSize: 40))))
+                          : Image.asset(art.image, fit: BoxFit.cover, width: 100, height: 110,
+                              errorBuilder: (_, __, ___) => Center(child: Text(art.emoji, style: const TextStyle(fontSize: 40)))))
+                        : Center(child: Text(art.emoji, style: const TextStyle(fontSize: 40))),
                     ),
                     // Text section
                     Expanded(
