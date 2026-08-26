@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/material.dart';
 
 /// نوع الأداة التفاعلية المرتبطة بالمقال
@@ -27,6 +29,16 @@ class ArticleSection {
     this.calloutTip,
     this.calloutWarning,
   });
+
+  factory ArticleSection.fromJson(Map<String, dynamic> json) {
+    return ArticleSection(
+      title: json['title'] as String? ?? '',
+      content: json['content'] as String? ?? '',
+      bulletPoints: (json['bulletPoints'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      calloutTip: json['calloutTip'] as String?,
+      calloutWarning: json['calloutWarning'] as String?,
+    );
+  }
 }
 
 /// سؤال وجواب شائع
@@ -34,6 +46,13 @@ class ArticleFAQ {
   final String question;
   final String answer;
   const ArticleFAQ({required this.question, required this.answer});
+
+  factory ArticleFAQ.fromJson(Map<String, dynamic> json) {
+    return ArticleFAQ(
+      question: json['question'] as String? ?? '',
+      answer: json['answer'] as String? ?? '',
+    );
+  }
 }
 
 /// نموذج المقال التفاعلي الذكي
@@ -71,6 +90,56 @@ class SmartArticle {
     this.toolTitle,
     this.toolSubtitle,
   });
+
+  factory SmartArticle.fromJson(Map<String, dynamic> json) {
+    ArticleToolType? parseTool(String? t) {
+      if (t == null) return null;
+      switch (t) {
+        case 'dueDateCalculator': return ArticleToolType.dueDateCalculator;
+        case 'ovulationCalculator': return ArticleToolType.ovulationCalculator;
+        case 'pregnancyWeeks': return ArticleToolType.pregnancyWeeks;
+        case 'babyTracker': return ArticleToolType.babyTracker;
+        case 'qadaaTracker': return ArticleToolType.qadaaTracker;
+        case 'womensFiqh': return ArticleToolType.womensFiqh;
+        case 'aiAssistant': return ArticleToolType.aiAssistant;
+        case 'waterTracker': return ArticleToolType.waterTracker;
+        default: return null;
+      }
+    }
+
+    Color parseColor(String? hex) {
+      if (hex == null || hex.isEmpty) return const Color(0xFFE91E63);
+      try {
+        final buffer = StringBuffer();
+        if (hex.length == 6 || hex.length == 7) buffer.write('ff');
+        buffer.write(hex.replaceFirst('#', ''));
+        return Color(int.parse(buffer.toString(), radix: 16));
+      } catch (_) {
+        return const Color(0xFFE91E63);
+      }
+    }
+
+    final rawSections = json['sections'] as List<dynamic>? ?? [];
+    final rawFaqs = json['faqs'] as List<dynamic>? ?? [];
+
+    return SmartArticle(
+      id: json['id'] as String? ?? '',
+      categoryId: json['categoryId'] as String? ?? 'general',
+      categoryName: json['categoryName'] as String? ?? 'عام',
+      title: json['title'] as String? ?? '',
+      readTime: json['readTime'] as String? ?? '4 دقائق',
+      author: json['author'] as String? ?? 'فريق نبضة الطبي',
+      badge: json['badge'] as String? ?? 'مقال موثق',
+      summary: json['summary'] as String? ?? '',
+      iconEmoji: json['iconEmoji'] as String? ?? '🌸',
+      themeColor: parseColor(json['themeColorHex'] as String?),
+      sections: rawSections.map((s) => ArticleSection.fromJson(s as Map<String, dynamic>)).toList(),
+      faqs: rawFaqs.map((f) => ArticleFAQ.fromJson(f as Map<String, dynamic>)).toList(),
+      toolType: parseTool(json['toolType'] as String?),
+      toolTitle: json['toolTitle'] as String?,
+      toolSubtitle: json['toolSubtitle'] as String?,
+    );
+  }
 }
 
 /// قاعدة بيانات المقالات التفاعلية الذكية لتطبيق نبضة
@@ -416,6 +485,29 @@ class SmartArticlesDatabase {
   }
 
   static List<SmartArticle> getByCategory(String categoryId) {
+    if (_cachedAllArticles != null && _cachedAllArticles!.isNotEmpty) {
+      final list = _cachedAllArticles!.where((a) => a.categoryId == categoryId).toList();
+      if (list.isNotEmpty) return list;
+    }
     return articles.where((a) => a.categoryId == categoryId).toList();
+  }
+
+  static List<SmartArticle>? _cachedAllArticles;
+
+  /// تحميل كافة المقالات الذكية (100 مقال)
+  static Future<List<SmartArticle>> getAll100Articles() async {
+    if (_cachedAllArticles != null && _cachedAllArticles!.isNotEmpty) {
+      return _cachedAllArticles!;
+    }
+    try {
+      final jsonStr = await rootBundle.loadString('assets/data/smart_100_articles.json');
+      final data = json.decode(jsonStr) as Map<String, dynamic>;
+      final rawList = data['articles'] as List<dynamic>? ?? [];
+      _cachedAllArticles = rawList.map((e) => SmartArticle.fromJson(e as Map<String, dynamic>)).toList();
+      return _cachedAllArticles!;
+    } catch (e) {
+      debugPrint('Error loading smart 100 articles: $e');
+      return articles;
+    }
   }
 }

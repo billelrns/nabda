@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/smart_interactive_articles_data.dart';
 import '../screens/articles/smart_article_detail_screen.dart';
+import '../screens/articles/smart_articles_list_screen.dart';
 
 /// كاروسال عرض المقالات التفاعلية الذكية في شاشات التطبيق
 class SmartArticlesCarousel extends StatelessWidget {
@@ -9,11 +10,11 @@ class SmartArticlesCarousel extends StatelessWidget {
   final String sectionSubtitle;
 
   const SmartArticlesCarousel({
-    Key? key,
+    super.key,
     this.categoryFilter,
     this.sectionTitle = 'مقالات حصرية وإرشادية',
     this.sectionSubtitle = 'محتوى طبي وتفاعلي موثق لصحتكِ وجمالكِ',
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,39 +36,66 @@ class SmartArticlesCarousel extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      sectionTitle,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1B1320),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        sectionTitle,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1B1320),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      sectionSubtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF6B6470),
+                      const SizedBox(height: 2),
+                      Text(
+                        sectionSubtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6B6470),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE91E63).withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(999),
+                    ],
                   ),
-                  child: const Text(
-                    'جديد ✨',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFE91E63),
+                ),
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SmartArticlesListScreen(
+                          initialCategory: categoryFilter,
+                          initialTitle: sectionTitle,
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE91E63).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'الموسوعة (100+) 📖',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFE91E63),
+                          ),
+                        ),
+                        SizedBox(width: 3),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 10,
+                          color: Color(0xFFE91E63),
+                        ),
+                      ],
                     ),
                   ),
                 ),
