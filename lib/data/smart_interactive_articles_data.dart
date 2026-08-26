@@ -72,6 +72,7 @@ class SmartArticle {
   final ArticleToolType? toolType;
   final String? toolTitle;
   final String? toolSubtitle;
+  final String? imagePath;
 
   const SmartArticle({
     required this.id,
@@ -89,6 +90,7 @@ class SmartArticle {
     this.toolType,
     this.toolTitle,
     this.toolSubtitle,
+    this.imagePath,
   });
 
   factory SmartArticle.fromJson(Map<String, dynamic> json) {
@@ -138,6 +140,7 @@ class SmartArticle {
       toolType: parseTool(json['toolType'] as String?),
       toolTitle: json['toolTitle'] as String?,
       toolSubtitle: json['toolSubtitle'] as String?,
+      imagePath: json['imagePath'] as String?,
     );
   }
 }

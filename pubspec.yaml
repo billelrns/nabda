@@ -54,6 +54,7 @@ flutter:
     - assets/images/articles/
     - assets/images/article_pics/
     - assets/images/pregnancy_news/
+    - assets/images/smart_articles/
     - assets/data/algeria_cities.json
     - assets/data/smart_100_articles.json
     - assets/data/

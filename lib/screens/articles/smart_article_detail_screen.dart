@@ -132,7 +132,7 @@ ${widget.article.summary}
               slivers: [
                 // ── Hero Header ──
                 SliverAppBar(
-                  expandedHeight: 220,
+                  expandedHeight: 240,
                   pinned: true,
                   backgroundColor: themeColor,
                   leading: IconButton(
@@ -140,7 +140,7 @@ ${widget.article.summary}
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.25),
+                        color: Colors.black.withValues(alpha: 0.35),
                       ),
                       child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
                     ),
@@ -152,7 +152,7 @@ ${widget.article.summary}
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.black.withOpacity(0.25),
+                          color: Colors.black.withValues(alpha: 0.35),
                         ),
                         child: Icon(
                           _isBookmarked
@@ -184,7 +184,7 @@ ${widget.article.summary}
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.black.withOpacity(0.25),
+                          color: Colors.black.withValues(alpha: 0.35),
                         ),
                         child: const Icon(Icons.share_outlined, color: Colors.white, size: 20),
                       ),
@@ -193,82 +193,95 @@ ${widget.article.summary}
                     const SizedBox(width: 8),
                   ],
                   flexibleSpace: FlexibleSpaceBar(
-                    background: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                          colors: [
-                            themeColor,
-                            themeColor.withOpacity(0.8),
-                            const Color(0xFF1B1320),
-                          ],
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (art.imagePath != null)
+                          Image.asset(
+                            art.imagePath!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox(),
+                          ),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.2),
+                                Colors.black.withValues(alpha: 0.5),
+                                const Color(0xFF1B1320).withValues(alpha: 0.95),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      padding: const EdgeInsets.fromLTRB(20, 70, 20, 20),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 70, 20, 20),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  art.categoryName,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.25),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      art.categoryName,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.withValues(alpha: 0.9),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      art.badge,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  art.badge,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Text(
+                                    art.iconEmoji,
+                                    style: const TextStyle(fontSize: 26),
                                   ),
-                                ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      art.readTime,
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Text(
-                                art.iconEmoji,
-                                style: const TextStyle(fontSize: 26),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  art.readTime,
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    color: Colors.white70,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
