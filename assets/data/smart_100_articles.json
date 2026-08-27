@@ -1,7 +1,8 @@
 {
   "count": 100,
-  "version": "1.1",
-  "last_updated": "2026-08-26",
+  "version": "1.2",
+  "last_updated": "2026-08-27",
+  "description": "100 unique aesthetic medical & lifestyle smart interactive articles",
   "articles": [
     {
       "id": "smart_001",
@@ -71,7 +72,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/124962/%D9%84%D9%8A%D8%AD%D8%AF%D8%AB-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A3%D8%B3%D8%B1%D8%B9%21-%D8%A5%D9%84%D9%8A%D9%83%D9%90-%D8%A3%D8%B3%D9%87%D9%84-%D8%B7%D8%B1%D9%8A%D9%82%D8%A9-%D9%84%D8%AD%D8%B3%D8%A7%D8%A8-%D8%A3%D9%8A%D8%A7%D9%85-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_001.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -142,7 +143,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/124353/%D9%87%D9%84-%D9%86%D8%B2%D9%88%D9%84-%D8%AE%D9%8A%D9%88%D8%B7-%D8%AF%D9%85-%D8%A3%D9%8A%D8%A7%D9%85-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6-%D9%85%D9%86-%D8%B9%D9%84%D8%A7%D9%85%D8%A7%D8%AA-%D8%A7%D9%84%D8%AD%D9%85%D9%84%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_002.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -213,7 +214,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/112184/%D9%87%D9%84-%D9%87%D9%86%D8%A7%D9%83-%D8%B9%D9%84%D8%A7%D9%85%D9%80%D8%A7%D8%AA-%D8%AD%D9%85%D9%84-%D9%85%D8%A8%D9%80%D9%83%D8%B1-%D8%AA%D8%B8%D9%87%D8%B1-%D8%A8%D8%B9%D8%AF-%D8%A3%D9%8A%D8%A7%D9%85-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6-%D8%9F%21-",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_003.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -284,7 +285,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/119178/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D9%83%D9%8A%D9%81-%D8%AA%D9%82%D9%88%D9%85%D9%8A-%D8%A8%D9%80-%D8%AD%D8%B3%D8%A7%D8%A8-%D8%A3%D9%8A%D8%A7%D9%85-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6-%D9%88%D8%A7%D9%84%D8%AC%D9%85%D8%A7%D8%B9%21",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_004.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -355,7 +356,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/124510/%D9%85%D8%AA%D9%89-%D8%A7%D8%B9%D9%85%D9%84-%D8%AA%D8%AD%D9%84%D9%8A%D9%84-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A8%D8%B9%D8%AF-%D8%AA%D8%A3%D8%AE%D8%B1-%D8%A7%D9%84%D8%AF%D9%88%D8%B1%D8%A9-%D8%A7%D9%84%D8%BA%D9%8A%D8%B1-%D9%85%D9%86%D8%AA%D8%B8%D9%85%D8%A9%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_period_tea.jpg",
+      "imagePath": "assets/images/smart_articles/art_005.jpg",
       "photoTag": "period_tea"
     },
     {
@@ -426,7 +427,7 @@
       "toolTitle": "سجلي أيام القضاء والصيام",
       "toolSubtitle": "متتبع تفاعلي لحساب ما عليكِ من أيام بسهولة",
       "sourceUrl": "https://malekah.info/Article/119965/%D8%B3%D8%B1-%D8%AA%D9%81%D8%AA%D9%8A%D8%AD-%D8%A7%D9%84%D8%A8%D8%B4%D8%B1%D8%A9-%D9%88%D8%A7%D9%84%D9%82%D8%B6%D8%A7%D8%A1-%D8%B9%D9%84%D9%89-%D8%A7%D9%84%D8%B3%D9%84%D9%8A%D9%88%D9%84%D9%8A%D8%AA-%D8%A8%D9%85%D9%83%D9%88%D9%86%D8%A7%D8%AA-%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9-%D9%88%D8%A2%D9%85%D9%86%D8%A9-%21",
-      "imagePath": "assets/images/smart_articles/photo_stretch_marks.jpg",
+      "imagePath": "assets/images/smart_articles/art_006.jpg",
       "photoTag": "stretch_marks"
     },
     {
@@ -497,7 +498,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/123466/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D9%85%D8%B9-%D8%A7%D9%84%D8%B1%D8%B6%D8%A7%D8%B9%D8%A9-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9",
-      "imagePath": "assets/images/smart_articles/photo_breastfeeding.jpg",
+      "imagePath": "assets/images/smart_articles/art_007.jpg",
       "photoTag": "breastfeeding"
     },
     {
@@ -568,7 +569,7 @@
       "toolTitle": "استشيري المستشارة الأسرية الذكية",
       "toolSubtitle": "حلول حكيمة لتعزيز التواهم وبناء علاقة زوجية دافئة",
       "sourceUrl": "https://malekah.info/Article/121277/%D9%83%D9%8A%D9%81-%D9%8A%D8%AA%D9%84%D8%A7%D8%B9%D8%A8-%D8%A7%D9%84%D8%B2%D9%88%D8%AC-%D8%A7%D9%84%D9%86%D8%B1%D8%AC%D8%B3%D9%8A-%D8%A8%D9%85%D9%81%D9%87%D9%88%D9%85-%D9%84%D8%BA%D8%A7%D8%AA-%D8%A7%D9%84%D8%AD%D8%A8%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_couple_coffee.jpg",
+      "imagePath": "assets/images/smart_articles/art_008.jpg",
       "photoTag": "couple_coffee"
     },
     {
@@ -639,7 +640,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/121677/%D9%87%D9%84-%D9%8A%D8%AD%D8%AA%D8%A7%D8%AC-%D8%B2%D9%88%D8%AC%D9%8A-%D9%84%D8%AA%D9%86%D8%A7%D9%88%D9%84-%D8%AD%D9%85%D8%B6-%D8%A7%D9%84%D9%81%D9%88%D9%84%D9%8A%D9%83-%D9%84%D8%B2%D9%8A%D8%A7%D8%AF%D8%A9-%D8%A7%D9%84%D8%AE%D8%B5%D9%88%D8%A8%D8%A9%D8%9F%21-",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_009.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -710,7 +711,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/121170/%D9%83%D9%8A%D9%81-%D9%8A%D9%85%D9%83%D9%86-%D8%A3%D9%86-%D9%8A%D8%AD%D8%AF%D8%AB-%D8%B3%D9%83%D8%B1%D9%8A-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D9%88%D8%AA%D8%B3%D9%85%D9%85-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%9F%21-%D9%88%D9%87%D9%84-%D9%84%D9%87%D9%85-%D8%B9%D9%84%D8%A7%D8%AC-%D8%9F%21--",
-      "imagePath": "assets/images/smart_articles/photo_maternity_vitamins.jpg",
+      "imagePath": "assets/images/smart_articles/art_010.jpg",
       "photoTag": "maternity_vitamins"
     },
     {
@@ -781,7 +782,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/113479/%D9%87%D9%84-%D9%8A%D8%B9%D9%86%D9%8A-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A7%D9%84%D8%B9%D9%86%D9%82%D9%88%D8%AF%D9%8A-%D8%A7%D9%86%D8%AA%D9%87%D8%A7%D8%A1-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A3%D9%88-%D8%A7%D9%84%D8%A5%D8%AC%D9%87%D8%A7%D8%B6-%D8%9F%21%D8%A5%D9%84%D9%89-%D9%85%D8%AA%D9%89-%D8%B3%D8%AA%D8%AA%D9%85-%D9%85%D8%AA%D8%A7%D8%A8%D8%B9%D8%AA%D9%8A%D8%9F%21",
-      "imagePath": "assets/images/smart_articles/photo_baby_milestones.jpg",
+      "imagePath": "assets/images/smart_articles/art_011.jpg",
       "photoTag": "baby_milestones"
     },
     {
@@ -852,7 +853,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/115148/%D9%87%D9%84-%D8%A7%D9%84%D8%B3%D9%88%D9%86%D8%A7%D8%B1-%D9%85%D8%B6%D8%B1-%D8%A8%D8%A7%D9%84%D8%B7%D9%81%D9%84%D8%9F%21-%D9%88%D9%87%D9%84-%D9%8A%D9%85%D9%83%D9%86%D9%86%D9%8A-%D8%AA%D8%AD%D8%AF%D9%8A%D8%AF-%D9%86%D9%88%D8%B9-%D8%A7%D9%84%D8%AC%D9%86%D9%8A%D9%86-%D9%85%D9%86-%D8%B4%D9%83%D9%84-%D8%A7%D9%84%D8%A8%D8%B7%D9%86%D8%9F%21",
-      "imagePath": "assets/images/smart_articles/photo_ultrasound.jpg",
+      "imagePath": "assets/images/smart_articles/art_012.jpg",
       "photoTag": "ultrasound"
     },
     {
@@ -923,7 +924,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/124442/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%A7%D8%B9%D8%B1%D8%A7%D8%B6-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A8%D8%AA%D9%88%D8%A3%D9%85-%D8%AF%D9%88%D9%86-%D8%B3%D9%88%D9%86%D8%A7%D8%B1",
-      "imagePath": "assets/images/smart_articles/photo_ultrasound.jpg",
+      "imagePath": "assets/images/smart_articles/art_013.jpg",
       "photoTag": "ultrasound"
     },
     {
@@ -994,7 +995,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/123983/%D9%88%D8%B5%D9%81%D8%A9-%D9%85%D8%AC%D8%B1%D8%A8%D8%A9-%D9%88%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9-%D9%84%D8%AA%D9%86%D8%B4%D9%8A%D8%B7-%D8%A7%D9%84%D9%85%D8%A8%D8%A7%D9%8A%D8%B6-%D9%88%D8%B2%D9%8A%D8%A7%D8%AF%D8%A9-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_014.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -1065,7 +1066,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة الفائقة",
       "toolSubtitle": "حددي أدق الأيام لرفع فرص حدوث الحمل والإنجاب",
       "sourceUrl": "https://malekah.info/Article/122648/%D8%AA%D8%B3%D8%A7%D9%82%D8%B7-%D8%A7%D9%84%D8%B4%D8%B9%D8%B1--%D8%A3%D9%87%D9%85-%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D8%AA%D9%83%D9%8A%D8%B3-%D8%A7%D9%84%D9%85%D8%A8%D8%A7%D9%8A%D8%B6-%D9%88%D8%B9%D9%84%D8%A7%D8%AC%D9%87",
-      "imagePath": "assets/images/smart_articles/photo_pcos_health.jpg",
+      "imagePath": "assets/images/smart_articles/art_015.jpg",
       "photoTag": "pcos_health"
     },
     {
@@ -1136,7 +1137,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/123804/%D8%AA%D8%B9%D8%A7%D9%86%D9%8A%D9%86-%D9%85%D9%86-%D8%AA%D9%83%D9%8A%D8%B3-%D8%A7%D9%84%D9%85%D8%A8%D8%A7%D9%8A%D8%B6%D8%9F-%D8%A5%D8%B0%D9%8B%D8%A7-%D8%A5%D9%84%D9%8A%D9%83%D9%90-%D8%A3%D9%81%D8%B6%D9%84-%D8%AE%D8%B7%D8%A9-%D9%84%D9%84%D8%AD%D9%85%D9%84%21",
-      "imagePath": "assets/images/smart_articles/photo_pcos_health.jpg",
+      "imagePath": "assets/images/smart_articles/art_016.jpg",
       "photoTag": "pcos_health"
     },
     {
@@ -1207,7 +1208,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/123333/%D8%A5%D9%84%D9%8A%D9%83%D9%90-%D8%A3%D9%87%D9%85-%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A8%D8%AA%D9%88%D8%A3%D9%85-%D9%84%D9%84%D9%85%D8%AC%D8%B1%D8%A8%D8%A7%D8%AA",
-      "imagePath": "assets/images/smart_articles/photo_pregnancy_test.jpg",
+      "imagePath": "assets/images/smart_articles/art_017.jpg",
       "photoTag": "pregnancy_test"
     },
     {
@@ -1278,7 +1279,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/123344/%D9%87%D8%B0%D9%87-%D9%87%D9%8A-%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A8%D8%AA%D9%88%D8%A3%D9%85-%D9%85%D9%86-%D8%AA%D8%AC%D8%A7%D8%B1%D8%A8-%D8%A7%D9%84%D8%A3%D9%85%D9%87%D8%A7%D8%AA-%D9%88%D9%88%D9%82%D8%AA-%D8%AD%D8%AF%D9%88%D8%AB%D9%87%D8%A7",
-      "imagePath": "assets/images/smart_articles/photo_pregnancy_test.jpg",
+      "imagePath": "assets/images/smart_articles/art_018.jpg",
       "photoTag": "pregnancy_test"
     },
     {
@@ -1349,7 +1350,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/123920/%D9%85%D8%A7-%D8%A7%D9%84%D9%81%D8%B1%D9%82-%D8%A8%D9%8A%D9%86-%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D8%AA%D8%B3%D9%85%D9%85-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D9%88%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9",
-      "imagePath": "assets/images/smart_articles/photo_maternity_vitamins.jpg",
+      "imagePath": "assets/images/smart_articles/art_019.jpg",
       "photoTag": "maternity_vitamins"
     },
     {
@@ -1420,7 +1421,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/122083/%D8%A3%D9%88%D9%84-%D8%B9%D9%84%D8%A7%D9%85%D8%A7%D8%AA-%D8%A7%D9%84%D8%AD%D9%85%D9%84---%D8%AA%D9%82%D9%84%D8%B5%D8%A7%D8%AA-%D8%A7%D9%84%D8%A7%D9%86%D8%BA%D8%B1%D8%A7%D8%B3--%D9%83%D9%84-%D9%85%D8%A7-%D8%AA%D8%AD%D8%AA%D8%A7%D8%AC%D9%8A-%D9%84%D9%85%D8%B9%D8%B1%D9%81%D8%AA%D9%87-%21--",
-      "imagePath": "assets/images/smart_articles/photo_pregnancy_test.jpg",
+      "imagePath": "assets/images/smart_articles/art_020.jpg",
       "photoTag": "pregnancy_test"
     },
     {
@@ -1491,7 +1492,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/122994/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%A3%D8%B3%D9%87%D9%84-%D8%B7%D8%B1%D9%8A%D9%82%D8%A9-%D9%84%D8%AD%D8%B3%D8%A7%D8%A8-%D9%85%D9%88%D8%B9%D8%AF-%D8%A7%D9%84%D9%88%D9%84%D8%A7%D8%AF%D8%A9-%D8%A7%D9%84%D9%85%D8%AA%D9%88%D9%82%D8%B9",
-      "imagePath": "assets/images/smart_articles/photo_labor_birth.jpg",
+      "imagePath": "assets/images/smart_articles/art_021.jpg",
       "photoTag": "labor_birth"
     },
     {
@@ -1562,7 +1563,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/125053/%D8%A5%D9%84%D9%8A%D9%83%D9%90-%D8%A3%D9%81%D8%B6%D9%84-%D9%83%D8%B1%D9%8A%D9%85-%D8%AA%D9%81%D8%AA%D9%8A%D8%AD-%D8%A7%D9%84%D8%A8%D8%B4%D8%B1%D8%A9-%D9%85%D9%86-%D8%A7%D9%84%D8%B5%D9%8A%D8%AF%D9%84%D9%8A%D8%A9%21",
-      "imagePath": "assets/images/smart_articles/photo_skincare_serum.jpg",
+      "imagePath": "assets/images/smart_articles/art_022.jpg",
       "photoTag": "skincare_serum"
     },
     {
@@ -1633,7 +1634,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/122041/%D9%87%D9%84-%D9%87%D8%B0%D9%87-%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D9%81%D9%8A-%D8%A7%D9%84%D8%B4%D9%87%D8%B1-%D8%A7%D9%84%D8%A3%D9%88%D9%84-%D9%88%D8%A7%D9%84%D8%AB%D8%A7%D9%86%D9%8A",
-      "imagePath": "assets/images/smart_articles/photo_pregnant_belly.jpg",
+      "imagePath": "assets/images/smart_articles/art_023.jpg",
       "photoTag": "pregnant_belly"
     },
     {
@@ -1704,7 +1705,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/124555/%D8%A3%D9%81%D8%B6%D9%84-%D8%AE%D9%84%D8%B7%D8%A9-%D9%84%D8%AA%D9%81%D8%AA%D9%8A%D8%AD-%D8%A7%D9%84%D8%A8%D8%B4%D8%B1%D8%A9-%D9%88%D8%A7%D9%84%D8%AA%D8%AE%D9%84%D8%B5-%D9%85%D9%86-%D8%A7%D8%B3%D9%85%D8%B1%D8%A7%D8%B1-%D8%A7%D9%84%D8%A5%D8%A8%D8%B7%21",
-      "imagePath": "assets/images/smart_articles/photo_skincare_serum.jpg",
+      "imagePath": "assets/images/smart_articles/art_024.jpg",
       "photoTag": "skincare_serum"
     },
     {
@@ -1775,7 +1776,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/122521/-%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-5-%D8%B9%D9%84%D8%A7%D8%AC%D8%A7%D8%AA-%D9%81%D8%B9%D9%91%D8%A7%D9%84%D8%A9-%D9%84%D9%88%D9%82%D9%81-%D8%AA%D8%B3%D8%A7%D9%82%D8%B7-%D8%A7%D9%84%D8%B4%D8%B9%D8%B1",
-      "imagePath": "assets/images/smart_articles/photo_hair_care_curls.jpg",
+      "imagePath": "assets/images/smart_articles/art_025.jpg",
       "photoTag": "hair_care_curls"
     },
     {
@@ -1846,7 +1847,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/123653/%D9%85%D8%A7-%D9%87%D9%8A-%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D9%81%D9%8A-%D8%A3%D9%88%D9%84-%D8%B9%D8%B4%D8%B1%D8%A9-%D8%A3%D9%8A%D8%A7%D9%85%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_pregnant_belly.jpg",
+      "imagePath": "assets/images/smart_articles/art_026.jpg",
       "photoTag": "pregnant_belly"
     },
     {
@@ -1917,7 +1918,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/123415/%D9%87%D9%84-%D8%A7%D9%84%D8%AF%D9%88%D8%AE%D8%A9-%D9%85%D9%86-%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D9%81%D9%8A-%D8%A7%D9%84%D8%A3%D8%B3%D8%A8%D9%88%D8%B9-%D8%A7%D9%84%D8%A3%D9%88%D9%84",
-      "imagePath": "assets/images/smart_articles/photo_pregnant_belly.jpg",
+      "imagePath": "assets/images/smart_articles/art_027.jpg",
       "photoTag": "pregnant_belly"
     },
     {
@@ -1988,7 +1989,7 @@
       "toolTitle": "استشيري المستشارة الأسرية الذكية",
       "toolSubtitle": "حلول حكيمة لتعزيز التواهم وبناء علاقة زوجية دافئة",
       "sourceUrl": "https://malekah.info/Article/122479/%D9%83%D9%8A%D9%81-%D8%A3%D8%AA%D8%B9%D8%A7%D9%85%D9%84-%D9%85%D8%B9-%D8%A7%D9%84%D8%A7%D9%84%D8%AA%D9%87%D8%A7%D8%A8%D8%A7%D8%AA-%D8%A7%D9%84%D9%85%D9%87%D8%A8%D9%84%D9%8A%D8%A9-%D8%A8%D8%B9%D8%AF-%D8%A3%D9%88%D9%84-%D8%B9%D9%84%D8%A7%D9%82%D8%A9-%D8%B2%D9%88%D8%AC%D9%8A%D8%A9",
-      "imagePath": "assets/images/smart_articles/photo_baby_milestones.jpg",
+      "imagePath": "assets/images/smart_articles/art_028.jpg",
       "photoTag": "baby_milestones"
     },
     {
@@ -2059,7 +2060,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/123045/5-%D8%B7%D8%B1%D9%82-%D9%81%D8%B9%D8%A7%D9%84%D8%A9-%D9%84%D9%84%D8%AA%D8%B9%D8%A7%D9%85%D9%84-%D9%85%D8%B9-%D8%AA%D8%B3%D8%A7%D9%82%D8%B7-%D8%A7%D9%84%D8%B4%D8%B9%D8%B1-%D9%81%D9%8A-%D8%A7%D9%84%D8%B4%D8%AA%D8%A7%D8%A1",
-      "imagePath": "assets/images/smart_articles/photo_hair_care_curls.jpg",
+      "imagePath": "assets/images/smart_articles/art_029.jpg",
       "photoTag": "hair_care_curls"
     },
     {
@@ -2130,7 +2131,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/122735/%D9%85%D8%B9%D8%B1%D9%81%D8%A9-%D9%86%D9%88%D8%B9-%D8%A7%D9%84%D8%AC%D9%86%D9%8A%D9%86-%D8%AD%D9%84%D9%85-%D8%A7%D9%84%D8%B9%D8%A7%D8%A6%D9%84%D8%A9---%D8%A5%D9%84%D9%8A%D9%83%D9%90-%D8%A3%D9%81%D8%B6%D9%84-%D8%A7%D9%84%D8%B7%D8%B1%D9%82-%D9%84%D8%A5%D8%AE%D8%A8%D8%A7%D8%B1%D9%87%D9%85",
-      "imagePath": "assets/images/smart_articles/photo_ultrasound.jpg",
+      "imagePath": "assets/images/smart_articles/art_030.jpg",
       "photoTag": "ultrasound"
     },
     {
@@ -2201,7 +2202,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/122182/%D8%AF%D8%A7%D9%8A%D8%AA-%D8%A7%D9%84%D8%AE%D8%B5%D9%88%D8%A8%D8%A9%21-%D8%A5%D9%84%D9%8A%D9%83%D9%90-%D8%A3%D9%81%D8%B6%D9%84-%D8%A7%D9%84%D8%A3%D8%B7%D8%B9%D9%85%D8%A9-%D9%84%D8%B2%D9%8A%D8%A7%D8%AF%D8%A9-%D8%A7%D9%84%D8%AE%D8%B5%D9%88%D8%A8%D8%A9-",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_031.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -2272,7 +2273,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/121673/%D8%A7%D9%84%D8%B1%D9%88%D8%AA%D9%8A%D9%86-%D8%A7%D9%84%D9%83%D8%A7%D9%85%D9%84-%D9%84%D8%AA%D9%81%D8%AA%D9%8A%D8%AD-%D8%A7%D9%84%D8%A8%D8%B4%D8%B1%D8%A9-%D9%88-%D8%AC%D9%84%D8%AF-%D8%AA%D8%AD%D8%AA-%D8%A7%D9%84%D8%A5%D8%A8%D8%B7-%D9%81%D9%8A-3-%D8%A3%D9%8A%D8%A7%D9%85-%D9%81%D9%82%D8%B7-%21",
-      "imagePath": "assets/images/smart_articles/photo_skincare_serum.jpg",
+      "imagePath": "assets/images/smart_articles/art_032.jpg",
       "photoTag": "skincare_serum"
     },
     {
@@ -2343,7 +2344,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/121672/%D8%A7%D9%84%D9%8A%D9%88%D9%85-%D8%A7%D9%84%D8%A3%D9%88%D9%84-%D9%81%D9%8A-%D8%B1%D9%88%D8%AA%D9%8A%D9%86-%23%D8%A7%D9%84%D9%85%D9%84%D9%83%D8%A9-%D9%84%D8%AA%D9%81%D8%AA%D9%8A%D8%AD-%D8%A7%D9%84%D8%A8%D8%B4%D8%B1%D8%A9-%D9%81%D9%8A-3-%D8%A3%D9%8A%D8%A7%D9%85-%D9%81%D9%82%D8%B7-%21--",
-      "imagePath": "assets/images/smart_articles/photo_skincare_serum.jpg",
+      "imagePath": "assets/images/smart_articles/art_033.jpg",
       "photoTag": "skincare_serum"
     },
     {
@@ -2414,7 +2415,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/121598/7-%D8%AD%D9%84%D9%88%D9%84-%D9%84%D9%85%D8%B4%D9%83%D9%84%D8%A9-%D8%AA%D8%B3%D8%A7%D9%82%D8%B7-%D8%A7%D9%84%D8%B4%D8%B9%D8%B1-%D8%A3%D8%AB%D9%86%D8%A7%D8%A1-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%21---------------------",
-      "imagePath": "assets/images/smart_articles/photo_hair_care_curls.jpg",
+      "imagePath": "assets/images/smart_articles/art_034.jpg",
       "photoTag": "hair_care_curls"
     },
     {
@@ -2485,7 +2486,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/119503/5-%D9%86%D8%B5%D8%A7%D8%A6%D8%AD-%D9%87%D8%A7%D9%85%D8%A9-%D9%88%D9%81%D9%8A-%D9%85%D8%AA%D9%86%D8%A7%D9%88%D9%84-%D8%A7%D9%84%D8%AC%D9%85%D9%8A%D8%B9-%D9%84%D9%88%D9%82%D9%81-%D8%AA%D8%B3%D8%A7%D9%82%D8%B7-%D8%A7%D9%84%D8%B4%D8%B9%D8%B1-%21-----------",
-      "imagePath": "assets/images/smart_articles/photo_hair_care_curls.jpg",
+      "imagePath": "assets/images/smart_articles/art_035.jpg",
       "photoTag": "hair_care_curls"
     },
     {
@@ -2556,7 +2557,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/119418/7-%D9%86%D8%B5%D8%A7%D8%A6%D8%AD-%D9%85%D8%B0%D9%87%D9%84%D8%A9-%D9%84%D9%85%D9%86-%D8%AA%D8%B9%D8%A7%D9%86%D9%8A-%D9%85%D9%86-%D8%AA%D8%B3%D8%A7%D9%82%D8%B7-%D8%A7%D9%84%D8%B4%D8%B9%D8%B1-%D8%A3%D8%AB%D9%86%D8%A7%D8%A1-%D8%A7%D9%84%D8%AD%D9%85%D9%84%21-",
-      "imagePath": "assets/images/smart_articles/photo_hair_care_curls.jpg",
+      "imagePath": "assets/images/smart_articles/art_036.jpg",
       "photoTag": "hair_care_curls"
     },
     {
@@ -2627,7 +2628,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/124592/%D8%B9%D9%84%D8%A7%D9%85%D8%A7%D8%AA-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A8%D8%AA%D9%88%D8%A3%D9%85--%D9%83%D9%8A%D9%81-%D8%AA%D9%83%D8%AA%D8%B4%D9%81%D9%8A%D9%86%D9%87%D8%A7-%D9%85%D9%86%D8%B0-%D8%A7%D9%84%D8%A3%D8%B3%D8%A7%D8%A8%D9%8A%D8%B9-%D8%A7%D9%84%D8%A3%D9%88%D9%84%D9%89",
-      "imagePath": "assets/images/smart_articles/photo_twin_pregnancy.jpg",
+      "imagePath": "assets/images/smart_articles/art_037.jpg",
       "photoTag": "twin_pregnancy"
     },
     {
@@ -2698,7 +2699,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/124042/5-%D8%AE%D8%B7%D9%88%D8%A7%D8%AA-%D8%B3%D8%AD%D8%B1%D9%8A%D8%A9-%D9%84%D9%84%D8%A7%D8%B3%D8%AA%D8%B9%D8%AF%D8%A7%D8%AF-%D9%84%D9%80-%D8%A7%D9%84%D8%B1%D8%B6%D8%A7%D8%B9%D8%A9-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9-%D9%82%D8%A8%D9%84-%D8%A7%D9%84%D9%88%D9%84%D8%A7%D8%AF%D8%A9",
-      "imagePath": "assets/images/smart_articles/photo_labor_birth.jpg",
+      "imagePath": "assets/images/smart_articles/art_038.jpg",
       "photoTag": "labor_birth"
     },
     {
@@ -2769,7 +2770,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/123543/%D9%87%D9%84-%D9%8A%D9%85%D9%83%D9%86-%D9%85%D8%B9%D8%B1%D9%81%D8%A9-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A8%D8%AA%D9%88%D8%A3%D9%85-%D9%85%D9%86-%D8%A7%D9%84%D8%B4%D9%87%D8%B1-%D8%A7%D9%84%D8%A3%D9%88%D9%84",
-      "imagePath": "assets/images/smart_articles/photo_twin_pregnancy.jpg",
+      "imagePath": "assets/images/smart_articles/art_039.jpg",
       "photoTag": "twin_pregnancy"
     },
     {
@@ -2840,7 +2841,7 @@
       "toolTitle": "تتبعي أسبوع حملكِ الحالي",
       "toolSubtitle": "شوفي تطور وزن وحجم جنينكِ لحظة بلحظة",
       "sourceUrl": "https://malekah.info/Article/124965/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%B9%D9%84%D8%A7%D9%85%D8%A7%D8%AA-%D8%A7%D9%84%D8%AD%D9%85%D9%84-%D8%A8%D8%AA%D9%88%D8%A3%D9%85-%D8%B0%D9%83%D9%88%D8%B1-%D9%81%D9%8A-%D8%A7%D9%84%D8%B4%D9%87%D8%B1-%D8%A7%D9%84%D8%A3%D9%88%D9%84",
-      "imagePath": "assets/images/smart_articles/photo_twin_pregnancy.jpg",
+      "imagePath": "assets/images/smart_articles/art_040.jpg",
       "photoTag": "twin_pregnancy"
     },
     {
@@ -2911,7 +2912,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/124830/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%A3%D9%81%D8%B6%D9%84-%D8%B2%D9%8A%D9%88%D8%AA-%D9%84%D8%AA%D9%83%D8%AB%D9%8A%D9%81-%D8%A7%D9%84%D8%B4%D8%B9%D8%B1-%D8%A7%D9%84%D8%AE%D9%81%D9%8A%D9%81",
-      "imagePath": "assets/images/smart_articles/photo_hair_care_curls.jpg",
+      "imagePath": "assets/images/smart_articles/art_041.jpg",
       "photoTag": "hair_care_curls"
     },
     {
@@ -2982,7 +2983,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة الفائقة",
       "toolSubtitle": "حددي أدق الأيام لرفع فرص حدوث الحمل والإنجاب",
       "sourceUrl": "https://malekah.info/Article/122395/%D8%A2%D9%84%D8%A7%D9%85-%D8%A7%D9%84%D8%AF%D9%88%D8%B1%D8%A9-%D8%A7%D9%84%D8%B4%D9%87%D8%B1%D9%8A%D8%A9-%D8%AA%D8%B4%D8%AA%D8%AF-%D9%81%D9%8A-%D8%A7%D9%84%D8%B4%D8%AA%D8%A7%D8%A1%D8%9F-%D8%A5%D9%84%D9%8A%D9%83%D9%90-7-%D8%B7%D8%B1%D9%82-%D9%84%D8%B9%D9%84%D8%A7%D8%AC%D9%87%D8%A7%21-",
-      "imagePath": "assets/images/smart_articles/photo_period_tea.jpg",
+      "imagePath": "assets/images/smart_articles/art_042.jpg",
       "photoTag": "period_tea"
     },
     {
@@ -3053,7 +3054,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/122578/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%A3%D9%81%D8%B6%D9%84-%D8%B7%D8%B1%D9%8A%D9%82%D8%A9-%D8%AA%D9%83%D8%AB%D9%8A%D9%81-%D8%A7%D9%84%D8%B4%D8%B9%D8%B1-%21",
-      "imagePath": "assets/images/smart_articles/photo_hair_care_curls.jpg",
+      "imagePath": "assets/images/smart_articles/art_043.jpg",
       "photoTag": "hair_care_curls"
     },
     {
@@ -3124,7 +3125,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة الفائقة",
       "toolSubtitle": "حددي أدق الأيام لرفع فرص حدوث الحمل والإنجاب",
       "sourceUrl": "https://malekah.info/Article/122935/3-%D8%AA%D9%88%D8%A7%D8%A8%D9%84-%D9%85%D9%86-%D9%85%D8%B7%D8%A8%D8%AE%D9%83%D9%90-%D8%B3%D8%AA%D8%AE%D9%81%D9%81-%D8%A2%D9%84%D8%A7%D9%85-%D8%A7%D9%84%D8%AF%D9%88%D8%B1%D8%A9-%D8%A7%D9%84%D8%B4%D9%87%D8%B1%D9%8A%D8%A9---%D8%AC%D8%B1%D8%A8%D9%8A%D9%87%D9%85-%D8%A7%D9%84%D8%A2%D9%86%21-",
-      "imagePath": "assets/images/smart_articles/photo_period_tea.jpg",
+      "imagePath": "assets/images/smart_articles/art_044.jpg",
       "photoTag": "period_tea"
     },
     {
@@ -3195,7 +3196,7 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/118829/13-%D8%B7%D8%B1%D9%8A%D9%82%D8%A9-%D9%84%D8%AC%D8%B9%D9%84-%D8%A7%D9%84%D9%81%D8%B7%D8%A7%D9%85-%D8%A3%D8%B3%D9%87%D9%84-%D9%84%D9%83-%D9%88%D9%84%D8%B7%D9%81%D9%84%D9%83%21",
-      "imagePath": "assets/images/smart_articles/photo_baby_first_food.jpg",
+      "imagePath": "assets/images/smart_articles/art_045.jpg",
       "photoTag": "baby_first_food"
     },
     {
@@ -3266,7 +3267,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/124355/%D9%83%D9%8A%D9%81%D9%8A%D8%A9-%D8%A5%D8%B2%D8%A7%D9%84%D8%A9-%D8%A7%D9%84%D9%87%D8%A7%D9%84%D8%A7%D8%AA-%D8%A7%D9%84%D8%B3%D9%88%D8%AF%D8%A7%D8%A1-%D8%AA%D8%AD%D8%AA-%D8%A7%D9%84%D8%B9%D9%8A%D9%86-%D8%A8%D8%A3%D8%B3%D8%B1%D8%B9-%D9%88%D9%82%D8%AA%21",
-      "imagePath": "assets/images/smart_articles/photo_dark_circles.jpg",
+      "imagePath": "assets/images/smart_articles/art_046.jpg",
       "photoTag": "dark_circles"
     },
     {
@@ -3337,7 +3338,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/122663/%D9%83%D9%8A%D9%81-%D8%A7%D8%AA%D8%B9%D8%A7%D9%85%D9%84-%D9%85%D8%B9-%D8%A7%D9%84%D9%87%D8%A7%D9%84%D8%A7%D8%AA-%D8%A7%D9%84%D8%B3%D9%88%D8%AF%D8%A7%D8%A1-%D8%9F%21-%D8%A5%D9%84%D9%8A%D9%83%D9%90-%D9%88%D8%B5%D9%81%D8%A7%D8%AA-%D9%85%D9%86%D8%B2%D9%84%D9%8A%D8%A9-%D9%81%D8%B9%D8%A7%D9%84%D8%A9",
-      "imagePath": "assets/images/smart_articles/photo_baby_milestones.jpg",
+      "imagePath": "assets/images/smart_articles/art_047.jpg",
       "photoTag": "baby_milestones"
     },
     {
@@ -3408,7 +3409,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/121753/%D8%AF%D8%B1%D8%AC%D8%A9-%D8%AD%D8%B1%D8%A7%D8%B1%D8%A9-%D8%AC%D8%B3%D9%85%D9%83-%D9%87%D9%8A-%D8%B9%D9%84%D8%A7%D9%85%D8%A9-%D9%87%D8%A7%D9%85%D8%A9-%D9%84%D8%AD%D8%AF%D9%88%D8%AB-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6%21-",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_048.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -3479,7 +3480,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/122366/%D9%85%D8%A7-%D9%87%D9%8A-%D8%B9%D9%84%D8%A7%D9%85%D8%A7%D8%AA-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6-%D9%88%D9%85%D8%AA%D9%89-%D9%8A%D9%86%D8%AA%D9%87%D9%8A%D8%9F-",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_049.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -3550,7 +3551,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة الفائقة",
       "toolSubtitle": "حددي أدق الأيام لرفع فرص حدوث الحمل والإنجاب",
       "sourceUrl": "https://malekah.info/Article/120969/%D9%87%D9%84-%D9%8A%D9%85%D9%83%D9%86-%D9%84%D9%87%D8%B0%D8%A7-%D8%A7%D9%84%D8%B4%D8%A6-%D8%A3%D9%86-%D9%8A%D8%B9%D8%A7%D9%84%D8%AC-%D9%85%D8%AA%D9%84%D8%A7%D8%B2%D9%85%D8%A9-%D8%AA%D9%83%D9%8A%D8%B3-%D8%A7%D9%84%D9%85%D8%A8%D8%A7%D9%8A%D8%B6-%D8%AD%D9%82%D9%8B%D8%A7-%D8%9F%21-",
-      "imagePath": "assets/images/smart_articles/photo_pcos_health.jpg",
+      "imagePath": "assets/images/smart_articles/art_050.jpg",
       "photoTag": "pcos_health"
     },
     {
@@ -3621,7 +3622,7 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/123297/%D9%85%D8%AA%D9%89-%D9%8A%D9%86%D8%AA%D8%B8%D9%85-%D9%86%D9%88%D9%85-%D8%A7%D9%84%D8%B1%D8%B6%D9%8A%D8%B9-%D9%88%D8%AA%D9%86%D8%AA%D9%87%D9%8A-%D9%85%D8%B9%D8%A7%D9%86%D8%A7%D8%A9-%D8%A7%D9%84%D8%A3%D9%85",
-      "imagePath": "assets/images/smart_articles/photo_newborn_sleep.jpg",
+      "imagePath": "assets/images/smart_articles/art_051.jpg",
       "photoTag": "newborn_sleep"
     },
     {
@@ -3692,7 +3693,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/124980/%D8%A7%D9%84%D9%87%D8%A7%D9%84%D8%A7%D8%AA-%D8%A7%D9%84%D8%B3%D9%88%D8%AF%D8%A7%D8%A1--%D9%84%D9%85%D8%A7%D8%B0%D8%A7-%D8%AA%D8%B8%D9%87%D8%B1-%D9%88%D9%83%D9%8A%D9%81-%D8%AA%D8%AA%D8%AE%D9%84%D8%B5%D9%8A%D9%86-%D9%85%D9%86%D9%87%D8%A7-%D8%A8%D8%B0%D9%83%D8%A7%D8%A1%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_kids_story_reading.jpg",
+      "imagePath": "assets/images/smart_articles/art_052.jpg",
       "photoTag": "kids_story_reading"
     },
     {
@@ -3763,7 +3764,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/122352/8-%D8%A3%D8%B4%D9%8A%D8%A7%D8%A1-%D9%8A%D8%B3%D8%A8%D8%A8%D9%88%D8%A7-%D8%A7%D9%84%D9%87%D8%A7%D9%84%D8%A7%D8%AA-%D8%A7%D9%84%D8%B3%D9%88%D8%AF%D8%A7%D8%A1-%D8%AA%D8%AD%D8%AA-%D8%B9%D9%8A%D9%86%D9%8A%D9%83%D9%90---%D8%AA%D8%B9%D8%B1%D9%81%D9%8A-%D8%B9%D9%84%D9%8A%D9%87%D8%A7-%21---",
-      "imagePath": "assets/images/smart_articles/photo_dark_circles.jpg",
+      "imagePath": "assets/images/smart_articles/art_053.jpg",
       "photoTag": "dark_circles"
     },
     {
@@ -3834,7 +3835,7 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/119204/%D8%AA%D8%A3%D8%AB%D9%8A%D8%B1-%D8%B1%D8%A7%D8%A6%D8%AD%D8%A9-%D8%A7%D9%84%D8%A8%D8%B5%D9%84-%D8%B9%D9%84%D9%89-%D9%86%D9%88%D9%85-%D8%A7%D9%84%D8%B1%D8%B6%D9%8A%D8%B9-%D9%83%D9%8A%D9%81-%D9%8A%D9%85%D9%83%D9%86-%D8%A3%D9%86-%D8%AA%D8%B3%D8%A7%D9%87%D9%85-%D9%81%D9%8A-%D8%AA%D9%87%D8%AF%D8%A6%D8%AA%D9%87%21-",
-      "imagePath": "assets/images/smart_articles/photo_newborn_sleep.jpg",
+      "imagePath": "assets/images/smart_articles/art_054.jpg",
       "photoTag": "newborn_sleep"
     },
     {
@@ -3905,7 +3906,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة الفائقة",
       "toolSubtitle": "حددي أدق الأيام لرفع فرص حدوث الحمل والإنجاب",
       "sourceUrl": "https://malekah.info/Article/123265/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D9%81%D9%88%D8%A7%D8%A6%D8%AF-%D8%AD%D8%A8-%D8%A7%D9%84%D8%B1%D8%B4%D8%A7%D8%AF-%D9%84%D8%AA%D9%83%D9%8A%D8%B3-%D8%A7%D9%84%D9%85%D8%A8%D8%A7%D9%8A%D8%B6%21",
-      "imagePath": "assets/images/smart_articles/photo_pcos_health.jpg",
+      "imagePath": "assets/images/smart_articles/art_055.jpg",
       "photoTag": "pcos_health"
     },
     {
@@ -3976,7 +3977,7 @@
       "toolTitle": "سجلي أيام القضاء والصيام",
       "toolSubtitle": "متتبع تفاعلي لحساب ما عليكِ من أيام بسهولة",
       "sourceUrl": "https://malekah.info/Article/123056/%D9%87%D9%84-%D9%8A%D9%85%D9%83%D9%86-%D8%B9%D9%84%D8%A7%D8%AC-%D8%AA%D9%83%D9%8A%D8%B3-%D8%A7%D9%84%D9%85%D8%A8%D8%A7%D9%8A%D8%B6-%D8%A8%D8%A7%D9%84%D8%B5%D9%8A%D8%A7%D9%85%D8%9B-%D8%A5%D9%84%D9%8A%D9%83%D9%90-%D8%A7%D9%84%D8%A5%D8%AC%D8%A7%D8%A8%D8%A9-",
-      "imagePath": "assets/images/smart_articles/photo_pcos_health.jpg",
+      "imagePath": "assets/images/smart_articles/art_056.jpg",
       "photoTag": "pcos_health"
     },
     {
@@ -4047,7 +4048,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/124852/-%D8%AF%D9%84%D9%8A%D9%84%D9%83%D9%90-%D9%84%D8%A7%D8%B3%D8%AA%D8%B9%D8%A7%D8%AF%D8%A9-%D8%A7%D9%84%D8%AA%D9%88%D8%A7%D8%B2%D9%86-%D8%A7%D9%84%D9%87%D8%B1%D9%85%D9%88%D9%86%D9%8A--%D9%88%D8%AC%D8%A8%D8%A7%D8%AA-%D8%AA%D8%AF%D8%B9%D9%85--%D9%81%D8%AA%D8%B1%D8%A9-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6-",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_057.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -4118,7 +4119,7 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/122569/%D8%A7%D9%84%D8%A8%D9%83%D8%A7%D8%A1-%D8%AD%D8%AA%D9%89-%D8%A7%D9%84%D9%86%D9%88%D9%85--%D8%AD%D9%8A%D9%84%D8%A9-%D8%AC%D8%AF%D9%8A%D8%AF%D8%A9-%D8%AA%D8%AD%D9%82%D9%82-%D9%86%D9%88%D9%85-%D8%A7%D9%84%D8%B1%D8%B6%D9%8A%D8%B9-%D8%A7%D9%84%D9%87%D8%A7%D8%AF%D8%A6%21",
-      "imagePath": "assets/images/smart_articles/photo_newborn_sleep.jpg",
+      "imagePath": "assets/images/smart_articles/art_058.jpg",
       "photoTag": "newborn_sleep"
     },
     {
@@ -4189,7 +4190,7 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/122176/%D8%AD%D9%84%D9%85-%D9%83%D9%84-%D8%A3%D9%85-%D8%AC%D8%AF%D9%8A%D8%AF%D8%A9%D8%9B-%D9%86%D9%88%D9%85-%D8%A7%D9%84%D8%B1%D8%B6%D9%8A%D8%B9%21-",
-      "imagePath": "assets/images/smart_articles/photo_newborn_sleep.jpg",
+      "imagePath": "assets/images/smart_articles/art_059.jpg",
       "photoTag": "newborn_sleep"
     },
     {
@@ -4260,7 +4261,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة الفائقة",
       "toolSubtitle": "حددي أدق الأيام لرفع فرص حدوث الحمل والإنجاب",
       "sourceUrl": "https://malekah.info/Article/120984/%D8%AA%D8%B9%D8%A7%D9%86%D9%8A%D9%86-%D9%85%D9%86-%D8%AA%D9%83%D9%8A%D8%B3-%D8%A7%D9%84%D9%85%D8%A8%D8%A7%D9%8A%D8%B6%D8%9F%21-%D8%A5%D8%B0%D9%8B%D8%A7-%D8%AA%D9%86%D8%A7%D9%88%D9%84%D9%8A-%D9%87%D8%B0%D9%87-%D8%A7%D9%84%D8%A3%D8%B7%D8%B9%D9%85%D8%A9-%D9%81%D9%8A-%D8%A7%D9%84%D8%B9%D9%8A%D8%AF%21-",
-      "imagePath": "assets/images/smart_articles/photo_pcos_health.jpg",
+      "imagePath": "assets/images/smart_articles/art_060.jpg",
       "photoTag": "pcos_health"
     },
     {
@@ -4331,7 +4332,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة الفائقة",
       "toolSubtitle": "حددي أدق الأيام لرفع فرص حدوث الحمل والإنجاب",
       "sourceUrl": "https://malekah.info/Article/120608/%D8%A3%D8%B9%D8%A7%D9%86%D9%8A-%D9%85%D9%86-%D8%AA%D9%83%D9%8A%D8%B3-%D8%A7%D9%84%D9%85%D8%A8%D8%A7%D9%8A%D8%B6%D8%9B-%D9%85%D8%A7-%D8%A7%D9%84%D8%B0%D9%8A-%D9%8A%D9%85%D9%83%D9%86%D9%86%D9%8A-%D9%81%D8%B9%D9%84%D9%87%D8%9F%21-",
-      "imagePath": "assets/images/smart_articles/photo_pcos_health.jpg",
+      "imagePath": "assets/images/smart_articles/art_061.jpg",
       "photoTag": "pcos_health"
     },
     {
@@ -4402,7 +4403,7 @@
       "toolTitle": "افتحي موسوعة فقه المرأة",
       "toolSubtitle": "أحكام الحيض والنفاس والاستحاضة الميسرة",
       "sourceUrl": "https://malekah.info/Article/122126/%D9%83%D9%8A%D9%81-%D8%AA%D8%B3%D8%AA%D8%AE%D8%AF%D9%85%D9%8A-%D8%A7%D9%84%D8%B7%D8%B9%D8%A7%D9%85-%D9%84%D8%B9%D9%84%D8%A7%D8%AC-%D8%AA%D9%83%D9%8A%D8%B3-%D8%A7%D9%84%D9%85%D8%A8%D8%A7%D9%8A%D8%B6%D8%9F%21-",
-      "imagePath": "assets/images/smart_articles/photo_pcos_health.jpg",
+      "imagePath": "assets/images/smart_articles/art_062.jpg",
       "photoTag": "pcos_health"
     },
     {
@@ -4473,7 +4474,7 @@
       "toolTitle": "استشيري خبيرة الجمال والعناية الذكية",
       "toolSubtitle": "روتين مخصص لنوع بشرتكِ وشعركِ في ثوانٍ",
       "sourceUrl": "https://malekah.info/Article/122369/%D9%83%D9%8A%D9%81-%D9%8A%D9%85%D9%83%D9%86-%D8%A3%D9%86-%D8%AA%D8%B9%D8%A7%D9%84%D8%AC%D9%8A-%D8%A7%D9%84%D9%87%D8%A7%D9%84%D8%A7%D8%AA-%D8%A7%D9%84%D8%B3%D9%88%D8%AF%D8%A7%D8%A1-%D8%A8%D8%B7%D8%B1%D9%82-%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9-%D9%88%D8%B7%D8%A8%D9%8A%D8%A9-%D8%9F%21-----",
-      "imagePath": "assets/images/smart_articles/photo_baby_milestones.jpg",
+      "imagePath": "assets/images/smart_articles/art_063.jpg",
       "photoTag": "baby_milestones"
     },
     {
@@ -4544,7 +4545,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة الفائقة",
       "toolSubtitle": "حددي أدق الأيام لرفع فرص حدوث الحمل والإنجاب",
       "sourceUrl": "https://malekah.info/Article/122125/%D9%85%D8%A7-%D9%87%D9%8A-%D9%85%D8%AA%D9%84%D8%A7%D8%B2%D9%85%D8%A9-%D8%AA%D9%83%D9%8A%D8%B3-%D8%A7%D9%84%D9%85%D8%A8%D8%A7%D9%8A%D8%B6%D8%8C-%D9%88%D9%85%D9%86-%D8%A7%D9%84%D8%B0%D9%8A-%D8%AA%D8%A4%D8%AB%D8%B1-%D8%B9%D9%84%D9%8A%D9%87%D8%8C-%D9%88%D9%84%D9%85%D8%A7%D8%B0%D8%A7%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_pcos_health.jpg",
+      "imagePath": "assets/images/smart_articles/art_064.jpg",
       "photoTag": "pcos_health"
     },
     {
@@ -4615,7 +4616,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/121890/%D8%AA%D9%88%D9%82%D9%81%D9%8A-%D8%B9%D9%86-%D8%A7%D9%84%D8%AA%D8%AE%D9%85%D9%8A%D9%86-%D9%88%D8%A7%D8%B3%D8%AA%D8%AE%D8%AF%D9%85%D9%8A-%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6%21-",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_065.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -4686,7 +4687,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/120724/%D9%83%D9%84-%D9%85%D8%A7-%D9%8A%D8%AC%D8%A8-%D8%A3%D9%86-%D8%AA%D8%B9%D8%B1%D9%81%D9%8A%D9%87-%D8%B9%D9%86-%D8%A8%D9%88%D9%8A%D8%B6%D8%A7%D8%AA%D9%83-%D9%88%D8%B9%D9%84%D8%A7%D9%82%D8%AA%D9%87%D8%A7-%D8%A8%D8%A7%D9%84%D8%AE%D8%B5%D9%88%D8%A8%D8%A9-%D9%88%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6%21-",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_066.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -4757,7 +4758,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/118838/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%A7%D8%B9%D8%B1%D8%A7%D8%B6-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6-%D8%A7%D9%84%D9%82%D9%88%D9%8A-%D9%88%D9%85%D8%AA%D9%89-%D9%8A%D8%AC%D8%A8-%D8%B2%D9%8A%D8%A7%D8%B1%D8%A9-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%A8%D8%A9%21",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_067.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -4828,7 +4829,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/112599/%D9%85%D8%A7-%D9%87%D9%88-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6-%D9%88%D9%83%D9%8A%D9%81-%D9%8A%D8%AD%D8%AF%D8%AB---%D8%A5%D9%84%D9%8A%D9%83%D9%90-%D9%83%D9%84-%D9%85%D8%A7-%D8%AA%D8%AD%D8%AA%D8%A7%D8%AC%D9%8A%D9%86-%D9%85%D8%B9%D8%B1%D9%81%D8%AA%D9%87-%21",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_068.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -4899,7 +4900,7 @@
       "toolTitle": "افتحي حاسبة التبويض والخصوبة",
       "toolSubtitle": "احسبي أيام نافذة الخصوبة بدقة فائقة",
       "sourceUrl": "https://malekah.info/Article/119454/%D8%AF%D9%84%D9%8A%D9%84-%D8%A7%D9%84%D8%AE%D8%B5%D9%88%D8%A8%D8%A9-%23%D9%84%D9%84%D9%85%D9%84%D9%83%D8%A9-%281%29----%D9%85%D8%A7%D8%B0%D8%A7-%D8%AA%D8%B9%D8%B1%D9%81%D9%8A%D9%86-%D8%B9%D9%86-%D9%85%D9%88%D8%B9%D8%AF-%D8%A7%D9%84%D8%AA%D8%A8%D9%88%D9%8A%D8%B6-%D8%9F%21--",
-      "imagePath": "assets/images/smart_articles/photo_ovulation_calendar.jpg",
+      "imagePath": "assets/images/smart_articles/art_069.jpg",
       "photoTag": "ovulation_calendar"
     },
     {
@@ -4970,7 +4971,7 @@
       "toolTitle": "سجلي نمو ونوم طفلكِ الآن",
       "toolSubtitle": "متابعة يومية لطفرات النمو والتغذية والتطعيمات",
       "sourceUrl": "https://malekah.info/Article/121467/%D9%85%D8%A7-%D9%87%D9%8A-%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D9%86%D9%82%D8%B5-%D9%81%D9%8A%D8%AA%D8%A7%D9%85%D9%8A%D9%86-%D8%AF-%D8%B9%D9%86%D8%AF-%D8%A7%D9%84%D8%A3%D8%B7%D9%81%D8%A7%D9%84%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_chia_seeds_bowl.jpg",
+      "imagePath": "assets/images/smart_articles/art_070.jpg",
       "photoTag": "chia_seeds_bowl"
     },
     {
@@ -5041,7 +5042,7 @@
       "toolTitle": "استشيري المستشارة الأسرية الذكية",
       "toolSubtitle": "حلول حكيمة لتعزيز التواهم وبناء علاقة زوجية دافئة",
       "sourceUrl": "https://malekah.info/Article/124209/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%A3%D9%87%D9%85-%D9%86%D9%82%D8%A7%D8%B7-%D8%B6%D8%B9%D9%81-%D8%A7%D9%84%D8%B2%D9%88%D8%AC-%D8%A7%D9%84%D9%86%D8%B1%D8%AC%D8%B3%D9%8A",
-      "imagePath": "assets/images/smart_articles/photo_couple_coffee.jpg",
+      "imagePath": "assets/images/smart_articles/art_071.jpg",
       "photoTag": "couple_coffee"
     },
     {
@@ -5112,7 +5113,7 @@
       "toolTitle": "استشيري طبيبة نبضة الذكية",
       "toolSubtitle": "إجابات طبية فورية مدعمة بأحدث الأبحاث العلمية",
       "sourceUrl": "https://malekah.info/Article/123833/%D9%87%D9%84-%D9%86%D9%82%D8%B5-%D9%81%D9%8A%D8%AA%D8%A7%D9%85%D9%8A%D9%86-%D8%AF-%D9%8A%D8%B3%D8%A8%D8%A8-%D8%AF%D9%88%D8%AE%D8%A9%D8%9F-%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%A7%D9%84%D8%A2%D9%86%21",
-      "imagePath": "assets/images/smart_articles/photo_chia_seeds_bowl.jpg",
+      "imagePath": "assets/images/smart_articles/art_072.jpg",
       "photoTag": "chia_seeds_bowl"
     },
     {
@@ -5183,7 +5184,7 @@
       "toolTitle": "استشيري طبيبة نبضة الذكية",
       "toolSubtitle": "إجابات طبية فورية مدعمة بأحدث الأبحاث العلمية",
       "sourceUrl": "https://malekah.info/Article/123667/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%B3%D8%A8%D8%A8-%D9%88%D8%B9%D9%84%D8%A7%D8%AC-%D8%A7%D9%84%D8%A7%D9%84%D8%AA%D9%87%D8%A7%D8%A8%D8%A7%D8%AA-%D8%A7%D9%84%D9%85%D9%87%D8%A8%D9%84%D9%8A%D8%A9",
-      "imagePath": "assets/images/smart_articles/photo_healthy_diet.jpg",
+      "imagePath": "assets/images/smart_articles/art_073.jpg",
       "photoTag": "healthy_diet"
     },
     {
@@ -5254,7 +5255,7 @@
       "toolTitle": "استشيري طبيبة نبضة الذكية",
       "toolSubtitle": "إجابات طبية فورية مدعمة بأحدث الأبحاث العلمية",
       "sourceUrl": "https://malekah.info/Article/123592/%D8%A3%D8%B9%D8%B1%D8%A7%D8%B6-%D9%86%D9%82%D8%B5-%D9%81%D9%8A%D8%AA%D8%A7%D9%85%D9%8A%D9%86-%D8%AF-%D9%84%D9%84%D9%86%D8%B3%D8%A7%D8%A1-%D8%A7%D9%84%D8%AD%D9%88%D8%A7%D9%85%D9%84---%D9%84%D8%A7-%D8%AA%D8%AA%D8%AC%D8%A7%D9%87%D9%84%D9%8A%D9%87%D8%A7",
-      "imagePath": "assets/images/smart_articles/photo_chia_seeds_bowl.jpg",
+      "imagePath": "assets/images/smart_articles/art_074.jpg",
       "photoTag": "chia_seeds_bowl"
     },
     {
@@ -5325,7 +5326,7 @@
       "toolTitle": "استشيري المستشارة الأسرية الذكية",
       "toolSubtitle": "حلول حكيمة لتعزيز التواهم وبناء علاقة زوجية دافئة",
       "sourceUrl": "https://malekah.info/Article/123157/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D9%86%D9%82%D8%A7%D8%B7-%D8%B6%D8%B9%D9%81-%D8%A7%D9%84%D8%B2%D9%88%D8%AC-%D8%A7%D9%84%D9%86%D8%B1%D8%AC%D8%B3%D9%8A-%D9%84%D8%AA%D9%85%D8%AA%D9%84%D9%83%D9%8A-%D8%B2%D9%85%D8%A7%D9%85-%D9%82%D9%84%D8%A8%D9%87",
-      "imagePath": "assets/images/smart_articles/photo_couple_coffee.jpg",
+      "imagePath": "assets/images/smart_articles/art_075.jpg",
       "photoTag": "couple_coffee"
     },
     {
@@ -5396,8 +5397,10 @@
       "toolTitle": "استشيري طبيبة نبضة الذكية",
       "toolSubtitle": "إجابات طبية فورية مدعمة بأحدث الأبحاث العلمية",
       "sourceUrl": "https://malekah.info/Article/124758/%D9%81%D9%88%D8%A7%D8%A6%D8%AF-%D8%A8%D8%B0%D9%88%D8%B1-%D8%A7%D9%84%D8%B4%D9%8A%D8%A7-%D9%84%D9%84%D9%86%D8%B3%D8%A7%D8%A1--%D8%B3%D8%B1-%D8%B5%D8%BA%D9%8A%D8%B1-%D9%84%D8%B5%D8%AD%D8%A9-%D9%83%D8%A8%D9%8A%D8%B1%D8%A9",
-      "imagePath": "assets/images/smart_articles/photo_chia_seeds_bowl.jpg",
-      "photoTag": "chia_seeds_bowl"
+      "imagePath": "assets/images/smart_articles/art_076.jpg",
+      "photoTag": "chia_seeds_bowl",
+      "photoId": "p_76",
+      "photoQuery": "lip balm organic shea butter small tin aesthetic"
     },
     {
       "id": "smart_077",
@@ -5467,8 +5470,10 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/125054/%D8%A7%D9%84%D8%AF%D9%84%D9%8A%D9%84-%D8%A7%D9%84%D8%B4%D8%A7%D9%85%D9%84-%D9%84%D8%B1%D8%AD%D9%84%D8%A9-%D8%B1%D8%B6%D8%A7%D8%B9%D9%87-%D8%B7%D9%81%D9%84%D9%83-%D8%AD%D8%AA%D9%89-%D8%AE%D8%B7%D9%88%D8%A9-%D8%A7%D9%84%D9%81%D8%B7%D8%A7%D9%85",
-      "imagePath": "assets/images/smart_articles/photo_baby_first_food.jpg",
-      "photoTag": "baby_first_food"
+      "imagePath": "assets/images/smart_articles/art_077.jpg",
+      "photoTag": "baby_first_food",
+      "photoId": "p_77",
+      "photoQuery": "relaxing home spa bath tub with flower petals candles"
     },
     {
       "id": "smart_078",
@@ -5538,8 +5543,10 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/113664/%D9%85%D8%AA%D9%89-%D8%AA%D9%82%D9%84%D9%82%D9%8A%D9%86-%D8%A8%D8%B4%D8%A3%D9%86-%D8%AA%D8%A3%D8%AE%D8%B1-%D8%A7%D9%84%D9%86%D8%B7%D9%82-%D9%88%D8%AA%D8%B7%D9%88%D8%B1-%D8%A7%D9%84%D9%84%D8%BA%D8%A9-%D8%B9%D9%86%D8%AF-%D8%B7%D9%81%D9%84%D9%83-%D8%A7%D9%84%D8%B5%D8%BA%D9%8A%D8%B1%D8%9F-",
-      "imagePath": "assets/images/smart_articles/photo_kids_story_reading.jpg",
-      "photoTag": "kids_story_reading"
+      "imagePath": "assets/images/smart_articles/art_078.jpg",
+      "photoTag": "kids_story_reading",
+      "photoId": "p_78",
+      "photoQuery": "pure vitamin c serum bottle with sliced fresh orange"
     },
     {
       "id": "smart_079",
@@ -5609,8 +5616,10 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/123212/%D9%87%D9%84-%D8%A7%D9%84%D8%AA%D8%B3%D9%86%D9%8A%D9%86-%D9%8A%D8%B3%D8%A8%D8%A8-%D8%A7%D8%B3%D8%AA%D9%81%D8%B1%D8%A7%D8%BA-%D8%A7%D9%84%D8%B1%D8%B6%D9%8A%D8%B9%D8%9F-%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%A7%D9%84%D8%A2%D9%86%21",
-      "imagePath": "assets/images/smart_articles/photo_teething_baby.jpg",
-      "photoTag": "teething_baby"
+      "imagePath": "assets/images/smart_articles/art_079.jpg",
+      "photoTag": "teething_baby",
+      "photoId": "p_79",
+      "photoQuery": "woman touching her soft clear skin natural no makeup glow"
     },
     {
       "id": "smart_080",
@@ -5680,8 +5689,10 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/122295/%D9%83%D9%8A%D9%81%D9%8A%D8%A9-%D8%B2%D9%8A%D8%A7%D8%AF%D8%A9-%D9%88%D8%B2%D9%86-%D8%A7%D9%84%D8%B7%D9%81%D9%84-%D8%A3%D8%AB%D9%86%D8%A7%D8%A1-%D8%A7%D9%84%D8%B1%D8%B6%D8%A7%D8%B9%D8%A9-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9",
-      "imagePath": "assets/images/smart_articles/photo_breastfeeding.jpg",
-      "photoTag": "breastfeeding"
+      "imagePath": "assets/images/smart_articles/art_080.jpg",
+      "photoTag": "breastfeeding",
+      "photoId": "p_80",
+      "photoQuery": "organic argan oil bottle glass dropper wooden tray"
     },
     {
       "id": "smart_081",
@@ -5751,8 +5762,10 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/121388/%D9%85%D8%A7-%D9%87%D9%88-%D8%A5%D8%B6%D8%B1%D8%A7%D8%A8-%D8%A7%D9%84%D8%B7%D9%81%D9%84-%D8%B9%D9%86-%D8%A7%D9%84%D8%B1%D8%B6%D8%A7%D8%B9%D8%A9-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9%D8%9F-%D9%88%D9%83%D9%8A%D9%81-%D8%AA%D8%AA%D8%B9%D8%A7%D9%85%D9%84%D9%8A%D9%86-%D9%85%D8%B9%D9%87%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_breastfeeding.jpg",
-      "photoTag": "breastfeeding"
+      "imagePath": "assets/images/smart_articles/art_081.jpg",
+      "photoTag": "breastfeeding",
+      "photoId": "p_81",
+      "photoQuery": "healthy chia seed pudding fruit kiwi strawberries glass cup"
     },
     {
       "id": "smart_082",
@@ -5822,8 +5835,10 @@
       "toolTitle": "استشيري المستشارة الأسرية الذكية",
       "toolSubtitle": "حلول حكيمة لتعزيز التواهم وبناء علاقة زوجية دافئة",
       "sourceUrl": "https://malekah.info/Article/123891/%D8%B9%D9%84%D8%A7%D9%85%D8%A7%D8%AA-%D8%A7%D9%84%D8%AD%D8%A8-%D9%88%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D9%8A%D8%A7%D9%82-%D8%B9%D9%86%D8%AF-%D8%A7%D9%84%D8%B2%D9%88%D8%AC-%D8%A7%D9%84%D8%B5%D8%A7%D9%85%D8%AA",
-      "imagePath": "assets/images/smart_articles/photo_couple_coffee.jpg",
-      "photoTag": "couple_coffee"
+      "imagePath": "assets/images/smart_articles/art_082.jpg",
+      "photoTag": "couple_coffee",
+      "photoId": "p_82",
+      "photoQuery": "woman practicing peaceful yoga sunrise mat living room"
     },
     {
       "id": "smart_083",
@@ -5893,8 +5908,10 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/119933/%D9%87%D9%84-%D9%8A%D8%B9%D8%AF-%D9%86%D9%82%D8%B5-%D8%A7%D9%84%D9%81%D9%8A%D8%AA%D8%A7%D9%85%D9%8A%D9%86%D8%A7%D8%AA-%D8%B9%D9%86%D8%AF-%D8%B7%D9%81%D9%84%D9%83-%D8%B3%D8%A8%D8%A8-%D9%81%D9%8A-%D8%AA%D8%A3%D8%AE%D8%B1-%D8%A7%D9%84%D9%86%D8%B7%D9%82-%D9%88%D8%A7%D9%84%D9%83%D9%84%D8%A7%D9%85%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_kids_story_reading.jpg",
-      "photoTag": "kids_story_reading"
+      "imagePath": "assets/images/smart_articles/art_083.jpg",
+      "photoTag": "kids_story_reading",
+      "photoId": "p_83",
+      "photoQuery": "fresh green salad bowl avocado cucumber olive oil"
     },
     {
       "id": "smart_084",
@@ -5964,8 +5981,10 @@
       "toolTitle": "سجلي نمو ونوم طفلكِ الآن",
       "toolSubtitle": "متابعة يومية لطفرات النمو والتغذية والتطعيمات",
       "sourceUrl": "https://malekah.info/Article/123291/%D9%87%D9%84-%D8%A7%D9%84%D8%B1%D8%B6%D8%A7%D8%B9%D8%A9-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9-%D8%AA%D9%86%D8%AD%D9%81%D8%9F-%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%A7%D9%84%D8%A2%D9%86%21",
-      "imagePath": "assets/images/smart_articles/photo_breastfeeding.jpg",
-      "photoTag": "breastfeeding"
+      "imagePath": "assets/images/smart_articles/art_084.jpg",
+      "photoTag": "breastfeeding",
+      "photoId": "p_84",
+      "photoQuery": "woman resting head on pillow peaceful calm deep sleep"
     },
     {
       "id": "smart_085",
@@ -6035,8 +6054,10 @@
       "toolTitle": "سجلي نمو ونوم طفلكِ الآن",
       "toolSubtitle": "متابعة يومية لطفرات النمو والتغذية والتطعيمات",
       "sourceUrl": "https://malekah.info/Article/122199/%D9%85%D8%A7-%D9%87%D9%8A-%D9%85%D8%AF%D8%A9-%D8%A7%D9%84%D8%B1%D8%B6%D8%A7%D8%B9%D8%A9-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9-%D8%A8%D8%A7%D9%84%D8%AF%D9%82%D8%A7%D8%A6%D9%82%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_breastfeeding.jpg",
-      "photoTag": "breastfeeding"
+      "imagePath": "assets/images/smart_articles/art_085.jpg",
+      "photoTag": "breastfeeding",
+      "photoId": "p_85",
+      "photoQuery": "fresh glass of water with sliced cucumber mint leaves"
     },
     {
       "id": "smart_086",
@@ -6106,8 +6127,10 @@
       "toolTitle": "سجلي نمو ونوم طفلكِ الآن",
       "toolSubtitle": "متابعة يومية لطفرات النمو والتغذية والتطعيمات",
       "sourceUrl": "https://malekah.info/Article/119347/%D8%A7%D9%84%D8%B1%D8%B6%D8%A7%D8%B9%D8%A9-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9-%D9%88%D8%AA%D8%B1%D9%87%D9%84-%D8%A7%D9%84%D8%AB%D8%AF%D9%8A%D9%8A%D9%86%21-%D9%87%D9%84-%D9%87%D9%86%D8%A7%D9%83-%D8%B9%D9%84%D8%A7%D9%82%D8%A9-%D8%AD%D9%82%D9%8B%D8%A7-%D8%A8%D9%8A%D9%86%D9%87%D9%85%D8%A7%D8%9F%21",
-      "imagePath": "assets/images/smart_articles/photo_breastfeeding.jpg",
-      "photoTag": "breastfeeding"
+      "imagePath": "assets/images/smart_articles/art_086.jpg",
+      "photoTag": "breastfeeding",
+      "photoId": "p_86",
+      "photoQuery": "warm oats porridge bowl with honey almonds berries"
     },
     {
       "id": "smart_087",
@@ -6177,8 +6200,10 @@
       "toolTitle": "سجلي نمو ونوم طفلكِ الآن",
       "toolSubtitle": "متابعة يومية لطفرات النمو والتغذية والتطعيمات",
       "sourceUrl": "https://malekah.info/Article/120563/%D9%87%D9%84-%D8%AA%D9%82%D9%84%D9%84-%D8%A7%D9%84%D8%B1%D8%B6%D8%A7%D8%B9%D8%A9-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9-%D9%85%D9%86-%D9%85%D8%AE%D8%A7%D8%B7%D8%B1-%D8%A7%D9%84%D8%A5%D8%B5%D8%A7%D8%A8%D8%A9-%D8%A8%D8%B3%D8%B1%D8%B7%D8%A7%D9%86-%D8%A7%D9%84%D8%AB%D8%AF%D9%8A%D8%9F-",
-      "imagePath": "assets/images/smart_articles/photo_breastfeeding.jpg",
-      "photoTag": "breastfeeding"
+      "imagePath": "assets/images/smart_articles/art_087.jpg",
+      "photoTag": "breastfeeding",
+      "photoId": "p_87",
+      "photoQuery": "woman walking on peaceful nature forest path wellness"
     },
     {
       "id": "smart_088",
@@ -6248,8 +6273,10 @@
       "toolTitle": "افتحي موسوعة فقه المرأة",
       "toolSubtitle": "أحكام الحيض والنفاس والاستحاضة الميسرة",
       "sourceUrl": "https://malekah.info/Article/119606/%D9%87%D9%84-%D8%B3%D9%85%D8%B9%D8%AA%D9%90-%D8%B9%D9%86-%D9%84%D8%BA%D8%A7%D8%AA-%D8%A7%D9%84%D8%AD%D8%A8-%D8%A7%D9%84%D8%AE%D9%85%D8%B3-%D9%88%D9%83%D9%8A%D9%81-%D8%AA%D8%B3%D8%AA%D8%AE%D8%AF%D9%85%D9%8A%D9%87%D8%A7-%D9%84%D8%AA%D8%AD%D8%B3%D9%8A%D9%86-%D8%B9%D9%84%D8%A7%D9%82%D8%AA%D9%83%D8%9F",
-      "imagePath": "assets/images/smart_articles/photo_couple_coffee.jpg",
-      "photoTag": "couple_coffee"
+      "imagePath": "assets/images/smart_articles/art_088.jpg",
+      "photoTag": "couple_coffee",
+      "photoId": "p_88",
+      "photoQuery": "hot ginger lemon honey tea steam cup cozy table"
     },
     {
       "id": "smart_089",
@@ -6319,8 +6346,10 @@
       "toolTitle": "سجلي نمو ونوم طفلكِ الآن",
       "toolSubtitle": "متابعة يومية لطفرات النمو والتغذية والتطعيمات",
       "sourceUrl": "https://malekah.info/Article/119431/%D9%81%D9%88%D8%A7%D8%A6%D8%AF-%D8%A7%D9%84%D8%B1%D8%B6%D8%A7%D8%B9%D8%A9-%D8%A7%D9%84%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9--%D8%B7%D8%B1%D9%82-%D9%85%D8%AF%D9%87%D8%B4%D8%A9-%D9%84%D9%85%D8%B3%D8%A7%D8%B9%D8%AF%D8%A9-%D8%A7%D9%84%D8%A3%D9%85%D9%87%D8%A7%D8%AA-%D9%88%D8%A7%D9%84%D8%A3%D8%B7%D9%81%D8%A7%D9%84%21",
-      "imagePath": "assets/images/smart_articles/photo_breastfeeding.jpg",
-      "photoTag": "breastfeeding"
+      "imagePath": "assets/images/smart_articles/art_089.jpg",
+      "photoTag": "breastfeeding",
+      "photoId": "p_89",
+      "photoQuery": "colorful berries blueberries raspberries bowl antioxidant"
     },
     {
       "id": "smart_090",
@@ -6390,8 +6419,10 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/113194/%D9%83%D9%84-%D9%85%D8%A7-%D8%AA%D8%AD%D8%AA%D8%A7%D8%AC%D9%8A%D9%86-%D9%85%D8%B9%D8%B1%D9%81%D8%AA%D9%87-%D8%9B-%D8%AD%D9%88%D9%84-%D9%81%D8%B7%D8%A7%D9%85-%D8%A7%D9%84%D8%B5%D8%BA%D9%8A%D8%B1-%D8%A7%D9%84%D8%AC%D9%85%D9%8A%D9%84-%21----",
-      "imagePath": "assets/images/smart_articles/photo_baby_first_food.jpg",
-      "photoTag": "baby_first_food"
+      "imagePath": "assets/images/smart_articles/art_090.jpg",
+      "photoTag": "baby_first_food",
+      "photoId": "p_90",
+      "photoQuery": "woman stretching arms balcony morning deep breath"
     },
     {
       "id": "smart_091",
@@ -6461,8 +6492,10 @@
       "toolTitle": "استشيري المستشارة الأسرية الذكية",
       "toolSubtitle": "حلول حكيمة لتعزيز التواهم وبناء علاقة زوجية دافئة",
       "sourceUrl": "https://malekah.info/Article/118732/5-%D8%B9%D9%84%D8%A7%D8%AC%D8%A7%D8%AA-%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9-%D9%84%D8%AA%D8%A8%D9%8A%D9%8A%D8%B6-%D8%A7%D9%84%D9%85%D9%86%D8%A7%D8%B7%D9%82-%D8%A7%D9%84%D8%AD%D8%B3%D8%A7%D8%B3%D8%A9-%D9%84%D9%84%D8%B9%D8%B1%D9%88%D8%B3",
-      "imagePath": "assets/images/smart_articles/photo_couple_coffee.jpg",
-      "photoTag": "couple_coffee"
+      "imagePath": "assets/images/smart_articles/art_091.jpg",
+      "photoTag": "couple_coffee",
+      "photoId": "p_91",
+      "photoQuery": "loving couple drinking coffee together cozy morning kitchen"
     },
     {
       "id": "smart_092",
@@ -6532,8 +6565,10 @@
       "toolTitle": "سجلي نمو ونوم طفلكِ الآن",
       "toolSubtitle": "متابعة يومية لطفرات النمو والتغذية والتطعيمات",
       "sourceUrl": "https://malekah.info/Article/117863/%D9%85%D8%B1%D8%AD%D9%84%D8%A9-%D8%A7%D9%84%D8%AA%D8%B3%D9%86%D9%8A%D9%86-%D9%88%D8%B7%D8%B1%D9%82-%D8%B7%D8%A8%D9%8A%D8%B9%D9%8A%D8%A9-%D9%85%D8%B0%D9%87%D9%84%D8%A9-%D9%84%D8%AA%D8%AE%D9%81%D9%8A%D9%81-%D8%A2%D9%84%D8%A7%D9%85-%D9%87%D8%B0%D9%87-%D8%A7%D9%84%D9%85%D8%B1%D8%AD%D9%84%D8%A9",
-      "imagePath": "assets/images/smart_articles/photo_teething_baby.jpg",
-      "photoTag": "teething_baby"
+      "imagePath": "assets/images/smart_articles/art_092.jpg",
+      "photoTag": "teething_baby",
+      "photoId": "p_92",
+      "photoQuery": "husband and wife holding hands sunset walk beach romantic"
     },
     {
       "id": "smart_093",
@@ -6603,8 +6638,10 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/117603/%D8%A8%D9%83%D8%A7%D8%A1-%D8%A7%D9%84%D8%B1%D8%B6%D9%8A%D8%B9---%D8%A7%D9%84%D8%A3%D8%B3%D8%A8%D8%A7%D8%A8-%D8%A7%D9%84%D8%B4%D8%A7%D8%A6%D8%B9%D8%A9-%D9%88%D8%A8%D8%B9%D8%B6-%D8%A7%D9%84%D8%AD%D9%84%D9%88%D9%84---------",
-      "imagePath": "assets/images/smart_articles/photo_newborn_sleep.jpg",
-      "photoTag": "newborn_sleep"
+      "imagePath": "assets/images/smart_articles/art_093.jpg",
+      "photoTag": "newborn_sleep",
+      "photoId": "p_93",
+      "photoQuery": "happy couple laughing together sitting on cozy living room sofa"
     },
     {
       "id": "smart_094",
@@ -6674,8 +6711,10 @@
       "toolTitle": "استشيري المستشارة الأسرية الذكية",
       "toolSubtitle": "حلول حكيمة لتعزيز التواهم وبناء علاقة زوجية دافئة",
       "sourceUrl": "https://malekah.info/Article/123683/%D8%A7%D9%83%D8%AA%D8%B4%D9%81%D9%8A-%D8%B9%D9%84%D8%A7%D9%85%D8%A7%D8%AA-%D8%A7%D9%84%D8%BA%D9%8A%D8%B1%D8%A9-%D9%81%D9%8A-%D8%A7%D9%84%D8%AD%D8%A8",
-      "imagePath": "assets/images/smart_articles/photo_couple_coffee.jpg",
-      "photoTag": "couple_coffee"
+      "imagePath": "assets/images/smart_articles/art_094.jpg",
+      "photoTag": "couple_coffee",
+      "photoId": "p_94",
+      "photoQuery": "romantic wedding couple bride groom gentle forehead kiss"
     },
     {
       "id": "smart_095",
@@ -6745,8 +6784,10 @@
       "toolTitle": "استشيري طبيبة نبضة الذكية",
       "toolSubtitle": "إجابات طبية فورية مدعمة بأحدث الأبحاث العلمية",
       "sourceUrl": "https://malekah.info/Article/123086/%D9%85%D9%86%D8%AA%D8%AC-%D9%8A%D8%B3%D8%A8%D8%A8-%D8%A7%D9%84%D8%A7%D9%84%D8%AA%D9%87%D8%A7%D8%A8%D8%A7%D8%AA-%D8%A7%D9%84%D9%85%D9%87%D8%A8%D9%84%D9%8A%D8%A9%D8%9B-%D8%A7%D8%B9%D8%B1%D9%81%D9%8A%D9%87-%D9%88%D8%AA%D8%AC%D9%86%D8%A8%D9%8A%D9%87-%D8%A7%D9%84%D8%A2%D9%86-",
-      "imagePath": "assets/images/smart_articles/photo_healthy_diet.jpg",
-      "photoTag": "healthy_diet"
+      "imagePath": "assets/images/smart_articles/art_095.jpg",
+      "photoTag": "healthy_diet",
+      "photoId": "p_95",
+      "photoQuery": "couple having meaningful warm conversation over table candlelight"
     },
     {
       "id": "smart_096",
@@ -6816,8 +6857,10 @@
       "toolTitle": "استشيري طبيبة نبضة الذكية",
       "toolSubtitle": "إجابات طبية فورية مدعمة بأحدث الأبحاث العلمية",
       "sourceUrl": "https://malekah.info/Article/124456/%D8%B1%D9%88%D8%AA%D9%8A%D9%86-%D9%88%D9%82%D8%A7%D9%8A%D8%A9-%D9%85%D8%AA%D9%83%D8%A7%D9%85%D9%84-%D9%8A%D8%AD%D9%85%D9%8A%D9%83%D9%90-%D9%85%D9%86-%D8%A7%D9%84%D8%A7%D9%84%D8%AA%D9%87%D8%A7%D8%A8%D8%A7%D8%AA-%D8%A7%D9%84%D9%85%D9%87%D8%A8%D9%84%D9%8A%D8%A9",
-      "imagePath": "assets/images/smart_articles/photo_healthy_diet.jpg",
-      "photoTag": "healthy_diet"
+      "imagePath": "assets/images/smart_articles/art_096.jpg",
+      "photoTag": "healthy_diet",
+      "photoId": "p_96",
+      "photoQuery": "husband giving warm supportive hug to his wife emotional"
     },
     {
       "id": "smart_097",
@@ -6887,8 +6930,10 @@
       "toolTitle": "استشيري طبيبة نبضة الذكية",
       "toolSubtitle": "إجابات طبية فورية مدعمة بأحدث الأبحاث العلمية",
       "sourceUrl": "https://malekah.info/Article/120309/%D8%A7%D9%84%D8%B9%D8%AF%D9%8A%D8%AF-%D9%85%D9%86-%D8%A7%D9%84%D8%A7%D9%88%D8%AC%D8%A7%D8%B9--%D9%88%D8%B1%D8%A7%D8%A6%D9%87%D8%A7-%D9%86%D9%82%D8%B5-%D9%81%D9%8A%D8%AA%D8%A7%D9%85%D9%8A%D9%86-%D8%AF",
-      "imagePath": "assets/images/smart_articles/photo_chia_seeds_bowl.jpg",
-      "photoTag": "chia_seeds_bowl"
+      "imagePath": "assets/images/smart_articles/art_097.jpg",
+      "photoTag": "chia_seeds_bowl",
+      "photoId": "p_97",
+      "photoQuery": "cozy warm living room fireplace books warm lighting home"
     },
     {
       "id": "smart_098",
@@ -6958,8 +7003,10 @@
       "toolTitle": "استشيري طبيبة نبضة الذكية",
       "toolSubtitle": "إجابات طبية فورية مدعمة بأحدث الأبحاث العلمية",
       "sourceUrl": "https://malekah.info/Article/119797/%D8%B4%D9%87%D9%8A%D8%A9-%D9%88%D9%84%D8%B0%D9%8A%D8%B0%D8%A9-%D9%88%D9%85%D9%81%D9%8A%D8%AF%D8%A9-%D9%84%D9%84%D8%B5%D8%AD%D8%A9%21-%D8%A5%D9%84%D9%8A%D9%83%D9%90-%D8%A3%D9%81%D8%B6%D9%84-%D8%A7%D9%84%D9%88%D8%B5%D9%81%D8%A7%D8%AA-%D9%84%D8%B9%D9%85%D9%84-%D8%A7%D9%84%D9%83%D8%A8%D8%AF%D8%A9-%D8%A7%D9%84%D9%84%D8%B0%D9%8A%D8%B0%D8%A9%21",
-      "imagePath": "assets/images/smart_articles/photo_healthy_diet.jpg",
-      "photoTag": "healthy_diet"
+      "imagePath": "assets/images/smart_articles/art_098.jpg",
+      "photoTag": "healthy_diet",
+      "photoId": "p_98",
+      "photoQuery": "couple cooking healthy dinner together in modern bright kitchen"
     },
     {
       "id": "smart_099",
@@ -7029,8 +7076,10 @@
       "toolTitle": "استشيري طبيبة نبضة الذكية",
       "toolSubtitle": "إجابات طبية فورية مدعمة بأحدث الأبحاث العلمية",
       "sourceUrl": "https://malekah.info/Article/122669/%D8%A3%D9%83%D8%AB%D8%B1-%D9%85%D9%86-10-%D8%A3%D8%B9%D8%B4%D8%A7%D8%A8-%D8%AA%D8%B3%D8%A7%D8%B9%D8%AF%D9%83%D9%90-%D8%B9%D9%84%D9%89-%D8%A7%D9%84%D8%AA%D9%86%D8%AD%D9%8A%D9%81---%D8%AC%D8%B1%D8%A8%D9%8A%D9%87%D8%A7-%D8%A7%D9%84%D8%A2%D9%86%21",
-      "imagePath": "assets/images/smart_articles/photo_natural_mask.jpg",
-      "photoTag": "natural_mask"
+      "imagePath": "assets/images/smart_articles/art_099.jpg",
+      "photoTag": "natural_mask",
+      "photoId": "p_99",
+      "photoQuery": "happy mother father and child walking in autumn park holding hands"
     },
     {
       "id": "smart_100",
@@ -7100,8 +7149,10 @@
       "toolTitle": "سجلي بيانات طفلكِ الآن",
       "toolSubtitle": "متابعة جدول الرضعات والنوم وطفرات النمو",
       "sourceUrl": "https://malekah.info/Article/125019/%D8%A3%D9%81%D9%83%D8%A7%D8%B1-%D8%B3%D8%AD%D9%88%D8%B1-%D8%A7%D9%84%D8%A3%D8%B3%D8%A8%D9%88%D8%B9-%D8%A7%D9%84%D8%A3%D9%88%D9%84%21-%D8%A3%D9%83%D9%84%D8%A7%D8%AA-%D8%AE%D9%81%D9%8A%D9%81%D8%A9-%D9%82%D8%A8%D9%84-%D8%A7%D9%84%D9%86%D9%88%D9%85",
-      "imagePath": "assets/images/smart_articles/photo_newborn_sleep.jpg",
-      "photoTag": "newborn_sleep"
+      "imagePath": "assets/images/smart_articles/art_100.jpg",
+      "photoTag": "newborn_sleep",
+      "photoId": "p_100",
+      "photoQuery": "peaceful family home interior warm minimalist aesthetic flowers"
     }
   ]
 }
