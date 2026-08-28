@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاينة صور المقالات - نبضة</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #e94560;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #16213e;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s;
+            border: 1px solid #0f3460;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #e94560;
+        }
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .card-info {
+            padding: 12px;
+        }
+        .card-info .num {
+            color: #e94560;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .card-info .title {
+            color: #ccc;
+            font-size: 13px;
+            margin-top: 4px;
+            line-height: 1.4;
+            max-height: 56px;
+            overflow: hidden;
+        }
+        .card-info .tag {
+            display: inline-block;
+            background: #0f3460;
+            color: #53a8e2;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-top: 6px;
+        }
+        .source-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-right: 4px;
+        }
+        .pinterest { background: #e60023; color: white; }
+        .picsum { background: #4a6741; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🖼️ معاينة صور المقالات — نبضة</h1>
+    <p class="subtitle">100 صورة في مجلد pinterest_articles</p>
+    <div class="grid" id="grid"></div>
+
+    <script>
+    // Articles data will be loaded inline
+    const articles = [{"id": "smart_001", "title": "السر الذهبي للحمل السريع: كيف تحددين يوم التبويض بدقة متناهية؟ 🌸", "photoTag": "ovulation_calendar", "categoryId": "pregnancy"}, {"id": "smart_002", "title": "نزول خيوط دم خفيفة أثناء التبويض: هل هي علامة حمل مؤكدة أم أمر عارض؟ 🩸", "photoTag": "ovulation_calendar", "categoryId": "pregnancy"}, {"id": "smart_003", "title": "7 علامات خفية ومبكرة للحمل تظهر فور انتهاء أيام التبويض وقبل موعد الدورة! ✨", "photoTag": "ovulation_calendar", "categoryId": "pregnancy"}, {"id": "smart_004", "title": "الدليل الشامل للتوقيت المثالي للجماع لزيادة فرص الحمل بأعلى نسبة ممكنة 🎯", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_005", "title": "متى يعطيكِ اختبار الحمل المنزلي النتيجة الصحيحة 100% بعد تأخر الدورة؟ ⏱️", "photoTag": "period_tea", "categoryId": "pregnancy"}, {"id": "smart_006", "title": "إكسير النضارة: الوصفة السحرية لتوحيد لون البشرة وشد السليوليت بدون تكاليف 💖", "photoTag": "stretch_marks", "categoryId": "beauty"}, {"id": "smart_007", "title": "هل يمكن أن يحدث حمل أثناء الرضاعة النظيفة؟ 5 علامات تكشف لكِ الحقيقة مبكراً 🤱", "photoTag": "breastfeeding", "categoryId": "pregnancy"}, {"id": "smart_008", "title": "الشفرة النفسية: كيف تتعاملين مع الزوج النرجسي وتحمين سلامكِ الداخلي؟ 🧠", "photoTag": "couple_coffee", "categoryId": "marriage"}, {"id": "smart_009", "title": "حمض الفوليك للزوج: السر الطبي المجهول لمضاعفة جودة الحيوانات المنوية والخصوبة 💊", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_010", "title": "سكري الحمل وتسمم الحمل: كيف تحمين نفسكِ وجنينكِ قبل فوات الأوان؟ 🩺", "photoTag": "maternity_vitamins", "categoryId": "pregnancy"}, {"id": "smart_011", "title": "الحمل العنقودي بالتفصيل الطبي: الأسباب، خطوات العلاج، وفرص الحمل السليم بعده 🌸", "photoTag": "baby_milestones", "categoryId": "pregnancy"}, {"id": "smart_012", "title": "خرافات وحقائق: هل السونار آمن؟ وهل يكشف شكل البطن نوع الجنين فعلاً؟ 🔍", "photoTag": "ultrasound", "categoryId": "pregnancy"}, {"id": "smart_013", "title": "اكتشفي اعراض الحمل بتوأم دون سونار — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "ultrasound", "categoryId": "pregnancy"}, {"id": "smart_014", "title": "وصفة مجربة وطبيعية لتنشيط المبايض وزيادة التبويض — كل ما تحتاجين معرفته بالتفصيل", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_015", "title": "تساقط الشعر أهم أعراض تكيس المبايض وعلاجه — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "pcos_health", "categoryId": "fertility"}, {"id": "smart_016", "title": "تعانين من تكيس المبايض إذًا إليكِ أفضل خطة للحمل — كل ما تحتاجين معرفته بالتفصيل", "photoTag": "pcos_health", "categoryId": "pregnancy"}, {"id": "smart_017", "title": "هل أنتِ حامل بتوأم؟ 6 إشارات جسدية وهرمونية قوية تسبق فحص السونار! 👶👶", "photoTag": "pregnancy_test", "categoryId": "pregnancy"}, {"id": "smart_018", "title": "هل أنتِ حامل بتوأم؟ 6 إشارات جسدية وهرمونية قوية تسبق فحص السونار! 👶👶", "photoTag": "pregnancy_test", "categoryId": "pregnancy"}, {"id": "smart_019", "title": "ما الفرق بين أعراض تسمم الحمل وأعراض الحمل الطبيعية — كل ما تحتاجين معرفته بالتف", "photoTag": "maternity_vitamins", "categoryId": "pregnancy"}, {"id": "smart_020", "title": "أول علامات الحمل تقلصات الانغراس كل ما تحتاجي لمعرفته — كل ما تحتاجين معرفته بال", "photoTag": "pregnancy_test", "categoryId": "pregnancy"}, {"id": "smart_021", "title": "اكتشفي أسهل طريقة لحساب موعد الولادة المتوقع — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "labor_birth", "categoryId": "pregnancy"}, {"id": "smart_022", "title": "إليكِ أفضل كريم تفتيح البشرة من الصيدلية — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "skincare_serum", "categoryId": "beauty"}, {"id": "smart_023", "title": "هل هذه أعراض الحمل في الشهر الأول والثاني؟ الدليل الطبي الشامل 💡", "photoTag": "pregnant_belly", "categoryId": "pregnancy"}, {"id": "smart_024", "title": "أفضل خلطة لتفتيح البشرة والتخلص من اسمرار الإبط — كل ما تحتاجين معرفته بالتفصيل ", "photoTag": "skincare_serum", "categoryId": "beauty"}, {"id": "smart_025", "title": "اكتشفي 5 علاجات فعّالة لوقف تساقط الشعر — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "hair_care_curls", "categoryId": "beauty"}, {"id": "smart_026", "title": "ما هي أعراض الحمل في أول عشرة أيام — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "pregnant_belly", "categoryId": "pregnancy"}, {"id": "smart_027", "title": "هل الدوخة من أعراض الحمل في الأسبوع الأول؟ الدليل الطبي الشامل 💡", "photoTag": "pregnant_belly", "categoryId": "pregnancy"}, {"id": "smart_028", "title": "كيف أتعامل مع الالتهابات المهبلية بعد أول علاقة زوجية بخطوات عملية وموثقة ✨", "photoTag": "baby_milestones", "categoryId": "marriage"}, {"id": "smart_029", "title": "5 طرق فعالة للتعامل مع تساقط الشعر في الشتاء — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "hair_care_curls", "categoryId": "beauty"}, {"id": "smart_030", "title": "معرفة نوع الجنين حلم العائلة إليكِ أفضل الطرق لإخبارهم — كل ما تحتاجين معرفته با", "photoTag": "ultrasound", "categoryId": "pregnancy"}, {"id": "smart_031", "title": "دايت الخصوبة إليكِ أفضل الأطعمة لزيادة الخصوبة — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_032", "title": "الروتين الكامل لتفتيح البشرة و جلد تحت الإبط في 3 أيام فقط — كل ما تحتاجين معرفت", "photoTag": "skincare_serum", "categoryId": "beauty"}, {"id": "smart_033", "title": "اليوم الأول في روتين #الملكة لتفتيح البشرة في 3 أيام فقط — كل ما تحتاجين معرفته ", "photoTag": "skincare_serum", "categoryId": "beauty"}, {"id": "smart_034", "title": "7 حلول لمشكلة تساقط الشعر أثناء الحمل — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "hair_care_curls", "categoryId": "pregnancy"}, {"id": "smart_035", "title": "5 نصائح هامة وفي متناول الجميع لوقف تساقط الشعر — كل ما تحتاجين معرفته بالتفصيل ", "photoTag": "hair_care_curls", "categoryId": "beauty"}, {"id": "smart_036", "title": "7 نصائح مذهلة لمن تعاني من تساقط الشعر أثناء الحمل — كل ما تحتاجين معرفته بالتفص", "photoTag": "hair_care_curls", "categoryId": "pregnancy"}, {"id": "smart_037", "title": "علامات الحمل بتوأم كيف تكتشفينها منذ الأسابيع الأولى — كل ما تحتاجين معرفته بالت", "photoTag": "twin_pregnancy", "categoryId": "pregnancy"}, {"id": "smart_038", "title": "5 خطوات سحرية للاستعداد لـ الرضاعة الطبيعية قبل الولادة — كل ما تحتاجين معرفته ب", "photoTag": "labor_birth", "categoryId": "pregnancy"}, {"id": "smart_039", "title": "هل يمكن معرفة الحمل بتوأم من الشهر الأول؟ الدليل الطبي الشامل 💡", "photoTag": "twin_pregnancy", "categoryId": "pregnancy"}, {"id": "smart_040", "title": "اكتشفي علامات الحمل بتوأم ذكور في الشهر الأول — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "twin_pregnancy", "categoryId": "pregnancy"}, {"id": "smart_041", "title": "اكتشفي أفضل زيوت لتكثيف الشعر الخفيف — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "hair_care_curls", "categoryId": "beauty"}, {"id": "smart_042", "title": "آلام الدورة الشهرية تشتد في الشتاء إليكِ 7 طرق لعلاجها — كل ما تحتاجين معرفته با", "photoTag": "period_tea", "categoryId": "fertility"}, {"id": "smart_043", "title": "اكتشفي أفضل طريقة تكثيف الشعر — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "hair_care_curls", "categoryId": "beauty"}, {"id": "smart_044", "title": "3 توابل من مطبخكِ ستخفف آلام الدورة الشهرية جربيهم الآن — كل ما تحتاجين معرفته ب", "photoTag": "period_tea", "categoryId": "fertility"}, {"id": "smart_045", "title": "13 طريقة لجعل الفطام أسهل لك ولطفلك — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "baby_first_food", "categoryId": "baby"}, {"id": "smart_046", "title": "كيفية إزالة الهالات السوداء تحت العين بأسرع وقت — كل ما تحتاجين معرفته بالتفصيل ", "photoTag": "dark_circles", "categoryId": "beauty"}, {"id": "smart_047", "title": "كيف اتعامل مع الهالات السوداء  إليكِ وصفات منزلية فعالة بخطوات عملية وموثقة ✨", "photoTag": "baby_milestones", "categoryId": "beauty"}, {"id": "smart_048", "title": "درجة حرارة جسمك هي علامة هامة لحدوث التبويض — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_049", "title": "ما هي علامات التبويض ومتى ينتهي — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_050", "title": "هل يمكن لهذا الشئ أن يعالج متلازمة تكيس المبايض حقًا؟ الدليل الطبي الشامل 💡", "photoTag": "pcos_health", "categoryId": "fertility"}, {"id": "smart_051", "title": "متى ينتظم نوم الرضيع وتنتهي معاناة الأم؟ التوقيت الصحيح بالحقائق الطبية ⏱️", "photoTag": "newborn_sleep", "categoryId": "baby"}, {"id": "smart_052", "title": "الهالات السوداء لماذا تظهر وكيف تتخلصين منها بذكاء — كل ما تحتاجين معرفته بالتفص", "photoTag": "kids_story_reading", "categoryId": "beauty"}, {"id": "smart_053", "title": "8 أشياء يسببوا الهالات السوداء تحت عينيكِ تعرفي عليها — كل ما تحتاجين معرفته بال", "photoTag": "dark_circles", "categoryId": "beauty"}, {"id": "smart_054", "title": "تأثير رائحة البصل على نوم الرضيع كيف يمكن أن تساهم في تهدئته — كل ما تحتاجين معر", "photoTag": "newborn_sleep", "categoryId": "baby"}, {"id": "smart_055", "title": "اكتشفي فوائد حب الرشاد لتكيس المبايض — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "pcos_health", "categoryId": "fertility"}, {"id": "smart_056", "title": "هل يمكن علاج تكيس المبايض بالصيام؛ إليكِ الإجابة؟ الدليل الطبي الشامل 💡", "photoTag": "pcos_health", "categoryId": "fertility"}, {"id": "smart_057", "title": "دليلكِ لاستعادة التوازن الهرموني وجبات تدعم فترة التبويض — كل ما تحتاجين معرفته ", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_058", "title": "البكاء حتى النوم حيلة جديدة تحقق نوم الرضيع الهادئ — كل ما تحتاجين معرفته بالتفص", "photoTag": "newborn_sleep", "categoryId": "baby"}, {"id": "smart_059", "title": "حلم كل أم جديدة؛ نوم الرضيع — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "newborn_sleep", "categoryId": "baby"}, {"id": "smart_060", "title": "تعانين من تكيس المبايض إذًا تناولي هذه الأطعمة في العيد — كل ما تحتاجين معرفته ب", "photoTag": "pcos_health", "categoryId": "fertility"}, {"id": "smart_061", "title": "أعاني من تكيس المبايض؛ ما الذي يمكنني فعله — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "pcos_health", "categoryId": "fertility"}, {"id": "smart_062", "title": "كيف تستخدمي الطعام لعلاج تكيس المبايض بخطوات عملية وموثقة ✨", "photoTag": "pcos_health", "categoryId": "fertility"}, {"id": "smart_063", "title": "كيف يمكن أن تعالجي الهالات السوداء بطرق طبيعية وطبية بخطوات عملية وموثقة ✨", "photoTag": "baby_milestones", "categoryId": "beauty"}, {"id": "smart_064", "title": "ما هي متلازمة تكيس المبايض، ومن الذي تؤثر عليه، ولماذا — كل ما تحتاجين معرفته با", "photoTag": "pcos_health", "categoryId": "fertility"}, {"id": "smart_065", "title": "توقفي عن التخمين واستخدمي اختبار التبويض — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_066", "title": "كل ما يجب أن تعرفيه عن بويضاتك وعلاقتها بالخصوبة والتبويض — كل ما تحتاجين معرفته", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_067", "title": "اكتشفي اعراض التبويض القوي ومتى يجب زيارة الطبيبة — كل ما تحتاجين معرفته بالتفصي", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_068", "title": "ما هو التبويض وكيف يحدث إليكِ كل ما تحتاجين معرفته — كل ما تحتاجين معرفته بالتفص", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_069", "title": "دليل الخصوبة #للملكة (1) ماذا تعرفين عن موعد التبويض — كل ما تحتاجين معرفته بالت", "photoTag": "ovulation_calendar", "categoryId": "fertility"}, {"id": "smart_070", "title": "ما هي أعراض نقص فيتامين د عند الأطفال — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "chia_seeds_bowl", "categoryId": "baby"}, {"id": "smart_071", "title": "اكتشفي أهم نقاط ضعف الزوج النرجسي — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "couple_coffee", "categoryId": "marriage"}, {"id": "smart_072", "title": "هل نقص فيتامين د يسبب دوخة اكتشفي الآن؟ الدليل الطبي الشامل 💡", "photoTag": "chia_seeds_bowl", "categoryId": "health"}, {"id": "smart_073", "title": "اكتشفي سبب وعلاج الالتهابات المهبلية — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "healthy_diet", "categoryId": "health"}, {"id": "smart_074", "title": "أعراض نقص فيتامين د للنساء الحوامل لا تتجاهليها — كل ما تحتاجين معرفته بالتفصيل ", "photoTag": "chia_seeds_bowl", "categoryId": "health"}, {"id": "smart_075", "title": "اكتشفي نقاط ضعف الزوج النرجسي لتمتلكي زمام قلبه — كل ما تحتاجين معرفته بالتفصيل ", "photoTag": "couple_coffee", "categoryId": "marriage"}, {"id": "smart_076", "title": "فوائد بذور الشيا للنساء سر صغير لصحة كبيرة — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "chia_seeds_bowl", "categoryId": "health"}, {"id": "smart_077", "title": "الدليل الشامل لرحلة رضاعه طفلك حتى خطوة الفطام — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "baby_first_food", "categoryId": "baby"}, {"id": "smart_078", "title": "متى تقلقين بشأن تأخر النطق وتطور اللغة عند طفلك الصغير؟ التوقيت الصحيح بالحقائق ", "photoTag": "kids_story_reading", "categoryId": "baby"}, {"id": "smart_079", "title": "هل التسنين يسبب استفراغ الرضيع اكتشفي الآن؟ الدليل الطبي الشامل 💡", "photoTag": "teething_baby", "categoryId": "baby"}, {"id": "smart_080", "title": "كيفية زيادة وزن الطفل أثناء الرضاعة الطبيعية — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "breastfeeding", "categoryId": "baby"}, {"id": "smart_081", "title": "ما هو إضراب الطفل عن الرضاعة الطبيعية وكيف تتعاملين معه — كل ما تحتاجين معرفته ب", "photoTag": "breastfeeding", "categoryId": "baby"}, {"id": "smart_082", "title": "علامات الحب والاشتياق عند الزوج الصامت — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "couple_coffee", "categoryId": "marriage"}, {"id": "smart_083", "title": "هل يعد نقص الفيتامينات عند طفلك سبب في تأخر النطق والكلام؟ الدليل الطبي الشامل 💡", "photoTag": "kids_story_reading", "categoryId": "baby"}, {"id": "smart_084", "title": "هل الرضاعة الطبيعية تنحف اكتشفي الآن؟ الدليل الطبي الشامل 💡", "photoTag": "breastfeeding", "categoryId": "baby"}, {"id": "smart_085", "title": "ما هي مدة الرضاعة الطبيعية بالدقائق — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "breastfeeding", "categoryId": "baby"}, {"id": "smart_086", "title": "الرضاعة الطبيعية وترهل الثديين هل هناك علاقة حقًا بينهما — كل ما تحتاجين معرفته ", "photoTag": "breastfeeding", "categoryId": "baby"}, {"id": "smart_087", "title": "هل تقلل الرضاعة الطبيعية من مخاطر الإصابة بسرطان الثدي؟ الدليل الطبي الشامل 💡", "photoTag": "breastfeeding", "categoryId": "baby"}, {"id": "smart_088", "title": "هل سمعتِ عن لغات الحب الخمس وكيف تستخدميها لتحسين علاقتك؟ الدليل الطبي الشامل 💡", "photoTag": "couple_coffee", "categoryId": "marriage"}, {"id": "smart_089", "title": "فوائد الرضاعة الطبيعية طرق مدهشة لمساعدة الأمهات والأطفال — كل ما تحتاجين معرفته", "photoTag": "breastfeeding", "categoryId": "baby"}, {"id": "smart_090", "title": "كل ما تحتاجين معرفته ؛ حول فطام الصغير الجميل — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "baby_first_food", "categoryId": "baby"}, {"id": "smart_091", "title": "5 علاجات طبيعية لتبييض المناطق الحساسة للعروس — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "couple_coffee", "categoryId": "marriage"}, {"id": "smart_092", "title": "مرحلة التسنين وطرق طبيعية مذهلة لتخفيف آلام هذه المرحلة — كل ما تحتاجين معرفته ب", "photoTag": "teething_baby", "categoryId": "baby"}, {"id": "smart_093", "title": "بكاء الرضيع الأسباب الشائعة وبعض الحلول — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "newborn_sleep", "categoryId": "baby"}, {"id": "smart_094", "title": "اكتشفي علامات الغيرة في الحب — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "couple_coffee", "categoryId": "marriage"}, {"id": "smart_095", "title": "منتج يسبب الالتهابات المهبلية؛ اعرفيه وتجنبيه الآن — كل ما تحتاجين معرفته بالتفص", "photoTag": "healthy_diet", "categoryId": "health"}, {"id": "smart_096", "title": "روتين وقاية متكامل يحميكِ من الالتهابات المهبلية — كل ما تحتاجين معرفته بالتفصيل", "photoTag": "healthy_diet", "categoryId": "health"}, {"id": "smart_097", "title": "العديد من الاوجاع ورائها نقص فيتامين د — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "chia_seeds_bowl", "categoryId": "health"}, {"id": "smart_098", "title": "شهية ولذيذة ومفيدة للصحة إليكِ أفضل الوصفات لعمل الكبدة اللذيذة — كل ما تحتاجين ", "photoTag": "healthy_diet", "categoryId": "health"}, {"id": "smart_099", "title": "أكثر من 10 أعشاب تساعدكِ على التنحيف جربيها الآن — كل ما تحتاجين معرفته بالتفصيل", "photoTag": "natural_mask", "categoryId": "health"}, {"id": "smart_100", "title": "أفكار سحور الأسبوع الأول أكلات خفيفة قبل النوم — كل ما تحتاجين معرفته بالتفصيل 🌸", "photoTag": "newborn_sleep", "categoryId": "health"}];
+
+    const grid = document.getElementById('grid');
+    articles.forEach(art => {
+        const num = art.id.replace('smart_', '');
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <img src="pinterest_articles/art_${num}.jpg" 
+                 alt="${art.title}" 
+                 loading="lazy"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22200%22><rect fill=%22%23333%22 width=%22400%22 height=%22200%22/><text fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22>Missing</text></svg>'">
+            <div class="card-info">
+                <span class="num">#${num}</span>
+                <div class="title">${art.title}</div>
+                <span class="tag">${art.photoTag || art.categoryId}</span>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+    </script>
+</body>
+</html>

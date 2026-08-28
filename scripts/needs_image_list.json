@@ -1,0 +1,312 @@
+[
+  {
+    "num": 2,
+    "query": "fertility tracking",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 3,
+    "query": "pregnancy planning",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 4,
+    "query": "women health calendar",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 6,
+    "query": "skin care body",
+    "tag": "stretch_marks"
+  },
+  {
+    "num": 9,
+    "query": "ovulation test",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 13,
+    "query": "pregnancy ultrasound",
+    "tag": "ultrasound"
+  },
+  {
+    "num": 14,
+    "query": "fertility cycle",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 16,
+    "query": "polycystic ovary",
+    "tag": "pcos_health"
+  },
+  {
+    "num": 18,
+    "query": "pregnancy test positive",
+    "tag": "pregnancy_test"
+  },
+  {
+    "num": 19,
+    "query": "prenatal vitamins",
+    "tag": "maternity_vitamins"
+  },
+  {
+    "num": 20,
+    "query": "early pregnancy",
+    "tag": "pregnancy_test"
+  },
+  {
+    "num": 21,
+    "query": "hospital birth",
+    "tag": "labor_birth"
+  },
+  {
+    "num": 24,
+    "query": "skincare routine",
+    "tag": "skincare_serum"
+  },
+  {
+    "num": 25,
+    "query": "hair care treatment",
+    "tag": "hair_care_curls"
+  },
+  {
+    "num": 26,
+    "query": "pregnant woman",
+    "tag": "pregnant_belly"
+  },
+  {
+    "num": 27,
+    "query": "maternity fashion",
+    "tag": "pregnant_belly"
+  },
+  {
+    "num": 28,
+    "query": "baby development",
+    "tag": "baby_milestones"
+  },
+  {
+    "num": 29,
+    "query": "healthy shiny hair",
+    "tag": "hair_care_curls"
+  },
+  {
+    "num": 30,
+    "query": "prenatal checkup",
+    "tag": "ultrasound"
+  },
+  {
+    "num": 31,
+    "query": "fertility tracking",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 32,
+    "query": "face serum",
+    "tag": "skincare_serum"
+  },
+  {
+    "num": 33,
+    "query": "beauty products",
+    "tag": "skincare_serum"
+  },
+  {
+    "num": 34,
+    "query": "hair growth",
+    "tag": "hair_care_curls"
+  },
+  {
+    "num": 35,
+    "query": "anti hair loss",
+    "tag": "hair_care_curls"
+  },
+  {
+    "num": 36,
+    "query": "hair oil treatment",
+    "tag": "hair_care_curls"
+  },
+  {
+    "num": 37,
+    "query": "twin babies",
+    "tag": "twin_pregnancy"
+  },
+  {
+    "num": 38,
+    "query": "delivery preparation",
+    "tag": "labor_birth"
+  },
+  {
+    "num": 39,
+    "query": "twin pregnancy belly",
+    "tag": "twin_pregnancy"
+  },
+  {
+    "num": 40,
+    "query": "double joy babies",
+    "tag": "twin_pregnancy"
+  },
+  {
+    "num": 41,
+    "query": "hair styling",
+    "tag": "hair_care_curls"
+  },
+  {
+    "num": 42,
+    "query": "herbal tea health",
+    "tag": "period_tea"
+  },
+  {
+    "num": 43,
+    "query": "hair strengthening",
+    "tag": "hair_care_curls"
+  },
+  {
+    "num": 44,
+    "query": "menstrual health",
+    "tag": "period_tea"
+  },
+  {
+    "num": 46,
+    "query": "under eye care",
+    "tag": "dark_circles"
+  },
+  {
+    "num": 47,
+    "query": "infant milestones",
+    "tag": "baby_milestones"
+  },
+  {
+    "num": 48,
+    "query": "pregnancy planning",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 49,
+    "query": "women health calendar",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 50,
+    "query": "hormonal balance",
+    "tag": "pcos_health"
+  },
+  {
+    "num": 51,
+    "query": "sleeping baby",
+    "tag": "newborn_sleep"
+  },
+  {
+    "num": 53,
+    "query": "eye cream beauty",
+    "tag": "dark_circles"
+  },
+  {
+    "num": 54,
+    "query": "baby crib peaceful",
+    "tag": "newborn_sleep"
+  },
+  {
+    "num": 55,
+    "query": "women health checkup",
+    "tag": "pcos_health"
+  },
+  {
+    "num": 56,
+    "query": "medical consultation women",
+    "tag": "pcos_health"
+  },
+  {
+    "num": 57,
+    "query": "ovulation test",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 58,
+    "query": "infant nap",
+    "tag": "newborn_sleep"
+  },
+  {
+    "num": 59,
+    "query": "baby sleep routine",
+    "tag": "newborn_sleep"
+  },
+  {
+    "num": 60,
+    "query": "healthy lifestyle woman",
+    "tag": "pcos_health"
+  },
+  {
+    "num": 61,
+    "query": "polycystic ovary",
+    "tag": "pcos_health"
+  },
+  {
+    "num": 62,
+    "query": "hormonal balance",
+    "tag": "pcos_health"
+  },
+  {
+    "num": 63,
+    "query": "baby growth",
+    "tag": "baby_milestones"
+  },
+  {
+    "num": 64,
+    "query": "women health checkup",
+    "tag": "pcos_health"
+  },
+  {
+    "num": 65,
+    "query": "fertility cycle",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 66,
+    "query": "fertility tracking",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 67,
+    "query": "pregnancy planning",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 68,
+    "query": "women health calendar",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 69,
+    "query": "ovulation test",
+    "tag": "ovulation_calendar"
+  },
+  {
+    "num": 71,
+    "query": "happy couple",
+    "tag": "couple_coffee"
+  },
+  {
+    "num": 72,
+    "query": "healthy food bowl",
+    "tag": "chia_seeds_bowl"
+  },
+  {
+    "num": 74,
+    "query": "superfood nutrition",
+    "tag": "chia_seeds_bowl"
+  },
+  {
+    "num": 75,
+    "query": "marriage love",
+    "tag": "couple_coffee"
+  },
+  {
+    "num": 87,
+    "query": "breastfeeding mother",
+    "tag": "breastfeeding"
+  },
+  {
+    "num": 92,
+    "query": "baby teeth",
+    "tag": "teething_baby"
+  }
+]

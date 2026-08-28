@@ -1,0 +1,368 @@
+{
+  "assigned": {
+    "smart_001": "photo_ovulation_calendar.jpg",
+    "smart_002": "photo_ovulation_calendar.jpg",
+    "smart_003": "photo_ovulation_calendar.jpg",
+    "smart_004": "photo_ovulation_calendar.jpg",
+    "smart_005": "photo_period_tea.jpg",
+    "smart_007": "photo_breastfeeding.jpg",
+    "smart_008": "photo_couple_coffee.jpg",
+    "smart_009": "photo_ovulation_calendar.jpg",
+    "smart_010": "photo_maternity_vitamins.jpg",
+    "smart_011": "photo_baby_milestones.jpg",
+    "smart_012": "photo_ultrasound.jpg",
+    "smart_013": "photo_ultrasound.jpg",
+    "smart_014": "photo_ovulation_calendar.jpg",
+    "smart_015": "photo_pcos_health.jpg",
+    "smart_016": "photo_pcos_health.jpg",
+    "smart_017": "photo_pregnancy_test.jpg",
+    "smart_018": "photo_pregnancy_test.jpg",
+    "smart_019": "photo_maternity_vitamins.jpg",
+    "smart_020": "photo_pregnancy_test.jpg",
+    "smart_022": "photo_skincare_serum.jpg",
+    "smart_023": "photo_pregnant_belly.jpg",
+    "smart_024": "photo_skincare_serum.jpg",
+    "smart_026": "photo_pregnant_belly.jpg",
+    "smart_027": "photo_pregnant_belly.jpg",
+    "smart_028": "photo_baby_milestones.jpg",
+    "smart_030": "photo_ultrasound.jpg",
+    "smart_031": "photo_ovulation_calendar.jpg",
+    "smart_032": "photo_skincare_serum.jpg",
+    "smart_033": "photo_skincare_serum.jpg",
+    "smart_042": "photo_period_tea.jpg",
+    "smart_044": "photo_period_tea.jpg",
+    "smart_045": "photo_baby_first_food.jpg",
+    "smart_047": "photo_baby_milestones.jpg",
+    "smart_048": "photo_ovulation_calendar.jpg",
+    "smart_049": "photo_ovulation_calendar.jpg",
+    "smart_050": "photo_pcos_health.jpg",
+    "smart_052": "photo_kids_story_reading.jpg",
+    "smart_055": "photo_pcos_health.jpg",
+    "smart_056": "photo_pcos_health.jpg",
+    "smart_057": "photo_ovulation_calendar.jpg",
+    "smart_060": "photo_pcos_health.jpg",
+    "smart_061": "photo_pcos_health.jpg",
+    "smart_062": "photo_pcos_health.jpg",
+    "smart_063": "photo_baby_milestones.jpg",
+    "smart_064": "photo_pcos_health.jpg",
+    "smart_065": "photo_ovulation_calendar.jpg",
+    "smart_066": "photo_ovulation_calendar.jpg",
+    "smart_067": "photo_ovulation_calendar.jpg",
+    "smart_068": "photo_ovulation_calendar.jpg",
+    "smart_069": "photo_ovulation_calendar.jpg",
+    "smart_070": "photo_chia_seeds_bowl.jpg",
+    "smart_071": "photo_couple_coffee.jpg",
+    "smart_072": "photo_chia_seeds_bowl.jpg",
+    "smart_073": "photo_healthy_diet.jpg",
+    "smart_074": "photo_chia_seeds_bowl.jpg",
+    "smart_075": "photo_couple_coffee.jpg",
+    "smart_076": "art_076.jpg",
+    "smart_077": "art_077.jpg",
+    "smart_078": "art_078.jpg",
+    "smart_079": "art_079.jpg",
+    "smart_080": "art_080.jpg",
+    "smart_081": "art_081.jpg",
+    "smart_082": "art_082.jpg",
+    "smart_083": "art_083.jpg",
+    "smart_084": "art_084.jpg",
+    "smart_085": "art_085.jpg",
+    "smart_086": "art_086.jpg",
+    "smart_087": "photo_breastfeeding.jpg",
+    "smart_088": "art_088.jpg",
+    "smart_089": "art_089.jpg",
+    "smart_090": "art_090.jpg",
+    "smart_091": "art_091.jpg",
+    "smart_093": "art_093.jpg",
+    "smart_094": "art_094.jpg",
+    "smart_095": "art_095.jpg",
+    "smart_096": "art_096.jpg",
+    "smart_097": "art_097.jpg",
+    "smart_098": "art_098.jpg",
+    "smart_099": "art_099.jpg",
+    "smart_100": "art_100.jpg"
+  },
+  "unassigned": [
+    {
+      "id": "smart_006",
+      "num": "006",
+      "tag": "stretch_marks",
+      "cat": "beauty",
+      "title": "إكسير النضارة: الوصفة السحرية لتوحيد لون البشرة وش"
+    },
+    {
+      "id": "smart_021",
+      "num": "021",
+      "tag": "labor_birth",
+      "cat": "pregnancy",
+      "title": "اكتشفي أسهل طريقة لحساب موعد الولادة المتوقع — كل "
+    },
+    {
+      "id": "smart_025",
+      "num": "025",
+      "tag": "hair_care_curls",
+      "cat": "beauty",
+      "title": "اكتشفي 5 علاجات فعّالة لوقف تساقط الشعر — كل ما تح"
+    },
+    {
+      "id": "smart_029",
+      "num": "029",
+      "tag": "hair_care_curls",
+      "cat": "beauty",
+      "title": "5 طرق فعالة للتعامل مع تساقط الشعر في الشتاء — كل "
+    },
+    {
+      "id": "smart_034",
+      "num": "034",
+      "tag": "hair_care_curls",
+      "cat": "pregnancy",
+      "title": "7 حلول لمشكلة تساقط الشعر أثناء الحمل — كل ما تحتا"
+    },
+    {
+      "id": "smart_035",
+      "num": "035",
+      "tag": "hair_care_curls",
+      "cat": "beauty",
+      "title": "5 نصائح هامة وفي متناول الجميع لوقف تساقط الشعر — "
+    },
+    {
+      "id": "smart_036",
+      "num": "036",
+      "tag": "hair_care_curls",
+      "cat": "pregnancy",
+      "title": "7 نصائح مذهلة لمن تعاني من تساقط الشعر أثناء الحمل"
+    },
+    {
+      "id": "smart_037",
+      "num": "037",
+      "tag": "twin_pregnancy",
+      "cat": "pregnancy",
+      "title": "علامات الحمل بتوأم كيف تكتشفينها منذ الأسابيع الأو"
+    },
+    {
+      "id": "smart_038",
+      "num": "038",
+      "tag": "labor_birth",
+      "cat": "pregnancy",
+      "title": "5 خطوات سحرية للاستعداد لـ الرضاعة الطبيعية قبل ال"
+    },
+    {
+      "id": "smart_039",
+      "num": "039",
+      "tag": "twin_pregnancy",
+      "cat": "pregnancy",
+      "title": "هل يمكن معرفة الحمل بتوأم من الشهر الأول؟ الدليل ا"
+    },
+    {
+      "id": "smart_040",
+      "num": "040",
+      "tag": "twin_pregnancy",
+      "cat": "pregnancy",
+      "title": "اكتشفي علامات الحمل بتوأم ذكور في الشهر الأول — كل"
+    },
+    {
+      "id": "smart_041",
+      "num": "041",
+      "tag": "hair_care_curls",
+      "cat": "beauty",
+      "title": "اكتشفي أفضل زيوت لتكثيف الشعر الخفيف — كل ما تحتاج"
+    },
+    {
+      "id": "smart_043",
+      "num": "043",
+      "tag": "hair_care_curls",
+      "cat": "beauty",
+      "title": "اكتشفي أفضل طريقة تكثيف الشعر — كل ما تحتاجين معرف"
+    },
+    {
+      "id": "smart_046",
+      "num": "046",
+      "tag": "dark_circles",
+      "cat": "beauty",
+      "title": "كيفية إزالة الهالات السوداء تحت العين بأسرع وقت — "
+    },
+    {
+      "id": "smart_051",
+      "num": "051",
+      "tag": "newborn_sleep",
+      "cat": "baby",
+      "title": "متى ينتظم نوم الرضيع وتنتهي معاناة الأم؟ التوقيت ا"
+    },
+    {
+      "id": "smart_053",
+      "num": "053",
+      "tag": "dark_circles",
+      "cat": "beauty",
+      "title": "8 أشياء يسببوا الهالات السوداء تحت عينيكِ تعرفي عل"
+    },
+    {
+      "id": "smart_054",
+      "num": "054",
+      "tag": "newborn_sleep",
+      "cat": "baby",
+      "title": "تأثير رائحة البصل على نوم الرضيع كيف يمكن أن تساهم"
+    },
+    {
+      "id": "smart_058",
+      "num": "058",
+      "tag": "newborn_sleep",
+      "cat": "baby",
+      "title": "البكاء حتى النوم حيلة جديدة تحقق نوم الرضيع الهادئ"
+    },
+    {
+      "id": "smart_059",
+      "num": "059",
+      "tag": "newborn_sleep",
+      "cat": "baby",
+      "title": "حلم كل أم جديدة؛ نوم الرضيع — كل ما تحتاجين معرفته"
+    },
+    {
+      "id": "smart_092",
+      "num": "092",
+      "tag": "teething_baby",
+      "cat": "baby",
+      "title": "مرحلة التسنين وطرق طبيعية مذهلة لتخفيف آلام هذه ال"
+    }
+  ],
+  "unique_files": [
+    "photo_maternity_vitamins.jpg",
+    "photo_pregnancy_test.jpg",
+    "photo_wedding_couple.jpg",
+    "photo_ovulation_calendar.jpg",
+    "photo_fetus_growth.jpg",
+    "art_097.jpg",
+    "art_094.jpg",
+    "art_088.jpg",
+    "photo_fertility_nutrition.jpg",
+    "art_098.jpg",
+    "art_086.jpg",
+    "photo_headache_relief.jpg",
+    "art_078.jpg",
+    "photo_breastfeeding.jpg",
+    "photo_baby_first_food.jpg",
+    "photo_body_scrub.jpg",
+    "photo_couple_coffee.jpg",
+    "photo_hospital_bag.jpg",
+    "art_095.jpg",
+    "photo_natural_mask.jpg",
+    "photo_womens_clinic.jpg",
+    "art_081.jpg",
+    "photo_stretching_exercise.jpg",
+    "photo_period_tea.jpg",
+    "photo_vitamin_d_sun.jpg",
+    "art_096.jpg",
+    "art_091.jpg",
+    "art_077.jpg",
+    "art_001.jpg",
+    "photo_healthy_diet.jpg",
+    "photo_baby_bath.jpg",
+    "photo_chia_seeds_bowl.jpg",
+    "photo_beauty_routine.jpg",
+    "photo_toddler_walking.jpg",
+    "art_076.jpg",
+    "art_080.jpg",
+    "photo_bottle_feeding.jpg",
+    "art_079.jpg",
+    "art_093.jpg",
+    "art_083.jpg",
+    "photo_hormones_balance.jpg",
+    "photo_folic_acid_tablets.jpg",
+    "photo_pregnant_belly.jpg",
+    "art_099.jpg",
+    "photo_kids_story_reading.jpg",
+    "art_090.jpg",
+    "photo_baby_milestones.jpg",
+    "art_082.jpg",
+    "art_085.jpg",
+    "art_100.jpg",
+    "photo_pcos_health.jpg",
+    "photo_happy_home.jpg",
+    "photo_ultrasound.jpg",
+    "photo_hydration_water.jpg",
+    "photo_sunscreen_care.jpg",
+    "photo_baby_massage_colic.jpg",
+    "art_084.jpg",
+    "art_089.jpg",
+    "photo_skincare_serum.jpg",
+    "photo_couple_hands.jpg"
+  ],
+  "duplicate_assignments": {
+    "photo_ovulation_calendar.jpg": [
+      "smart_001",
+      "smart_002",
+      "smart_003",
+      "smart_004",
+      "smart_009",
+      "smart_014",
+      "smart_031",
+      "smart_048",
+      "smart_049",
+      "smart_057",
+      "smart_065",
+      "smart_066",
+      "smart_067",
+      "smart_068",
+      "smart_069"
+    ],
+    "photo_period_tea.jpg": [
+      "smart_005",
+      "smart_042",
+      "smart_044"
+    ],
+    "photo_breastfeeding.jpg": [
+      "smart_007",
+      "smart_087"
+    ],
+    "photo_couple_coffee.jpg": [
+      "smart_008",
+      "smart_071",
+      "smart_075"
+    ],
+    "photo_maternity_vitamins.jpg": [
+      "smart_010",
+      "smart_019"
+    ],
+    "photo_baby_milestones.jpg": [
+      "smart_011",
+      "smart_028",
+      "smart_047",
+      "smart_063"
+    ],
+    "photo_ultrasound.jpg": [
+      "smart_012",
+      "smart_013",
+      "smart_030"
+    ],
+    "photo_pcos_health.jpg": [
+      "smart_015",
+      "smart_016",
+      "smart_050",
+      "smart_055",
+      "smart_056",
+      "smart_060",
+      "smart_061",
+      "smart_062",
+      "smart_064"
+    ],
+    "photo_pregnancy_test.jpg": [
+      "smart_017",
+      "smart_018",
+      "smart_020"
+    ],
+    "photo_skincare_serum.jpg": [
+      "smart_022",
+      "smart_024",
+      "smart_032",
+      "smart_033"
+    ],
+    "photo_pregnant_belly.jpg": [
+      "smart_023",
+      "smart_026",
+      "smart_027"
+    ],
+    "photo_chia_seeds_bowl.jpg": [
+      "smart_070",
+      "smart_072",
+      "smart_074"
+    ]
+  }
+}

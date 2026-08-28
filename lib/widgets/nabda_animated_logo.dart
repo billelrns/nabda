@@ -199,60 +199,144 @@ class _HeartsPainter extends CustomPainter {
 
     final motherRect = Rect.fromLTWH(0, 0, size.width, size.height);
     final motherPath = _heartPath(motherRect);
+    final w = size.width, h = size.height;
 
-    // توهج خارجي ينبض مع القلب
+    // ① توهّج خارجي ينبض مع القلب
     final glowStrength = (motherScale - 1.0).clamp(0.0, 0.08) / 0.08;
     canvas.drawPath(
       motherPath,
       Paint()
-        ..color = _kPink.withValues(alpha: 0.18 + 0.22 * glowStrength)
+        ..color = _kPink.withValues(alpha: 0.20 + 0.25 * glowStrength)
         ..maskFilter =
-            MaskFilter.blur(BlurStyle.normal, size.width * (0.04 + 0.03 * glowStrength)),
+            MaskFilter.blur(BlurStyle.normal, w * (0.05 + 0.04 * glowStrength)),
     );
 
-    // تعبئة متدرجة
+    // ② ظل تلامسي أسفل القلب يعطي إحساس الارتفاع عن السطح
+    canvas.drawPath(
+      motherPath.shift(Offset(0, h * 0.045)),
+      Paint()
+        ..color = const Color(0xFF9E0B3F).withValues(alpha: 0.22)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.06),
+    );
+
+    // ③ الجسم الزجاجي: تدرّج قطري من فاتح جداً أعلى اليسار إلى غامق أسفل اليمين
     canvas.drawPath(
       motherPath,
       Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: const [_kPink, _kDeepPink],
+        ..shader = RadialGradient(
+          center: const Alignment(-0.45, -0.55),
+          radius: 1.25,
+          colors: const [
+            Color(0xFFFF9BC4), // ضوء الحافة العلوية
+            _kPink,
+            _kDeepPink,
+            Color(0xFFA80D48), // عمق الحافة السفلية
+          ],
+          stops: const [0.0, 0.38, 0.74, 1.0],
         ).createShader(motherRect),
     );
 
-    // لمعة زجاجية على الفص الأيسر العلوي
     canvas.save();
     canvas.clipPath(motherPath);
+
+    // ④ ضوء مرتد من الأسفل (بصمة الزجاج الحقيقي)
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(size.width * 0.30, size.height * 0.22),
-        width: size.width * 0.34,
-        height: size.height * 0.18,
+        center: Offset(w * 0.50, h * 0.86),
+        width: w * 0.62,
+        height: h * 0.26,
       ),
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.35)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, size.width * 0.05),
+        ..color = const Color(0xFFFF6FA8).withValues(alpha: 0.55)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.10),
     );
 
-    // تجويف داخلي (عمق) يحتضن قلب الطفل
-    final cavityRect = Rect.fromCenter(
-      center: Offset(size.width * 0.50, size.height * 0.52),
-      width: size.width * 0.60,
-      height: size.height * 0.60,
+    // ⑤ اللمعة الرئيسية — بقعة بيضاء ناعمة على الفصّ الأيسر
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(w * 0.29, h * 0.24),
+        width: w * 0.36,
+        height: h * 0.24,
+      ),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.62)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.055),
     );
+
+    // ⑥ لمعة ثانوية صغيرة حادّة — تعطي الحسّ الزجاجي المصقول
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(w * 0.235, h * 0.205),
+        width: w * 0.115,
+        height: h * 0.075,
+      ),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.92)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.012),
+    );
+
+    // ⑦ لمعة طويلة على الفصّ الأيمن (انعكاس مصدر ضوء ثانٍ)
+    canvas.save();
+    canvas.translate(w * 0.70, h * 0.30);
+    canvas.rotate(-0.5);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: w * 0.10, height: h * 0.20),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.34)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.035),
+    );
+    canvas.restore();
+
+    // ⑧ التجويف الداخلي — حفرة زجاجية غائرة تحتضن قلب الطفل
+    final cavityRect = Rect.fromCenter(
+      center: Offset(w * 0.50, h * 0.53),
+      width: w * 0.62,
+      height: h * 0.62,
+    );
+    final cavityPath = _heartPath(cavityRect);
+
+    // ظل داخلي علوي يوهم بالغَور
     canvas.drawPath(
-      _heartPath(cavityRect),
+      cavityPath.shift(Offset(0, -h * 0.012)),
+      Paint()
+        ..color = const Color(0xFF8E0A3A).withValues(alpha: 0.35)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.035),
+    );
+
+    canvas.drawPath(
+      cavityPath,
       Paint()
         ..shader = RadialGradient(
+          center: const Alignment(-0.2, 0.35),
+          radius: 1.0,
           colors: [
-            _kBabyPink.withValues(alpha: 0.85),
-            _kLightPink.withValues(alpha: 0.35),
+            _kLightPink.withValues(alpha: 0.55),
+            _kBabyPink.withValues(alpha: 0.92),
           ],
         ).createShader(cavityRect)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, size.width * 0.02),
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.018),
     );
+
     canvas.restore(); // نهاية القص داخل قلب الأم
+
+    // ⑨ حافة ضوئية رفيعة حول القلب كلّه (حدّ الزجاج)
+    canvas.drawPath(
+      motherPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = w * 0.012
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.75),
+            Colors.white.withValues(alpha: 0.05),
+            const Color(0xFFFF8FBB).withValues(alpha: 0.45),
+          ],
+          stops: const [0.0, 0.45, 1.0],
+        ).createShader(motherRect),
+    );
+
     canvas.restore(); // نهاية تحجيم قلب الأم
 
     // ══ قلب الطفل ══
@@ -282,30 +366,78 @@ class _HeartsPainter extends CustomPainter {
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, babyBase * 0.06),
     );
 
+    // هالة دافئة حول قلب الطفل — كأنه يتوهّج داخل قلب أمّه
     canvas.drawPath(
       babyPath,
       Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: const [Color(0xFFFFEEF4), _kBabyPink, Color(0xFFF9A8C5)],
+        ..color = Colors.white.withValues(alpha: 0.30 + 0.30 * ((babyScale - 1.0).clamp(0.0, 0.12) / 0.12))
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, babyBase * 0.14),
+    );
+
+    // جسم زجاجي لؤلؤي
+    canvas.drawPath(
+      babyPath,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.4, -0.5),
+          radius: 1.2,
+          colors: const [
+            Color(0xFFFFFFFF),
+            Color(0xFFFFE4EF),
+            _kBabyPink,
+            Color(0xFFF48CB3),
+          ],
+          stops: const [0.0, 0.30, 0.70, 1.0],
         ).createShader(babyRect),
     );
 
-    // لمعة صغيرة على قلب الطفل
     canvas.save();
     canvas.clipPath(babyPath);
+
+    // ضوء مرتد أسفل قلب الطفل
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(-babyBase * 0.18, -babyBase * 0.22),
-        width: babyBase * 0.34,
-        height: babyBase * 0.18,
+        center: Offset(0, babyBase * 0.30),
+        width: babyBase * 0.60,
+        height: babyBase * 0.24,
       ),
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.75)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, babyBase * 0.05),
+        ..color = const Color(0xFFFFB3D0).withValues(alpha: 0.60)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, babyBase * 0.10),
+    );
+
+    // لمعة رئيسية
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(-babyBase * 0.17, -babyBase * 0.20),
+        width: babyBase * 0.34,
+        height: babyBase * 0.20,
+      ),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.85)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, babyBase * 0.045),
+    );
+
+    // نقطة لمعة حادّة
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(-babyBase * 0.21, -babyBase * 0.235),
+        width: babyBase * 0.11,
+        height: babyBase * 0.07,
+      ),
+      Paint()..color = Colors.white.withValues(alpha: 0.98),
     );
     canvas.restore();
+
+    // حافة ضوئية رفيعة
+    canvas.drawPath(
+      babyPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = babyBase * 0.022
+        ..color = Colors.white.withValues(alpha: 0.55),
+    );
+
     canvas.restore();
   }
 
@@ -442,29 +574,90 @@ class _MiniHeartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     final path = _HeartsPainter._heartPath(rect);
+    final w = size.width, h = size.height;
+
+    // ظل تلامسي
+    canvas.drawPath(
+      path.shift(Offset(0, h * 0.06)),
+      Paint()
+        ..color = const Color(0xFF9E0B3F).withValues(alpha: 0.20)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.08),
+    );
+
+    // جسم زجاجي بنفس تدرّج القلب الكبير
     canvas.drawPath(
       path,
       Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_kPink, _kDeepPink],
+        ..shader = const RadialGradient(
+          center: Alignment(-0.45, -0.55),
+          radius: 1.25,
+          colors: [Color(0xFFFF9BC4), _kPink, _kDeepPink, Color(0xFFA80D48)],
+          stops: [0.0, 0.38, 0.74, 1.0],
         ).createShader(rect),
     );
-    // لمعة
+
     canvas.save();
     canvas.clipPath(path);
+
+    // ضوء مرتد سفلي
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(size.width * 0.32, size.height * 0.26),
-        width: size.width * 0.30,
-        height: size.height * 0.16,
+        center: Offset(w * 0.50, h * 0.86),
+        width: w * 0.62,
+        height: h * 0.26,
       ),
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.6)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, size.width * 0.06),
+        ..color = const Color(0xFFFF6FA8).withValues(alpha: 0.50)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.12),
+    );
+
+    // قلب طفل صغير بالداخل — نفس هوية اللوغو مصغّرة
+    final innerRect = Rect.fromCenter(
+      center: Offset(w * 0.50, h * 0.55),
+      width: w * 0.42,
+      height: h * 0.42,
+    );
+    canvas.drawPath(
+      _HeartsPainter._heartPath(innerRect),
+      Paint()
+        ..shader = const RadialGradient(
+          center: Alignment(-0.3, -0.4),
+          colors: [Colors.white, Color(0xFFFFD6E6)],
+        ).createShader(innerRect)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.015),
+    );
+
+    // لمعة رئيسية
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(w * 0.29, h * 0.24),
+        width: w * 0.34,
+        height: h * 0.20,
+      ),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.60)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.055),
+    );
+
+    // نقطة لمعة حادّة
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(w * 0.235, h * 0.205),
+        width: w * 0.11,
+        height: h * 0.07,
+      ),
+      Paint()..color = Colors.white.withValues(alpha: 0.95),
     );
     canvas.restore();
+
+    // حافة ضوئية
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = w * 0.03
+        ..color = Colors.white.withValues(alpha: 0.45),
+    );
   }
 
   @override
