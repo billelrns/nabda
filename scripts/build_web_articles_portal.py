@@ -1656,7 +1656,7 @@ html_template = """<!DOCTYPE html>
 
       modal.style.display = 'block';
       document.body.style.overflow = 'hidden';
-      history.replaceState(null, '', `#${art.id}`);
+      history.replaceState(null, '', `?id=${art.id}`);
     }
 
     function closeArticleModal() {
@@ -1720,11 +1720,12 @@ html_template = """<!DOCTYPE html>
 
     window.addEventListener('DOMContentLoaded', () => {
       applyFilterAndRender();
-      if (window.location.hash) {
-        const hashId = window.location.hash.substring(1);
-        if (hashId) {
-          setTimeout(() => { openArticleModal(hashId); }, 200);
-        }
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryId = urlParams.get('id');
+      const hashId = window.location.hash ? window.location.hash.substring(1) : null;
+      const targetId = queryId || hashId;
+      if (targetId) {
+        setTimeout(() => { openArticleModal(targetId); }, 200);
       }
     });
   </script>
