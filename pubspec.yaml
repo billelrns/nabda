@@ -57,6 +57,7 @@ flutter:
     - assets/images/fetus/
     - assets/images/fetus_hd/
     - assets/images/articles/
+    - assets/images/articles_bg/
     - assets/images/article_pics/
     - assets/images/pregnancy_news/
     - assets/images/smart_articles/
