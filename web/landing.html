@@ -24,7 +24,27 @@
   .nb-tools{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
   .nb-names{display:grid;grid-template-columns:1fr 1fr;gap:22px}
   .nb-foot{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:24px}
-  .nb-art4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+
+  /* Articles 3-Column Grid — تصميم نبضة العصري الموحد */
+  .nb-art-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .nb-art-card{background:#ffffff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.06);display:flex;flex-direction:column;cursor:pointer;transition:all .3s cubic-bezier(0.165,0.84,0.44,1);text-decoration:none;color:inherit;position:relative}
+  .nb-art-card:hover{transform:translateY(-6px);box-shadow:0 20px 42px rgba(244,63,126,.14);border-color:rgba(244,63,126,.35)}
+  .nb-art-img-wrap{position:relative;width:100%;height:210px;overflow:hidden;background:#FDE8EF}
+  .nb-art-img{width:100%;height:100%;object-fit:cover;transition:transform .45s ease;display:block}
+  .nb-art-card:hover .nb-art-img{transform:scale(1.06)}
+  .nb-art-float-cat{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#00897B;padding:4px 12px;border-radius:50px;font-size:12px;font-weight:800;box-shadow:0 3px 10px rgba(0,0,0,.12);display:flex;align-items:center;gap:4px}
+  .nb-art-body{padding:18px 20px 16px;display:flex;flex-direction:column;flex-grow:1;justify-content:space-between}
+  .nb-art-cat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .nb-art-cat-tag{color:#00897B;font-weight:800;font-size:12.5px}
+  .nb-art-badge{background:#FCE4EC;color:#E42558;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+  .nb-art-title{font-size:16.5px;font-weight:800;color:#1F1A20;line-height:1.45;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:48px;transition:color .2s}
+  .nb-art-card:hover .nb-art-title{color:#F43F7E}
+  .nb-art-desc{font-size:13px;color:#8F8795;line-height:1.65;margin-bottom:16px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .nb-art-footer{padding-top:12px;border-top:1px solid #F8E1EA;display:flex;justify-content:space-between;align-items:center}
+  .nb-art-views{display:inline-flex;align-items:center;gap:5px;background:rgba(110,110,110,.07);color:#666;padding:3px 9px;border-radius:6px;font-size:12px;font-weight:600}
+  .nb-art-time{font-size:11.5px;color:#A098A5;font-weight:600}
+  .nb-art-cta{color:#F43F7E;font-weight:800;font-size:12.5px;display:inline-flex;align-items:center;gap:4px;transition:transform .2s}
+  .nb-art-card:hover .nb-art-cta{transform:translateX(-4px)}
 
   /* Tool cards — مطابقة للتصميم الأصلي */
   .nb-tool{background:linear-gradient(180deg,#ffffff,#FFF9FC);border:1px solid #F4E3EB;border-radius:26px;padding:26px 18px 22px;text-align:center;box-shadow:0 12px 30px rgba(244,63,126,.07);cursor:pointer;display:flex;flex-direction:column;align-items:center;transition:transform .2s, box-shadow .2s}
@@ -51,14 +71,14 @@
   .nb-dot.on{width:30px;background:#F43F7E}
   .nb-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:6;width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.9);color:#F43F7E;font-size:24px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(244,63,126,.2)}
 
-  @media(max-width:900px){
+  @media(max-width:992px){
     .nb-strip{grid-template-columns:1fr 1fr}
     .nb-j4{grid-template-columns:1fr 1fr}
     .nb-prod{grid-template-columns:1fr 1fr}
     .nb-tools{grid-template-columns:repeat(2,1fr)}
     .nb-names{grid-template-columns:1fr}
     .nb-foot{grid-template-columns:1fr 1fr}
-    .nb-art4{grid-template-columns:1fr 1fr}
+    .nb-art-grid{grid-template-columns:1fr 1fr}
     .nb-tool-icon{width:80px;height:80px}
     .nb-hide-m{display:none!important}
     .nb-slider{height:auto;min-height:520px}
@@ -66,6 +86,25 @@
     .nb-slide-grad{background:linear-gradient(180deg,rgba(255,255,255,.96) 0%,rgba(255,255,255,.85) 40%,rgba(255,255,255,.55) 85%,rgba(255,255,255,.35) 100%)}
     .nb-slide-title{font-size:30px}
   }
+  @media(max-width:640px){
+    .nb-art-grid{grid-template-columns:1fr;gap:16px}
+  }
+
+  /* Landing Carousels — موسوعة نبضة */
+  #wiki-carousels { max-width: 1280px; margin: 56px auto 0; }
+  .landing-carousel { margin: 36px 0; padding: 0; }
+  .carousel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .carousel-header h2 { font-size: 22px; font-weight: 800; color: #E91E63; }
+  .more-btn { color: #E91E63; text-decoration: none; font-weight: 700; font-size: 13px; padding: 7px 18px; background: #FDE8EF; border-radius: 20px; transition: all .2s; }
+  .more-btn:hover { background: #F8BBD0; transform: translateY(-2px); }
+  .carousel-scroll { display: flex; overflow-x: auto; gap: 14px; padding-bottom: 14px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+  .mini-card { flex: 0 0 210px; text-decoration: none; color: inherit; background: white; border: 1px solid #F8E1EA; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(244,63,126,.06); transition: all .3s cubic-bezier(0.165,0.84,0.44,1); display: flex; flex-direction: column; }
+  .mini-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(244,63,126,.14); border-color: rgba(244,63,126,.35); }
+  .mini-card img { width: 100%; height: 120px; object-fit: cover; display: block; }
+  .mini-card-body { padding: 12px 14px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; }
+  .mini-card-body h4 { font-size: 13px; font-weight: 700; margin: 0 0 8px 0; line-height: 1.45; color: #1F1A20; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 38px; }
+  .mini-card-time { font-size: 11px; color: #8F8795; }
+
 </style>
 <script>
   function nb(action){
@@ -338,29 +377,155 @@
   </div>
 </div>
 
-<!-- PREGNANCY ARTICLES -->
+<!-- PREGNANCY ARTICLES (Nabda 3-Column Modern Grid) -->
 <div style="max-width:1280px;margin:54px auto 0;padding:0 24px">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
-    <span onclick="nb('pregnancy')" style="font-size:14px;color:#F43F7E;font-weight:800;cursor:pointer">عرض المزيد →</span>
-    <h2 style="font-size:30px;font-weight:800;display:inline-flex;align-items:center;gap:10px">دليلكِ للحمل <span style="color:#F43F7E">💗</span></h2>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2 style="font-size:30px;font-weight:800;display:inline-flex;align-items:center;gap:10px;margin-bottom:6px">دليلكِ للحمل والموسوعة الطبية <span style="color:#F43F7E">💗</span></h2>
+      <p style="font-size:14.5px;color:#8F8795;margin:0">مقالات موثوقة بإشراف طبي متخصص ترافقكِ في كل مراحل الأمومة</p>
+    </div>
+    <a href="articles.html" style="display:inline-flex;align-items:center;gap:6px;font-size:14.5px;color:#F43F7E;font-weight:800;text-decoration:none;padding:8px 18px;border-radius:50px;background:#FDE8EF;border:1px solid #F8D7E5;transition:.2s">
+      عرض جميع المقالات (2,500+) ←
+    </a>
   </div>
-  <div class="nb-art4">
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.06);cursor:pointer">
-      <div style="position:relative"><div style="width:100%;height:150px;background:linear-gradient(160deg,#FDE8EF,#FFF7FA);display:flex;align-items:center;justify-content:center;font-size:46px">🤱</div><span style="position:absolute;top:10px;right:10px;background:#fff;color:#F43F7E;font-size:11px;font-weight:800;border-radius:8px;padding:4px 8px">🔖</span></div>
-      <div style="padding:16px"><div style="font-weight:800;font-size:14.5px;margin-bottom:6px">كيف تزيدين فرص الحمل؟</div><div style="font-size:12.5px;color:#8F8795;line-height:1.7">لا تستهيني بنتيجة اختبار الحمل الإيجابي؛ هذه النصائح تساعدكِ...</div></div>
-    </div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.06);cursor:pointer">
-      <div style="position:relative"><div style="width:100%;height:150px;background:linear-gradient(160deg,#FCE4EC,#FFF7FA);display:flex;align-items:center;justify-content:center;font-size:46px">🌸</div><span style="position:absolute;top:10px;right:10px;background:#fff;color:#F43F7E;font-size:11px;font-weight:800;border-radius:8px;padding:4px 8px">🔖</span></div>
-      <div style="padding:16px"><div style="font-weight:800;font-size:14.5px;margin-bottom:6px">ما هي أفضل وضعية للحمل؟</div><div style="font-size:12.5px;color:#8F8795;line-height:1.7">إذا كنتِ تبحثين عن أفضل وضعية للحمل لحدوثه، فإليكِ...</div></div>
-    </div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.06);cursor:pointer">
-      <div style="position:relative"><div style="width:100%;height:150px;background:linear-gradient(160deg,#EDE7F6,#FFF7FA);display:flex;align-items:center;justify-content:center;font-size:46px">💊</div><span style="position:absolute;top:10px;right:10px;background:#fff;color:#F43F7E;font-size:11px;font-weight:800;border-radius:8px;padding:4px 8px">🔖</span></div>
-      <div style="padding:16px"><div style="font-weight:800;font-size:14.5px;margin-bottom:6px">أفضل فيتامينات الخصوبة</div><div style="font-size:12.5px;color:#8F8795;line-height:1.7">قومي بتعزيز الخصوبة واستعدي للحمل بطريقة صحية...</div></div>
-    </div>
-    <div onclick="nb('signup')" style="background:#fff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.06);cursor:pointer">
-      <div style="position:relative"><div style="width:100%;height:150px;background:linear-gradient(160deg,#E0F2F1,#FFF7FA);display:flex;align-items:center;justify-content:center;font-size:46px">🥗</div><span style="position:absolute;top:10px;right:10px;background:#fff;color:#F43F7E;font-size:11px;font-weight:800;border-radius:8px;padding:4px 8px">🔖</span></div>
-      <div style="padding:16px"><div style="font-weight:800;font-size:14.5px;margin-bottom:6px">١٠ أشياء يجب تجنّبها عند محاولة الحمل</div><div style="font-size:12.5px;color:#8F8795;line-height:1.7">أشياء بسيطة قد تؤثّر على فرصكِ في الحمل دون أن تدركي...</div></div>
-    </div>
+  <div class="nb-art-grid">
+    <!-- Card 1 -->
+    <a href="articles.html?id=art_001" class="nb-art-card">
+      <div class="nb-art-img-wrap">
+        <img src="images/smart_articles/photo_ovulation_calendar.jpg" alt="كيف تزيدين فرص الحمل بسرعة؟" class="nb-art-img" onerror="this.onerror=null;this.src='images/smart_articles/art_001.jpg'" loading="lazy">
+        <span class="nb-art-float-cat">🌸 التخطيط للحمل</span>
+      </div>
+      <div class="nb-art-body">
+        <div>
+          <div class="nb-art-cat-row">
+            <span class="nb-art-cat-tag">🌸 التخطيط للحمل</span>
+            <span class="nb-art-badge">موثق طبياً 🩺</span>
+          </div>
+          <h3 class="nb-art-title">كيف تزيدين فرص الحمل بسرعة وبطرق طبيعية مثبتة؟</h3>
+          <p class="nb-art-desc">دليلكِ الشامل لتعزيز الخصوبة وتحديد أيام التبويض بدقة لزيادة فرص الحمل الطبيعي بطريقة صحية وآمنة.</p>
+        </div>
+        <div class="nb-art-footer">
+          <span class="nb-art-views">👁️ 4,820</span>
+          <span class="nb-art-time">⏱️ 5 دقائق</span>
+          <span class="nb-art-cta">اقرأي المقال ←</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Card 2 -->
+    <a href="articles.html?id=art_003" class="nb-art-card">
+      <div class="nb-art-img-wrap">
+        <img src="images/smart_articles/photo_pregnancy_test.jpg" alt="أعراض الحمل المبكرة قبل موعد الدورة" class="nb-art-img" onerror="this.onerror=null;this.src='images/smart_articles/art_003.jpg'" loading="lazy">
+        <span class="nb-art-float-cat">🤰 رعاية الحمل</span>
+      </div>
+      <div class="nb-art-body">
+        <div>
+          <div class="nb-art-cat-row">
+            <span class="nb-art-cat-tag">🤰 رعاية الحمل</span>
+            <span class="nb-art-badge">الأكثر قراءة 🔥</span>
+          </div>
+          <h3 class="nb-art-title">أعراض الحمل المبكرة قبل موعد الدورة الشهرية</h3>
+          <p class="nb-art-desc">علامات دقيقة وتغيرات هرمونية وجسدية تؤكد حدوث الحمل حتى قبل إجراء اختبار الحمل المنزلي.</p>
+        </div>
+        <div class="nb-art-footer">
+          <span class="nb-art-views">👁️ 6,190</span>
+          <span class="nb-art-time">⏱️ 4 دقائق</span>
+          <span class="nb-art-cta">اقرأي المقال ←</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Card 3 -->
+    <a href="articles.html?id=art_009" class="nb-art-card">
+      <div class="nb-art-img-wrap">
+        <img src="images/smart_articles/photo_maternity_vitamins.jpg" alt="أفضل فيتامينات الخصوبة وحمض الفوليك" class="nb-art-img" onerror="this.onerror=null;this.src='images/smart_articles/art_009.jpg'" loading="lazy">
+        <span class="nb-art-float-cat">🥗 التغذية والصحة</span>
+      </div>
+      <div class="nb-art-body">
+        <div>
+          <div class="nb-art-cat-row">
+            <span class="nb-art-cat-tag">🥗 التغذية والصحة</span>
+            <span class="nb-art-badge">نصيحة طبيبة 👩‍⚕️</span>
+          </div>
+          <h3 class="nb-art-title">أفضل فيتامينات الخصوبة وحمض الفوليك قبل الحمل</h3>
+          <p class="nb-art-desc">المكملات الغذائية الأساسية لتهيئة جسمكِ لاستقبال الحمل وتطور الجهاز العصبي للجنين بنجاح.</p>
+        </div>
+        <div class="nb-art-footer">
+          <span class="nb-art-views">👁️ 3,940</span>
+          <span class="nb-art-time">⏱️ 6 دقائق</span>
+          <span class="nb-art-cta">اقرأي المقال ←</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Card 4 -->
+    <a href="articles.html?id=art_012" class="nb-art-card">
+      <div class="nb-art-img-wrap">
+        <img src="images/smart_articles/photo_ultrasound.jpg" alt="مراحل تطور ونمو الجنين أسبوعاً بأسبوع" class="nb-art-img" onerror="this.onerror=null;this.src='images/smart_articles/art_012.jpg'" loading="lazy">
+        <span class="nb-art-float-cat">👶 نمو الجنين</span>
+      </div>
+      <div class="nb-art-body">
+        <div>
+          <div class="nb-art-cat-row">
+            <span class="nb-art-cat-tag">👶 نمو الجنين</span>
+            <span class="nb-art-badge">دليل شامل 📖</span>
+          </div>
+          <h3 class="nb-art-title">مراحل تطور ونمو الجنين أسبوعاً بأسبوع</h3>
+          <p class="nb-art-desc">شاهدي كيف ينمو طفلكِ الصغير في كل مرحلة وتعرّفي على دلالات الفحص التلفزيوني ونبضات قلبه.</p>
+        </div>
+        <div class="nb-art-footer">
+          <span class="nb-art-views">👁️ 5,410</span>
+          <span class="nb-art-time">⏱️ 7 دقائق</span>
+          <span class="nb-art-cta">اقرأي المقال ←</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Card 5 -->
+    <a href="articles.html?id=art_007" class="nb-art-card">
+      <div class="nb-art-img-wrap">
+        <img src="images/smart_articles/photo_breastfeeding.jpg" alt="دليل الرضاعة الطبيعية للأم الجديدة" class="nb-art-img" onerror="this.onerror=null;this.src='images/smart_articles/art_007.jpg'" loading="lazy">
+        <span class="nb-art-float-cat">🍼 رعاية المولود</span>
+      </div>
+      <div class="nb-art-body">
+        <div>
+          <div class="nb-art-cat-row">
+            <span class="nb-art-cat-tag">🍼 رعاية المولود</span>
+            <span class="nb-art-badge">موثق طبياً 🩺</span>
+          </div>
+          <h3 class="nb-art-title">دليل الرضاعة الطبيعية للأم الجديدة خطوة بخطوة</h3>
+          <p class="nb-art-desc">الوضعيات الصحيحة للالتصاق، وكيفية تجنب آلام الحلمة وزيادة إدرار الحليب الطبيعي بأسهل الطرق.</p>
+        </div>
+        <div class="nb-art-footer">
+          <span class="nb-art-views">👁️ 4,120</span>
+          <span class="nb-art-time">⏱️ 5 دقائق</span>
+          <span class="nb-art-cta">اقرأي المقال ←</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Card 6 -->
+    <a href="articles.html?id=art_011" class="nb-art-card">
+      <div class="nb-art-img-wrap">
+        <img src="images/smart_articles/photo_newborn_sleep.jpg" alt="روتين نوم الطفل الرضيع وحلول المغص" class="nb-art-img" onerror="this.onerror=null;this.src='images/smart_articles/art_011.jpg'" loading="lazy">
+        <span class="nb-art-float-cat">🌙 نوم الطفل</span>
+      </div>
+      <div class="nb-art-body">
+        <div>
+          <div class="nb-art-cat-row">
+            <span class="nb-art-cat-tag">🌙 نوم الطفل</span>
+            <span class="nb-art-badge">نصائح أمهات 💡</span>
+          </div>
+          <h3 class="nb-art-title">روتين نوم الطفل الرضيع وحلول مشكلة المغص والغازات</h3>
+          <p class="nb-art-desc">خطوات مجربة لتهدئة الرضيع، وتدليك المغص، ومساعدته على النوم المتواصل براحة واسترخاء.</p>
+        </div>
+        <div class="nb-art-footer">
+          <span class="nb-art-views">👁️ 4,750</span>
+          <span class="nb-art-time">⏱️ 6 دقائق</span>
+          <span class="nb-art-cta">اقرأي المقال ←</span>
+        </div>
+      </div>
+    </a>
   </div>
 </div>
 
@@ -380,6 +545,404 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- WIKI CAROUSELS -->
+<div id="wiki-carousels" style="max-width:1280px;margin:56px auto 0;padding:0 24px;">
+    <div style="text-align:center;margin-bottom:28px;">
+        <h2 style="font-size:32px;font-weight:900;color:#1F1A20;margin-bottom:8px;">موسوعة نبضة الشاملة (2,500+ مقال)</h2>
+        <p style="font-size:16px;color:#8F8795;">محتوى طبي وتفاعلي موثق بأحدث المراجع العالمية لجميع مراحل حياتكِ</p>
+    </div>
+
+    <section class="landing-carousel" data-cat="pregnancy">
+        <div class="carousel-header">
+            <h2>🤰 مقالات الحمل والولادة</h2>
+            <a href="articles.html?filter=pregnancy" class="more-btn">قراءة المزيد ←</a>
+        </div>
+        <div class="carousel-scroll">
+            <a href="articles.html?id=smart_500_1501" class="mini-card">
+                <img src="assets/images/articles_bg/bg_pregnancy_02.jpg" alt="خطوة بخطوة: أهم علامات تدل على الحمل بتوأم لنتائج مضمونة ومريحة 🤰" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>خطوة بخطوة: أهم علامات تدل على الحمل بتوأم لنتائج مضمونة ومريحة 🤰</h4>
+                    <span class="mini-card-time">⏱ 5 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1502" class="mini-card">
+                <img src="assets/images/articles_bg/bg_pregnancy_01.jpg" alt="إكسير الراحة والسكينة: نقص المغنيسيوم عند الحامل سيصيبك بهذه التشنجات بأبسط الخطوات 👶" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>إكسير الراحة والسكينة: نقص المغنيسيوم عند الحامل سيصيبك بهذه التشنجات بأبسط الخط</h4>
+                    <span class="mini-card-time">⏱ 5 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1503" class="mini-card">
+                <img src="assets/images/articles_bg/bg_pregnancy_04.jpg" alt="ملفكِ الشامل: لمعرفة جنس الجنين 4 نصائح قبل عمل السونار للحامل بأعلى نسب نجاح 👶" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>ملفكِ الشامل: لمعرفة جنس الجنين 4 نصائح قبل عمل السونار للحامل بأعلى نسب نجاح 👶</h4>
+                    <span class="mini-card-time">⏱ 6 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1504" class="mini-card">
+                <img src="assets/images/articles_bg/bg_pregnancy_02.jpg" alt="احذري إهمال ذلك: تغذية الحامل بتوأم المثالية تبدأ من الشهر الأول والحلول الصحيحة 🩺" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>احذري إهمال ذلك: تغذية الحامل بتوأم المثالية تبدأ من الشهر الأول والحلول الصحيحة</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1505" class="mini-card">
+                <img src="assets/images/articles_bg/bg_pregnancy_05.jpg" alt="هل المثبتات تمنع الولادة الطبيعية؟ الدليل العلمي الشامل والموثق 🌸" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>هل المثبتات تمنع الولادة الطبيعية؟ الدليل العلمي الشامل والموثق 🌸</h4>
+                    <span class="mini-card-time">⏱ 5 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1506" class="mini-card">
+                <img src="assets/images/articles_bg/bg_pregnancy_02.jpg" alt="خطوة بخطوة: أبرز دلالات الحمل بولد الأكيدة لنتائج مضمونة ومريحة 🩺" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>خطوة بخطوة: أبرز دلالات الحمل بولد الأكيدة لنتائج مضمونة ومريحة 🩺</h4>
+                    <span class="mini-card-time">⏱ 6 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1507" class="mini-card">
+                <img src="assets/images/articles_bg/bg_pregnancy_02.jpg" alt="كل ما تحتاجين معرفته: سكري الحمل هل يؤثر على الجنين بنصائح استشاريين 🩺" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>كل ما تحتاجين معرفته: سكري الحمل هل يؤثر على الجنين بنصائح استشاريين 🩺</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1508" class="mini-card">
+                <img src="assets/images/articles_bg/bg_pregnancy_04.jpg" alt="الدليل الطبي الشامل: أضرار الساونا للحامل متعة قد تدمر حملك بطرق آمنة وموثقة 🩺" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>الدليل الطبي الشامل: أضرار الساونا للحامل متعة قد تدمر حملك بطرق آمنة وموثقة 🩺</h4>
+                    <span class="mini-card-time">⏱ 6 دقائق</span>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section class="landing-carousel" data-cat="beauty">
+        <div class="carousel-header">
+            <h2>💄 جمالكِ وعنايتك</h2>
+            <a href="articles.html?filter=beauty" class="more-btn">قراءة المزيد ←</a>
+        </div>
+        <div class="carousel-scroll">
+            <a href="articles.html?id=smart_500_0501" class="mini-card">
+                <img src="assets/images/articles_bg/bg_beauty_05.jpg" alt="ملفكِ الشامل: 4 نصائح عناية بالبشرة لتجنب أي تجاعيد أو شيخوخة مبكرة بأعلى نسب نجاح 🌸" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>ملفكِ الشامل: 4 نصائح عناية بالبشرة لتجنب أي تجاعيد أو شيخوخة مبكرة بأعلى نسب نج</h4>
+                    <span class="mini-card-time">⏱ 3 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_0502" class="mini-card">
+                <img src="assets/images/articles_bg/bg_beauty_04.jpg" alt="كيف تعتني العروس بجمالها وشعرها في الصيف؟ حقائق مؤكدة تفاجئكِ 💖" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>كيف تعتني العروس بجمالها وشعرها في الصيف؟ حقائق مؤكدة تفاجئكِ 💖</h4>
+                    <span class="mini-card-time">⏱ 4 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_0503" class="mini-card">
+                <img src="assets/images/articles_bg/bg_beauty_03.jpg" alt="كل ما تحتاجين معرفته: عروس على الأبواب بمحفظة نقدية فارغة ! إليكِ البديل بنصائح استشاريين 💖" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>كل ما تحتاجين معرفته: عروس على الأبواب بمحفظة نقدية فارغة ! إليكِ البديل بنصائح </h4>
+                    <span class="mini-card-time">⏱ 3 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_0504" class="mini-card">
+                <img src="assets/images/articles_bg/bg_beauty_05.jpg" alt="كل ما تحتاجين معرفته: أفضل أنواع الزيوت الطبيعية لشعر جميل قبل زفافك بنصائح استشاريين 💖" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>كل ما تحتاجين معرفته: أفضل أنواع الزيوت الطبيعية لشعر جميل قبل زفافك بنصائح استش</h4>
+                    <span class="mini-card-time">⏱ 3 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_0505" class="mini-card">
+                <img src="assets/images/articles_bg/bg_beauty_04.jpg" alt="احذري إهمال ذلك: ماسكات العروس للشعر الجاف والباهت والحلول الصحيحة 🌸" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>احذري إهمال ذلك: ماسكات العروس للشعر الجاف والباهت والحلول الصحيحة 🌸</h4>
+                    <span class="mini-card-time">⏱ 3 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_0506" class="mini-card">
+                <img src="assets/images/articles_bg/bg_beauty_01.jpg" alt="هل يسبب لكِ شعرك المجعد إحراجًا في أول أيام زواجك ! إليك الحل؟ إليكِ الإجابة الطبية القاطعة 🌸" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>هل يسبب لكِ شعرك المجعد إحراجًا في أول أيام زواجك ! إليك الحل؟ إليكِ الإجابة الط</h4>
+                    <span class="mini-card-time">⏱ 3 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_0507" class="mini-card">
+                <img src="assets/images/articles_bg/bg_beauty_02.jpg" alt="دليل نبضة الموثق: عناية خاصة للعروس ببتلات الورد لراحة بال تامة 🌿" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>دليل نبضة الموثق: عناية خاصة للعروس ببتلات الورد لراحة بال تامة 🌿</h4>
+                    <span class="mini-card-time">⏱ 3 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_0508" class="mini-card">
+                <img src="assets/images/articles_bg/bg_beauty_01.jpg" alt="كيف تتخلصي من البقع الداكنة على البشرة قبل زفافكِ؟ كشف السر وخطوات الحل السريع 🌸" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>كيف تتخلصي من البقع الداكنة على البشرة قبل زفافكِ؟ كشف السر وخطوات الحل السريع 🌸</h4>
+                    <span class="mini-card-time">⏱ 3 دقائق</span>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section class="landing-carousel" data-cat="baby">
+        <div class="carousel-header">
+            <h2>👶 رعاية الرضيع</h2>
+            <a href="articles.html?filter=baby" class="more-btn">قراءة المزيد ←</a>
+        </div>
+        <div class="carousel-scroll">
+            <a href="articles.html?id=smart_500_2161" class="mini-card">
+                <img src="assets/images/articles_bg/bg_baby_01.jpg" alt="خطوة بخطوة: أضرار إطعام الطفل في الشهر الثالث واحذري منها لنتائج مضمونة ومريحة 🍼" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>خطوة بخطوة: أضرار إطعام الطفل في الشهر الثالث واحذري منها لنتائج مضمونة ومريحة 🍼</h4>
+                    <span class="mini-card-time">⏱ 5 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_2162" class="mini-card">
+                <img src="assets/images/articles_bg/bg_baby_01.jpg" alt="إكسير الراحة والسكينة: البراز الاخضر للرضيع! متى يكون الأمر مقلقًا بأبسط الخطوات 🌙" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>إكسير الراحة والسكينة: البراز الاخضر للرضيع! متى يكون الأمر مقلقًا بأبسط الخطوات</h4>
+                    <span class="mini-card-time">⏱ 5 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_2163" class="mini-card">
+                <img src="assets/images/articles_bg/bg_baby_02.jpg" alt="الدليل الطبي الشامل: الدليل الشامل لرحلة رضاعه طفلك حتى خطوة الفطام بطرق آمنة وموثقة 💖" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>الدليل الطبي الشامل: الدليل الشامل لرحلة رضاعه طفلك حتى خطوة الفطام بطرق آمنة وم</h4>
+                    <span class="mini-card-time">⏱ 3 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_2164" class="mini-card">
+                <img src="assets/images/articles_bg/bg_baby_01.jpg" alt="إكسير الراحة والسكينة: الطبقة البيضاء على بشرة المولود لا تنظيفها فورا بأبسط الخطوات 🧸" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>إكسير الراحة والسكينة: الطبقة البيضاء على بشرة المولود لا تنظيفها فورا بأبسط الخ</h4>
+                    <span class="mini-card-time">⏱ 6 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_2165" class="mini-card">
+                <img src="assets/images/articles_bg/bg_baby_02.jpg" alt="إكسير الراحة والسكينة: الرضاعة في رمضان؛ كيف تغذي رضيعكِ وأنتِ صائمة بأبسط الخطوات 💖" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>إكسير الراحة والسكينة: الرضاعة في رمضان؛ كيف تغذي رضيعكِ وأنتِ صائمة بأبسط الخطو</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_2166" class="mini-card">
+                <img src="assets/images/articles_bg/bg_baby_01.jpg" alt="إكسير الراحة والسكينة: اقتربت ولادتكِ؟ إذًا يجب أن تعلمي هذه الأشياء عن الرضيع بأبسط الخطوات 💖" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>إكسير الراحة والسكينة: اقتربت ولادتكِ؟ إذًا يجب أن تعلمي هذه الأشياء عن الرضيع ب</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_131" class="mini-card">
+                <img src="assets/images/articles_bg/bg_baby_03.jpg" alt="الدليل الطبي الشامل: الصيام والرضاعة في رمضان هل سيضر رضيعك بطرق آمنة وموثقة 🍼" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>الدليل الطبي الشامل: الصيام والرضاعة في رمضان هل سيضر رضيعك بطرق آمنة وموثقة 🍼</h4>
+                    <span class="mini-card-time">⏱ 6 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_142" class="mini-card">
+                <img src="assets/images/articles_bg/bg_baby_03.jpg" alt="طرق مجربة وموثقة: 5 خطوات سحرية للاستعداد لـ الرضاعة الطبيعية قبل الولادة خطوة بخطوة 💖" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>طرق مجربة وموثقة: 5 خطوات سحرية للاستعداد لـ الرضاعة الطبيعية قبل الولادة خطوة ب</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section class="landing-carousel" data-cat="fertility">
+        <div class="carousel-header">
+            <h2>🌸 التبويض والخصوبة</h2>
+            <a href="articles.html?filter=fertility" class="more-btn">قراءة المزيد ←</a>
+        </div>
+        <div class="carousel-scroll">
+            <a href="articles.html?id=smart_500_001" class="mini-card">
+                <img src="assets/images/articles_bg/bg_fertility_05.jpg" alt="متى تبدا اعراض الحمل بالظهور! وما الفرق بينها وبين الدورة؟ ٥ حقائق خفية لم يخبركِ بها أحد ✨" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>متى تبدا اعراض الحمل بالظهور! وما الفرق بينها وبين الدورة؟ ٥ حقائق خفية لم يخبرك</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_191" class="mini-card">
+                <img src="assets/images/articles_bg/bg_fertility_03.jpg" alt="إكسير الراحة والسكينة: لحمية الرحم اثناء الحمل وتأثيرها على الولادة بأبسط الخطوات 🌸" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>إكسير الراحة والسكينة: لحمية الرحم اثناء الحمل وتأثيرها على الولادة بأبسط الخطوا</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_192" class="mini-card">
+                <img src="assets/images/articles_bg/bg_fertility_04.jpg" alt="هل لحمية الرحم تمنع الحمل؟ وهل يمكن علاجها بالأعشاب؟ ٥ حقائق خفية لم يخبركِ بها أحد ✨" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>هل لحمية الرحم تمنع الحمل؟ وهل يمكن علاجها بالأعشاب؟ ٥ حقائق خفية لم يخبركِ بها </h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_193" class="mini-card">
+                <img src="assets/images/articles_bg/bg_fertility_04.jpg" alt="هل لحمية الرحم تسبب سرطان؟ وكيف يمكن علاجها؟ الدليل العلمي الشامل والموثق 💊" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>هل لحمية الرحم تسبب سرطان؟ وكيف يمكن علاجها؟ الدليل العلمي الشامل والموثق 💊</h4>
+                    <span class="mini-card-time">⏱ 6 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_194" class="mini-card">
+                <img src="assets/images/articles_bg/bg_fertility_05.jpg" alt="هل لحمية الرحم تنزل مع الدورة وما هي طرق العلاج؟ كشف السر الطبي وخطوات العلاج 💊" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>هل لحمية الرحم تنزل مع الدورة وما هي طرق العلاج؟ كشف السر الطبي وخطوات العلاج 💊</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_195" class="mini-card">
+                <img src="assets/images/articles_bg/bg_fertility_04.jpg" alt="احذري إهمال ذلك: الدليل الطبي الشامل حول لحمية عنق الرحم والحلول الطبية الصحيحة 💊" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>احذري إهمال ذلك: الدليل الطبي الشامل حول لحمية عنق الرحم والحلول الطبية الصحيحة </h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_196" class="mini-card">
+                <img src="assets/images/articles_bg/bg_fertility_03.jpg" alt="دليل نبضة الموثق: شكل لحمية الرحم الأعراض، الأسباب، وطرق العلاج لراحة بال تامة 📅" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>دليل نبضة الموثق: شكل لحمية الرحم الأعراض، الأسباب، وطرق العلاج لراحة بال تامة 📅</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_197" class="mini-card">
+                <img src="assets/images/articles_bg/bg_fertility_03.jpg" alt="السر المجهول: فوائد حاسبة الدورة الشهرية وكيفية استخدامها وكيف تستفيدين منه فوراً؟ ✨" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>السر المجهول: فوائد حاسبة الدورة الشهرية وكيفية استخدامها وكيف تستفيدين منه فورا</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section class="landing-carousel" data-cat="health">
+        <div class="carousel-header">
+            <h2>💗 صحّة المرأة</h2>
+            <a href="articles.html?filter=health" class="more-btn">قراءة المزيد ←</a>
+        </div>
+        <div class="carousel-scroll">
+            <a href="articles.html?id=smart_500_1038" class="mini-card">
+                <img src="assets/images/articles_bg/bg_health_05.jpg" alt="هل يمكن تنظيم الدورة الشهرية بدون أدوية؟ إليكِ الإجابة الطبية القاطعة ⭐" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>هل يمكن تنظيم الدورة الشهرية بدون أدوية؟ إليكِ الإجابة الطبية القاطعة ⭐</h4>
+                    <span class="mini-card-time">⏱ 5 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_109" class="mini-card">
+                <img src="assets/images/articles_bg/bg_health_02.jpg" alt="احذري إهمال ذلك: أهم فوائد فيتامين د للنساء للحوامل والحلول الطبية الصحيحة 💊" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>احذري إهمال ذلك: أهم فوائد فيتامين د للنساء للحوامل والحلول الطبية الصحيحة 💊</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1054" class="mini-card">
+                <img src="assets/images/articles_bg/bg_health_01.jpg" alt="دليل نبضة الموثق: حقيقة عفن الفوط الصحية هل هو مجرد ترند أم خطر حقيقي لراحة بال تامة 🩺" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>دليل نبضة الموثق: حقيقة عفن الفوط الصحية هل هو مجرد ترند أم خطر حقيقي لراحة بال </h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1055" class="mini-card">
+                <img src="assets/images/articles_bg/bg_health_05.jpg" alt="هل قلة نزيف الدورة أمر طبيعي أم علامة يجب فحصها؟ إليكِ الإجابة الطبية القاطعة 💊" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>هل قلة نزيف الدورة أمر طبيعي أم علامة يجب فحصها؟ إليكِ الإجابة الطبية القاطعة 💊</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1056" class="mini-card">
+                <img src="assets/images/articles_bg/bg_health_02.jpg" alt="دليل نبضة الموثق: أخطاء في التعامل مع آلام الدورة تفاقمها دون أن تشعري لراحة بال تامة 💡" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>دليل نبضة الموثق: أخطاء في التعامل مع آلام الدورة تفاقمها دون أن تشعري لراحة بال</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1057" class="mini-card">
+                <img src="assets/images/articles_bg/bg_health_03.jpg" alt="الدليل الطبي الشامل: أفضل المأكولات لتخفيف أعراض الدورة الشهرية بطرق آمنة وموثقة 🩺" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>الدليل الطبي الشامل: أفضل المأكولات لتخفيف أعراض الدورة الشهرية بطرق آمنة وموثقة</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1058" class="mini-card">
+                <img src="assets/images/articles_bg/bg_health_04.jpg" alt="السر المجهول: غياب هذا العنصر يضاعف آلام الدورة الشهرية وكيف تستفيدين منه فوراً؟ 💡" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>السر المجهول: غياب هذا العنصر يضاعف آلام الدورة الشهرية وكيف تستفيدين منه فوراً؟</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1059" class="mini-card">
+                <img src="assets/images/articles_bg/bg_health_01.jpg" alt="إكسير الراحة والسكينة: هذه العادة اليومية قد تكون السبب في شدة أعراض الدورة لديكِ بأبسط الخطوات 🩺" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>إكسير الراحة والسكينة: هذه العادة اليومية قد تكون السبب في شدة أعراض الدورة لديك</h4>
+                    <span class="mini-card-time">⏱ 5 دقائق</span>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section class="landing-carousel" data-cat="marriage">
+        <div class="carousel-header">
+            <h2>💕 حياتك الزوجية</h2>
+            <a href="articles.html?filter=marriage" class="more-btn">قراءة المزيد ←</a>
+        </div>
+        <div class="carousel-scroll">
+            <a href="articles.html?id=smart_500_006" class="mini-card">
+                <img src="assets/images/articles_bg/bg_marriage_01.jpg" alt="ملفكِ الشامل: انا حامل 13 طريقة مثالية لـ تعامل الزوج مع زوجته الحامل بأعلى نسب نجاح 💖" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>ملفكِ الشامل: انا حامل 13 طريقة مثالية لـ تعامل الزوج مع زوجته الحامل بأعلى نسب </h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_012" class="mini-card">
+                <img src="assets/images/articles_bg/bg_marriage_05.jpg" alt="خطوة بخطوة: حركه الجنين رسائل صغيرة تكشف الكثير عن حالته لنتائج مضمونة ومريحة 🗝️" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>خطوة بخطوة: حركه الجنين رسائل صغيرة تكشف الكثير عن حالته لنتائج مضمونة ومريحة 🗝️</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_049" class="mini-card">
+                <img src="assets/images/articles_bg/bg_marriage_02.jpg" alt="خطوة بخطوة: جنين عمره شهر من خلية صغيرة إلى قلب ينبض بالحياة لنتائج مضمونة ومريحة 🗝️" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>خطوة بخطوة: جنين عمره شهر من خلية صغيرة إلى قلب ينبض بالحياة لنتائج مضمونة ومريح</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_147" class="mini-card">
+                <img src="assets/images/articles_bg/bg_marriage_03.jpg" alt="احذري إهمال ذلك: ارسمي دور الزوج أثناء الحمل بنفسك واجعليه يشاركك لحظاتك والحلول الطبية الصحيحة 🗝️" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>احذري إهمال ذلك: ارسمي دور الزوج أثناء الحمل بنفسك واجعليه يشاركك لحظاتك والحلول</h4>
+                    <span class="mini-card-time">⏱ 6 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1167" class="mini-card">
+                <img src="assets/images/articles_bg/bg_marriage_02.jpg" alt="كيف أتجنب الخلافات الزوجية المستمرة ؟ لا تدخلي أنواع النساء هذه بيتك؟ حقائق مؤكدة تفاجئكِ 🌸" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>كيف أتجنب الخلافات الزوجية المستمرة ؟ لا تدخلي أنواع النساء هذه بيتك؟ حقائق مؤكد</h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1168" class="mini-card">
+                <img src="assets/images/articles_bg/bg_marriage_05.jpg" alt="كيف نتعامل مع تدخل أهل الزوجة بحكمة؟ ٥ حقائق خفية لم يخبركِ بها أحد 🗝️" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>كيف نتعامل مع تدخل أهل الزوجة بحكمة؟ ٥ حقائق خفية لم يخبركِ بها أحد 🗝️</h4>
+                    <span class="mini-card-time">⏱ 6 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1169" class="mini-card">
+                <img src="assets/images/articles_bg/bg_marriage_01.jpg" alt="كيف اجعل زوجي يحبني ولا يرى غيري؟ كشف السر وخطوات الحل السريع 🌸" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>كيف اجعل زوجي يحبني ولا يرى غيري؟ كشف السر وخطوات الحل السريع 🌸</h4>
+                    <span class="mini-card-time">⏱ 5 دقائق</span>
+                </div>
+            </a>
+            <a href="articles.html?id=smart_500_1170" class="mini-card">
+                <img src="assets/images/articles_bg/bg_marriage_05.jpg" alt="إكسير الراحة والسكينة: اختبار الأنوثة أين تقفين على مقياس الأنوثة الحقيقي بأبسط الخطوات 🧠" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>إكسير الراحة والسكينة: اختبار الأنوثة أين تقفين على مقياس الأنوثة الحقيقي بأبسط </h4>
+                    <span class="mini-card-time">⏱ 7 دقائق</span>
+                </div>
+            </a>
+        </div>
+    </section>
 </div>
 
 <!-- FOOTER -->
@@ -410,7 +973,7 @@
         <h4 style="font-size:15px;font-weight:800;margin-bottom:14px">المجتمع</h4>
         <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:#8F8795">
           <span style="cursor:pointer" onclick="nb('community')">المنتدى</span>
-          <span style="cursor:pointer" onclick="nb('pregnancy')">المقالات</span>
+          <a href="articles.html" style="cursor:pointer;text-decoration:none;color:inherit">موسوعة المقالات (2,500+)</a>
         </div>
       </div>
       <div>

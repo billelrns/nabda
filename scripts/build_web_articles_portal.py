@@ -1,6 +1,10 @@
 import os
+import sys
 import json
 import shutil
+import re
+
+sys.stdout.reconfigure(encoding='utf-8')
 
 # Paths
 json_path = r'C:\nabda_app\assets\data\smart_2500_articles.json'
@@ -1753,3 +1757,119 @@ if os.path.exists(src_dir):
             shutil.copy2(s, d)
 
 print(f"SUCCESS: Generated complete Nabda-styled articles portal ({articles_count} articles) at {web_articles_path}")
+
+# Ensure articles_bg folder exists and background images are synchronized
+web_bg_dir = r'C:\nabda_app\web\assets\images\articles_bg'
+os.makedirs(web_bg_dir, exist_ok=True)
+src_bg_dir = r'C:\nabda_app\assets\images\articles_bg'
+if os.path.exists(src_bg_dir):
+    for item in os.listdir(src_bg_dir):
+        s = os.path.join(src_bg_dir, item)
+        d = os.path.join(web_bg_dir, item)
+        if os.path.isfile(s) and not os.path.exists(d):
+            shutil.copy2(s, d)
+    print(f"✓ Synchronized background images to {web_bg_dir}")
+
+def build_landing_carousels(articles, top_n=8):
+    """يبني HTML لكاروسالات لكل فئة، للحقن في landing.html."""
+    from collections import defaultdict
+    by_cat = defaultdict(list)
+    for a in articles:
+        by_cat[a.get('categoryId', '')].append(a)
+    
+    # ترتيب حسب المشاهدات في كل فئة، ثم أخذ top_n
+    cat_labels = {
+        'pregnancy': ('🤰 مقالات الحمل والولادة', 'pregnancy'),
+        'beauty': ('💄 جمالكِ وعنايتك', 'beauty'),
+        'baby': ('👶 رعاية الرضيع', 'baby'),
+        'fertility': ('🌸 التبويض والخصوبة', 'fertility'),
+        'health': ('💗 صحّة المرأة', 'health'),
+        'marriage': ('💕 حياتك الزوجية', 'marriage'),
+    }
+    
+    sections = []
+    for cat_id, (label, filter_val) in cat_labels.items():
+        cat_articles = sorted(by_cat.get(cat_id, []), 
+                             key=lambda a: -a.get('originalViews', 0))[:top_n]
+        if not cat_articles:
+            continue
+        
+        cards_html = '\n'.join([
+            f'''            <a href="articles.html?id={a['id']}" class="mini-card">
+                <img src="{a.get('imagePath', '')}" alt="{a['title']}" onerror="this.style.display='none'">
+                <div class="mini-card-body">
+                    <h4>{a['title'][:80]}</h4>
+                    <span class="mini-card-time">⏱ {a.get('readTime', '')}</span>
+                </div>
+            </a>'''
+            for a in cat_articles
+        ])
+        
+        sections.append(f'''
+    <section class="landing-carousel" data-cat="{cat_id}">
+        <div class="carousel-header">
+            <h2>{label}</h2>
+            <a href="articles.html?filter={filter_val}" class="more-btn">قراءة المزيد ←</a>
+        </div>
+        <div class="carousel-scroll">
+{cards_html}
+        </div>
+    </section>''')
+    
+    inner_content = '\n'.join(sections)
+    return f'<!-- WIKI CAROUSELS -->\n<div id="wiki-carousels" style="max-width:1280px;margin:56px auto 0;padding:0 24px;">\n    <div style="text-align:center;margin-bottom:28px;">\n        <h2 style="font-size:32px;font-weight:900;color:#1F1A20;margin-bottom:8px;">موسوعة نبضة الشاملة (2,500+ مقال)</h2>\n        <p style="font-size:16px;color:#8F8795;">محتوى طبي وتفاعلي موثق بأحدث المراجع العالمية لجميع مراحل حياتكِ</p>\n    </div>\n{inner_content}\n</div>'
+
+def update_landing_html(articles):
+    landing_path = r'C:\nabda_app\web\landing.html'
+    if not os.path.exists(landing_path):
+        print(f"Warning: {landing_path} not found")
+        return
+    
+    with open(landing_path, 'r', encoding='utf-8') as f:
+        html = f.read()
+
+    css_rules = """
+  /* Landing Carousels — موسوعة نبضة */
+  #wiki-carousels { max-width: 1280px; margin: 56px auto 0; }
+  .landing-carousel { margin: 36px 0; padding: 0; }
+  .carousel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .carousel-header h2 { font-size: 22px; font-weight: 800; color: #E91E63; }
+  .more-btn { color: #E91E63; text-decoration: none; font-weight: 700; font-size: 13px; padding: 7px 18px; background: #FDE8EF; border-radius: 20px; transition: all .2s; }
+  .more-btn:hover { background: #F8BBD0; transform: translateY(-2px); }
+  .carousel-scroll { display: flex; overflow-x: auto; gap: 14px; padding-bottom: 14px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+  .mini-card { flex: 0 0 210px; text-decoration: none; color: inherit; background: white; border: 1px solid #F8E1EA; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(244,63,126,.06); transition: all .3s cubic-bezier(0.165,0.84,0.44,1); display: flex; flex-direction: column; }
+  .mini-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(244,63,126,.14); border-color: rgba(244,63,126,.35); }
+  .mini-card img { width: 100%; height: 120px; object-fit: cover; display: block; }
+  .mini-card-body { padding: 12px 14px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; }
+  .mini-card-body h4 { font-size: 13px; font-weight: 700; margin: 0 0 8px 0; line-height: 1.45; color: #1F1A20; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 38px; }
+  .mini-card-time { font-size: 11px; color: #8F8795; }
+"""
+
+    if '.landing-carousel' not in html:
+        style_close = '</style>'
+        if style_close in html:
+            html = html.replace(style_close, f'{css_rules}\n{style_close}', 1)
+            print("✓ Injected carousel CSS into landing.html")
+
+    carousels_html = build_landing_carousels(articles, top_n=8)
+
+    if 'id="wiki-carousels"' in html:
+        html = re.sub(r'<!-- WIKI CAROUSELS -->.*?</div>\s*(?=<!-- FOOTER -->)', f'{carousels_html}\n\n', html, flags=re.DOTALL)
+        if 'id="wiki-carousels"' not in html:
+            # Fallback regex
+            html = re.sub(r'<div id="wiki-carousels".*?</div>\s*</div>\s*(?=<!-- FOOTER -->)', f'{carousels_html}\n\n', html, flags=re.DOTALL)
+        print("✓ Updated existing wiki-carousels in landing.html")
+    else:
+        footer_marker = '<!-- FOOTER -->'
+        if footer_marker in html:
+            html = html.replace(footer_marker, f'{carousels_html}\n\n{footer_marker}', 1)
+            print("✓ Injected wiki-carousels before <!-- FOOTER --> in landing.html")
+        else:
+            print("ERROR: <!-- FOOTER --> not found in landing.html")
+
+    with open(landing_path, 'w', encoding='utf-8') as f:
+        f.write(html)
+    print("✓ Successfully updated web/landing.html")
+
+update_landing_html(articles)
+
