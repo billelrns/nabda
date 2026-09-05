@@ -22,10 +22,18 @@ import 'firebase_options.dart';
 import 'screens/community/community_screen.dart';
 import 'screens/pregnancy/pregnancy_weeks_screen.dart';
 import 'screens/shop/shop_page.dart';
+import 'screens/articles/articles_hub_screen.dart';
 import 'widgets/news_section.dart';
 import 'widgets/nabda_ui.dart';
 import 'widgets/nabda_animated_logo.dart';
 import 'utils/article_images.dart';
+import 'utils/fetus_size.dart';
+import 'widgets/nabda_article_ad.dart';
+import 'widgets/article_engagement_bar.dart';
+
+import 'services/admob_service.dart';
+import 'services/pregnancy_dates_service.dart';
+import 'widgets/due_date_card.dart';
 import 'screens/fertility/fertility_screen.dart';
 import 'services/country_currency_service.dart';
 import 'services/notification_service.dart';
@@ -41,6 +49,7 @@ import 'screens/intro_screen.dart';
 import 'screens/baby_names/baby_names_screen.dart';
 import 'screens/trackers/weight_tracker_screen.dart';
 import 'screens/trackers/health_trackers_screen.dart';
+import 'screens/doctors/doctors_list_screen.dart';
 import 'screens/pregnancy/pregnancy_calendar_screen.dart';
 import 'screens/pregnancy/pregnancy_journal_screen.dart';
 import 'screens/pregnancy/fetus_size_screen.dart';
@@ -53,11 +62,23 @@ import 'screens/pregnancy/share_progress_screen.dart';
 import 'widgets/personalized_tips.dart';
 import 'widgets/cycle_calendar.dart';
 import 'widgets/conditional_content.dart';
+import 'widgets/smart_articles_carousel.dart';
+import 'screens/articles/smart_article_detail_screen.dart';
+import 'screens/articles/smart_articles_list_screen.dart';
+import 'screens/fiqh/womens_fiqh_screen.dart';
+import 'screens/qadaa/qadaa_screen.dart';
+import 'screens/profile/favorites_screen.dart';
+import 'screens/profile/my_posts_screen.dart';
+import 'screens/profile/support_screen.dart';
+import 'screens/profile/about_screen.dart';
+import 'screens/profile/data_control_screen.dart';
+import 'screens/profile/blocked_users_screen.dart';
+import 'screens/profile/follows_screen.dart';
+import 'services/app_rating_share_service.dart';
+import 'widgets/baby_logs_chart.dart';
 import 'models/pregnancy_week_articles.dart' show pregnancyMonthArForWeek;
 import 'widgets/cycle_analysis_screen.dart';
 import 'widgets/cycle_phase_wheel.dart';
-import 'widgets/smart_articles_carousel.dart';
-import 'screens/articles/smart_article_detail_screen.dart';
 import 'web/web_home.dart';
 import 'web/web_pregnancy.dart';
 import 'web/web_public_home.dart';
@@ -185,12 +206,16 @@ void main() async {
     tz.setLocalLocation(tz.getLocation('Africa/Algiers'));
   } catch (_) {}
 
-  // ✅ الإصلاح الحقيقي لخطأ ca9 على الويب: تعطيل التخزين المحلي (IndexedDB)
-  // الذي يسبب "FIRESTORE INTERNAL ASSERTION FAILED: Unexpected state"
+  // ✅ إصلاح خطأ ca9 على الويب: تعطيل التخزين المحلي (IndexedDB) هناك فقط.
+  // ⚠️ على الموبايل نُبقي الكاش مفعّلاً — تعطيله كان يبطّئ الإقلاع ويجبر
+  //    كل قراءة على الذهاب للشبكة، ويجعل التطبيق بلا عمل دون اتصال.
   try {
-    FirebaseFirestore.instance.settings = const Settings(
-      persistenceEnabled: false,
-    );
+    FirebaseFirestore.instance.settings = kIsWeb
+        ? const Settings(persistenceEnabled: false)
+        : const Settings(
+            persistenceEnabled: true,
+            cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+          );
   } catch (_) {}
 
   // تجاهل أخطاء Firestore الداخلية (ca9) على الويب
@@ -224,8 +249,8 @@ void main() async {
     } catch (_) {}
   }
 
-  // طلب أذونات إشعارات الأدوية وإنشاء القناة
-  await NotifService.ensureMedSetup();
+  // طلب أذونات إشعارات الأدوية وإنشاء القناة — في الخلفية حتى لا تؤخّر الإقلاع
+  NotifService.ensureMedSetup();
 
   await localeNotifier.loadSavedLocale();
   CountryCurrencyService().initialize();
@@ -246,6 +271,11 @@ void main() async {
       // تجاهل: العرض سيتمّ بخطّ احتياطي، ثم يُبدَّل تلقائيًا عند وصول الخطّ.
     }
   }
+
+  // خريطة عنوان المقال → معرّفه (ملف JSON صغير — سريع)
+  await ArticleImages.preload();
+  // AdMob لا يجب أن يحجب أول إطار
+  AdMobService.init();
 
   runApp(NabdaApp());
 }
@@ -303,7 +333,10 @@ class _RootGateState extends State<RootGate> {
 
   Future<void> _afterSplash() async {
     final prefs = await SharedPreferences.getInstance();
-    final introSeen = prefs.getBool('intro_seen') ?? false;
+    // 🔑 مفتاح مُرقَّم: بعد إعادة تصميم شاشات التعريف (صور Golden Hour الجديدة)
+    // كان المفتاح القديم `intro_seen` مضبوطاً على true عند كل من فتح التطبيق
+    // سابقاً، فلا تظهر الشاشات الجديدة أبداً. رفع الإصدار يُظهرها مرّة واحدة.
+    final introSeen = prefs.getBool('intro_seen_v2') ?? false;
     if (!mounted) return;
     setState(() => _phase = (introSeen || kIsWeb) ? 2 : 1);
   }
@@ -419,7 +452,15 @@ class AuthGate extends StatelessWidget {
                 });
               }
               if (!done) return OnboardingScreen(onDone: () {});
-              return MainNav();
+              // المرحلة الفعلية من Firestore — والحمل النشط له الأولوية
+              // (حسابات قديمة قد يكون فيها lifeStage = cycle رغم وجود حمل)
+              final pd = PregnancyDates.fromUserData(ud);
+              final stage = pd.isActive
+                  ? 'pregnant'
+                  : (ud['babyBirthDate'] != null
+                      ? 'baby'
+                      : ud['lifeStage'] as String?);
+              return MainNav(initialStage: stage);
             },
           );
         }
@@ -1906,10 +1947,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       } else {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: email, password: passC.text);
-        // تحديث lastLoginAt في الدليل العامّ
-        await FirebaseFirestore.instance.collection('users_directory')
+        // تحديث lastLoginAt في الدليل العامّ — غير حاجب:
+        // ⚠️ كان await بلا try، فإذا رفضت قواعد Firestore الكتابة ظهرت
+        // الرسالة «حدث خطأ…» وبدا الدخول فاشلاً رغم نجاح المصادقة فعلاً.
+        FirebaseFirestore.instance.collection('users_directory')
             .doc(FirebaseAuth.instance.currentUser!.uid)
-            .set({'lastLoginAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+            .set({'lastLoginAt': FieldValue.serverTimestamp()}, SetOptions(merge: true))
+            .catchError((e) => debugPrint('lastLoginAt skip: $e'));
       }
       // نجح الدخول/التسجيل: علّمي الجهاز أنّ لديه حساباً (العودة لاحقاً بوضع الدخول)
       final prefs = await SharedPreferences.getInstance();
@@ -2328,39 +2372,47 @@ class _AuthBgPainter extends CustomPainter {
 
 // ==================== MAIN NAVIGATION ====================
 class MainNav extends StatefulWidget {
+  /// مرحلة المستخدمة من Firestore (المصدر الموثوق) — تُحدّد التبويب الأوّل
+  /// قبل أول إطار، فلا تظهر شاشة خاطئة لثوانٍ ثم تتبدّل.
+  final String? initialStage;
+  const MainNav({Key? key, this.initialStage}) : super(key: key);
+
   @override
   State<MainNav> createState() => _MainNavState();
 }
 
 class _MainNavState extends State<MainNav> {
-  int _index = 0;
+  late int _index;
   late final List<Widget> _pages;
+
+  static int _tabForStage(String? stage) {
+    switch (stage) {
+      case 'planning':
+      case 'pregnant':
+        return 2; // متابعة الحمل / محاولة الحمل
+      case 'cycle':
+        return 1; // الدورة
+      case 'baby':
+        return 3; // الطفل
+      default:
+        return 0; // الرئيسية
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    // التبويب الصحيح فوراً من بيانات Firestore الممرّرة
+    _index = _tabForStage(widget.initialStage);
     _pages = [HomePage(onCardTap: goToTab), CyclePage(), PregnancyPage(), BabyPage(), ShopPage()];
-    _applyInitialTab();
+    if (widget.initialStage == null) _applyInitialTab();
   }
 
-  // تهبط المستخدمة على التبويب المناسب لمرحلتها بعد الإعداد
+  // احتياطي فقط عند عدم تمرير المرحلة: نقرأها من التخزين المحلي
   Future<void> _applyInitialTab() async {
     final prefs = await SharedPreferences.getInstance();
-    final stage = prefs.getString('life_stage');
-    int? target;
-    switch (stage) {
-      case 'planning':
-      case 'pregnant':
-        target = 2; // متابعة الحمل / محاولة الحمل
-        break;
-      case 'cycle':
-        target = 1; // الدورة
-        break;
-      case 'baby':
-        target = 3; // الطفل
-        break;
-    }
-    if (target != null && mounted) setState(() => _index = target!);
+    final target = _tabForStage(prefs.getString('life_stage'));
+    if (target != 0 && mounted) setState(() => _index = target);
   }
 
   void goToTab(int index) => setState(() => _index = index);
@@ -2596,14 +2648,18 @@ class _MainNavState extends State<MainNav> {
                   ),
                 );
               }
-              return GestureDetector(
+              // Flexible يمنع تجاوز الشريط على الشاشات الضيّقة
+              // (كان يظهر شريط التحذير الأصفر/الأسود بمقدار ~6 بكسل)
+              return Flexible(
+                fit: FlexFit.loose,
+                child: GestureDetector(
                 onTap: () => setState(() => _index = i),
                 behavior: HitTestBehavior.opaque,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeOutCubic,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isActive ? 16 : 12,
+                    horizontal: isActive ? 12 : 6,
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
@@ -2636,19 +2692,25 @@ class _MainNavState extends State<MainNav> {
                           ? NabdaPulse(child: navIcon())
                           : Opacity(opacity: 0.82, child: navIcon()),
                       if (isActive) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          labels[i],
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            labels[i],
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.fade,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
+              ),
               );
             }),
           ),
@@ -2732,10 +2794,32 @@ class _MainNavState extends State<MainNav> {
                   _navItem(context, '📅', 'متابعة الدورة', tabIndex: 1),
                   _navItem(context, '👶', 'رعاية الطفل', tabIndex: 3),
                   _navItem(context, '💕', 'الخصوبة', onTap: () => _soon(context)),
-                  _navItem(context, '🩺', 'الأطباء', onTap: () => _soon(context)),
+                  _navItem(context, '🩺', 'الأطباء',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DoctorsListScreen()))),
                   _navItem(context, '📈', 'صحتي',
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthTrackersScreen()))),
-                  // ❌ أُزيلت "حسابي" و"الإعدادات" — مكرّرتان مع بطاقة البروفايل العلويّة.
+                  _sidebarDivider(line),
+                  // ── الموسوعة الشرعية والمقالات الذكية ──
+                  _navItem(context, '📗', 'فقه المرأة',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WomensFiqhScreen()))),
+                  _navItem(context, '🌙', 'قضاء الصيام',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QadaaScreen()))),
+                  _navItem(context, '📚', 'المقالات الذكية',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SmartArticlesListScreen()))),
+                  _sidebarDivider(line),
+                  // ── حسابي ──
+                  _navItem(context, '🔖', 'مقالاتي المحفوظة',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()))),
+                  _navItem(context, '📝', 'منشوراتي',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyPostsScreen()))),
+                  _navItem(context, '🛡️', 'الخصوصية والبيانات',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DataControlScreen()))),
+                  _navItem(context, '🚫', 'الحسابات المحظورة',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BlockedUsersScreen()))),
+                  _navItem(context, '💬', 'الدعم والمساعدة',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()))),
+                  _navItem(context, 'ℹ️', 'عن نبضة',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()))),
                 ],
               ),
             ),
@@ -2868,14 +2952,8 @@ class _HomePageState extends State<HomePage> {
     if (user == null) return;
     final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     final data = doc.data() ?? {};
-    int week = 0;
-    final pregStart = data['pregnancyStartDate'] ?? data['pregnancyStart'];
-    if (pregStart != null) {
-      try {
-        final start = (pregStart as Timestamp).toDate();
-        week = (DateTime.now().difference(start).inDays / 7).floor().clamp(1, 42);
-      } catch (_) {}
-    }
+    // ── مصدر موحّد لتواريخ الحمل (نفس ما يستعمله التقويم وصفحة الحمل) ──
+    final int week = PregnancyDates.fromUserData(data).week;
     // ── جلب بيانات الوزن الحقيقية ──
     double? curWeight, preWeight;
     try {
@@ -2928,13 +3006,7 @@ class _HomePageState extends State<HomePage> {
               if (snapshot.hasData && snapshot.data!.exists) {
                 _userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
                 if (_userData['name'] != null) _userName = _userData['name'] as String;
-                final pregStart = _userData['pregnancyStartDate'] ?? _userData['pregnancyStart'];
-                if (pregStart != null) {
-                  try {
-                    final start = (pregStart as Timestamp).toDate();
-                    _pregnancyWeek = (DateTime.now().difference(start).inDays / 7).floor().clamp(1, 42);
-                  } catch (_) {}
-                }
+                _pregnancyWeek = PregnancyDates.fromUserData(_userData).week;
               }
               return CustomScrollView(
                 slivers: [
@@ -3098,7 +3170,6 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(height: 16),
 
-                        
                         // ════════════ LATEST NEWS ════════════
                         Padding(
                           padding: const EdgeInsets.all(20),
@@ -3178,17 +3249,22 @@ const SizedBox(height: 30),
           // Image side
           ClipRRect(
             borderRadius: BorderRadius.circular(24),
-            child: Image.network(
-              'https://images.unsplash.com/photo-1556760544-74068565f05c?w=600&q=85',
+            child: Image.asset(
+              'assets/images/hero_home.png',
               width: 130, height: 180,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, __, ___) => Image.asset(
+                'assets/images/intro/intro_welcome.png',
                 width: 130, height: 180,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: const LinearGradient(colors: [Color(0xFFFFD9E5), Color(0xFFFFB1CD)]),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 130, height: 180,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: const LinearGradient(colors: [Color(0xFFFFD9E5), Color(0xFFFFB1CD)]),
+                  ),
+                  child: const Icon(Icons.pregnant_woman, size: 60, color: Color(0xFFB6195F)),
                 ),
-                child: const Icon(Icons.pregnant_woman, size: 60, color: Color(0xFFB6195F)),
               ),
             ),
           ),
@@ -3226,12 +3302,11 @@ const SizedBox(height: 30),
                   style: TextStyle(fontSize: 12, color: const Color(0xFF5A0F33).withOpacity(0.78), fontWeight: FontWeight.w500, height: 1.65),
                 ),
                 const SizedBox(height: 8),
-                // Mini pills
-                Row(children: [
+                // Mini pills — Wrap يمنع التجاوز على الشاشات الضيّقة
+                Wrap(spacing: 6, runSpacing: 6, children: [
                   _heroPill(_pregnancyWeek > 0
                       ? (_pregnancyWeek <= 13 ? 'الثلث الأول' : _pregnancyWeek <= 26 ? 'الثلث الثاني' : 'الثلث الثالث')
                       : 'ابدئي رحلتكِ'),
-                  const SizedBox(width: 6),
                   _heroPill('مزاج هادئ'),
                 ]),
               ],
@@ -3260,16 +3335,8 @@ const SizedBox(height: 30),
     final pct = (week / total).clamp(0.0, 1.0);
     final remaining = total - week;
 
-    // Fetus size data
-    final fetusSizes = {
-      4: '🫐 توت', 8: '🫒 زيتونة', 12: '🍋 ليمونة', 16: '🍎 تفاحة', 20: '🍌 موزة',
-      24: '🌽 ذرة', 26: '🥦 قرنبيط', 28: '🍆 باذنجانة', 30: '🥥 جوز هند', 32: '🍈 شمام',
-      34: '🍍 أناناس', 36: '🥬 خس', 38: '🍉 بطيخة', 40: '🎃 يقطينة',
-    };
-    String fetusSize = '🫘 بذرة';
-    for (final entry in fetusSizes.entries) {
-      if (week >= entry.key) fetusSize = entry.value;
-    }
+    // حجم الجنين — مصدر موحّد مع قسم الحمل (lib/utils/fetus_size.dart)
+    final fetusSize = FetusSize.labeled(week);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -3288,41 +3355,27 @@ const SizedBox(height: 30),
           // Row: Ring + Info
           Row(
             children: [
-              // Ring progress
+              // Ring progress — 118 بدل 130 لتفادي التجاوز على الشاشات الضيّقة
               SizedBox(
-                width: 130, height: 130,
+                width: 118, height: 118,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
                     CustomPaint(
-                      size: const Size(130, 130),
+                      size: const Size(118, 118),
                       painter: _TrackerRingPainter(pct),
                     ),
-                    // Baby emoji center
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 3600),
-                      builder: (_, v, child) {
-                        final yOffset = 3 * (0.5 - (0.5 * (1 + (2 * 3.14159 * v).remainder(6.28) < 3.14159 ? (2 * 3.14159 * v).remainder(3.14159) / 3.14159 : 1 - ((2 * 3.14159 * v).remainder(3.14159) / 3.14159)))).abs();
-                        return Transform.translate(
-                          offset: Offset(0, -yOffset),
-                          child: child,
-                        );
-                      },
-                      child: Container(
-                        width: 70, height: 70,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const RadialGradient(
-                            center: Alignment(-0.3, -0.4),
-                            colors: [Color(0xFFFFE6EF), Color(0xFFFFC0D6), Color(0xFFFF8DB7)],
-                            stops: [0, 0.6, 1],
-                          ),
-                          boxShadow: [
-                            BoxShadow(color: _pink.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 6)),
-                          ],
-                        ),
-                        child: const Center(child: Text('👶', style: TextStyle(fontSize: 34))),
+                    // الجنين الحقيقي يطفو داخل الرحم — نفس صورة قسم الحمل
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: _pink.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 6)),
+                        ],
+                      ),
+                      child: WombFloatingFetus(
+                        fetusAsset: 'assets/images/fetus_hd/week_${week.clamp(4, 41)}.png',
+                        size: 88,
                       ),
                     ),
                   ],
@@ -3350,7 +3403,14 @@ const SizedBox(height: 30),
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text('الأسبوع $week · ${pregnancyMonthArForWeek(week)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _pink)),
+                        Flexible(
+                          child: Text(
+                            'الأسبوع $week · ${pregnancyMonthArForWeek(week)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _pink),
+                          ),
+                        ),
                       ]),
                     ),
                     const SizedBox(height: 8),
@@ -3386,7 +3446,10 @@ const SizedBox(height: 30),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
+          // تاريخ الولادة المتوقّع — قابل للتعديل مع سؤال المصدر
+          DueDateCard(color: _pink, compact: true, onChanged: _loadData),
+          const SizedBox(height: 12),
           // CTA button
           GestureDetector(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyWeeksScreen())),
@@ -3850,6 +3913,15 @@ const SizedBox(height: 30),
       _QAData(Icons.emoji_events, 'الإنجازات', '7 شارات', '',
         [_gold, _goldDeep], () => Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsScreen())),
         asset: 'assets/icons_3d/icon_achievements.png'),
+      _QAData(Icons.menu_book, 'فقه المرأة', '273 حكماً شرعياً', '',
+        [_teal, _tealDeep],
+        () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WomensFiqhScreen()))),
+      _QAData(Icons.nightlight_round, 'قضاء الصيام', 'متتبّع أيام القضاء', '',
+        [_lavender, _lavender2],
+        () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QadaaScreen()))),
+      _QAData(Icons.auto_stories, 'موسوعة نبضة', '2,500 مقال', '',
+        [const Color(0xFFE91E63), const Color(0xFFC2185B)],
+        () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticlesHubScreen()))),
     ];
 
     return Column(
@@ -5491,14 +5563,6 @@ class _BabyPageState extends State<BabyPage> {
                         const PersonalizedTipsCard(stage: 'baby'),
                         const ConditionalContentSection(stage: 'baby'),
 
-                        const SizedBox(height: 14),
-                        const SmartArticlesCarousel(
-                          categoryFilter: 'baby',
-                          sectionTitle: 'مقالات رعاية الرضيع والطفل',
-                          sectionSubtitle: 'دليل الأمهات الجدد لنمو وتغذية ونوم الصغير',
-                        ),
-                        const SizedBox(height: 14),
-
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 BABY SELECTOR \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
                         if (babyDocs.isNotEmpty)
                           Container(
@@ -5661,6 +5725,21 @@ class _BabyPageState extends State<BabyPage> {
                               [_teal, _tealDeep], () => _addLog('diaper')),
                           ]),
                         ),
+
+                        // \u2500\u2500 \u0645\u062E\u0637\u0651\u0637 \u0622\u062E\u0631 7 \u0623\u064A\u0627\u0645 \u0644\u0643\u0644 \u0646\u0634\u0627\u0637 \u2500\u2500
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                          child: BabyLogsChart(babyId: activeBabyId),
+                        ),
+
+                        // \u2500\u2500 \u0645\u0642\u0627\u0644\u0627\u062A \u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0631\u0636\u064A\u0639 (\u0628\u0639\u062F \u0627\u0644\u0633\u062C\u0644 \u0627\u0644\u064A\u0648\u0645\u064A) \u2500\u2500
+                        const SizedBox(height: 18),
+                        const SmartArticlesCarousel(
+                          categoryFilter: 'baby',
+                          sectionTitle: '\u0645\u0642\u0627\u0644\u0627\u062A \u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0631\u0636\u064A\u0639 \u0648\u0627\u0644\u0637\u0641\u0644',
+                          sectionSubtitle: '\u062F\u0644\u064A\u0644 \u0627\u0644\u0623\u0645\u0647\u0627\u062A \u0627\u0644\u062C\u062F\u062F \u0644\u0646\u0645\u0648 \u0648\u062A\u063A\u0630\u064A\u0629 \u0648\u0646\u0648\u0645 \u0627\u0644\u0635\u063A\u064A\u0631',
+                        ),
+                        const SizedBox(height: 6),
 
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 VACCINES SECTION \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
                         _sectionHeader('\u0627\u0644\u062A\u0637\u0639\u064A\u0645\u0627\u062A', '\u0633\u062C\u0644 \u0627\u0644\u0644\u0642\u0627\u062D\u0627\u062A'),
@@ -7103,83 +7182,22 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
     ],
   };
 
-  static final Map<String, List<String>> _inlineImageSets = {
-    'حمل': [
-      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
-      'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=700&q=80',
-    ],
-    'حامل': [
-      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
-      'https://images.unsplash.com/photo-1509822929063-6b6cfc9b42f2?w=700&q=80',
-    ],
-    'طفل': [
-      'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=700&q=80',
-      'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=700&q=80',
-    ],
-    'رضاعة': [
-      'https://images.unsplash.com/photo-1584582397869-3e903bfe9985?w=700&q=80',
-      'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=700&q=80',
-    ],
-    'تغذية': [
-      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=700&q=80',
-      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=700&q=80',
-    ],
-    'غذاء': [
-      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=700&q=80',
-      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=700&q=80',
-    ],
-    'دورة': [
-      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=700&q=80',
-      'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=700&q=80',
-    ],
-    'رياضة': [
-      'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=700&q=80',
-      'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=700&q=80',
-    ],
-    'تمارين': [
-      'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=700&q=80',
-      'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=700&q=80',
-    ],
-    'نوم': [
-      'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=700&q=80',
-      'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=700&q=80',
-    ],
-    'فيتامين': [
-      'https://images.unsplash.com/photo-1505576399279-0d754c0fdc67?w=700&q=80',
-      'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=700&q=80',
-    ],
-    'نفسية': [
-      'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=700&q=80',
-      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=700&q=80',
-    ],
-    'طبيب': [
-      'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=700&q=80',
-      'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=700&q=80',
-    ],
-    'تطعيم': [
-      'https://images.unsplash.com/photo-1632053002928-1919605ee6f7?w=700&q=80',
-      'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=700&q=80',
-    ],
-    'بشرة': [
-      'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=700&q=80',
-      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=700&q=80',
-    ],
-    'ولادة': [
-      'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=700&q=80',
-      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
-    ],
-  };
+  /// مساحة إعلانية داخل المقال — AdMob ثم إعلاناتك ثم منتج مطابق للموضوع
+  Widget _adSlot(int slot) => NabdaArticleAd(
+        slot: slot,
+        articleId: widget.articleId ?? _title,
+        section: widget.section.isEmpty ? 'all' : widget.section,
+        articleTitle: _title,
+        articleBody: _body,
+        color: widget.color,
+      );
 
+  /// صور داخل نصّ المقال — أُزيلت كل الصور الجاهزة القديمة (Unsplash).
+  /// تبقى فقط الصور التي تضيفينها أنتِ من لوحة التحكم لهذا المقال تحديداً.
   List<String> _getInlineImages() {
-    // Use override content image if available
     if (_contentImageUrl.isNotEmpty) return [_contentImageUrl];
     if (widget.contentImages.isNotEmpty) return widget.contentImages;
-    for (final entry in _inlineImageSets.entries) {
-      if (_title.contains(entry.key)) return entry.value;
-    }
-    return [
-      'https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=700&q=80',
-    ];
+    return const [];
   }
 
   @override
@@ -7383,7 +7401,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                           textAlign: TextAlign.justify,
                           style: TextStyle(fontSize: 16.5, height: 1.9, color: Color(0xFF3A343B), letterSpacing: 0.1)),
                       ));
-                      // First image after paragraph 2
+                      // صورة يدوية (من لوحة التحكم) بعد الفقرة الثانية
                       if (i == 1 && imgIdx < inlineImgs.length) {
                         widgets.add(Padding(
                           padding: EdgeInsets.only(bottom: 20),
@@ -7395,14 +7413,15 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                         ));
                         imgIdx++;
                       }
-                      // Google Ads placeholder at midpoint
-                      if (i == midPoint && paragraphs.length > 3) {
-                        widgets.add(Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: NabdaAd(slot: 0, groupId: 'newsdetail', place: 'news', color: Color(0xFFE91E63)),
-                        ));
+                      // ── مساحة إعلانية ① بعد الفقرة الثانية ──
+                      if (i == 1 && paragraphs.length > 3) {
+                        widgets.add(_adSlot(0));
                       }
-                      // Second image after midpoint+2
+                      // ── مساحة إعلانية ② في منتصف المقال ──
+                      if (i == midPoint && paragraphs.length > 5 && midPoint > 1) {
+                        widgets.add(_adSlot(1));
+                      }
+                      // صورة يدوية ثانية
                       if (i == midPoint + 2 && imgIdx < inlineImgs.length) {
                         widgets.add(Padding(
                           padding: EdgeInsets.only(bottom: 20),
@@ -7415,7 +7434,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                         imgIdx++;
                       }
                     }
-                    // Remaining images at end
+                    // الصور اليدوية المتبقية
                     while (imgIdx < inlineImgs.length) {
                       widgets.add(Padding(
                         padding: EdgeInsets.only(bottom: 20),
@@ -7427,7 +7446,17 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                       ));
                       imgIdx++;
                     }
+                    // ── شريط التفاعل (الإعجاب والمشاركة والحفظ) ──
+                    widgets.add(ArticleEngagementBar(
+                      articleId: widget.articleId ?? _title,
+                      articleTitle: _title,
+                      section: widget.section.isEmpty ? 'home' : widget.section,
+                      color: widget.color,
+                    ));
+                    // ── مساحة إعلانية ③ في نهاية المقال ──
+                    widgets.add(_adSlot(2));
                     return widgets;
+
                   }(),
                   SizedBox(height: 20),
                   Container(
@@ -7464,7 +7493,11 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                           .map((doc) => DynamicContentService.docToProduct(doc))
                           .toList();
                       final staticProducts = _productsBySection[widget.section] ?? _productsBySection['home']!;
-                      final allProducts = [...dynamicProducts, ...staticProducts];
+                      // ترتيب المنتجات حسب قربها من موضوع المقال
+                      final allProducts = NabdaAds.rankProducts<Map<String, String>>(
+                        <Map<String, String>>[...dynamicProducts, ...staticProducts],
+                        '$_title $_body',
+                      );
                       return SizedBox(
                     height: 200,
                     child: ListView.builder(
@@ -8011,8 +8044,58 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   const SizedBox(height: 16),
                 ],
 
+                // ══════════════ قسم «نشاطي» ══════════════
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),
+                  child: Row(children: [
+                    Container(width: 3, height: 16,
+                      decoration: BoxDecoration(color: const Color(0xFFE0195B), borderRadius: BorderRadius.circular(2))),
+                    const SizedBox(width: 8),
+                    const Text('نشاطي',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20))),
+                  ]),
+                ),
+                _menuItem('متابعاتي', Icons.person_add_alt_1, Colors.pink.shade400, () {
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const FollowsScreen(type: 'following', title: 'متابَعاتي')));
+                }),
+                _menuItem('متابِعاتي', Icons.groups_2, Colors.purple.shade400, () {
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const FollowsScreen(type: 'followers', title: 'متابِعاتي')));
+                }),
+                _menuItem('المفضلة', Icons.bookmark, Colors.orange.shade600, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()));
+                }),
+                _menuItem('منشوراتي', Icons.article_outlined, Colors.blue.shade600, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MyPostsScreen()));
+                }),
+                _menuItem('المحظورات', Icons.block, Colors.red.shade400, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const BlockedUsersScreen()));
+                }),
                 _menuItem('الإنجازات والشارات', Icons.emoji_events, Colors.amber.shade700, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsScreen()));
+                }),
+
+                // ══════════════ قسم «أخرى» ══════════════
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+                  child: Row(children: [
+                    Container(width: 3, height: 16,
+                      decoration: BoxDecoration(color: const Color(0xFF00897B), borderRadius: BorderRadius.circular(2))),
+                    const SizedBox(width: 8),
+                    const Text('أخرى',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20))),
+                  ]),
+                ),
+                _menuItem('الدعم الفني', Icons.support_agent, Colors.teal.shade600, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()));
+                }),
+                _menuItem('قيّم البرنامج', Icons.star_rate_rounded, Colors.amber.shade600,
+                    () => AppRatingShareService.rateApp()),
+                _menuItem('انشر البرنامج', Icons.ios_share, Colors.indigo.shade400,
+                    () => AppRatingShareService.shareApp()),
+                _menuItem('عن التطبيق', Icons.info_outline, Colors.blueGrey, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
                 }),
                 _menuItem(tr('edit_name'), Icons.edit, Colors.teal, () => _editName(context)),
                 _menuItem(tr('language'), Icons.language, Colors.indigo, () => _showLanguagePicker(context)),
@@ -8060,6 +8143,27 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   Navigator.push(context, MaterialPageRoute(builder: (_) => PrivacyPolicyPage()));
                 }),
                 _menuItem(tr('help'), Icons.help, Colors.green, null),
+
+                // ── زر بارز: التحكم في بياناتي (تصدير • مسح • حذف الحساب) ──
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const DataControlScreen())),
+                    icon: const Icon(Icons.shield_outlined),
+                    label: const Text('🔒  التحكم في بياناتي',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00897B),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
+                ),
                 SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
@@ -8808,8 +8912,7 @@ class _NewsSection extends StatelessWidget {
         child: Row(children: [
           ClipRRect(
             borderRadius: const BorderRadius.horizontal(right: Radius.circular(16)),
-            child: Image.network(n['image']!, width: 100, height: 90, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(width: 100, height: 90, color: accentColor.withOpacity(0.1), child: Icon(Icons.newspaper, color: accentColor))),
+            child: ArticleImage(title: n['title'] ?? '', section: 'home', networkUrl: n['image'], width: 100, height: 90, fit: BoxFit.cover),
           ),
           Expanded(
             child: Padding(
@@ -8873,8 +8976,7 @@ class _AllNewsScreen extends StatelessWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                    child: Image.network(n['image']!, height: 160, width: double.infinity, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(height: 160, color: accentColor.withOpacity(0.1), child: Icon(Icons.newspaper, color: accentColor, size: 50))),
+                    child: ArticleImage(title: n['title'] ?? '', section: 'home', networkUrl: n['image'], height: 160, width: double.infinity, fit: BoxFit.cover),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(14),

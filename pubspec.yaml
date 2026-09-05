@@ -35,6 +35,11 @@ dependencies:
   firebase_storage: ^12.4.0
   video_player: ^2.9.2
   visibility_detector: ^0.4.0+2
+  share_plus: ^10.1.4
+  in_app_review: ^2.0.9
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+  geolocator: ^10.1.0
 
 dev_dependencies:
   flutter_test:
@@ -55,6 +60,13 @@ flutter:
     - assets/images/article_pics/
     - assets/images/pregnancy_news/
     - assets/images/smart_articles/
+    - assets/images/share_cards/
     - assets/data/algeria_cities.json
     - assets/data/smart_100_articles.json
+    - assets/data/smart_2500_articles.json
+    - assets/data/article_titles.json
+    - assets/data/news_images.json
+    - assets/data/algeria_doctors_clinics.json
+    - assets/data/algeria_wilaya_centroids.json
+    - assets/data/arab_world_doctors.json
     - assets/data/
