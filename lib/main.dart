@@ -63,6 +63,7 @@ import 'widgets/personalized_tips.dart';
 import 'widgets/cycle_calendar.dart';
 import 'widgets/conditional_content.dart';
 import 'widgets/smart_articles_carousel.dart';
+import 'widgets/smart_article_carousel.dart';
 import 'screens/articles/smart_article_detail_screen.dart';
 import 'screens/articles/smart_articles_list_screen.dart';
 import 'screens/fiqh/womens_fiqh_screen.dart';
@@ -3164,9 +3165,16 @@ class _HomePageState extends State<HomePage> {
                         ),
 
                         // ════════════ SMART INTERACTIVE ARTICLES ════════════
-                        const SmartArticlesCarousel(
-                          sectionTitle: 'مقالات ذكية وإرشادية',
-                          sectionSubtitle: 'محتوى طبي تفاعلي موثق لتلبية جميع تساؤلاتكِ',
+                        const SmartArticleCarousel(
+                          categoryId: null,
+                          title: '🔥 الأكثر قراءة في نبضة',
+                          maxItems: 10,
+                        ),
+                        const SizedBox(height: 12),
+                        const SmartArticleCarousel(
+                          categoryId: 'beauty',
+                          title: '💄 جمالكِ وعنايتك',
+                          maxItems: 8,
                         ),
                         const SizedBox(height: 16),
 
@@ -4678,6 +4686,10 @@ class _CyclePageState extends State<CyclePage> {
                           padding: const EdgeInsets.all(20),
                           child: _CycleArticlesSection(),
                         ),
+                        const SizedBox(height: 12),
+                        const SmartArticleCarousel(categoryId: 'fertility', title: '🌸 التبويض والخصوبة', maxItems: 8),
+                        const SizedBox(height: 12),
+                        const SmartArticleCarousel(categoryId: 'health', title: '💗 صحّة المرأة', maxItems: 8),
                         const SizedBox(height: 30),
                       ],
                     ),
@@ -5734,10 +5746,10 @@ class _BabyPageState extends State<BabyPage> {
 
                         // \u2500\u2500 \u0645\u0642\u0627\u0644\u0627\u062A \u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0631\u0636\u064A\u0639 (\u0628\u0639\u062F \u0627\u0644\u0633\u062C\u0644 \u0627\u0644\u064A\u0648\u0645\u064A) \u2500\u2500
                         const SizedBox(height: 18),
-                        const SmartArticlesCarousel(
-                          categoryFilter: 'baby',
-                          sectionTitle: '\u0645\u0642\u0627\u0644\u0627\u062A \u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0631\u0636\u064A\u0639 \u0648\u0627\u0644\u0637\u0641\u0644',
-                          sectionSubtitle: '\u062F\u0644\u064A\u0644 \u0627\u0644\u0623\u0645\u0647\u0627\u062A \u0627\u0644\u062C\u062F\u062F \u0644\u0646\u0645\u0648 \u0648\u062A\u063A\u0630\u064A\u0629 \u0648\u0646\u0648\u0645 \u0627\u0644\u0635\u063A\u064A\u0631',
+                        const SmartArticleCarousel(
+                          categoryId: 'baby',
+                          title: '👶 مقالات رعاية الرضيع',
+                          maxItems: 10,
                         ),
                         const SizedBox(height: 6),
 

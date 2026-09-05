@@ -105,7 +105,9 @@ const Map<String, String> categoryNames = {
   'marriage': 'العلاقة الزوجية والسكينة',
   'fertility': 'التبويض والتخطيط للحمل',
   'womens_health': 'صحة المرأة والرشاقة',
+  'health': 'صحة المرأة والرشاقة',
   'baby_care': 'رعاية وتطور الرضيع',
+  'baby': 'رعاية وتطور الرضيع',
 };
 
 /// خريطة categoryId → emoji مميز
@@ -115,7 +117,9 @@ const Map<String, String> categoryEmojis = {
   'marriage': '💕',
   'fertility': '🌸',
   'womens_health': '💗',
+  'health': '💗',
   'baby_care': '👶',
+  'baby': '👶',
 };
 
 /// خريطة categoryId → لون ثيم — ألوان نبضة الرسمية بعد التنظيف
@@ -126,7 +130,9 @@ const Map<String, int> categoryColors = {
   'marriage': 0xFFEC407A,        // rose (روز أنثوي)
   'fertility': 0xFF7E57C2,       // Nabda lavender (لافندر)
   'womens_health': 0xFF00897B,   // Nabda teal (تركوازي نبضة الرسمي)
+  'health': 0xFF00897B,          // Nabda teal (تركوازي نبضة الرسمي)
   'baby_care': 0xFF29B6F6,       // light blue (أزرق لطيف للرضع)
+  'baby': 0xFF29B6F6,            // light blue (أزرق لطيف للرضع)
 };
 
 /// ألوان نبضة الرسمية للمرجع
