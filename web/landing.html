@@ -15,7 +15,7 @@
   ::selection{background:#F8BBD0}
   @keyframes nb-beat{0%,100%{transform:scale(1)}14%{transform:scale(1.18)}28%{transform:scale(1)}42%{transform:scale(1.12)}70%{transform:scale(1)}}
   @keyframes nb-up{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
-  .nb-up{animation:nb-up .5s ease both}
+  .nb-up{animation:nb-up.5s ease both}
   button{font-family:inherit}
 
   .nb-strip{display:grid;grid-template-columns:auto repeat(4,1fr);gap:8px;align-items:center}
@@ -27,37 +27,37 @@
 
   /* Articles 3-Column Grid — تصميم نبضة العصري الموحد */
   .nb-art-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-  .nb-art-card{background:#ffffff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.06);display:flex;flex-direction:column;cursor:pointer;transition:all .3s cubic-bezier(0.165,0.84,0.44,1);text-decoration:none;color:inherit;position:relative}
+  .nb-art-card{background:#ffffff;border:1px solid #F8E1EA;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(244,63,126,.06);display:flex;flex-direction:column;cursor:pointer;transition:all.3s cubic-bezier(0.165,0.84,0.44,1);text-decoration:none;color:inherit;position:relative}
   .nb-art-card:hover{transform:translateY(-6px);box-shadow:0 20px 42px rgba(244,63,126,.14);border-color:rgba(244,63,126,.35)}
   .nb-art-img-wrap{position:relative;width:100%;height:210px;overflow:hidden;background:#FDE8EF}
-  .nb-art-img{width:100%;height:100%;object-fit:cover;transition:transform .45s ease;display:block}
-  .nb-art-card:hover .nb-art-img{transform:scale(1.06)}
+  .nb-art-img{width:100%;height:100%;object-fit:cover;transition:transform.45s ease;display:block}
+  .nb-art-card:hover.nb-art-img{transform:scale(1.06)}
   .nb-art-float-cat{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#00897B;padding:4px 12px;border-radius:50px;font-size:12px;font-weight:800;box-shadow:0 3px 10px rgba(0,0,0,.12);display:flex;align-items:center;gap:4px}
   .nb-art-body{padding:18px 20px 16px;display:flex;flex-direction:column;flex-grow:1;justify-content:space-between}
   .nb-art-cat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
   .nb-art-cat-tag{color:#00897B;font-weight:800;font-size:12.5px}
   .nb-art-badge{background:#FCE4EC;color:#E42558;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
-  .nb-art-title{font-size:16.5px;font-weight:800;color:#1F1A20;line-height:1.45;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:48px;transition:color .2s}
-  .nb-art-card:hover .nb-art-title{color:#F43F7E}
+  .nb-art-title{font-size:16.5px;font-weight:800;color:#1F1A20;line-height:1.45;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:48px;transition:color.2s}
+  .nb-art-card:hover.nb-art-title{color:#F43F7E}
   .nb-art-desc{font-size:13px;color:#8F8795;line-height:1.65;margin-bottom:16px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .nb-art-footer{padding-top:12px;border-top:1px solid #F8E1EA;display:flex;justify-content:space-between;align-items:center}
   .nb-art-views{display:inline-flex;align-items:center;gap:5px;background:rgba(110,110,110,.07);color:#666;padding:3px 9px;border-radius:6px;font-size:12px;font-weight:600}
   .nb-art-time{font-size:11.5px;color:#A098A5;font-weight:600}
-  .nb-art-cta{color:#F43F7E;font-weight:800;font-size:12.5px;display:inline-flex;align-items:center;gap:4px;transition:transform .2s}
-  .nb-art-card:hover .nb-art-cta{transform:translateX(-4px)}
+  .nb-art-cta{color:#F43F7E;font-weight:800;font-size:12.5px;display:inline-flex;align-items:center;gap:4px;transition:transform.2s}
+  .nb-art-card:hover.nb-art-cta{transform:translateX(-4px)}
 
   /* Tool cards — مطابقة للتصميم الأصلي */
-  .nb-tool{background:linear-gradient(180deg,#ffffff,#FFF9FC);border:1px solid #F4E3EB;border-radius:26px;padding:26px 18px 22px;text-align:center;box-shadow:0 12px 30px rgba(244,63,126,.07);cursor:pointer;display:flex;flex-direction:column;align-items:center;transition:transform .2s, box-shadow .2s}
+  .nb-tool{background:linear-gradient(180deg,#ffffff,#FFF9FC);border:1px solid #F4E3EB;border-radius:26px;padding:26px 18px 22px;text-align:center;box-shadow:0 12px 30px rgba(244,63,126,.07);cursor:pointer;display:flex;flex-direction:column;align-items:center;transition:transform.2s, box-shadow.2s}
   .nb-tool:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(244,63,126,.14)}
   .nb-tool-icon{width:112px;height:112px;border-radius:28px;background-size:cover;background-position:center;background-repeat:no-repeat;margin:0 auto 16px;box-shadow:0 8px 20px rgba(244,63,126,.1)}
   .nb-tool-title{font-size:16px;font-weight:800;margin-bottom:8px;color:#1F1A20;line-height:1.35}
   .nb-tool-desc{font-size:12.5px;color:#8F8795;line-height:1.75;margin-bottom:18px}
   .nb-tool-btn{margin-top:auto;width:42px;height:42px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;box-shadow:0 8px 16px rgba(0,0,0,.14);padding-bottom:2px;transition:.2s}
-  .nb-tool:hover .nb-tool-btn{transform:scale(1.08)}
+  .nb-tool:hover.nb-tool-btn{transform:scale(1.08)}
 
   /* Hero carousel */
   .nb-slider{position:relative;height:520px}
-  .nb-slide{position:absolute;inset:0;transition:opacity .8s ease;opacity:0;pointer-events:none;z-index:1}
+  .nb-slide{position:absolute;inset:0;transition:opacity.8s ease;opacity:0;pointer-events:none;z-index:1}
   .nb-slide.on{opacity:1;pointer-events:auto;z-index:2}
   .nb-slide-img{position:absolute;inset:0;background-size:cover;background-position:center}
   /* التدرّج: منطقة معتمة على اليسار (خلف النصّ) وشفافة تمامًا على اليمين (الصورة واضحة) */
@@ -95,10 +95,10 @@
   .landing-carousel { margin: 36px 0; padding: 0; }
   .carousel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .carousel-header h2 { font-size: 22px; font-weight: 800; color: #E91E63; }
-  .more-btn { color: #E91E63; text-decoration: none; font-weight: 700; font-size: 13px; padding: 7px 18px; background: #FDE8EF; border-radius: 20px; transition: all .2s; }
+  .more-btn { color: #E91E63; text-decoration: none; font-weight: 700; font-size: 13px; padding: 7px 18px; background: #FDE8EF; border-radius: 20px; transition: all.2s; }
   .more-btn:hover { background: #F8BBD0; transform: translateY(-2px); }
   .carousel-scroll { display: flex; overflow-x: auto; gap: 14px; padding-bottom: 14px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
-  .mini-card { flex: 0 0 210px; text-decoration: none; color: inherit; background: white; border: 1px solid #F8E1EA; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(244,63,126,.06); transition: all .3s cubic-bezier(0.165,0.84,0.44,1); display: flex; flex-direction: column; }
+  .mini-card { flex: 0 0 210px; text-decoration: none; color: inherit; background: white; border: 1px solid #F8E1EA; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(244,63,126,.06); transition: all.3s cubic-bezier(0.165,0.84,0.44,1); display: flex; flex-direction: column; }
   .mini-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(244,63,126,.14); border-color: rgba(244,63,126,.35); }
   .mini-card img { width: 100%; height: 120px; object-fit: cover; display: block; }
   .mini-card-body { padding: 12px 14px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; }
@@ -122,7 +122,66 @@
 <div style="position:sticky;top:0;z-index:40;padding:18px 24px 0">
   <div style="max-width:1280px;margin:0 auto;background:rgba(255,255,255,.35);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.5);border-radius:24px;box-shadow:0 10px 34px rgba(244,63,126,.1);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px">
     <div style="display:flex;align-items:center;gap:10px">
-      <img src="landing-assets/logo-heart.png" alt="نبضة" style="display:block;animation:nb-beat 2.2s ease-in-out infinite;height:50px"/>
+      <!-- ══ شعار نبضة الرسمي المتحرك — فيكتور، الكلمة يساراً والقلبان يميناً ══ -->
+      <svg class="nbl" viewBox="0 0 2820 1000" role="img" aria-label="نبضة" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="nblB" cx="30%" cy="24%" r="88%"><stop offset="0%" stop-color="#FF9BC4"/><stop offset="38%" stop-color="#F0347C"/><stop offset="74%" stop-color="#E0195B"/><stop offset="100%" stop-color="#A80D48"/></radialGradient>
+          <radialGradient id="nblP" cx="32%" cy="26%" r="86%"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="30%" stop-color="#FFE4EF"/><stop offset="70%" stop-color="#FFD6E3"/><stop offset="100%" stop-color="#F48CB3"/></radialGradient>
+          <radialGradient id="nblC" cx="40%" cy="68%" r="80%"><stop offset="0%" stop-color="#D9799B" stop-opacity=".62"/><stop offset="100%" stop-color="#FFD6E3" stop-opacity=".88"/></radialGradient>
+          <linearGradient id="nblR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff" stop-opacity=".78"/><stop offset="45%" stop-color="#fff" stop-opacity=".05"/><stop offset="100%" stop-color="#FF8FBB" stop-opacity=".45"/></linearGradient>
+          <linearGradient id="nblW" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0347C"/><stop offset="100%" stop-color="#C2185B"/></linearGradient>
+          <filter id="nblF1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="26"/></filter>
+          <filter id="nblF2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="13"/></filter>
+          <filter id="nblF3" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>
+          <path id="nblH" d="M50 32C36 6 4 12 4 38C4 60 28 74 50 92C72 74 96 60 96 38C96 12 64 6 50 32Z"/>
+          <g id="nblD"><use href="#nblH" x="-50" y="-50" fill="url(#nblB)"/><use href="#nblH" x="-50" y="-50" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3.4"/><ellipse cx="-21" cy="-26" rx="17" ry="10" fill="#fff" fill-opacity=".62" filter="url(#nblF3)"/><ellipse cx="-26" cy="-30" rx="5.5" ry="3.4" fill="#fff" fill-opacity=".95"/></g>
+        </defs>
+        <!-- القلبان — الصورتان المعتمدتان (ضعهما في landing-assets/) -->
+        <image class="nblMo" href="landing-assets/heart-big.png"   x="1779" y="40"  width="1000" height="921" style="transform-origin:2279px 500px"/>
+        <image class="nblBa" href="landing-assets/heart-small.png" x="2081" y="374" width="450"  height="382" style="transform-origin:2306px 565px"/>
+        <!-- الكلمة: مسار فيكتور بلا نقاط + قلوب مكان النقاط -->
+        <g transform="translate(40 168) scale(0.7508)">
+          <path fill="url(#nblW)" d="M446 193L446 537Q446 543 450 547Q454 551 462 551L496 551L496 680L417 680Q366 680 324 640Q275 689 206 689L205 689L203 689Q103 689 46 606Q0 541 0 451Q0 341 70 269Q133 204 227 204Q278 204 328 225L369 193ZM291 344Q267 338 246 338Q202 338 177 368Q152 398 152 451Q152 501 179.5 533Q207 565 251 565Q268 565 291 560ZM823 343Q950 207 1123 207Q1247 207 1330 281Q1407 350 1407 456L1407 512Q1407 524 1408 551L1439 551L1439 680L1420 680L1382 634L1380 634Q1342 680 1283 680L489 680L489 551L669 551L669 220L823 220ZM1253 473Q1252 408 1201 370Q1159 339 1104 339Q984 339 884 457Q878 467 863 488Q835 529 822 551L1238 551Q1253 551 1253 537ZM1766 220L1766 542Q1766 546 1767 551L1816 551L1816 680L1785 680L1741 634L1739 634Q1701 680 1641 680L1432 680L1432 551L1592 551Q1601 551 1606 545Q1612 540 1612 531L1612 220ZM2143 220L2143 556Q2143 600 2114 635Q2076 680 2018 680L1809 680L1809 551L1974 551Q1980 551 1984 548Q1989 544 1989 537L1989 220Z"/>
+          <g class="nbd d1"><g class="nbp"><use href="#nblD" transform="translate(2065 78) scale(1.95)"/></g></g>
+          <g class="nbd d2"><g class="nbp"><use href="#nblD" transform="translate(1688 804.5) scale(1.95)"/></g></g>
+          <g class="nbd d3"><g class="nbp"><use href="#nblD" transform="translate(1058 78) scale(1.95)"/></g></g>
+          <g class="nbd d4"><g class="nbp"><use href="#nblD" transform="translate(368 78) scale(1.95)"/></g></g>
+          <g class="nbd d5"><g class="nbp"><use href="#nblD" transform="translate(188.5 78) scale(1.95)"/></g></g>
+        </g>
+      </svg>
+      <style>
+        .nbl{display:block;height:50px;width:auto;overflow:visible}
+        @media(max-width:640px){.nbl{height:40px}}
+        /* قلب الأم — 40 نبضة/د، نبضة واحدة عريضة ناعمة */
+        @keyframes nblMo{0%{transform:scale(1)}8%{transform:scale(1.028)}13%{transform:scale(1.04)}
+          20%{transform:scale(1.03)}32%{transform:scale(1.006)}46%{transform:scale(1.012)}60%,100%{transform:scale(1)}}
+        /* قلب الطفل — 140 نبضة/د، لَب-دَب حادّ */
+        @keyframes nblBa{0%{transform:scale(1)}9%{transform:scale(1.115)}19%{transform:scale(.985)}
+          31%{transform:scale(1.058)}43%{transform:scale(.998)}56%,100%{transform:scale(1)}}
+        @keyframes nblSw{0%,100%{transform:translate(-13px,-9px) rotate(-3.6deg)}50%{transform:translate(13px,9px) rotate(3.6deg)}}
+        .nblMo{animation:nblMo 1.5s ease-in-out infinite}
+        .nblBa{animation:nblBa.43s ease-in-out infinite,nblSw 3s ease-in-out infinite}
+        /* النقاط: قفزة وانزلاق على الحرف ثم رجوع */
+        @keyframes nbSl{0%,52%{transform:translateX(0)}64%,78%{transform:translateX(-55px)}92%,100%{transform:translateX(0)}}
+        @keyframes nbSd{0%,52%{transform:translateX(0)}64%,78%{transform:translateX(62px)}92%,100%{transform:translateX(0)}}
+        @keyframes nbHp{0%,50%{transform:translateY(0) scaleX(1) scaleY(1)}
+          55%{transform:translateY(6px) scaleX(1.14) scaleY(.86)}
+          66%{transform:translateY(-120px) scaleX(.9) scaleY(1.12) rotate(-9deg)}
+          78%{transform:translateY(-120px) scaleX(.94) scaleY(1.06) rotate(7deg)}
+          90%{transform:translateY(8px) scaleX(1.18) scaleY(.82)}
+          96%{transform:translateY(0) scaleX(.96) scaleY(1.04)}
+          100%{transform:translateY(0) scaleX(1) scaleY(1)}}
+        @keyframes nbId{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-7px) rotate(3deg)}}
+        .nbd{animation:nbSl 3s cubic-bezier(.34,1.4,.5,1) infinite}
+        .nbp{animation:nbHp 3s cubic-bezier(.3,1.5,.5,1) infinite,nbId 1.5s ease-in-out infinite}
+        .nbd.d2{animation-name:nbSd}
+        .nbd.d1{animation-delay:0s}      .nbd.d1.nbp{animation-delay:0s,0s}
+        .nbd.d2{animation-delay:-.6s}    .nbd.d2.nbp{animation-delay:-.6s,-.3s}
+        .nbd.d3{animation-delay:-1.2s}   .nbd.d3.nbp{animation-delay:-1.2s,-.6s}
+        .nbd.d4{animation-delay:-1.8s}   .nbd.d4.nbp{animation-delay:-1.8s,-.9s}
+        .nbd.d5{animation-delay:-2.4s}   .nbd.d5.nbp{animation-delay:-2.4s,-1.2s}
+        @media(prefers-reduced-motion:reduce){.nblMo,.nblBa,.nbd,.nbp{animation:none!important}}
+      </style>
     </div>
     <div class="nb-hide-m" style="display:flex;align-items:center;gap:22px;font-size:14.5px;color:#4A434B;font-weight:700">
       <span style="color:#F43F7E;cursor:pointer">الرئيسية</span>
@@ -640,9 +699,9 @@
                 </div>
             </a>
             <a href="articles.html?id=smart_500_0503" class="mini-card">
-                <img src="assets/images/articles_bg/bg_beauty_03.jpg" alt="كل ما تحتاجين معرفته: عروس على الأبواب بمحفظة نقدية فارغة ! إليكِ البديل بنصائح استشاريين 💖" onerror="this.style.display='none'">
+                <img src="assets/images/articles_bg/bg_beauty_03.jpg" alt="كل ما تحتاجين معرفته: عروس على الأبواب بمحفظة نقدية فارغة! إليكِ البديل بنصائح استشاريين 💖" onerror="this.style.display='none'">
                 <div class="mini-card-body">
-                    <h4>كل ما تحتاجين معرفته: عروس على الأبواب بمحفظة نقدية فارغة ! إليكِ البديل بنصائح </h4>
+                    <h4>كل ما تحتاجين معرفته: عروس على الأبواب بمحفظة نقدية فارغة! إليكِ البديل بنصائح ا</h4>
                     <span class="mini-card-time">⏱ 3 دقائق</span>
                 </div>
             </a>
@@ -661,9 +720,9 @@
                 </div>
             </a>
             <a href="articles.html?id=smart_500_0506" class="mini-card">
-                <img src="assets/images/articles_bg/bg_beauty_01.jpg" alt="هل يسبب لكِ شعرك المجعد إحراجًا في أول أيام زواجك ! إليك الحل؟ إليكِ الإجابة الطبية القاطعة 🌸" onerror="this.style.display='none'">
+                <img src="assets/images/articles_bg/bg_beauty_01.jpg" alt="هل يسبب لكِ شعرك المجعد إحراجًا في أول أيام زواجك! إليك الحل؟ إليكِ الإجابة الطبية القاطعة 🌸" onerror="this.style.display='none'">
                 <div class="mini-card-body">
-                    <h4>هل يسبب لكِ شعرك المجعد إحراجًا في أول أيام زواجك ! إليك الحل؟ إليكِ الإجابة الط</h4>
+                    <h4>هل يسبب لكِ شعرك المجعد إحراجًا في أول أيام زواجك! إليك الحل؟ إليكِ الإجابة الطب</h4>
                     <span class="mini-card-time">⏱ 3 دقائق</span>
                 </div>
             </a>
@@ -756,16 +815,16 @@
         </div>
         <div class="carousel-scroll">
             <a href="articles.html?id=smart_500_001" class="mini-card">
-                <img src="assets/images/articles_bg/bg_fertility_05.jpg" alt="متى تبدا اعراض الحمل بالظهور! وما الفرق بينها وبين الدورة؟ ٥ حقائق خفية لم يخبركِ بها أحد ✨" onerror="this.style.display='none'">
+                <img src="assets/images/articles_bg/bg_fertility_05.jpg" alt="متى تبدا أعراض الحمل بالظهور! وما الفرق بينها وبين الدورة؟ ٥ حقائق خفية لم يخبركِ بها أحد ✨" onerror="this.style.display='none'">
                 <div class="mini-card-body">
-                    <h4>متى تبدا اعراض الحمل بالظهور! وما الفرق بينها وبين الدورة؟ ٥ حقائق خفية لم يخبرك</h4>
+                    <h4>متى تبدا أعراض الحمل بالظهور! وما الفرق بينها وبين الدورة؟ ٥ حقائق خفية لم يخبرك</h4>
                     <span class="mini-card-time">⏱ 7 دقائق</span>
                 </div>
             </a>
             <a href="articles.html?id=smart_500_191" class="mini-card">
-                <img src="assets/images/articles_bg/bg_fertility_03.jpg" alt="إكسير الراحة والسكينة: لحمية الرحم اثناء الحمل وتأثيرها على الولادة بأبسط الخطوات 🌸" onerror="this.style.display='none'">
+                <img src="assets/images/articles_bg/bg_fertility_03.jpg" alt="إكسير الراحة والسكينة: لحمية الرحم أثناء الحمل وتأثيرها على الولادة بأبسط الخطوات 🌸" onerror="this.style.display='none'">
                 <div class="mini-card-body">
-                    <h4>إكسير الراحة والسكينة: لحمية الرحم اثناء الحمل وتأثيرها على الولادة بأبسط الخطوا</h4>
+                    <h4>إكسير الراحة والسكينة: لحمية الرحم أثناء الحمل وتأثيرها على الولادة بأبسط الخطوا</h4>
                     <span class="mini-card-time">⏱ 7 دقائق</span>
                 </div>
             </a>
@@ -914,9 +973,9 @@
                 </div>
             </a>
             <a href="articles.html?id=smart_500_1167" class="mini-card">
-                <img src="assets/images/articles_bg/bg_marriage_02.jpg" alt="كيف أتجنب الخلافات الزوجية المستمرة ؟ لا تدخلي أنواع النساء هذه بيتك؟ حقائق مؤكدة تفاجئكِ 🌸" onerror="this.style.display='none'">
+                <img src="assets/images/articles_bg/bg_marriage_02.jpg" alt="كيف أتجنب الخلافات الزوجية المستمرة؟ لا تدخلي أنواع النساء هذه بيتك؟ حقائق مؤكدة تفاجئكِ 🌸" onerror="this.style.display='none'">
                 <div class="mini-card-body">
-                    <h4>كيف أتجنب الخلافات الزوجية المستمرة ؟ لا تدخلي أنواع النساء هذه بيتك؟ حقائق مؤكد</h4>
+                    <h4>كيف أتجنب الخلافات الزوجية المستمرة؟ لا تدخلي أنواع النساء هذه بيتك؟ حقائق مؤكدة</h4>
                     <span class="mini-card-time">⏱ 7 دقائق</span>
                 </div>
             </a>
