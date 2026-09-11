@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/smart_article.dart';
@@ -19,6 +21,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   final SmartArticlesService _service = SmartArticlesService();
   double _readingProgress = 0.0;
   bool _isBookmarked = false;
+  bool _isBookmarkLoading = false;
   List<SmartArticle> _relatedArticles = [];
   bool _loadingRelated = true;
 
@@ -27,6 +30,101 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _loadRelated();
+    _checkBookmarkStatus();
+  }
+
+  Future<void> _checkBookmarkStatus() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('favorites')
+          .doc(widget.article.id)
+          .get();
+      if (mounted) {
+        setState(() {
+          _isBookmarked = doc.exists;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggleBookmark() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('سجّلي الدخول أولاً لحفظ المقال في المفضلة 🔖'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final original = _isBookmarked;
+    setState(() {
+      _isBookmarked = !original;
+      _isBookmarkLoading = true;
+    });
+
+    final favRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('favorites')
+        .doc(widget.article.id);
+
+    try {
+      if (!original) {
+        await favRef.set({
+          'type': 'article',
+          'articleId': widget.article.id,
+          'title': widget.article.title,
+          'preview': widget.article.summary,
+          'thumbnail': widget.article.imagePath,
+          'category': widget.article.categoryName,
+          'categoryId': widget.article.categoryId,
+          'savedAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        await favRef.delete();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              !original
+                  ? 'تم حفظ المقال في المفضلة 🤍'
+                  : 'تمت الإزالة من المفضلة',
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: widget.article.themeColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isBookmarked = original;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تعذر تحديث المفضلة، تحققي من الاتصال بالإنترنت'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBookmarkLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -127,18 +225,18 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                   : null,
               actions: [
                 IconButton(
-                  icon: Icon(_isBookmarked ? Icons.bookmark : Icons.bookmark_border),
+                  icon: _isBookmarkLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Icon(
+                          _isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                          color: _isBookmarked ? const Color(0xFFFF4081) : Colors.white,
+                        ),
                   tooltip: 'حفظ المقال',
-                  onPressed: () {
-                    setState(() => _isBookmarked = !_isBookmarked);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(_isBookmarked ? 'تم حفظ المقال في المفضلة' : 'تمت الإزالة من المفضلة'),
-                        duration: const Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
+                  onPressed: _isBookmarkLoading ? null : _toggleBookmark,
                 ),
                 IconButton(
                   icon: const Icon(Icons.share),

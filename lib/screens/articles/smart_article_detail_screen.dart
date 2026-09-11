@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/smart_interactive_articles_data.dart';
 import '../qadaa/qadaa_screen.dart';
 import '../fiqh/womens_fiqh_screen.dart';
 import '../pregnancy/pregnancy_weeks_screen.dart';
+import '../pregnancy/pregnancy_calendar_screen.dart';
+import '../trackers/health_trackers_screen.dart';
 import '../fertility/fertility_screen.dart';
 import '../../main.dart';
 
@@ -23,12 +27,108 @@ class _SmartArticleDetailScreenState extends State<SmartArticleDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   double _readingProgress = 0.0;
   bool _isBookmarked = false;
+  bool _isBookmarkLoading = false;
   final Set<int> _expandedFaqs = {};
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _checkBookmarkStatus();
+  }
+
+  Future<void> _checkBookmarkStatus() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('favorites')
+          .doc(widget.article.id)
+          .get();
+      if (mounted) {
+        setState(() {
+          _isBookmarked = doc.exists;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggleBookmark() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('سجّلي الدخول أولاً لحفظ المقال في المفضلة 🔖'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final original = _isBookmarked;
+    setState(() {
+      _isBookmarked = !original;
+      _isBookmarkLoading = true;
+    });
+
+    final favRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('favorites')
+        .doc(widget.article.id);
+
+    try {
+      if (!original) {
+        await favRef.set({
+          'type': 'article',
+          'articleId': widget.article.id,
+          'title': widget.article.title,
+          'preview': widget.article.summary,
+          'thumbnail': widget.article.imagePath,
+          'category': widget.article.categoryName,
+          'categoryId': widget.article.categoryId,
+          'savedAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        await favRef.delete();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              !original
+                  ? 'تم حفظ المقال في المفضلة 🤍'
+                  : 'تمت الإزالة من المفضلة',
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: widget.article.themeColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isBookmarked = original;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تعذر تحديث المفضلة، تحققي من الاتصال بالإنترنت'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBookmarkLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -76,7 +176,14 @@ ${widget.article.summary}
   void _triggerToolAction(ArticleToolType? toolType) {
     if (toolType == null) return;
     switch (toolType) {
+      // حاسبة موعد الولادة → تقويم الحمل (فيه تاريخ الولادة المتوقّع القابل
+      // للتعديل والعدّ التنازلي) — وليس قائمة الأسابيع.
       case ArticleToolType.dueDateCalculator:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PregnancyCalendarScreen()),
+        );
+        break;
       case ArticleToolType.pregnancyWeeks:
         Navigator.push(
           context,
@@ -109,9 +216,14 @@ ${widget.article.summary}
           MaterialPageRoute(builder: (_) => AIChatPage()),
         );
         break;
+      // متتبّعات الطفل والماء → شاشة المتتبّعات الصحّية الفعلية
+      // (كانت تُغلق الصفحة فقط بلا أي فائدة)
       case ArticleToolType.babyTracker:
       case ArticleToolType.waterTracker:
-        Navigator.maybePop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const HealthTrackersScreen()),
+        );
         break;
     }
   }
@@ -154,30 +266,24 @@ ${widget.article.summary}
                           shape: BoxShape.circle,
                           color: Colors.black.withValues(alpha: 0.35),
                         ),
-                        child: Icon(
-                          _isBookmarked
-                              ? Icons.bookmark_rounded
-                              : Icons.bookmark_border_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
+                        child: _isBookmarkLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Icon(
+                                _isBookmarked
+                                    ? Icons.bookmark_rounded
+                                    : Icons.bookmark_border_rounded,
+                                color: _isBookmarked ? const Color(0xFFFF4081) : Colors.white,
+                                size: 20,
+                              ),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isBookmarked = !_isBookmarked;
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              _isBookmarked
-                                  ? 'تم حفظ المقال في المفضلة 🤍'
-                                  : 'تمت الإزالة من المفضلة',
-                            ),
-                            duration: const Duration(seconds: 1),
-                            backgroundColor: themeColor,
-                          ),
-                        );
-                      },
+                      onPressed: _isBookmarkLoading ? null : _toggleBookmark,
                     ),
                     IconButton(
                       icon: Container(

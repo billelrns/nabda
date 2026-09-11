@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../community/post_detail_screen.dart';
+import '../articles/smart_articles_list_screen.dart';
+import '../articles/smart_article_detail_screen.dart';
+import '../../services/smart_articles_service.dart';
+import '../../models/smart_article.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({Key? key}) : super(key: key);
@@ -62,6 +66,7 @@ class FavoritesScreen extends StatelessWidget {
                     itemCount: docs.length,
                     itemBuilder: (context, i) {
                       final d = docs[i].data() as Map<String, dynamic>;
+                      final isArticle = (d['type'] as String?) == 'article';
                       final postId = d['postId'] as String? ?? docs[i].id;
                       final title = d['title'] as String? ?? 'بدون عنوان';
                       final preview = d['preview'] as String? ?? '';
@@ -74,8 +79,50 @@ class FavoritesScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            if (postId.isNotEmpty) {
+                          onTap: () async {
+                            if (isArticle) {
+                              final articleId = d['articleId'] as String? ?? docs[i].id;
+
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (_) => const Center(
+                                  child: CircularProgressIndicator(color: Color(0xFF00897B)),
+                                ),
+                              );
+
+                              SmartArticle? art;
+                              try {
+                                if (articleId.isNotEmpty) {
+                                  art = await SmartArticlesService().getById(articleId);
+                                }
+                                if (art == null && title.isNotEmpty) {
+                                  art = await SmartArticlesService().getByTitle(title);
+                                }
+                              } catch (_) {}
+
+                              if (context.mounted) {
+                                Navigator.pop(context); // إغلاق مؤشر التحميل
+                                if (art != null) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SmartArticleDetailScreen(article: art!),
+                                    ),
+                                  );
+                                } else {
+                                  // حل احتياطي في حال كان المقال غير موجود في القاعدة الذكية
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SmartArticlesListScreen(
+                                        initialTitle: title,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            } else if (postId.isNotEmpty) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -91,24 +138,22 @@ class FavoritesScreen extends StatelessWidget {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child: thumbnail != null && thumbnail.isNotEmpty
-                                      ? Image.network(
-                                          thumbnail,
-                                          width: 60,
-                                          height: 60,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Container(
-                                            width: 60,
-                                            height: 60,
-                                            color: const Color(0xFFE0F2F1),
-                                            child: const Icon(Icons.bookmark, color: Color(0xFF00897B), size: 28),
-                                          ),
-                                        )
-                                      : Container(
-                                          width: 60,
-                                          height: 60,
-                                          color: const Color(0xFFFFF0F5),
-                                          child: const Icon(Icons.bookmark, color: Color(0xFFE91E63), size: 28),
-                                        ),
+                                      ? (thumbnail.startsWith('http')
+                                          ? Image.network(
+                                              thumbnail,
+                                              width: 60,
+                                              height: 60,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => _fallbackThumb(isArticle),
+                                            )
+                                          : Image.asset(
+                                              thumbnail,
+                                              width: 60,
+                                              height: 60,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => _fallbackThumb(isArticle),
+                                            ))
+                                      : _fallbackThumb(isArticle),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -130,7 +175,26 @@ class FavoritesScreen extends StatelessWidget {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
-                                      if (authorName.isNotEmpty) ...[
+                                      if (isArticle) ...[
+                                        const SizedBox(height: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF00897B)
+                                                .withOpacity(0.10),
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                          ),
+                                          child: const Text(
+                                            '📖 مقال محفوظ',
+                                            style: TextStyle(
+                                                fontSize: 10.5,
+                                                color: Color(0xFF00897B),
+                                                fontWeight: FontWeight.w700),
+                                          ),
+                                        ),
+                                      ] else if (authorName.isNotEmpty) ...[
                                         const SizedBox(height: 4),
                                         Text(
                                           authorName,
@@ -154,6 +218,19 @@ class FavoritesScreen extends StatelessWidget {
                   );
                 },
               ),
+      ),
+    );
+  }
+
+  Widget _fallbackThumb(bool isArticle) {
+    return Container(
+      width: 60,
+      height: 60,
+      color: isArticle ? const Color(0xFFE0F2F1) : const Color(0xFFFFF0F5),
+      child: Icon(
+        isArticle ? Icons.menu_book_rounded : Icons.bookmark,
+        color: isArticle ? const Color(0xFF00897B) : const Color(0xFFE91E63),
+        size: 28,
       ),
     );
   }

@@ -190,24 +190,91 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ),
         ),
       ),
-      floatingActionButton: _mainTab == 0 || _mainTab == 1
-        ? FloatingActionButton.extended(
-            onPressed: () async {
-              String? cohortKey;
-              if (_mainTab == 1 && _currentUserId != null) {
-                final userSnap = await FirebaseFirestore.instance.collection('users').doc(_currentUserId!).get();
-                cohortKey = userSnap.data()?['cohortKey'] as String?;
-              }
-              if (mounted) {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => CreatePostScreen(cohortKey: cohortKey)));
-              }
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // زر الرسائل الخاصة الطافي مع شارة العداد الحي للرسائل السابقة
+          FloatingActionButton(
+            heroTag: 'community_chat_fab',
+            tooltip: 'رسائلي الخاصة والمحادثات السابقة',
+            backgroundColor: const Color(0xFF00897B),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChatListScreen()),
+              );
             },
-            backgroundColor: const Color(0xFFE91E63),
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('منشور جديد', style: TextStyle(fontWeight: FontWeight.bold)),
-          )
-        : null,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 24),
+                if (_currentUserId != null)
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('direct_chats')
+                        .where('participants', arrayContains: _currentUserId)
+                        .snapshots(),
+                    builder: (context, snap) {
+                      if (!snap.hasData) return const SizedBox.shrink();
+                      int totalUnread = 0;
+                      for (final doc in snap.data!.docs) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final unreadMap = data['unreadCount'] as Map<String, dynamic>?;
+                        if (unreadMap != null && unreadMap[_currentUserId] is int) {
+                          totalUnread += unreadMap[_currentUserId] as int;
+                        }
+                      }
+                      if (totalUnread <= 0) return const SizedBox.shrink();
+                      return Positioned(
+                        top: -8,
+                        right: -8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFE91E63),
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                          child: Center(
+                            child: Text(
+                              totalUnread > 99 ? '+99' : '$totalUnread',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+          if (_mainTab == 0 || _mainTab == 1) ...[
+            const SizedBox(height: 12),
+            FloatingActionButton.extended(
+              heroTag: 'community_new_post_fab',
+              onPressed: () async {
+                String? cohortKey;
+                if (_mainTab == 1 && _currentUserId != null) {
+                  final userSnap = await FirebaseFirestore.instance.collection('users').doc(_currentUserId!).get();
+                  cohortKey = userSnap.data()?['cohortKey'] as String?;
+                }
+                if (mounted) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => CreatePostScreen(cohortKey: cohortKey)));
+                }
+              },
+              backgroundColor: const Color(0xFFE91E63),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('منشور جديد', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ],
+      ),
       body: _mainTab == 0
         ? Column(
             children: [
