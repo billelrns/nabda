@@ -9,22 +9,35 @@ class MessagingService {
     final chatId = '${participants[0]}_${participants[1]}';
 
     final chatRef = _db.collection('direct_chats').doc(chatId);
-    final snap = await chatRef.get();
-
-    if (!snap.exists) {
+    try {
+      final snap = await chatRef.get();
+      if (!snap.exists) {
+        await chatRef.set({
+          'id': chatId,
+          'participants': participants,
+          'lastMessage': '',
+          'lastMessageSenderId': '',
+          'lastMessageTime': FieldValue.serverTimestamp(),
+          'unreadCount': {
+            currentUid: 0,
+            recipientUid: 0,
+          },
+          'blockedBy': [],
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (_) {
+      // إذا فشلت القراءة لعدم وجود الوثيقة، ننشئها باستخدام merge
       await chatRef.set({
         'id': chatId,
         'participants': participants,
-        'lastMessage': '',
-        'lastMessageSenderId': '',
-        'lastMessageTime': FieldValue.serverTimestamp(),
         'unreadCount': {
           currentUid: 0,
           recipientUid: 0,
         },
         'blockedBy': [],
         'createdAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
     }
 
     return chatId;
