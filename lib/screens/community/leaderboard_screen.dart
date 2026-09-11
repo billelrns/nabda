@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'user_profile_screen.dart';
+import '../../widgets/follow_button.dart';
 
 // ─── Theme ───
 const Color _bg = Color(0xFFFAF5F5);
@@ -374,51 +375,3 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
   }
 }
 
-// ─── Follow Button Widget (public for reuse) ───
-class FollowButton extends StatelessWidget {
-  final String targetUserId;
-  const FollowButton({Key? key, required this.targetUserId}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null || uid == targetUserId) return const SizedBox.shrink();
-    return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').doc(uid)
-        .collection('following').doc(targetUserId).snapshots(),
-      builder: (context, snap) {
-        final isFollowing = snap.hasData && snap.data!.exists;
-        return GestureDetector(
-          onTap: () async {
-            final ref = FirebaseFirestore.instance.collection('users').doc(uid).collection('following').doc(targetUserId);
-            final targetRef = FirebaseFirestore.instance.collection('users').doc(targetUserId).collection('followers').doc(uid);
-            // كتابة مستند الطرف الآخر قد تُرفض بقواعد الخصوصية — نجعلها غير قاتلة
-            // حتى تبقى متابعتي (الجهة الخاصّة بي) فعّالة دون كسر.
-            if (isFollowing) {
-              await ref.delete();
-              try { await targetRef.delete(); } catch (_) {}
-              try { await FirebaseFirestore.instance.collection('users').doc(uid).update({'followingCount': FieldValue.increment(-1)}); } catch (_) {}
-              try { await FirebaseFirestore.instance.collection('users').doc(targetUserId).update({'followersCount': FieldValue.increment(-1)}); } catch (_) {}
-            } else {
-              await ref.set({'followedAt': FieldValue.serverTimestamp()});
-              try { await targetRef.set({'followedAt': FieldValue.serverTimestamp()}); } catch (_) {}
-              try { await FirebaseFirestore.instance.collection('users').doc(uid).update({'followingCount': FieldValue.increment(1)}); } catch (_) {}
-              try { await FirebaseFirestore.instance.collection('users').doc(targetUserId).update({'followersCount': FieldValue.increment(1)}); } catch (_) {}
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            decoration: BoxDecoration(
-              color: isFollowing ? Colors.grey.shade200 : _pink,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              isFollowing ? 'متابَعة ✓' : 'متابعة',
-              style: TextStyle(color: isFollowing ? _text2 : Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}

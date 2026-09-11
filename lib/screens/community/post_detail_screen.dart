@@ -3,11 +3,13 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/community_engagement_service.dart';
 import '../../models/community_post_model.dart';
 import 'user_profile_screen.dart';
+import '../../widgets/follow_button.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
@@ -24,7 +26,140 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final FocusNode _commentFocus = FocusNode();
   bool _isSubmittingComment = false;
 
+  // ── حالة المفضلة والتنبيهات والإخفاء ──
+  bool _isFavorite = false;
+  bool _notifOn = false;
+
   String? get _currentUserId => FirebaseAuth.instance.currentUser?.uid;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPostPrefs();
+  }
+
+  DocumentReference<Map<String, dynamic>>? _userSub(String col) {
+    final uid = _currentUserId;
+    if (uid == null) return null;
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection(col)
+        .doc(widget.postId);
+  }
+
+  Future<void> _loadPostPrefs() async {
+    try {
+      final favRef = _userSub('favorites');
+      final notifRef = _userSub('post_notifications');
+      if (favRef == null || notifRef == null) return;
+      final results = await Future.wait([favRef.get(), notifRef.get()]);
+      if (!mounted) return;
+      setState(() {
+        _isFavorite = results[0].exists;
+        _notifOn = results[1].exists;
+      });
+    } catch (_) {}
+  }
+
+  void _needLogin() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('سجّلي الدخول أولاً'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _toggleFavorite() async {
+    final ref = _userSub('favorites');
+    if (ref == null) return _needLogin();
+    final was = _isFavorite;
+    setState(() => _isFavorite = !was);
+    try {
+      if (was) {
+        await ref.delete();
+      } else {
+        await ref.set({
+          'type': 'post',
+          'postId': widget.postId,
+          'savedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(was ? 'أُزيل من المفضلة' : 'حُفظ في المفضلة 🔖'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isFavorite = was);
+    }
+  }
+
+  Future<void> _togglePostNotifications() async {
+    final ref = _userSub('post_notifications');
+    if (ref == null) return _needLogin();
+    final was = _notifOn;
+    setState(() => _notifOn = !was);
+    try {
+      if (was) {
+        await ref.delete();
+      } else {
+        await ref.set({
+          'postId': widget.postId,
+          'enabledAt': FieldValue.serverTimestamp(),
+        });
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(was
+                ? 'أُلغيت تنبيهات هذا المنشور'
+                : 'ستصلكِ تنبيهات هذا المنشور 🔔'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) setState(() => _notifOn = was);
+    }
+  }
+
+  Future<void> _hidePost() async {
+    final ref = _userSub('hidden_posts');
+    if (ref == null) return _needLogin();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Text('إخفاء المنشور'),
+          content: const Text('لن يظهر هذا المنشور في خلاصتك بعد الآن.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00897B), foregroundColor: Colors.white),
+              child: const Text('إخفاء'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.set({
+        'postId': widget.postId,
+        'hiddenAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) Navigator.pop(context);
+    } catch (_) {}
+  }
 
   static const Map<String, String> _categoryLabels = {
     'all': 'الكل',
@@ -143,6 +278,55 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           backgroundColor: const Color(0xFF00897B),
           foregroundColor: Colors.white,
           elevation: 0,
+          actions: [
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (v) {
+                switch (v) {
+                  case 'fav':
+                    _toggleFavorite();
+                    break;
+                  case 'hide':
+                    _hidePost();
+                    break;
+                  case 'notif':
+                    _togglePostNotifications();
+                    break;
+                }
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'fav',
+                  child: Row(children: [
+                    Icon(_isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                        size: 20, color: const Color(0xFFE0195B)),
+                    const SizedBox(width: 10),
+                    Text(_isFavorite ? 'إزالة من المفضلة' : 'حفظ في المفضلة'),
+                  ]),
+                ),
+                PopupMenuItem(
+                  value: 'notif',
+                  child: Row(children: [
+                    Icon(_notifOn
+                            ? Icons.notifications_active
+                            : Icons.notifications_none,
+                        size: 20, color: const Color(0xFF00897B)),
+                    const SizedBox(width: 10),
+                    Text(_notifOn ? 'إلغاء التنبيهات' : 'تفعيل التنبيهات'),
+                  ]),
+                ),
+                const PopupMenuItem(
+                  value: 'hide',
+                  child: Row(children: [
+                    Icon(Icons.visibility_off_outlined,
+                        size: 20, color: Colors.grey),
+                    SizedBox(width: 10),
+                    Text('إخفاء هذا المنشور'),
+                  ]),
+                ),
+              ],
+            ),
+          ],
         ),
         // حقل التعليق خارج الـStreamBuilder حتى لا يُعاد بناؤه مع تحديثات
         // المنشور (وإلا فقد التركيز وأُغلقت لوحة المفاتيح).
@@ -278,6 +462,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         ],
                       ),
                     ),
+                    if (!post.isAnonymous && !isTeamPost && post.userId.isNotEmpty) ...[
+                      FollowButton(targetUserId: post.userId, compact: true),
+                      const SizedBox(width: 4),
+                      DirectMessageButton(targetUserId: post.userId, compact: true),
+                      const SizedBox(width: 6),
+                    ],
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
@@ -492,6 +682,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     if (isTeamComment) ...[
                       const SizedBox(width: 3),
                       const Icon(Icons.verified, size: 14, color: Color(0xFF00897B)),
+                    ],
+                    if (!isTeamComment && (comment['userId']?.toString().isNotEmpty ?? false)) ...[
+                      const SizedBox(width: 6),
+                      FollowButton(targetUserId: comment['userId'].toString(), compact: true),
+                      const SizedBox(width: 4),
+                      DirectMessageButton(targetUserId: comment['userId'].toString(), compact: true),
                     ],
                     const Spacer(),
                     Text(

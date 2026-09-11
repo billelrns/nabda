@@ -83,16 +83,34 @@ class MessagingService {
     final snap = await chatRef.get();
     if (!snap.exists) return;
 
-    final blockedBy = List<String>.from(snap.data()?['blockedBy'] ?? []);
+    final data = snap.data();
+    final participants = List<String>.from(data?['participants'] ?? []);
+    final recipientId = participants.firstWhere((p) => p != currentUid, orElse: () => '');
+    final blockedBy = List<String>.from(data?['blockedBy'] ?? []);
+
+    final userBlockedRef = recipientId.isNotEmpty
+        ? _db.collection('users').doc(currentUid).collection('blocked').doc(recipientId)
+        : null;
 
     if (blockedBy.contains(currentUid)) {
       await chatRef.update({
         'blockedBy': FieldValue.arrayRemove([currentUid]),
       });
+      if (userBlockedRef != null) {
+        try { await userBlockedRef.delete(); } catch (_) {}
+      }
     } else {
       await chatRef.update({
         'blockedBy': FieldValue.arrayUnion([currentUid]),
       });
+      if (userBlockedRef != null) {
+        try {
+          await userBlockedRef.set({
+            'blockedAt': FieldValue.serverTimestamp(),
+            'chatId': chatId,
+          });
+        } catch (_) {}
+      }
     }
   }
 

@@ -248,10 +248,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
               _buildShareRow(themeColor),
               const SizedBox(height: 20),
 
-              // ملخص المقال
-              _buildSummaryCard(themeColor),
-              const SizedBox(height: 24),
-
               // أقسام المقال
               ...article.sections.map((section) => _buildSectionWidget(section, themeColor)),
 
@@ -297,9 +293,13 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
               children: [
                 Row(
                   children: [
-                    Text(
-                      widget.article.author,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF2C2C2C)),
+                    Flexible(
+                      child: Text(
+                        widget.article.author,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF2C2C2C)),
+                      ),
                     ),
                     const SizedBox(width: 4),
                     const Icon(Icons.verified, size: 14, color: Color(0xFF00897B)),
@@ -381,37 +381,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
             Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(Color themeColor) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF8FB),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: themeColor.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.lightbulb_outline, color: themeColor, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'خلاصة الدليل والمعلومات الأساسية',
-                style: TextStyle(color: themeColor, fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            widget.article.summary,
-            style: const TextStyle(fontSize: 14, height: 1.6, color: Color(0xFF4A434B)),
-          ),
-        ],
       ),
     );
   }

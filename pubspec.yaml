@@ -45,6 +45,36 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# ─── أيقونة التطبيق: شعار نبضة (القلبان) ───
+# التوليد:  dart run flutter_launcher_icons
+# المصدر يُنشأ بـ:  powershell -ExecutionPolicy Bypass -File tools\make_icons.ps1
+flutter_launcher_icons:
+  image_path: "assets/icon/nabda_icon.png"
+
+  android: "ic_launcher"          # نفس الاسم المُشار إليه في AndroidManifest
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFF5F8"
+  adaptive_icon_foreground: "assets/icon/nabda_icon_fg.png"
+
+  ios: true
+  remove_alpha_ios: true          # آبل ترفض الأيقونات ذات الشفافية
+
+  web:
+    generate: true
+    image_path: "assets/icon/nabda_icon.png"
+    background_color: "#FFF5F8"
+    theme_color: "#E91E63"
+
+  windows:
+    generate: true
+    image_path: "assets/icon/nabda_icon.png"
+    icon_size: 256
+
+  macos:
+    generate: true
+    image_path: "assets/icon/nabda_icon.png"
 
 flutter:
   uses-material-design: true
@@ -62,12 +92,11 @@ flutter:
     - assets/images/pregnancy_news/
     - assets/images/smart_articles/
     - assets/images/share_cards/
-    - assets/data/algeria_cities.json
-    - assets/data/smart_100_articles.json
+    # تسجيل ملفات البيانات التشغيلية فردياً لمنع تسريب ملفات العمل والنسخ الاحتياطية
     - assets/data/smart_2500_articles.json
-    - assets/data/article_titles.json
-    - assets/data/news_images.json
-    - assets/data/algeria_doctors_clinics.json
-    - assets/data/algeria_wilaya_centroids.json
+    - assets/data/smart_100_articles.json
     - assets/data/arab_world_doctors.json
-    - assets/data/
+    - assets/data/algeria_cities.json
+    - assets/data/article_titles.json
+    - assets/data/algeria_wilaya_centroids.json
+    - assets/data/news_images.json

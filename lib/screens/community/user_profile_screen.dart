@@ -5,6 +5,7 @@ import 'leaderboard_screen.dart';
 import 'post_detail_screen.dart';
 import '../messaging/chat_room_screen.dart';
 import '../../services/messaging_service.dart';
+import '../../widgets/follow_button.dart';
 
 // ─── Theme ───
 const Color _bg = Color(0xFFFAF5F5);
@@ -26,8 +27,39 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   String _activityTab = 'posts'; // posts, photos
+  int? _liveFollowersCount;
+  int? _liveFollowingCount;
 
   bool get _isOwnProfile => FirebaseAuth.instance.currentUser?.uid == widget.userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFollowCounts();
+  }
+
+  Future<void> _loadFollowCounts() async {
+    try {
+      final followersSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .collection('followers')
+          .count()
+          .get();
+      final followingSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .collection('following')
+          .count()
+          .get();
+      if (mounted) {
+        setState(() {
+          _liveFollowersCount = followersSnap.count ?? 0;
+          _liveFollowingCount = followingSnap.count ?? 0;
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,8 +124,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildProfileHeader(Map<String, dynamic> d) {
     final name = d['name'] ?? '';
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final followersCount = d['followersCount'] ?? 0;
-    final followingCount = d['followingCount'] ?? 0;
+    final followersCount = _liveFollowersCount ?? (d['followersCount'] ?? 0);
+    final followingCount = _liveFollowingCount ?? (d['followingCount'] ?? 0);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
@@ -125,51 +157,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             // Buttons
             if (!_isOwnProfile)
               Row(children: [
-                Expanded(child: FollowButton(targetUserId: widget.userId)),
+                Expanded(
+                  child: FollowButton(
+                    targetUserId: widget.userId,
+                    onFollowChanged: _loadFollowCounts,
+                  ),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () async {
-                      final myUid = FirebaseAuth.instance.currentUser?.uid;
-                      if (myUid == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('يجب تسجيل الدخول أولاً'), backgroundColor: _teal),
-                        );
-                        return;
-                      }
-
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) => const Center(
-                          child: CircularProgressIndicator(color: _teal),
-                        ),
-                      );
-
-                      try {
-                        final chatId = await MessagingService().getOrCreateChat(myUid, widget.userId);
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => ChatRoomScreen(chatId: chatId)));
-                        }
-                      } catch (_) {
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('حدث خطأ أثناء فتح المحادثة'), backgroundColor: Colors.red),
-                          );
-                        }
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: _text2.withOpacity(0.3)),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Center(child: Text('رسالة', style: TextStyle(color: _text2, fontSize: 12, fontWeight: FontWeight.bold))),
-                    ),
+                  child: DirectMessageButton(
+                    targetUserId: widget.userId,
+                    targetUserName: name,
                   ),
                 ),
               ]),

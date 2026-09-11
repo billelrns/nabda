@@ -104,6 +104,12 @@ class BlockedUsersScreen extends StatelessWidget {
                                 ),
                                 onPressed: () async {
                                   await docs[i].reference.delete();
+                                  try {
+                                    final p = [uid, blockedUid]..sort();
+                                    await FirebaseFirestore.instance.collection('direct_chats').doc(p.join('_')).update({
+                                      'blockedBy': FieldValue.arrayRemove([uid]),
+                                    });
+                                  } catch (_) {}
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('تم إلغاء حظر $name بنجاح')),
