@@ -71,6 +71,11 @@ service cloud.firestore {
         allow read, write: if isAuthenticated() && isOwner(userId);
       }
 
+      // المفضلة والمحفوظات (مقالات، منشورات)
+      match /favorites/{favoriteId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+
       // كل المجموعات الفرعية الأخرى للمستخدم (babies, baby_logs, cycle_logs,
       // weight_tracker, vaccines, logs، private...) يملكها صاحب الحساب فقط
       match /{subCollection=**} {

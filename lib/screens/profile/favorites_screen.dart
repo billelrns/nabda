@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../community/post_detail_screen.dart';
-import '../articles/smart_articles_list_screen.dart';
+import '../articles/article_detail_screen.dart';
 import '../articles/smart_article_detail_screen.dart';
 import '../../services/smart_articles_service.dart';
 import '../../models/smart_article.dart';
+import '../../data/smart_interactive_articles_data.dart' as interactive_data;
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({Key? key}) : super(key: key);
@@ -30,13 +31,43 @@ class FavoritesScreen extends StatelessWidget {
                     .collection('users')
                     .doc(uid)
                     .collection('favorites')
-                    .orderBy('savedAt', descending: true)
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator(color: Color(0xFF00897B)));
                   }
-                  final docs = snapshot.data?.docs ?? [];
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, size: 60, color: Colors.red.shade300),
+                            const SizedBox(height: 12),
+                            Text(
+                              'تعذر تحميل المحفوظات، يرجى المحاولة لاحقاً',
+                              style: TextStyle(color: Colors.grey.shade700, fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  final docs = (snapshot.data?.docs ?? []).toList();
+                  docs.sort((a, b) {
+                    final aData = a.data() as Map<String, dynamic>;
+                    final bData = b.data() as Map<String, dynamic>;
+                    final aTime = aData['savedAt'];
+                    final bTime = bData['savedAt'];
+                    if (aTime is Timestamp && bTime is Timestamp) {
+                      return bTime.compareTo(aTime);
+                    }
+                    if (aTime is Timestamp) return -1;
+                    if (bTime is Timestamp) return 1;
+                    return 0;
+                  });
+
                   if (docs.isEmpty) {
                     return Center(
                       child: Padding(
@@ -92,12 +123,19 @@ class FavoritesScreen extends StatelessWidget {
                               );
 
                               SmartArticle? art;
+                              interactive_data.SmartArticle? interactiveArt;
                               try {
                                 if (articleId.isNotEmpty) {
                                   art = await SmartArticlesService().getById(articleId);
                                 }
                                 if (art == null && title.isNotEmpty) {
                                   art = await SmartArticlesService().getByTitle(title);
+                                }
+                                if (art == null) {
+                                  try {
+                                    interactiveArt = interactive_data.SmartArticlesDatabase.articles
+                                        .firstWhere((a) => a.id == articleId || a.title == title);
+                                  } catch (_) {}
                                 }
                               } catch (_) {}
 
@@ -107,17 +145,43 @@ class FavoritesScreen extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => SmartArticleDetailScreen(article: art!),
+                                      builder: (_) => ArticleDetailScreen(article: art!),
                                     ),
                                   );
-                                } else {
-                                  // حل احتياطي في حال كان المقال غير موجود في القاعدة الذكية
+                                } else if (interactiveArt != null) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => SmartArticlesListScreen(
-                                        initialTitle: title,
+                                      builder: (_) => SmartArticleDetailScreen(article: interactiveArt!),
+                                    ),
+                                  );
+                                } else {
+                                  final fallbackArt = SmartArticle(
+                                    id: articleId,
+                                    originalId: articleId,
+                                    rank: 1,
+                                    categoryId: d['categoryId'] as String? ?? 'general',
+                                    categoryName: d['category'] as String? ?? 'موسوعة نبضة',
+                                    title: title,
+                                    readTime: '5 دقائق',
+                                    author: d['author'] as String? ?? 'فريق نبضة الطبي',
+                                    summary: preview,
+                                    iconEmoji: '📖',
+                                    themeColor: const Color(0xFF00897B),
+                                    sections: [
+                                      ArticleSection(
+                                        title: 'محتوى المقال',
+                                        content: preview.isNotEmpty ? preview : title,
                                       ),
+                                    ],
+                                    faqs: const [],
+                                    originalViews: 1,
+                                    imagePath: thumbnail ?? 'assets/images/logo_nabda.png',
+                                  );
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ArticleDetailScreen(article: fallbackArt),
                                     ),
                                   );
                                 }

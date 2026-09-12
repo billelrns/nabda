@@ -128,25 +128,41 @@ class SmartArticlesService {
     return stats;
   }
 
-  /// جلب مقال بواسطة المعرف (ID)
+  static String _normalizeArabic(String text) {
+    return text
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[إأآا]'), 'ا')
+        .replaceAll('ة', 'ه')
+        .replaceAll('ى', 'ي')
+        .replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '');
+  }
+
+  /// جلب مقال بواسطة المعرف (ID) أو المعرف الأصلي
   Future<SmartArticle?> getById(String id) async {
+    final clean = id.trim();
+    if (clean.isEmpty) return null;
     final all = await loadAll();
     try {
-      return all.firstWhere((a) => a.id == id);
+      return all.firstWhere((a) => a.id == clean || a.originalId == clean);
     } catch (_) {
       return null;
     }
   }
 
-  /// جلب مقال بواسطة العنوان
+  /// جلب مقال بواسطة العنوان مع توحيد الحروف العربية والتطابق الجزئي
   Future<SmartArticle?> getByTitle(String title) async {
+    final clean = _normalizeArabic(title);
+    if (clean.isEmpty) return null;
     final all = await loadAll();
-    final clean = title.trim().toLowerCase();
     try {
-      return all.firstWhere((a) => a.title.trim().toLowerCase() == clean);
+      return all.firstWhere((a) => _normalizeArabic(a.title) == clean);
     } catch (_) {
       try {
-        return all.firstWhere((a) => a.title.trim().toLowerCase().contains(clean) || clean.contains(a.title.trim().toLowerCase()));
+        return all.firstWhere((a) {
+          final normA = _normalizeArabic(a.title);
+          return normA.contains(clean) || clean.contains(normA);
+        });
       } catch (_) {
         return null;
       }

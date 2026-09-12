@@ -225,24 +225,54 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                   : null,
               actions: [
                 IconButton(
-                  icon: _isBookmarkLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : Icon(
-                          _isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                          color: _isBookmarked ? const Color(0xFFFF4081) : Colors.white,
-                        ),
-                  tooltip: 'حفظ المقال',
+                  icon: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _isBookmarked
+                          ? Colors.white
+                          : Colors.black.withValues(alpha: 0.35),
+                      boxShadow: _isBookmarked
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: _isBookmarkLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: _isBookmarked ? const Color(0xFFE91E63) : Colors.white,
+                            ),
+                          )
+                        : Icon(
+                            _isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                            color: _isBookmarked ? const Color(0xFFE91E63) : Colors.white,
+                            size: 20,
+                          ),
+                  ),
+                  tooltip: _isBookmarked ? 'إزالة من المفضلة' : 'حفظ في المفضلة',
                   onPressed: _isBookmarkLoading ? null : _toggleBookmark,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.share),
+                  icon: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: 0.35),
+                    ),
+                    child: const Icon(Icons.share, color: Colors.white, size: 20),
+                  ),
                   tooltip: 'مشاركة',
                   onPressed: _shareNative,
                 ),
+                const SizedBox(width: 4),
               ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Stack(
@@ -425,34 +455,47 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   }
 
   Widget _buildShareRow(Color themeColor) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _shareIconButton(
-          icon: Icons.link,
-          label: 'نسخ الرابط',
-          color: const Color(0xFF5E35B1),
-          onTap: _copyLink,
-        ),
-        _shareIconButton(
-          icon: Icons.chat_bubble_outline,
-          label: 'واتساب',
-          color: const Color(0xFF25D366),
-          onTap: _shareWhatsApp,
-        ),
-        _shareIconButton(
-          icon: Icons.share,
-          label: 'مشاركة',
-          color: themeColor,
-          onTap: _shareNative,
-        ),
-        _shareIconButton(
-          icon: Icons.open_in_browser,
-          label: 'إكس',
-          color: const Color(0xFF1DA1F2),
-          onTap: _shareTwitter,
-        ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          _shareIconButton(
+            icon: _isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+            label: _isBookmarked ? 'محفوظ في المفضلة 🤍' : 'حفظ المقال 🔖',
+            color: _isBookmarked ? const Color(0xFFE91E63) : const Color(0xFF00897B),
+            onTap: _isBookmarkLoading ? () {} : _toggleBookmark,
+          ),
+          const SizedBox(width: 8),
+          _shareIconButton(
+            icon: Icons.link,
+            label: 'نسخ الرابط',
+            color: const Color(0xFF5E35B1),
+            onTap: _copyLink,
+          ),
+          const SizedBox(width: 8),
+          _shareIconButton(
+            icon: Icons.chat_bubble_outline,
+            label: 'واتساب',
+            color: const Color(0xFF25D366),
+            onTap: _shareWhatsApp,
+          ),
+          const SizedBox(width: 8),
+          _shareIconButton(
+            icon: Icons.share,
+            label: 'مشاركة',
+            color: themeColor,
+            onTap: _shareNative,
+          ),
+          const SizedBox(width: 8),
+          _shareIconButton(
+            icon: Icons.open_in_browser,
+            label: 'إكس',
+            color: const Color(0xFF1DA1F2),
+            onTap: _shareTwitter,
+          ),
+        ],
+      ),
     );
   }
 
