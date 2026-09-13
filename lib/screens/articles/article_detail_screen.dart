@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/smart_article.dart';
 import '../../services/smart_articles_service.dart';
+import '../../services/favorites_service.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
   final SmartArticle article;
@@ -34,96 +33,72 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   }
 
   Future<void> _checkBookmarkStatus() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('favorites')
-          .doc(widget.article.id)
-          .get();
-      if (mounted) {
-        setState(() {
-          _isBookmarked = doc.exists;
-        });
-      }
-    } catch (_) {}
+    final bookmarked = FavoritesService().isBookmarked(widget.article.id);
+    if (mounted) {
+      setState(() {
+        _isBookmarked = bookmarked;
+      });
+    }
+    // فحص إضافي غير متزامن لتأكيد الحالة
+    final confirmed = await FavoritesService().checkIsBookmarked(widget.article.id);
+    if (mounted && confirmed != _isBookmarked) {
+      setState(() {
+        _isBookmarked = confirmed;
+      });
+    }
   }
 
   Future<void> _toggleBookmark() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('سجّلي الدخول أولاً لحفظ المقال في المفضلة 🔖'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    final original = _isBookmarked;
     setState(() {
-      _isBookmarked = !original;
       _isBookmarkLoading = true;
     });
 
-    final favRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('favorites')
-        .doc(widget.article.id);
+    final hex = widget.article.themeColor.value.toRadixString(16).padLeft(8, '0');
+    final colorHex = '#${hex.substring(2)}';
 
-    try {
-      if (!original) {
-        await favRef.set({
-          'type': 'article',
-          'articleId': widget.article.id,
-          'title': widget.article.title,
-          'preview': widget.article.summary,
-          'thumbnail': widget.article.imagePath,
-          'category': widget.article.categoryName,
-          'categoryId': widget.article.categoryId,
-          'savedAt': FieldValue.serverTimestamp(),
-        });
-      } else {
-        await favRef.delete();
-      }
+    final newStatus = await FavoritesService().toggleArticle(
+      articleId: widget.article.id,
+      title: widget.article.title,
+      summary: widget.article.summary,
+      category: widget.article.categoryName,
+      categoryId: widget.article.categoryId,
+      imagePath: widget.article.imagePath,
+      author: widget.article.author,
+      readTime: widget.article.readTime,
+      themeColorHex: colorHex,
+    );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              !original
-                  ? 'تم حفظ المقال في المفضلة 🤍'
-                  : 'تمت الإزالة من المفضلة',
-            ),
-            duration: const Duration(seconds: 2),
-            backgroundColor: widget.article.themeColor,
-            behavior: SnackBarBehavior.floating,
+    if (mounted) {
+      setState(() {
+        _isBookmarked = newStatus;
+        _isBookmarkLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                newStatus ? Icons.bookmark_added_rounded : Icons.bookmark_remove_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                newStatus
+                    ? 'تم حفظ المقال في المفضلة بنجاح 🤍'
+                    : 'تمت إزالة المقال من المفضلة',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isBookmarked = original;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تعذر تحديث المفضلة، تحققي من الاتصال بالإنترنت'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isBookmarkLoading = false;
-        });
-      }
+          duration: const Duration(seconds: 2),
+          backgroundColor: newStatus ? const Color(0xFF00897B) : const Color(0xFFE91E63),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
     }
   }
 

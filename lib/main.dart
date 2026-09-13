@@ -66,6 +66,9 @@ import 'widgets/smart_articles_carousel.dart';
 import 'widgets/smart_article_carousel.dart';
 import 'screens/articles/smart_article_detail_screen.dart';
 import 'screens/articles/smart_articles_list_screen.dart';
+import 'screens/articles/articles_hub_screen.dart';
+import 'screens/articles/articles_search_screen.dart';
+import 'screens/articles/articles_list_screen.dart';
 import 'screens/fiqh/womens_fiqh_screen.dart';
 import 'screens/qadaa/qadaa_screen.dart';
 import 'screens/profile/favorites_screen.dart';
@@ -84,6 +87,7 @@ import 'web/web_home.dart';
 import 'web/web_pregnancy.dart';
 import 'web/web_public_home.dart';
 import 'web/url_helper.dart';
+import 'services/favorites_service.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -277,6 +281,8 @@ void main() async {
   await ArticleImages.preload();
   // AdMob لا يجب أن يحجب أول إطار
   AdMobService.init();
+  // تهيئة كاش المفضلة والمحفوظات للوصول الفوري بدون إنترنت
+  FavoritesService().init();
 
   runApp(NabdaApp());
 }
@@ -2614,29 +2620,31 @@ class _MainNavState extends State<MainNav> {
                 'assets/icons_3d/icon_nav_baby.png',
                 'assets/icons_3d/icon_shop.png',
               ];
+              // خانة موحّدة لكل الأيقونات = 30px عرضاً.
+              // الرسم يطفو قليلاً خارجها للوضوح، لكن دون مزاحمة النصّ.
+              const slot = 30.0;
               Widget navIcon() {
                 if (navAssets[i] == null) {
-                  return SizedBox(
-                    width: 34,
-                    height: 34,
+                  return const SizedBox(
+                    width: slot,
+                    height: slot,
                     child: OverflowBox(
-                      maxWidth: 46,
-                      maxHeight: 46,
-                      child: const NabdaBeatingHearts(size: 46),
+                      maxWidth: 38,
+                      maxHeight: 38,
+                      child: NabdaBeatingHearts(size: 38),
                     ),
                   );
                 }
-                // الأيقونة تطفو أكبر من الشريط لوضوح تام
                 return SizedBox(
-                  width: 34,
-                  height: 34,
+                  width: slot,
+                  height: slot,
                   child: OverflowBox(
-                    maxWidth: 52,
-                    maxHeight: 52,
+                    maxWidth: 42,
+                    maxHeight: 42,
                     child: Image.asset(
                       navAssets[i]!,
-                      width: 52,
-                      height: 52,
+                      width: 42,
+                      height: 42,
                       fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) => Icon(
                         isActive ? activeIcons[i] : icons[i],
@@ -2660,7 +2668,7 @@ class _MainNavState extends State<MainNav> {
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeOutCubic,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isActive ? 12 : 6,
+                    horizontal: isActive ? 10 : 5,
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
@@ -2694,16 +2702,21 @@ class _MainNavState extends State<MainNav> {
                           : Opacity(opacity: 0.82, child: navIcon()),
                       if (isActive) ...[
                         const SizedBox(width: 5),
+                        // FittedBox يصغّر الاسم قليلاً بدل أن يقصّه،
+                        // فيظهر اسم القسم كاملاً على كل عروض الشاشات.
                         Flexible(
-                          child: Text(
-                            labels[i],
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.fade,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              labels[i],
+                              maxLines: 1,
+                              softWrap: false,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),
@@ -2805,8 +2818,8 @@ class _MainNavState extends State<MainNav> {
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WomensFiqhScreen()))),
                   _navItem(context, '🌙', 'قضاء الصيام',
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QadaaScreen()))),
-                  _navItem(context, '📚', 'المقالات الذكية',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SmartArticlesListScreen()))),
+                  _navItem(context, '📚', 'موسوعة نبضة (6,982)',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticlesHubScreen()))),
                   _sidebarDivider(line),
                   // ── حسابي ──
                   _navItem(context, '🔖', 'مقالاتي المحفوظة',
@@ -3032,6 +3045,16 @@ class _HomePageState extends State<HomePage> {
                       child: Row(
                         children: [
                           const SizedBox(width: 10),
+                          // Search icon for articles & smart tools
+                          _topBarIconBtn(
+                            icon: Icons.search_rounded,
+                            color: _pink,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const ArticlesSearchScreen()),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
                           // Bell icon
                           _topBarIconBtn(
                             icon: Icons.notifications_outlined,
@@ -3039,35 +3062,9 @@ class _HomePageState extends State<HomePage> {
                             showDot: true,
                             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage())),
                           ),
-                          // Logo center
-                          Expanded(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 32, height: 32,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    gradient: const RadialGradient(
-                                      center: Alignment(-0.4, -0.5),
-                                      colors: [Color(0xFFFF8DB7), _pink, Color(0xFFD63A78)],
-                                      stops: [0, 0.55, 1],
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(color: _pink.withOpacity(0.35), blurRadius: 14, offset: const Offset(0, 6)),
-                                    ],
-                                  ),
-                                  child: const Center(child: Icon(Icons.favorite, color: Colors.white, size: 16)),
-                                ),
-                                const SizedBox(width: 8),
-                                ShaderMask(
-                                  shaderCallback: (bounds) => const LinearGradient(
-                                    colors: [_pink, _lavender2],
-                                  ).createShader(bounds),
-                                  child: const Text('نبضة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5)),
-                                ),
-                              ],
-                            ),
+                          // Logo center — الشعار الرسمي المتحرك (الكلمة يساراً والقلبان يميناً)
+                          const Expanded(
+                            child: Center(child: NabdaLogoBar(height: 38)),
                           ),
                           // Avatar
                           GestureDetector(
@@ -3110,6 +3107,9 @@ class _HomePageState extends State<HomePage> {
 
                         // ════════════ HERO SECTION ════════════
                         _buildHero(),
+
+                        // ════════════ SEARCH (ARTICLES & SMART TOOLS) ════════════
+                        _buildSearchBarButton(),
 
                         // ════════════ PREGNANCY TRACKER ════════════
                         if (_pregnancyWeek > 0) _buildTracker(),
@@ -3168,12 +3168,24 @@ class _HomePageState extends State<HomePage> {
                         const SmartArticleCarousel(
                           categoryId: null,
                           title: '🔥 الأكثر قراءة في نبضة',
-                          maxItems: 10,
+                          maxItems: 8,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
+                        const SmartArticleCarousel(
+                          categoryId: 'health',
+                          title: '🥗 صحة المرأة والرشاقة والتغذية',
+                          maxItems: 8,
+                        ),
+                        const SizedBox(height: 14),
                         const SmartArticleCarousel(
                           categoryId: 'beauty',
-                          title: '💄 جمالكِ وعنايتك',
+                          title: '💄 جمالي وعنايتي بالبشرة والشعر',
+                          maxItems: 8,
+                        ),
+                        const SizedBox(height: 14),
+                        const SmartArticleCarousel(
+                          categoryId: 'marriage',
+                          title: '💍 العلاقة الزوجية والسكينة الأسرية',
                           maxItems: 8,
                         ),
                         const SizedBox(height: 16),
@@ -3232,6 +3244,109 @@ const SizedBox(height: 30),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  // ─────────── SEARCH BAR BUTTON (ARTICLES & TOOLS) ───────────
+  Widget _buildSearchBarButton() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ArticlesSearchScreen()),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: _pink.withOpacity(0.22), width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFC2185B).withOpacity(0.06),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+                BoxShadow(
+                  color: _ink.withOpacity(0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF4F93), Color(0xFF9B6FE1)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _pink.withOpacity(0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.search_rounded, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'ابحثي في مقالات وأدوات نبضة الذكية...',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1B1320),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '6,982 مقالاً موثقاً • 18 أداة ذكية وحاسبة طبية',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _ink3,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF1F6),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: _pink.withOpacity(0.2)),
+                  ),
+                  child: const Text(
+                    'بحث',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFE53B7E),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -3927,7 +4042,7 @@ const SizedBox(height: 30),
       _QAData(Icons.nightlight_round, 'قضاء الصيام', 'متتبّع أيام القضاء', '',
         [_lavender, _lavender2],
         () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QadaaScreen()))),
-      _QAData(Icons.auto_stories, 'موسوعة نبضة', '2,500 مقال', '',
+      _QAData(Icons.auto_stories, 'موسوعة نبضة', '6,982 مقالاً', '',
         [const Color(0xFFE91E63), const Color(0xFFC2185B)],
         () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticlesHubScreen()))),
     ];
@@ -4587,7 +4702,7 @@ class _CyclePageState extends State<CyclePage> {
                         ),
 
                         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 SYMPTOMS SECTION \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-                        _sectionHeader('\u0633\u062C\u0651\u0644\u064A \u0623\u0639\u0631\u0627\u0636\u0643\u0650', '\u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u064A\u0648\u0645'),
+                        _sectionHeader('\u0633\u062C\u0651\u0644\u064A \u0623\u0639\u0631\u0627\u0630\u0643\u0650', '\u0623\u0639\u0631\u0627\u0636 \u0627\u0644\u064A\u0648\u0645'),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Wrap(spacing: 8, runSpacing: 8, children: [
@@ -4681,7 +4796,7 @@ class _CyclePageState extends State<CyclePage> {
                           ),
                         ),
 
-                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 ARTICLES \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        // ════════════ ARTICLES ════════════
                         Padding(
                           padding: const EdgeInsets.all(20),
                           child: _CycleArticlesSection(),
@@ -4689,7 +4804,11 @@ class _CyclePageState extends State<CyclePage> {
                         const SizedBox(height: 12),
                         const SmartArticleCarousel(categoryId: 'fertility', title: '🌸 التبويض والخصوبة', maxItems: 8),
                         const SizedBox(height: 12),
-                        const SmartArticleCarousel(categoryId: 'health', title: '💗 صحّة المرأة', maxItems: 8),
+                        const SmartArticleCarousel(categoryId: 'health', title: '🥗 صحة المرأة والرشاقة والتغذية', maxItems: 8),
+                        const SizedBox(height: 12),
+                        const SmartArticleCarousel(categoryId: 'beauty', title: '💄 جمالي وعنايتي بالبشرة والشعر', maxItems: 8),
+                        const SizedBox(height: 12),
+                        const SmartArticleCarousel(categoryId: 'marriage', title: '💍 العلاقة الزوجية والسكينة الأسرية', maxItems: 8),
                         const SizedBox(height: 30),
                       ],
                     ),
@@ -4705,7 +4824,7 @@ class _CyclePageState extends State<CyclePage> {
 
   String _arabicDate() {
     final now = DateTime.now();
-    final days = ['\u0627\u0644\u0623\u062D\u062F', '\u0627\u0644\u0625\u062B\u0646\u064A\u0646', '\u0627\u0644\u062B\u0644\u0627\u062B\u0627\u0621', '\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621', '\u0627\u0644\u062E\u0645\u064A\u0633', '\u0627\u0644\u062C\u0645\u0639\u0629', '\u0627\u0644\u0633\u0628\u062A'];
+    final days = ['\u0627\u0644\u0623\u062D\u062F', '\u0627\u0644\u0625\u062B\u0646\u064A\u0646', '\u0627\u0644\u062B\u0644\u0627\u062A\u0627\u0621', '\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621', '\u0627\u0644\u062E\u0645\u064A\u0633', '\u0627\u0644\u062C\u0645\u0639\u0629', '\u0627\u0644\u0633\u0628\u062A'];
     final months = ['\u064A\u0646\u0627\u064A\u0631', '\u0641\u0628\u0631\u0627\u064A\u0631', '\u0645\u0627\u0631\u0633', '\u0623\u0628\u0631\u064A\u0644', '\u0645\u0627\u064A\u0648', '\u064A\u0648\u0646\u064A\u0648', '\u064A\u0648\u0644\u064A\u0648', '\u0623\u063A\u0633\u0637\u0633', '\u0633\u0628\u062A\u0645\u0628\u0631', '\u0623\u0643\u062A\u0648\u0628\u0631', '\u0646\u0648\u0641\u0645\u0628\u0631', '\u062F\u064A\u0633\u0645\u0628\u0631'];
     return '${days[now.weekday % 7]} ${now.day} ${months[now.month - 1]}';
   }
@@ -5367,7 +5486,7 @@ class _BabyPageState extends State<BabyPage> {
 
   String _arabicDate() {
     final now = DateTime.now();
-    final days = ['\u0627\u0644\u0623\u062D\u062F', '\u0627\u0644\u0625\u062B\u0646\u064A\u0646', '\u0627\u0644\u062B\u0644\u0627\u062B\u0627\u0621', '\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621', '\u0627\u0644\u062E\u0645\u064A\u0633', '\u0627\u0644\u062C\u0645\u0639\u0629', '\u0627\u0644\u0633\u0628\u062A'];
+    final days = ['\u0627\u0644\u0623\u062D\u062F', '\u0627\u0644\u0625\u062B\u0646\u064A\u0646', '\u0627\u0644\u062B\u0644\u0627\u062A\u0627\u0621', '\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621', '\u0627\u0644\u062E\u0645\u064A\u0633', '\u0627\u0644\u062C\u0645\u0639\u0629', '\u0627\u0644\u0633\u0628\u062A'];
     final months = ['\u064A\u0646\u0627\u064A\u0631', '\u0641\u0628\u0631\u0627\u064A\u0631', '\u0645\u0627\u0631\u0633', '\u0623\u0628\u0631\u064A\u0644', '\u0645\u0627\u064A\u0648', '\u064A\u0648\u0646\u064A\u0648', '\u064A\u0648\u0644\u064A\u0648', '\u0623\u063A\u0633\u0637\u0633', '\u0633\u0628\u062A\u0645\u0628\u0631', '\u0623\u0643\u062A\u0648\u0628\u0631', '\u0646\u0648\u0641\u0645\u0628\u0631', '\u062F\u064A\u0633\u0645\u0628\u0631'];
     return '${days[now.weekday % 7]} ${now.day} ${months[now.month - 1]}';
   }
@@ -5789,10 +5908,28 @@ class _BabyPageState extends State<BabyPage> {
                           ),
                         ),
 
-                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 ARTICLES \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        // ════════════ ARTICLES ════════════
                         Padding(
                           padding: const EdgeInsets.all(20),
                           child: _BabyArticlesSection(ageDays: ageDays),
+                        ),
+                        const SizedBox(height: 12),
+                        const SmartArticleCarousel(
+                          categoryId: 'health',
+                          title: '🥗 صحة المرأة والرشاقة والتغذية',
+                          maxItems: 8,
+                        ),
+                        const SizedBox(height: 12),
+                        const SmartArticleCarousel(
+                          categoryId: 'beauty',
+                          title: '💄 جمالي وعنايتي بالبشرة والشعر',
+                          maxItems: 8,
+                        ),
+                        const SizedBox(height: 12),
+                        const SmartArticleCarousel(
+                          categoryId: 'marriage',
+                          title: '💍 العلاقة الزوجية والسكينة الأسرية',
+                          maxItems: 8,
                         ),
 
                         // ════════════ LATEST NEWS ════════════
