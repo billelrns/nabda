@@ -113,7 +113,7 @@ class FavoritesService {
       'thumbnail': imagePath,
       'category': category,
       'categoryId': categoryId,
-      'author': author ?? 'فريق نبضة الطبي',
+      'author': author ?? 'فريق تحرير نبضة',
       'readTime': readTime ?? '5 دقائق',
       'themeColorHex': themeColorHex ?? '#00897B',
       'savedAtMillis': DateTime.now().millisecondsSinceEpoch,

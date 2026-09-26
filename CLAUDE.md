@@ -66,3 +66,13 @@ The app requires Firebase before it can run:
 2. Create a **Firestore** database.
 3. Place `google-services.json` in `android/app/` (excluded from git).
 4. Credentials are pre-configured in `lib/firebase_options.dart` for the `nabda-app-ca864` Firebase project.
+
+## Google Play Release
+
+- **Android applicationId is `com.nabda.womenhealth`** (changed 2026-09-26 — `com.nabda.app` was taken on Play). The Kotlin `namespace` / `MainActivity` package stays `com.nabda.app`; don't change it.
+- Firebase has a separate Android app registered for `com.nabda.womenhealth` (appId `1:911912460091:android:b302018d2448f8235b611e`), used in `google-services.json` and `firebase_options.dart`.
+- Release signing: `android/key.properties` → `C:/keys/nabda-release.jks` (never commit; back up offline).
+- Build machine has ~7 GB RAM: `android/gradle.properties` is tuned (Xmx2048m, C2 off, 1 worker). Don't lower Xmx below 2048m — `mergeDexRelease` OOMs at 1024m. Avoid `flutter clean` before every build.
+- Bump `version:` in `pubspec.yaml` (versionCode) for every Play upload. First upload was `1.0.0+2` to Closed testing (Alpha), testers via Google Group `nabda-testers@googlegroups.com`.
+- Play declarations: Ads = No (the shop's `FeedVideoAd` only promotes own products), no Advertising ID, Data safety declares Crashlytics + FCM IDs. Update these before adding any ad SDK.
+- Pending for next build: rename "إعلان مميز" label in `lib/widgets/feed_video_ad.dart`; hide language switch until translations are complete.

@@ -59,7 +59,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     final thumbnail = d['thumbnail'] as String?;
     final category = (d['category'] ?? 'موسوعة نبضة').toString();
     final categoryId = (d['categoryId'] ?? 'general').toString();
-    final author = (d['author'] ?? 'فريق نبضة الطبي').toString();
+    final author = (d['author'] ?? 'فريق تحرير نبضة').toString();
     final readTime = (d['readTime'] ?? '5 دقائق').toString();
     final hexStr = (d['themeColorHex'] as String? ?? '#00897B').replaceAll('#', '');
     final themeColor = Color(int.parse('FF$hexStr', radix: 16));
