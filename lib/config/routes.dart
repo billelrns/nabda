@@ -117,6 +117,7 @@ class AppRoutes {
       ),
       GoRoute(
         path: vaccinationSchedule,
+        redirect: (context, state) => kHideMedicalFeatures ? home : null,
         builder: (context, state) => const VaccinationSchedule(),
       ),
       GoRoute(

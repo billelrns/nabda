@@ -263,6 +263,7 @@ class _ArticlesSearchScreenState extends State<ArticlesSearchScreen> {
   static const Set<String> _medicalToolIds = {
     'health_measurements',
     'medications',
+    'vaccinations',
     'ai_chat',
     'doctors',
   };

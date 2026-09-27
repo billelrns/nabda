@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../config/play_compliance.dart';
 
 class BabyDashboard extends StatelessWidget {
   const BabyDashboard({Key? key}) : super(key: key);
@@ -72,6 +73,7 @@ class BabyDashboard extends StatelessWidget {
             const SizedBox(height: 10),
             _buildMilestoneCard('الحبو', '6-10 أشهر', Icons.directions_walk),
             const SizedBox(height: 30),
+            if (!kHideMedicalFeatures)
             ElevatedButton.icon(
               onPressed: () => context.go('/vaccinations'),
               icon: const Icon(Icons.vaccines),

@@ -1584,7 +1584,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             _SectionBody(
               'نستخدم خدمات خارجية موثوقة:\n'
               '• Firebase (Google): للمصادقة وتخزين البيانات والإشعارات وتقارير الأعطال (Crashlytics).\n'
-              '• Google Gemini AI: للمساعد الذكي عند توفّره (يُرسل نص السؤال فقط).\n'
+              '• Google Gemini AI: لمساعدة نبضة (أسئلة غير طبية فقط)؛ يُرسل نص السؤال، وتُحفظ المحادثة في حسابكِ.\n'
               '• Exchange Rate API: لتحويل العملات (لا تُرسل بيانات شخصية).\n\n'
               'كل خدمة تخضع لسياسة خصوصيتها الخاصة.',
             ),
