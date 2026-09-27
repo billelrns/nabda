@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حاسبة التبويض والخصوبة الدقيقة — احسبي أيام الإباضة وفرص الحمل | نبضة</title>
+  <meta name="description" content="احسبي أيام التبويض الأكثر خصوبة بدقة طبية، وتعرفي على نافذة الخصوبة الذهبية وموعد دورتكِ القادمة لزيادة فرص الحمل الطبيعي عبر حاسبة التبويض المجانية من نبضة.">
+  <link rel="canonical" href="https://nabda.online/tools/ovulation.html">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <!-- Open Graph -->
+  <meta property="og:title" content="حاسبة التبويض والخصوبة الدقيقة | نبضة">
+  <meta property="og:description" content="احسبي أيام الإباضة ونافذة الخصوبة الستة وموعد الدورة القادمة لتعزيز فرص حدوث الحمل بسرعة.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nabda.online/tools/ovulation.html">
+  <meta property="og:image" content="https://nabda.online/landing-assets/slide-cycle.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "حاسبة التبويض وأيام الخصوبة من نبضة",
+    "url": "https://nabda.online/tools/ovulation.html",
+    "applicationCategory": "HealthApplication",
+    "operatingSystem": "All",
+    "description": "أداة ذكية لحساب يوم الإباضة وفترة الخصوبة لزيادة فرص الحمل الطبيعي."
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "كيف يُحسب يوم التبويض بدقة؟",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "يحدث التبويض عادةً قبل 14 يوماً من موعد الدورة الشهرية التالية (وهو ما يُعرف بالطور الأصفري). إذا كانت دورتك 28 يوماً، فإن التبويض يكون في اليوم 14. أما إذا كانت دورتك 32 يوماً، فإن التبويض يكون في اليوم 18."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "ما هي نافذة الخصوبة الأكثر فرصة للحمل؟",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "تمتد نافذة الخصوبة لمدة 6 أيام: الأيام الخمسة التي تسبق يوم التبويض بالإضافة إلى يوم التبويض نفسه. تعيش الحيوانات المنوية في جسم المرأة حتى 5 أيام، بينما تبقى البويضة قابلة للإخصاب لمدة 12 إلى 24 ساعة فقط بعد خروجها."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "ما هي أهم علامات التبويض الجسدية؟",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "زيادة إفرازات عنق الرحم الشفافة واللزجة الشبيهة بزلال البيض، ارتفاع طفيف في درجة حرارة الجسم الأساسية، ألم خفيف أسفل البطن في أحد الجانبين، وزيادة الرغبة العاطفية."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    :root {
+      --primary: #E91E63;
+      --primary-dark: #C2185B;
+      --primary-soft: #FFF0F5;
+      --teal: #00897B;
+      --teal-light: #E0F2F1;
+      --green-fertile: #2E7D32;
+      --green-bg: #E8F5E9;
+      --yellow-ov: #F57F17;
+      --yellow-bg: #FFFDE7;
+      --text-dark: #1F1A20;
+      --text-muted: #6C6270;
+      --bg: #FFF8FB;
+      --card-bg: #FFFFFF;
+      --border: #F3D3E2;
+      --shadow: 0 10px 30px rgba(233, 30, 99, 0.08);
+      --font: 'Cairo', 'Tajawal', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
+    body { background: var(--bg); color: var(--text-dark); line-height: 1.7; direction: rtl; text-align: right; }
+    a { text-decoration: none; color: inherit; }
+
+    /* Header */
+    .header {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      padding: 12px 20px;
+    }
+    .header-inner {
+      max-width: 1180px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    }
+    .logo-box { display: flex; align-items: center; gap: 10px; }
+    .logo-badge {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #F43F7E, #FF8DA1);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 18px; box-shadow: 0 4px 12px rgba(244,63,126,.3);
+    }
+    .logo-text { font-size: 22px; font-weight: 900; color: var(--primary); }
+    .nav-links { display: flex; align-items: center; gap: 16px; font-size: 14px; font-weight: 700; }
+    .nav-link { color: var(--text-muted); transition: color .2s; }
+    .nav-link:hover, .nav-link.active { color: var(--primary); }
+    .app-btn {
+      background: linear-gradient(135deg, var(--primary), #FF4081);
+      color: #fff; padding: 8px 18px; border-radius: 999px;
+      font-weight: 700; font-size: 13px; transition: transform .2s;
+    }
+    .app-btn:hover { transform: translateY(-2px); }
+
+    /* Main Container */
+    .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+    .breadcrumbs { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .breadcrumbs a { color: var(--teal); font-weight: 600; }
+
+    .hero-title { font-size: 32px; font-weight: 900; color: #1a1a1a; margin-bottom: 8px; }
+    .hero-subtitle { font-size: 16px; color: var(--text-muted); margin-bottom: 24px; }
+
+    /* Calculator Card */
+    .calc-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: var(--shadow);
+      margin-bottom: 30px;
+    }
+    .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 720px) { .grid-inputs { grid-template-columns: 1fr; } }
+
+    .form-group label { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; color: #333; }
+    .form-group .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .form-input {
+      width: 100%; padding: 13px 14px; border-radius: 14px;
+      border: 1.5px solid #E2D1DA; background: #FFFDFE;
+      font-size: 15px; font-weight: 600; color: #222; outline: none;
+      transition: border-color .2s;
+    }
+    .form-input:focus { border-color: var(--primary); }
+
+    .calc-btn {
+      width: 100%; background: linear-gradient(135deg, var(--teal), #00BFA5);
+      color: white; border: none; padding: 15px; border-radius: 16px;
+      font-size: 16px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 137, 123, 0.25);
+      transition: all .25s ease;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0, 137, 123, 0.35); }
+
+    /* Results */
+    .results-wrap {
+      display: none;
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1.5px dashed #F0D5E1;
+      animation: fadeIn .4s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .result-badge {
+      display: inline-block; background: var(--green-bg); color: var(--green-fertile);
+      padding: 4px 14px; border-radius: 50px; font-size: 13px; font-weight: 800; margin-bottom: 12px;
+    }
+    .ovulation-date-big {
+      font-size: 34px; font-weight: 900; color: var(--teal);
+      margin-bottom: 6px; line-height: 1.25;
+    }
+    .ovulation-day-name { font-size: 16px; color: var(--text-muted); font-weight: 600; margin-bottom: 24px; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 26px; }
+    @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+    .stat-item {
+      background: #FAFAFC; border: 1px solid #ECECF0;
+      padding: 18px; border-radius: 18px; text-align: center;
+    }
+    .stat-item.fertile { background: #F1F8E9; border-color: #C8E6C9; }
+    .stat-item.period { background: #FFEBEE; border-color: #FFCDD2; }
+    .stat-label { font-size: 12.5px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; }
+    .stat-val { font-size: 17px; font-weight: 800; color: #222; }
+
+    /* Mini Calendar */
+    .mini-cal-wrap {
+      background: white; border: 1.5px solid #F0DCE6; border-radius: 20px;
+      padding: 20px; margin-bottom: 26px;
+    }
+    .mini-cal-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+    }
+    .mini-cal-title { font-size: 16px; font-weight: 800; color: #1F1A20; }
+    .mini-cal-legend { display: flex; gap: 14px; font-size: 12px; font-weight: 700; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+    .cal-th { font-size: 12px; font-weight: 800; color: #888; padding: 6px 0; }
+    .cal-day {
+      padding: 8px 4px; border-radius: 10px; font-size: 13px; font-weight: 700;
+      color: #333; background: #F9F9FA; transition: transform .15s;
+    }
+    .cal-day.empty { background: transparent; }
+    .cal-day.period { background: #FFCDD2; color: #C62828; }
+    .cal-day.fertile { background: #C8E6C9; color: #2E7D32; font-weight: 800; }
+    .cal-day.ovulation { background: #00897B; color: white; font-weight: 900; box-shadow: 0 2px 8px rgba(0,137,123,.3); }
+
+    /* Tips & App Promo */
+    .app-promo-box {
+      background: linear-gradient(135deg, #E0F2F1, #F1F8E9);
+      border: 1px solid #B2DFDB;
+      border-radius: 20px; padding: 24px; text-align: center; margin-top: 24px;
+    }
+    .app-promo-box h4 { font-size: 18px; font-weight: 800; color: var(--teal); margin-bottom: 6px; }
+    .app-promo-box p { font-size: 14px; color: var(--text-muted); margin-bottom: 16px; }
+    .app-promo-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--teal); color: white; padding: 11px 26px; border-radius: 999px;
+      font-weight: 800; font-size: 14px;
+    }
+
+    /* SEO Section */
+    .article-section {
+      background: white; border-radius: 24px; border: 1px solid var(--border);
+      padding: 36px; margin-top: 40px; box-shadow: var(--shadow);
+    }
+    .article-section h2 { font-size: 22px; font-weight: 800; color: #111; margin: 28px 0 12px; }
+    .article-section h2:first-of-type { margin-top: 0; }
+    .article-section p { font-size: 15px; color: #4A444C; line-height: 1.8; margin-bottom: 14px; }
+    .article-section ul { padding-right: 22px; margin-bottom: 16px; color: #4A444C; font-size: 15px; }
+    .article-section li { margin-bottom: 8px; }
+
+    /* FAQ */
+    .faq-item { border: 1px solid #F0DDE6; border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+    .faq-q { padding: 16px 20px; background: #FFFBFD; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; }
+    .faq-a { padding: 16px 20px; font-size: 14.5px; color: #555; background: #fff; border-top: 1px solid #F0DDE6; display: none; }
+    .faq-item.open .faq-a { display: block; }
+    .faq-item.open .faq-q { color: var(--teal); }
+
+    /* Footer */
+    .footer {
+      background: #fff; border-top: 1px solid var(--border);
+      padding: 40px 20px; margin-top: 60px; text-align: center; font-size: 13.5px; color: var(--text-muted);
+    }
+    .footer-links { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin-bottom: 16px; font-weight: 600; }
+    .footer-links a:hover { color: var(--primary); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo-box">
+        <div class="logo-badge">♥</div>
+        <span class="logo-text">نبضة</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/" class="nav-link">الرئيسية</a>
+        <a href="/tools/due-date.html" class="nav-link">حاسبة الولادة</a>
+        <a href="/tools/ovulation.html" class="nav-link active">التبويض والخصوبة</a>
+        <a href="/tools/baby-names.html" class="nav-link">أسماء المواليد</a>
+        <a href="/tools/fetus-size.html" class="nav-link">حجم الجنين</a>
+        <a href="/articles.html" class="nav-link">موسوعة نبضة</a>
+        <a href="/shop" class="nav-link">المتجر</a>
+      </nav>
+      <a href="/" class="app-btn">تطبيق نبضة</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="breadcrumbs">
+      <a href="/">الرئيسية</a> / <span>أدوات الخصوبة</span> / <span>حاسبة التبويض والخصوبة</span>
+    </div>
+
+    <h1 class="hero-title">حاسبة التبويض وأيام الخصوبة الدقيقة 🌿</h1>
+    <p class="hero-subtitle">احسبي موعد خروج البويضة ونافذة الخصوبة الستة الذهبية وموعد الدورة القادمة لزيادة فرص حدوث الحمل الطبيعي بسرعة وأمان.</p>
+
+    <!-- Calculator Card -->
+    <div class="calc-card">
+      <form id="ovulationForm" onsubmit="event.preventDefault(); calculateOvulation();">
+        <div class="grid-inputs">
+          <div class="form-group">
+            <label for="cycleStart">أول يوم من آخر دورة شهرية *</label>
+            <input type="date" id="cycleStart" class="form-input" required>
+            <div class="hint">اليوم الذي بدأ فيه نزول الدم</div>
+          </div>
+          <div class="form-group">
+            <label for="cycleLength">طول الدورة الشهرية (أيام)</label>
+            <input type="number" id="cycleLength" class="form-input" min="21" max="45" value="28">
+            <div class="hint">الفترة بين بداية دورتين متتاليتين (الافتراضي: 28)</div>
+          </div>
+          <div class="form-group">
+            <label for="lutealPhase">طول الطور الأصفري (أيام)</label>
+            <input type="number" id="lutealPhase" class="form-input" min="10" max="18" value="14">
+            <div class="hint">المدة من الإباضة للدورة التالية (الافتراضي: 14)</div>
+          </div>
+        </div>
+
+        <button type="submit" class="calc-btn">
+          <span>احسبي أيام التبويض والخصوبة الآن</span>
+          <span>✨</span>
+        </button>
+      </form>
+
+      <!-- Results -->
+      <div id="resultsWrap" class="results-wrap">
+        <span class="result-badge">🌱 يوم الإباضة المتوقع</span>
+        <div class="ovulation-date-big" id="ovDateDisplay">--</div>
+        <div class="ovulation-day-name" id="ovDayNameDisplay">--</div>
+
+        <div class="stats-grid">
+          <div class="stat-item fertile">
+            <div class="stat-label">نافذة الخصوبة العالية (6 أيام)</div>
+            <div class="stat-val" id="fertileWindowDisplay">--</div>
+          </div>
+          <div class="stat-item period">
+            <div class="stat-label">موعد الدورة الشهرية القادمة</div>
+            <div class="stat-val" id="nextPeriodDisplay">--</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">الأيام المتبقية حتى التبويض</div>
+            <div class="stat-val" id="daysToOvDisplay">--</div>
+          </div>
+        </div>
+
+        <!-- Mini Calendar View -->
+        <div class="mini-cal-wrap">
+          <div class="mini-cal-header">
+            <div class="mini-cal-title" id="calMonthTitle">تقويم شهر التبويض</div>
+            <div class="mini-cal-legend">
+              <div class="legend-item"><span class="legend-dot" style="background:#FFCDD2"></span><span>الدورة</span></div>
+              <div class="legend-item"><span class="legend-dot" style="background:#C8E6C9"></span><span>أيام الخصوبة</span></div>
+              <div class="legend-item"><span class="legend-dot" style="background:#00897B"></span><span>يوم التبويض</span></div>
+            </div>
+          </div>
+          <div class="cal-grid" id="calGrid">
+            <!-- Weekday headers -->
+            <div class="cal-th">أحد</div>
+            <div class="cal-th">إثنين</div>
+            <div class="cal-th">ثلاثاء</div>
+            <div class="cal-th">أربعاء</div>
+            <div class="cal-th">خميس</div>
+            <div class="cal-th">جمعة</div>
+            <div class="cal-th">سبت</div>
+            <!-- Days rendered via JS -->
+          </div>
+        </div>
+
+        <!-- App Promo -->
+        <div class="app-promo-box">
+          <h4>سجّلي أعراضكِ واحصلي على إشعارات التبويض التلقائية 📲</h4>
+          <p>تطبيق نبضة يحلل دوراتكِ الشهرية السابقة بالذكاء الاصطناعي ليتنبأ بأيام خصوبتكِ بدقة متناهية وينبهكِ مسبقاً.</p>
+          <a href="/" class="app-promo-btn">تحميل تطبيق نبضة مجاناً</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEO Educational Guide -->
+    <article class="article-section">
+      <h2>كيف تعمل حاسبة التبويض علمياً؟</h2>
+      <p>تعتمد دورة الخصوبة عند المرأة على حدثين محوريين: طور نمو الجريبات قبل الإباضة (Follicular Phase) والذي قد تتفاوت مدته من شهر لآخر، وطور ما بعد الإباضة المسمى <strong>الطور الأصفري (Luteal Phase)</strong>. في الغالبية الساحقة من النساء، يظل الطور الأصفري ثابتاً تماماً ومدته <strong>14 يوماً</strong>.</p>
+      <p>بناءً على ذلك، يتم تحديد يوم التبويض بدقة بطرح 14 يوماً من إجمالي طول الدورة الشهرية الكاملة. فإذا كانت دورتكِ تأتي كل 30 يوماً، فإن التبويض يحدث في اليوم (30 - 14 = 16) من بداية الدورة.</p>
+
+      <h2>نافذة الخصوبة الذهبية (Fertile Window)</h2>
+      <p>تتساءل الكثير من النساء: هل يمكن حدوث الحمل في يوم الإباضة فقط؟ الإجابة العلمية هي <strong>لا</strong>. نافذة الخصوبة تمتد لحوالي <strong>6 أيام كاملة</strong>:</p>
+      <ul>
+        <li><strong>الأيام الخمسة قبل التبويض:</strong> تتمتع الحيوانات المنوية بالقدرة على العيش داخل الرحم وقناتي فالوب لمدة تصل إلى 5 أيام في وجود إفرازات عنق الرحم المناسبة.</li>
+        <li><strong>يوم التبويض:</strong> هو اليوم الذي تنطلق فيه البويضة الناضجة من المبيض نحو قناة فالوب وتكون جاهزة للإخصاب.</li>
+        <li><strong>عمر البويضة القصير:</strong> تبقى البويضة على قيد الحياة لمدة تتراوح بين 12 إلى 24 ساعة فقط بعد خروجها، فإذا لم تُلقح خلال هذا الوقت يمتصها الجسم وتبدأ الاستعدادات للدورة التالية.</li>
+      </ul>
+
+      <h2>أبرز علامات التبويض التي يمكنكِ ملاحظتها في المنزل</h2>
+      <p>بالإضافة إلى استخدام الحاسبة، يوصي أطباء الخصوبة بمراقبة العلامات الحيوية الطبيعية التي يرسلها جسمكِ عند اقتراب الإباضة:</p>
+      <ul>
+        <li><strong>مخاط عنق الرحم الخصب:</strong> يتحول الإفراز المهبلي ليصبح شفافاً، زلقاً، ومطاطياً يشبه تماماً بياض البيض النيئ، وهو مصمم لتسهيل حركة الحيوانات المنوية وحمايتها.</li>
+        <li><strong>وخز التبويض (Mittelschmerz):</strong> تشعر نحو 20% من النساء بألم أو نغز خفيف في أحد جانبي الحوض يستمر من بضع دقائق إلى ساعات معدودة وقت تحرر البويضة.</li>
+        <li><strong>ارتفاع درجة حرارة الجسم الأساسية (BBT):</strong> بعد حدوث التبويض مباشرة، يفرز الجسم هرمون البروجسترون الذي يرفع حرارة الجسم القاعدية بمقدار 0.2 إلى 0.5 درجة مئوية حتى موعد الدورة.</li>
+      </ul>
+
+      <h2>نصائح طبية لزيادة فرص حدوث الحمل السريع</h2>
+      <p>لتعظيم احتمالية حدوث الحمل بطرق طبيعية، ينصح المتخصصون بالتالي:</p>
+      <ul>
+        <li>ممارسة العلاقة الزوجية بانتظام كل يومين خلال نافذة الخصوبة، وخاصة في اليومين السابقين للتبويض ويوم التبويض نفسه.</li>
+        <li>بدء تناول مكمل حمض الفوليك (400 ميكروغرام) يومياً لحماية الجنين المستقبلي من تشوهات الأنبوب العصبي.</li>
+        <li>الابتعاد عن التوتر والإجهاد البدني المفرط، والحفاظ على وزن صحي ونوم كافٍ لتعزيز التوازن الهرموني.</li>
+      </ul>
+
+      <h2>الأسئلة الشائعة حول التبويض والخصوبة</h2>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">هل يمكن أن يحدث التبويض مرتين في دورة واحدة؟ <span>▾</span></div>
+        <div class="faq-a">نعم، ولكن يحدث ذلك خلال نفس النافذة الزمنية (خلال 24 ساعة)، وهو ما يؤدي إلى الحمل بالتوأم غير المتطابق. لا يمكن طبياً حدوث تبويضين متباعدين في أوقات مختلفة من نفس الشهر.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">ماذا أفعل إذا كانت دورتي الشهرية تتأخر أو غير منتظمة؟ <span>▾</span></div>
+        <div class="faq-a">في حال عدم انتظام الدورة، يُنصح باستخدام اختبارات التبويض المنزلية (LH Strips) أو قياس درجة الحرارة القاعدية يومياً، أو مراجعة الطبيبة لفحص الهرمونات والتأكد من عدم وجود متلازمة تكيس المبايض (PCOS).</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">متى يجب استشارة طبيب الخصوبة؟ <span>▾</span></div>
+        <div class="faq-a">يُنصح باستشارة الطبيب إذا مر عام كامل من المحاولة المنتظمة دون حدوث حمل لمن هم دون سن 35 عاماً، أو بعد 6 أشهر لمن تجاوزت أعمارهن 35 عاماً.</div>
+      </div>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="/">الرئيسية</a>
+      <a href="/tools/due-date.html">حاسبة الولادة</a>
+      <a href="/tools/ovulation.html">حاسبة التبويض</a>
+      <a href="/tools/baby-names.html">أسماء المواليد</a>
+      <a href="/tools/fetus-size.html">حجم الجنين</a>
+      <a href="/articles.html">موسوعة نبضة</a>
+      <a href="/shop">المتجر</a>
+      <a href="/privacy.html">سياسة الخصوصية</a>
+      <a href="/terms.html">شروط الاستخدام</a>
+    </div>
+    <p>© 2026 نبضة (Nabda). جميع الحقوق محفوظة. المحتوى لأغراض تثقيفية وإرشادية ولا يغني عن الاستشارة الطبية المتخصصة.</p>
+  </footer>
+
+  <script>
+    const arabicMonths = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+    const arabicDays = [
+      'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'
+    ];
+
+    function calculateOvulation() {
+      const cStartVal = document.getElementById('cycleStart').value;
+      const cycleLen = parseInt(document.getElementById('cycleLength').value, 10) || 28;
+      const luteal = parseInt(document.getElementById('lutealPhase').value, 10) || 14;
+      if (!cStartVal) return;
+
+      // Save to localStorage
+      try {
+        localStorage.setItem('nabda_cycle_start', cStartVal);
+        localStorage.setItem('nabda_cycle_len', cycleLen.toString());
+        localStorage.setItem('nabda_luteal', luteal.toString());
+      } catch(e){}
+
+      const parts = cStartVal.split('-');
+      const cycleStart = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Formula matching fertility_screen.dart:144-148
+      const ovDayNum = cycleLen - luteal; // 28 - 14 = 14
+      let ovDate = new Date(cycleStart.getTime() + (ovDayNum - 1) * 86400000);
+
+      // If ovulation date has passed, advance to next cycle
+      if (new Date(ovDate.getTime() + 86400000).getTime() < today.getTime()) {
+        const cyclesToAdd = Math.floor((today.getTime() - ovDate.getTime()) / (cycleLen * 86400000)) + 1;
+        ovDate = new Date(ovDate.getTime() + cyclesToAdd * cycleLen * 86400000);
+      }
+
+      const fStart = new Date(ovDate.getTime() - 5 * 86400000);
+      const fEnd = new Date(ovDate.getTime() + 1 * 86400000);
+
+      // Next period = ovDate + luteal days
+      const nextPeriod = new Date(ovDate.getTime() + luteal * 86400000);
+
+      // Days to ovulation
+      const daysToOv = Math.round((ovDate.getTime() - today.getTime()) / 86400000);
+
+      // Format displays
+      const ovDayName = arabicDays[ovDate.getDay()];
+      document.getElementById('ovDateDisplay').textContent = `${ovDate.getDate()} ${arabicMonths[ovDate.getMonth()]} ${ovDate.getFullYear()}`;
+      document.getElementById('ovDayNameDisplay').textContent = `يوم ${ovDayName}`;
+
+      document.getElementById('fertileWindowDisplay').textContent = `${fStart.getDate()} ${arabicMonths[fStart.getMonth()]} — ${fEnd.getDate()} ${arabicMonths[fEnd.getMonth()]}`;
+      document.getElementById('nextPeriodDisplay').textContent = `${nextPeriod.getDate()} ${arabicMonths[nextPeriod.getMonth()]}`;
+      document.getElementById('daysToOvDisplay').textContent = daysToOv > 0 ? `${daysToOv} يوم` : (daysToOv === 0 ? 'اليوم! 🎯' : 'انتهى');
+
+      // Render mini calendar
+      renderCalendar(ovDate, fStart, fEnd, cycleStart);
+
+      document.getElementById('resultsWrap').style.display = 'block';
+      document.getElementById('resultsWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function renderCalendar(ovDate, fStart, fEnd, cStart) {
+      const grid = document.getElementById('calGrid');
+      // Keep only first 7 elements (headers)
+      while (grid.children.length > 7) {
+        grid.removeChild(grid.lastChild);
+      }
+
+      const year = ovDate.getFullYear();
+      const month = ovDate.getMonth();
+      document.getElementById('calMonthTitle').textContent = `تقويم شهر ${arabicMonths[month]} ${year}`;
+
+      const firstDayOfMonth = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      // Empty lead days
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'cal-day empty';
+        grid.appendChild(empty);
+      }
+
+      for (let d = 1; d <= totalDays; d++) {
+        const dateObj = new Date(year, month, d);
+        const dayEl = document.createElement('div');
+        dayEl.className = 'cal-day';
+        dayEl.textContent = d;
+
+        const time = dateObj.getTime();
+        // Check Ovulation day
+        if (dateObj.toDateString() === ovDate.toDateString()) {
+          dayEl.classList.add('ovulation');
+          dayEl.title = 'يوم التبويض';
+        } else if (time >= fStart.getTime() && time <= fEnd.getTime()) {
+          dayEl.classList.add('fertile');
+          dayEl.title = 'نافذة الخصوبة';
+        } else if (Math.abs(time - cStart.getTime()) <= 4 * 86400000 && time >= cStart.getTime()) {
+          dayEl.classList.add('period');
+          dayEl.title = 'فترة الدورة';
+        }
+
+        grid.appendChild(dayEl);
+      }
+    }
+
+    function restoreSavedData() {
+      try {
+        const savedStart = localStorage.getItem('nabda_cycle_start');
+        const savedLen = localStorage.getItem('nabda_cycle_len');
+        const savedLuteal = localStorage.getItem('nabda_luteal');
+        if (savedStart) {
+          document.getElementById('cycleStart').value = savedStart;
+          if (savedLen) document.getElementById('cycleLength').value = savedLen;
+          if (savedLuteal) document.getElementById('lutealPhase').value = savedLuteal;
+          calculateOvulation();
+        }
+      } catch(e){}
+    }
+
+    function toggleFaq(el) {
+      el.parentElement.classList.toggle('open');
+    }
+
+    window.addEventListener('DOMContentLoaded', restoreSavedData);
+  </script>
+</body>
+</html>

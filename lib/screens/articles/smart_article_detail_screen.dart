@@ -9,6 +9,9 @@ import '../trackers/health_trackers_screen.dart';
 import '../fertility/fertility_screen.dart';
 import '../../main.dart';
 import '../../services/favorites_service.dart';
+import '../../utils/article_text.dart';
+import '../../utils/article_tools.dart';
+import '../../config/play_compliance.dart';
 
 /// شاشة عرض المقال التفاعلي الذكي
 class SmartArticleDetailScreen extends StatefulWidget {
@@ -185,6 +188,7 @@ ${widget.article.summary}
         );
         break;
       case ArticleToolType.aiAssistant:
+        if (kHideMedicalFeatures) break; // المساعد مخفي في نسخة الحساب الشخصي
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => AIChatPage()),
@@ -396,7 +400,7 @@ ${widget.article.summary}
                                 color: themeColor.withOpacity(0.12),
                               ),
                               child: Center(
-                                child: Icon(Icons.verified_user_rounded,
+                                child: Icon(Icons.edit_note_rounded,
                                     color: themeColor, size: 18),
                               ),
                             ),
@@ -414,7 +418,7 @@ ${widget.article.summary}
                                     ),
                                   ),
                                   const Text(
-                                    'محتوى طبي مُراجع ومتوافق مع المعايير الصحية العالمية',
+                                    'محتوى تثقيفي — لا يغني عن استشارة الطبيبة',
                                     style: TextStyle(
                                       fontSize: 10.5,
                                       color: Color(0xFF8E8295),
@@ -467,7 +471,7 @@ ${widget.article.summary}
                         const SizedBox(height: 24),
 
                         // Interactive In-Article Action Tool Card
-                        if (art.toolType != null && art.toolTitle != null) ...[
+                        if (hasArticleTool(art.toolType) && art.toolTitle != null) ...[
                           _buildInteractiveToolBanner(art, themeColor),
                           const SizedBox(height: 24),
                         ],
@@ -556,14 +560,10 @@ ${widget.article.summary}
             ),
           ),
           const SizedBox(height: 10),
-          Text(
-            sec.content,
-            style: const TextStyle(
-              fontSize: 14.5,
-              color: Color(0xFF4A3F4F),
-              height: 1.65,
-            ),
-          ),
+          ...splitParagraphs(sec.content).map((p) => Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: RichArabic(p),
+              )),
           if (sec.bulletPoints.isNotEmpty) ...[
             const SizedBox(height: 10),
             Column(
@@ -584,12 +584,12 @@ ${widget.article.summary}
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(
+                        child: RichArabic(
                           bp,
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF2D2D3A),
-                            height: 1.5,
+                            height: 1.6,
                           ),
                         ),
                       ),
@@ -609,14 +609,20 @@ ${widget.article.summary}
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: const Color(0xFFFFD54F), width: 1),
               ),
-              child: Text(
-                sec.calloutTip!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF795548),
-                  height: 1.5,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: splitParagraphs(sec.calloutTip!).map((p) => Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: RichArabic(
+                        p,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF795548),
+                          height: 1.5,
+                        ),
+                      ),
+                    )).toList(),
               ),
             ),
           ],
@@ -630,14 +636,20 @@ ${widget.article.summary}
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: const Color(0xFFEF5350), width: 1),
               ),
-              child: Text(
-                sec.calloutWarning!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFC62828),
-                  height: 1.5,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: splitParagraphs(sec.calloutWarning!).map((p) => Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: RichArabic(
+                        p,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFC62828),
+                          height: 1.5,
+                        ),
+                      ),
+                    )).toList(),
               ),
             ),
           ],
@@ -695,7 +707,14 @@ ${widget.article.summary}
             ),
           ),
           ElevatedButton(
-            onPressed: () => _triggerToolAction(art.toolType),
+            onPressed: () {
+              final builder = getArticleToolBuilder(art.toolType);
+              if (builder != null) {
+                Navigator.push(context, MaterialPageRoute(builder: builder));
+              } else {
+                _triggerToolAction(art.toolType);
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: themeColor,
               foregroundColor: Colors.white,
@@ -759,13 +778,19 @@ ${widget.article.summary}
                 subtitle: isExp
                     ? Padding(
                         padding: const EdgeInsets.only(top: 8, bottom: 4),
-                        child: Text(
-                          faq.answer,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF555555),
-                            height: 1.5,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: splitParagraphs(faq.answer).map((p) => Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child: RichArabic(
+                                  p,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF555555),
+                                    height: 1.6,
+                                  ),
+                                ),
+                              )).toList(),
                         ),
                       )
                     : null,

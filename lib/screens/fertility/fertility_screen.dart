@@ -1,9 +1,11 @@
-import '../../widgets/smart_articles_carousel.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/news_section.dart';
 import '../../widgets/conditional_content.dart';
+import '../../config/play_compliance.dart';
+import '../../widgets/smart_articles_carousel.dart';
+import '../../widgets/smart_article_carousel.dart';
 
 /// رحلة الخصوبة — تصميم فاخر (glassmorphism) للنساء اللواتي يحاولن الحمل.
 /// محتوى إرشادي فقط ولا يغني عن استشارة الطبيب.
@@ -167,11 +169,29 @@ class _FertilityScreenState extends State<FertilityScreen> {
       _knowledgeCard('🩺', 'متى أراجع أخصائي الخصوبة؟', 'علامات تستدعي زيارة الطبيب والفحوصات', _lav, () => _openArticle('متى تراجعين الأخصائي', _whenSpecialistText)),
       const SizedBox(height: 10),
       _knowledgeCard('📋', 'استبيان الخصوبة', 'أجيبي على أسئلة قصيرة لتوجيه مخصّص', _peach, _openQuestionnaire),
-      const SizedBox(height: 18),
+      const SizedBox(height: 22),
       const SmartArticlesCarousel(
         categoryFilter: 'fertility',
         sectionTitle: 'مقالات الخصوبة والتبويض التفاعلية',
-        sectionSubtitle: 'طرق طبيعية مثبتة لتعزيز فرص الحمل والإنجاب',
+        sectionSubtitle: 'نصائح طبيعية لتعزيز فرص الحمل',
+      ),
+      const SizedBox(height: 18),
+      const SmartArticleCarousel(
+        categoryId: 'health',
+        title: '🥗 صحة المرأة والرشاقة والتغذية',
+        maxItems: 8,
+      ),
+      const SizedBox(height: 14),
+      const SmartArticleCarousel(
+        categoryId: 'beauty',
+        title: '💄 جمالي وعنايتي بالبشرة والشعر',
+        maxItems: 8,
+      ),
+      const SizedBox(height: 14),
+      const SmartArticleCarousel(
+        categoryId: 'marriage',
+        title: '💍 العلاقة الزوجية والسكينة الأسرية',
+        maxItems: 8,
       ),
       const SizedBox(height: 18),
       const ConditionalContentSection(stage: 'planning'),
@@ -381,7 +401,7 @@ class _FertilityScreenState extends State<FertilityScreen> {
     int months = (fp?['tryMonths'] as num?)?.toInt() ?? 6;
     String age = fp?['age'] as String? ?? '25-34';
     String regular = fp?['regular'] as String? ?? 'yes';
-    String condition = fp?['condition'] as String? ?? 'none';
+    String condition = safeCondition(fp?['condition'] as String?);
     showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
       builder: (_) => StatefulBuilder(builder: (ctx, setS) => Directionality(textDirection: TextDirection.rtl,
@@ -410,6 +430,7 @@ class _FertilityScreenState extends State<FertilityScreen> {
               DropdownMenuItem(value: 'yes', child: Text('نعم، منتظمة')),
               DropdownMenuItem(value: 'no', child: Text('لا، غير منتظمة')),
             ], onChanged: (v) => setS(() => regular = v ?? 'yes')),
+            if (!kHideMedicalFeatures) ...[
             const SizedBox(height: 8),
             const Text('هل لديك حالة معروفة؟', style: TextStyle(fontWeight: FontWeight.w700)),
             DropdownButton<String>(isExpanded: true, value: condition, items: const [
@@ -418,6 +439,7 @@ class _FertilityScreenState extends State<FertilityScreen> {
               DropdownMenuItem(value: 'thyroid', child: Text('الغدة الدرقية')),
               DropdownMenuItem(value: 'other', child: Text('أخرى')),
             ], onChanged: (v) => setS(() => condition = v ?? 'none')),
+            ],
             const SizedBox(height: 18),
             _gradientButton('احصلي على التوجيه', Icons.auto_awesome, () {
               final profile = {'tryMonths': months, 'age': age, 'regular': regular, 'condition': condition};

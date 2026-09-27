@@ -28,8 +28,8 @@ html_template = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>موسوعة نبضة — دليلكِ الشامل لصحة المرأة، الأمومة والجمال</title>
-  <meta name="description" content="موسوعة نبضة الطبية والمصورة: أكثر من 2,500 مقال ودليل موثق حول الحمل والولادة، العناية بالبشرة والجمال، التبويض والخصوبة، صحة المرأة ورعاية الرضيع.">
+  <title>موسوعة نبضة — دليلكِ الشامل لصحة المرأة، الأمومة والجمال (آلاف المقالات)</title>
+  <meta name="description" content="موسوعة نبضة: آلاف المقالات المبسّطة حول الحمل والولادة، العناية بالبشرة والجمال، التبويض والخصوبة، صحة المرأة ورعاية الرضيع.">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -299,6 +299,66 @@ html_template = """<!DOCTYPE html>
       padding: 2px 8px;
       font-size: 11px;
       font-weight: 700;
+    }
+
+    
+    /* Subcategories Horizontal Bar */
+    .subcategories-menu-row {
+      background-color: #fff5f8;
+      border-bottom: 1px solid #fce4ec;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+      padding: 10px 0;
+      transition: all 0.25s ease;
+    }
+    .subcategories-menu-row::-webkit-scrollbar {
+      display: none;
+    }
+    .subcategories-menu-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .subcat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 15px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #555;
+      background: #ffffff;
+      border: 1px solid #f3d4df;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .subcat-pill:hover {
+      color: var(--primary-pink);
+      border-color: var(--primary-pink);
+      background: #fffbfe;
+      transform: translateY(-1px);
+    }
+    .subcat-pill.active {
+      background: var(--primary-pink);
+      color: #ffffff;
+      border-color: var(--primary-pink);
+      box-shadow: 0 3px 10px rgba(233, 30, 99, 0.25);
+    }
+    .subcat-pill-count {
+      font-size: 11px;
+      padding: 1px 7px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.06);
+    }
+    .subcat-pill.active .subcat-pill-count {
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
     }
 
     /* Content Wrapper & Breadcrumb */
@@ -1108,15 +1168,15 @@ html_template = """<!DOCTYPE html>
   <div class="top-banner">
     <div class="top-banner-title">
       <span class="pulse"></span>
-      <span>موسوعة نبضة الطبية والمصورة — أكثر من 2,500 مقال ودليل علمي موثق لصحة وسعادة المرأة</span>
+      <span>موسوعة نبضة — آلاف المقالات التثقيفية المبسّطة لصحة وسعادة المرأة</span>
     </div>
     <div class="top-banner-badges">
       <a href="https://play.google.com/store/apps/details?id=com.nabda.app" target="_blank" class="store-badge-btn">
         <span>🤖</span> Google Play
       </a>
-      <a href="https://apps.apple.com/app/nabda" target="_blank" class="store-badge-btn">
-        <span>🍏</span> App Store
-      </a>
+      <span class="store-badge-btn" style="opacity: 0.8; cursor: default;">
+        <span>🍏</span> قريباً على App Store
+      </span>
     </div>
   </div>
 
@@ -1134,7 +1194,7 @@ html_template = """<!DOCTYPE html>
       <!-- Search Box in Nav -->
       <form class="nav-search-form" onsubmit="event.preventDefault(); triggerSearch();">
         <div class="nav-search-box">
-          <input type="search" id="searchInput" class="nav-search-input" placeholder="ابحثي في 2,500+ مقال، عَرَض، أو استفسار طبي..." aria-label="بحث">
+          <input type="search" id="searchInput" class="nav-search-input" placeholder="ابحثي في مقالات نبضة..." aria-label="بحث">
           <button type="button" class="nav-search-btn" onclick="triggerSearch()">
             <span>🔍</span> بحث
           </button>
@@ -1153,34 +1213,41 @@ html_template = """<!DOCTYPE html>
     <div class="categories-menu-container">
       <div class="cat-menu-item active" data-cat="all" onclick="selectCategory('all', this)">
         <span>الكل</span>
-        <span class="cat-menu-badge" id="badge-all">2,500</span>
+        <span class="cat-menu-badge" id="badge-all"></span>
       </div>
       <div class="cat-menu-item" data-cat="pregnancy" onclick="selectCategory('pregnancy', this)">
         <span>🤰 الحمل والولادة</span>
-        <span class="cat-menu-badge">1,126</span>
+        <span class="cat-menu-badge" id="badge-pregnancy">—</span>
       </div>
       <div class="cat-menu-item" data-cat="beauty" onclick="selectCategory('beauty', this)">
         <span>💄 جمالي وعنايتي</span>
-        <span class="cat-menu-badge">762</span>
+        <span class="cat-menu-badge" id="badge-beauty">—</span>
       </div>
       <div class="cat-menu-item" data-cat="marriage" onclick="selectCategory('marriage', this)">
         <span>💍 زوجيات وسكينة</span>
-        <span class="cat-menu-badge">312</span>
+        <span class="cat-menu-badge" id="badge-marriage">—</span>
       </div>
       <div class="cat-menu-item" data-cat="fertility" onclick="selectCategory('fertility', this)">
         <span>🌸 التبويض والحمل</span>
-        <span class="cat-menu-badge">176</span>
+        <span class="cat-menu-badge" id="badge-fertility">—</span>
       </div>
       <div class="cat-menu-item" data-cat="health" onclick="selectCategory('health', this)">
         <span>🥗 صحة ورشاقة</span>
-        <span class="cat-menu-badge">115</span>
+        <span class="cat-menu-badge" id="badge-health">—</span>
       </div>
       <div class="cat-menu-item" data-cat="baby" onclick="selectCategory('baby', this)">
         <span>👶 رعاية الرضيع</span>
-        <span class="cat-menu-badge">9</span>
+        <span class="cat-menu-badge" id="badge-baby">—</span>
       </div>
     </div>
   </nav>
+
+  <!-- Horizontal Subcategory Bar -->
+  <div class="subcategories-menu-row" id="subcatBar">
+    <div class="subcategories-menu-container" id="subcatContainer">
+      <!-- Injected via JS based on active category -->
+    </div>
+  </div>
 
   <!-- Main Content Area -->
   <main class="content-wrapper">
@@ -1190,13 +1257,13 @@ html_template = """<!DOCTYPE html>
       <span class="sep">&gt;</span>
       <a href="articles.html">موسوعة المقالات</a>
       <span class="sep">&gt;</span>
-      <span id="breadcrumbCurrent" class="breadcrumb-current">جميع المقالات الطبية</span>
+      <span id="breadcrumbCurrent" class="breadcrumb-current">جميع المقالات</span>
     </div>
 
     <!-- Section Title & Results Count Header -->
     <div class="section-title-bar">
       <div>
-        <h1 class="section-title-main" id="sectionHeaderTitle">أحدث المقالات والأدلة الموثقة</h1>
+        <h1 class="section-title-main" id="sectionHeaderTitle">أحدث المقالات والأدلة</h1>
       </div>
       <div class="section-stats-pill" id="resultsCountPill">
         عرض 2,500 مقال متاح
@@ -1226,12 +1293,12 @@ html_template = """<!DOCTYPE html>
     <div class="footer-container">
       <div class="footer-col">
         <h4>عن موسوعة نبضة</h4>
-        <p>تطبيق وموسوعة نبضة هي المرجع العربي الأول لصحة المرأة، متابعة الحمل أسبوعاً بأسبوع، أدلة التبويض والخصوبة، والعناية المتكاملة بالجمال ورعاية الطفل الرضيع بمحتوى طبي موثوق.</p>
-        <p style="color: #FF6090; font-weight: 700;">دقة علمية · خصوصية تامة · تجربة نسائية فريدة</p>
+        <p>تطبيق وموسوعة نبضة رفيقتكِ العربية في صحة المرأة: متابعة الحمل أسبوعاً بأسبوع، أدلة التبويض والخصوبة، والعناية المتكاملة بالجمال ورعاية الطفل الرضيع بمحتوى تثقيفي مبسّط.</p>
+        <p style="color: #FF6090; font-weight: 700;">محتوى مبسّط · خصوصية تامة · تجربة نسائية فريدة</p>
       </div>
 
       <div class="footer-col">
-        <h4>الموضوعات الطبية</h4>
+        <h4>الموضوعات</h4>
         <ul class="footer-links">
           <li><a href="javascript:void(0)" onclick="selectCategory('pregnancy')">الحمل والولادة ومراحله</a></li>
           <li><a href="javascript:void(0)" onclick="selectCategory('fertility')">التبويض والتخطيط للحمل</a></li>
@@ -1258,14 +1325,19 @@ html_template = """<!DOCTYPE html>
           <span>🤖</span> Google Play Store
         </a>
         <br>
-        <a href="https://apps.apple.com/app/nabda" target="_blank" class="store-badge-btn" style="display: inline-flex;">
-          <span>🍏</span> Apple App Store
-        </a>
+        <span class="store-badge-btn" style="display: inline-flex; opacity: 0.8; cursor: default;">
+          <span>🍏</span> قريباً على App Store
+        </span>
       </div>
     </div>
 
     <div class="footer-copyright-bar">
-      <div>© 2026 تطبيق وموسوعة نبضة — جميع الحقوق محفوظة لشركة نبضة لتكنولوجيا الرعاية الصحية.</div>
+      <div>© 2026 تطبيق وموسوعة نبضة — جميع الحقوق محفوظة.</div>
+      <div style="margin: 8px 0;">
+        <a href="/privacy.html" style="color: #00897B; text-decoration: none;">سياسة الخصوصية</a> ·
+        <a href="/terms.html" style="color: #00897B; text-decoration: none;">شروط الاستخدام</a> ·
+        <a href="/delete-account.html" style="color: #00897B; text-decoration: none;">حذف الحساب</a>
+      </div>
       <div class="footer-disclaimer">
         تنبيه طبي: المعلومات والمقالات الطبية الواردة في هذه الموسوعة هي لأغراض التوعية والإرشاد العام فقط، ولا تغني بأي حال عن الفحص الطبي المباشر واستشارة الطبيب المعالج أو المتخصص.
       </div>
@@ -1279,9 +1351,118 @@ html_template = """<!DOCTYPE html>
     let currentPage = 1;
     const pageSize = 15; // 3 columns x 5 rows = 15 articles per page
     let filteredArticles = [];
+    const subcategoriesByCategory = {
+      pregnancy: [
+        { id: 'preg_nutrition_vitamins', name: 'تغذية وفيتامينات الحامل', emoji: '🥗' },
+        { id: 'preg_labor_delivery', name: 'المخاض والولادة والتحضير', emoji: '🏥' },
+        { id: 'preg_health_tests', name: 'فحوصات وسونار ومتاعب الحمل', emoji: '🔬' },
+        { id: 'preg_symptoms_weeks', name: 'أعراض الحمل وتطور الجنين', emoji: '🤰' },
+        { id: 'preg_postpartum', name: 'ما بعد الولادة والنفاس', emoji: '🌸' }
+      ],
+      baby: [
+        { id: 'baby_development_growth', name: 'مراحل النمو والتطور', emoji: '🧸' },
+        { id: 'baby_breastfeeding_food', name: 'الرضاعة والتغذية والفطام', emoji: '🍼' },
+        { id: 'baby_sleep_routine', name: 'نوم الرضيع والروتين والبكاء', emoji: '😴' },
+        { id: 'baby_health_care', name: 'صحة الرضيع والتطعيمات', emoji: '👶' },
+        { id: 'baby_safety_gear', name: 'سلامة الطفل ومستلزماته', emoji: '🛡️' }
+      ],
+      fertility: [
+        { id: 'fert_ovulation_cycle', name: 'حساب التبويض وعلامات الخصوبة', emoji: '🗓️' },
+        { id: 'fert_boost_tips', name: 'تعزيز الخصوبة وفرص الحمل', emoji: '🌸' },
+        { id: 'fert_pcos_hormones', name: 'تكيس المبايض واضطراب الهرمونات', emoji: '🩺' },
+        { id: 'fert_ivf_medical', name: 'الفحوصات والحقن المجهري', emoji: '🔬' }
+      ],
+      health: [
+        { id: 'health_nutrition_fitness', name: 'الرشاقة وإنقاص الوزن والطبخ', emoji: '🥗' },
+        { id: 'health_diseases_prevention', name: 'الأمراض النسائية والوقاية', emoji: '🩺' },
+        { id: 'health_mental_wellness', name: 'الصحة النفسية والاسترخاء', emoji: '🕊️' },
+        { id: 'health_hormones_lifestyle', name: 'الهرمونات ونمط الحياة', emoji: '💗' },
+        { id: 'health_period_cycle', name: 'الدورة الشهرية وأعراضها', emoji: '🩸' }
+      ],
+      beauty: [
+        { id: 'beauty_skincare', name: 'العناية بالبشرة والوجه والنضارة', emoji: '✨' },
+        { id: 'beauty_haircare', name: 'العناية بالشعر ومنع التساقط', emoji: '💇‍♀️' },
+        { id: 'beauty_body_perfume', name: 'العناية بالجسم والتعطير', emoji: '🌸' },
+        { id: 'beauty_natural_recipes', name: 'الوصفات والخلطات الطبيعية', emoji: '🌿' },
+        { id: 'beauty_pregnancy_safe', name: 'الجمال الآمن للحوامل والأمهات', emoji: '🤰' }
+      ],
+      marriage: [
+        { id: 'marr_communication', name: 'التفاهم والحوار ولغات الحب', emoji: '💑' },
+        { id: 'marr_conflicts_solutions', name: 'إدارة الخلافات والضغوط', emoji: '🕊️' },
+        { id: 'marr_parenting_partnership', name: 'الشراكة الوالدية وبناء الأسرة', emoji: '👨‍👩‍👧' },
+        { id: 'marr_intimacy', name: 'العلاقة الحميمة والانسجام', emoji: '💖' }
+      ]
+    };
+
+    let currentSubcategory = 'all';
+
+    function renderSubcategoriesBar() {
+      const container = document.getElementById('subcatContainer');
+      const bar = document.getElementById('subcatBar');
+      if (!container || !bar) return;
+      container.innerHTML = '';
+
+      let subList = [];
+      if (currentCategory === 'all') {
+        Object.values(subcategoriesByCategory).forEach(subs => {
+          subList.push(...subs);
+        });
+      } else {
+        subList = subcategoriesByCategory[currentCategory] || [];
+      }
+
+      if (subList.length === 0) {
+        bar.style.display = 'none';
+        return;
+      }
+      bar.style.display = 'block';
+
+      // Count articles per subcategory
+      const subCounts = {};
+      let catTotal = 0;
+      allArticles.forEach(a => {
+        if (currentCategory === 'all' || a.categoryId === currentCategory) {
+          catTotal++;
+          if (a.subcategoryId) {
+            subCounts[a.subcategoryId] = (subCounts[a.subcategoryId] || 0) + 1;
+          }
+        }
+      });
+
+      // 'All' Pill
+      const allPill = document.createElement('div');
+      allPill.className = `subcat-pill ${currentSubcategory === 'all' ? 'active' : ''}`;
+      allPill.onclick = () => selectSubcategory('all', allPill);
+      allPill.innerHTML = `<span>🌟 الكل</span><span class="subcat-pill-count">${formatNumber(catTotal)}</span>`;
+      container.appendChild(allPill);
+
+      subList.forEach(sub => {
+        const count = subCounts[sub.id] || 0;
+        if (count === 0 && currentCategory === 'all') return;
+        const pill = document.createElement('div');
+        pill.className = `subcat-pill ${currentSubcategory === sub.id ? 'active' : ''}`;
+        pill.onclick = () => selectSubcategory(sub.id, pill);
+        pill.innerHTML = `<span>${sub.emoji} ${sub.name}</span><span class="subcat-pill-count">${formatNumber(count)}</span>`;
+        container.appendChild(pill);
+      });
+    }
+
+    function selectSubcategory(subId, el) {
+      currentSubcategory = subId;
+      currentPage = 1;
+      document.querySelectorAll('.subcat-pill').forEach(p => p.classList.remove('active'));
+      if (el) {
+        el.classList.add('active');
+      } else {
+        const target = document.querySelector(`.subcat-pill[onclick*="'${subId}'"]`);
+        if (target) target.classList.add('active');
+      }
+      applyFilterAndRender();
+    }
+
 
     const categoryMeta = {
-      all: { name: 'جميع المقالات الطبية', title: 'أحدث المقالات والأدلة الموثقة', icon: '🌟' },
+      all: { name: 'جميع المقالات', title: 'أحدث المقالات والأدلة', icon: '🌟' },
       pregnancy: { name: 'الحمل والولادة', title: 'تصنيف — الحمل والولادة ومراحله', icon: '🤰' },
       beauty: { name: 'جمالي وعنايتي', title: 'تصنيف — أسرار الجمال والعناية بالبشرة والشعر', icon: '💄' },
       marriage: { name: 'العلاقة الزوجية والسكينة', title: 'تصنيف — السكينة والمودة الزوجية', icon: '💍' },
@@ -1319,6 +1500,7 @@ html_template = """<!DOCTYPE html>
 
     function selectCategory(cat, el) {
       currentCategory = cat;
+      currentSubcategory = 'all';
       currentPage = 1;
 
       document.querySelectorAll('.cat-menu-item').forEach(item => item.classList.remove('active'));
@@ -1336,6 +1518,7 @@ html_template = """<!DOCTYPE html>
       const titleEl = document.getElementById('sectionHeaderTitle');
       if (titleEl) titleEl.textContent = meta.title;
 
+      renderSubcategoriesBar();
       applyFilterAndRender();
       window.scrollTo({ top: 120, behavior: 'smooth' });
     }
@@ -1362,11 +1545,16 @@ html_template = """<!DOCTYPE html>
       filteredArticles = allArticles.filter(art => {
         const matchCat = (currentCategory === 'all') || (art.categoryId === currentCategory);
         if (!matchCat) return false;
+        const matchSub = (currentSubcategory === 'all') || (art.subcategoryId === currentSubcategory);
+        if (!matchSub) return false;
         if (!q) return true;
         return (art.title && art.title.toLowerCase().includes(q)) ||
                (art.summary && art.summary.toLowerCase().includes(q)) ||
                (art.categoryName && art.categoryName.toLowerCase().includes(q)) ||
-               (art.badge && art.badge.toLowerCase().includes(q));
+               (art.subcategoryName && art.subcategoryName.toLowerCase().includes(q)) ||
+               (art.specialty && art.specialty.toLowerCase().includes(q)) ||
+               (art.badge && art.badge.toLowerCase().includes(q)) ||
+               (art.tags && Array.isArray(art.tags) && art.tags.some(t => t.toLowerCase().includes(q)));
       });
 
       const countPill = document.getElementById('resultsCountPill');
@@ -1414,9 +1602,10 @@ html_template = """<!DOCTYPE html>
           </div>
           <div class="card-content-area">
             <div>
-              <div class="card-cat-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="card-cat-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
                 <span style="color: var(--accent-teal); font-weight: 800; font-size: 13px;">${art.iconEmoji || '🌸'} ${art.categoryName}</span>
-                <span style="background: var(--light-pink-bg); color: var(--primary-pink); padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700;">${art.badge || 'موثق طبياً 🩺'}</span>
+                ${art.subcategoryName ? `<span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">${art.subcategoryEmoji || '🔖'} ${art.subcategoryName}</span>` : ''}
+                <span style="background: var(--light-pink-bg); color: var(--primary-pink); padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700;">${art.badge || 'دليل شامل 📘'}</span>
               </div>
               <h3 class="card-title">${art.title}</h3>
               <p class="card-snippet">${art.summary}</p>
@@ -1542,7 +1731,7 @@ html_template = """<!DOCTYPE html>
       if (art.faqs && art.faqs.length > 0) {
         faqsHtml = `
           <div style="margin-top: 36px; padding-top: 20px; border-top: 1.5px dashed #e2e8f0;">
-            <h3 class="article-section-h2"><span>❓</span> الأسئلة الأكثر شيوعاً وإجابات الأطباء</h3>
+            <h3 class="article-section-h2"><span>❓</span> الأسئلة الأكثر شيوعاً وإجاباتها</h3>
         `;
         art.faqs.forEach(f => {
           faqsHtml += `
@@ -1560,7 +1749,7 @@ html_template = """<!DOCTYPE html>
         toolBannerHtml = `
           <div class="interactive-tool-box">
             <h4>⚡ ${art.toolTitle}</h4>
-            <p>${art.toolSubtitle || 'أداة طبية ذكية مخصصة لمتابعتكِ اليومية خطوة بخطوة بدقة عالية'}</p>
+            <p>${art.toolSubtitle || 'أداة ذكية لمتابعتكِ اليومية خطوة بخطوة'}</p>
             <a href="https://play.google.com/store/apps/details?id=com.nabda.app" target="_blank" class="tool-action-btn">
               <span>📱</span> افتحي الأداة مجاناً في تطبيق نبضة
             </a>
@@ -1599,16 +1788,17 @@ html_template = """<!DOCTYPE html>
             <span onclick="closeArticleModal()" style="cursor:pointer;">الرئيسية</span>
             <span>&gt;</span>
             <span onclick="selectCategory('${art.categoryId}'); closeArticleModal();" style="cursor:pointer;">${art.categoryName}</span>
+            ${art.subcategoryName ? `<span>&gt;</span><span onclick="selectCategory('${art.categoryId}'); selectSubcategory('${art.subcategoryId}'); closeArticleModal();" style="cursor:pointer; color: #00897B; font-weight: 700;">${art.subcategoryEmoji || ''} ${art.subcategoryName}</span>` : ''}
             <span>&gt;</span>
             <span style="color: #666; font-weight: 500;">عرض المقال</span>
           </div>
           <h1 class="modal-article-title">${art.title}</h1>
           <div class="modal-author-bar">
             <div class="author-info-box">
-              <img src="images/smart_articles/photo_womens_clinic.jpg" alt="طبيبة نبضة" class="author-avatar" onerror="this.src='favicon.png'">
+              <img src="nabda_heart.png" alt="نبضة" class="author-avatar" onerror="this.src='favicon.png'">
               <div class="author-details">
-                <span class="author-name">${art.author || 'فريق التحرير الطبي — نبضة'} <span class="author-verified">✓</span></span>
-                <span class="publish-date">مراجعة وتدقيق طبي معتمد · ⏱️ ${art.readTime} · 👁️ ${formatNumber(viewsCount)} قراءة</span>
+                <span class="author-name">${art.author || 'فريق تحرير نبضة'}</span>
+                <span class="publish-date">محتوى تثقيفي · ⏱️ ${art.readTime} · 👁️ ${formatNumber(viewsCount)} قراءة</span>
               </div>
             </div>
             <div class="social-share-row">
@@ -1633,11 +1823,11 @@ html_template = """<!DOCTYPE html>
 
             <div class="resources-collapsible">
               <button class="resources-btn" onclick="toggleResources()">
-                <span>📚 المراجع والمصادر الطبية المعتمدة</span>
+                <span>📚 للاستزادة: مصادر عالمية موثوقة</span>
                 <span id="resourcesArrow">▼</span>
               </button>
               <div class="resources-body" id="resourcesBody">
-                <p>تم إعداد هذا المحتوى وتدقيقه وفقاً لأحدث البروتوكولات الإكلينيكية الصادرة عن:</p>
+                <p>جهات عالمية موثوقة للاستزادة في صحة المرأة والحمل (وليست مراجع كُتب منها هذا المقال):</p>
                 <ul style="padding-right: 22px; margin-top: 8px;">
                   <li>الكلية الأمريكية لأطباء النساء والتوليد (ACOG Guidelines)</li>
                   <li>المعهد الوطني للصحة والرعاية المتميزة (NICE UK)</li>
@@ -1722,14 +1912,51 @@ html_template = """<!DOCTYPE html>
       if (e.key === 'Escape') closeArticleModal();
     });
 
+    function updateCategoryBadges() {
+      const counts = { all: allArticles.length };
+      allArticles.forEach(a => {
+        counts[a.categoryId] = (counts[a.categoryId] || 0) + 1;
+      });
+      const badgeAll = document.getElementById('badge-all');
+      if (badgeAll) badgeAll.textContent = formatNumber(counts.all || 0);
+      ['pregnancy', 'beauty', 'marriage', 'fertility', 'health', 'baby'].forEach(cat => {
+        const b = document.getElementById('badge-' + cat);
+        if (b && counts[cat] !== undefined) b.textContent = formatNumber(counts[cat]);
+      });
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-      applyFilterAndRender();
+      updateCategoryBadges();
+
       const urlParams = new URLSearchParams(window.location.search);
       const queryId = urlParams.get('id');
       const hashId = window.location.hash ? window.location.hash.substring(1) : null;
       const targetId = queryId || hashId;
+
+      const catParam = urlParams.get('cat') || urlParams.get('category') || urlParams.get('filter');
+      const subcatParam = urlParams.get('subcat') || urlParams.get('subcategory');
+      const searchParam = urlParams.get('q') || urlParams.get('search');
+
+      if (catParam && (categoryMeta[catParam] || catParam === 'all')) {
+        selectCategory(catParam);
+      } else {
+        renderSubcategoriesBar();
+        applyFilterAndRender();
+      }
+
+      if (subcatParam) {
+        selectSubcategory(subcatParam);
+      }
+
+      if (searchParam) {
+        searchQuery = searchParam;
+        const sInput = document.getElementById('searchInput');
+        if (sInput) sInput.value = searchParam;
+        applyFilterAndRender();
+      }
+
       if (targetId) {
-        setTimeout(() => { openArticleModal(targetId); }, 200);
+        setTimeout(() => { openArticleModal(targetId); }, 250);
       }
     });
   </script>
@@ -1809,7 +2036,7 @@ def build_landing_carousels(articles, top_n=8):
     <section class="landing-carousel" data-cat="{cat_id}">
         <div class="carousel-header">
             <h2>{label}</h2>
-            <a href="articles.html?filter={filter_val}" class="more-btn">قراءة المزيد ←</a>
+            <a href="articles.html?cat={filter_val}" class="more-btn">اكتشفي المزيد ←</a>
         </div>
         <div class="carousel-scroll">
 {cards_html}
@@ -1817,7 +2044,7 @@ def build_landing_carousels(articles, top_n=8):
     </section>''')
     
     inner_content = '\n'.join(sections)
-    return f'<!-- WIKI CAROUSELS -->\n<div id="wiki-carousels" style="max-width:1280px;margin:56px auto 0;padding:0 24px;">\n    <div style="text-align:center;margin-bottom:28px;">\n        <h2 style="font-size:32px;font-weight:900;color:#1F1A20;margin-bottom:8px;">موسوعة نبضة الشاملة (2,500+ مقال)</h2>\n        <p style="font-size:16px;color:#8F8795;">محتوى طبي وتفاعلي موثق بأحدث المراجع العالمية لجميع مراحل حياتكِ</p>\n    </div>\n{inner_content}\n</div>'
+    return f'<!-- WIKI CAROUSELS -->\n<div id="wiki-carousels" style="max-width:1280px;margin:56px auto 0;padding:0 24px;">\n    <div style="text-align:center;margin-bottom:28px;">\n        <h2 style="font-size:32px;font-weight:900;color:#1F1A20;margin-bottom:8px;">موسوعة نبضة الشاملة</h2>\n        <p style="font-size:16px;color:#8F8795;">مقالات تثقيفية مبسّطة لجميع مراحل حياتكِ</p>\n    </div>\n{inner_content}\n</div>'
 
 def update_landing_html(articles):
     landing_path = r'C:\nabda_app\web\landing.html'
@@ -1852,6 +2079,13 @@ def update_landing_html(articles):
             print("✓ Injected carousel CSS into landing.html")
 
     carousels_html = build_landing_carousels(articles, top_n=8)
+
+
+    # Update title and button text across landing.html
+    html = html.replace('عرض جميع المقالات (2,500+) ←', 'عرض جميع مقالات موسوعة نبضة ←')
+    html = html.replace('موسوعة المقالات (2,500+)', 'موسوعة نبضة')
+    html = html.replace('>الموسوعة 📖<', '>موسوعة نبضة 📚<')
+    html = html.replace('قراءة المزيد ←', 'اكتشفي المزيد ←')
 
     if 'id="wiki-carousels"' in html:
         html = re.sub(r'<!-- WIKI CAROUSELS -->.*?</div>\s*(?=<!-- FOOTER -->)', f'{carousels_html}\n\n', html, flags=re.DOTALL)

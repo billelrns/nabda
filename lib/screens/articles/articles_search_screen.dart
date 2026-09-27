@@ -140,7 +140,7 @@ class _ArticlesSearchScreenState extends State<ArticlesSearchScreen> {
     SmartToolItem(
       id: 'vaccinations',
       title: 'جدول تطعيمات ولقاحات الطفل',
-      subtitle: 'جدول اللقاحات الوطنية المعتمدة ومواعيد تطعيمات طفلكِ الدقيقة',
+      subtitle: 'تذكير بمواعيد تطعيمات طفلكِ — تأكدي منها مع طبيبتكِ',
       category: 'رعاية الرضيع',
       icon: Icons.medical_services_rounded,
       color: const Color(0xFF26A69A),
@@ -214,7 +214,7 @@ class _ArticlesSearchScreenState extends State<ArticlesSearchScreen> {
       category: 'استشارات',
       icon: Icons.smart_toy_rounded,
       color: const Color(0xFFE91E63),
-      keywords: ['ذكاء', 'مساعد', 'طبيب ذكي', 'استشارة', 'سؤال', 'ai', 'شات', 'طبيبة'],
+      keywords: ['ذكاء', 'مساعد', 'استشارة', 'سؤال', 'ai', 'شات', 'طبيبة'],
       builder: (_) => const AIChatScreen(),
     ),
     SmartToolItem(
@@ -678,7 +678,7 @@ class _ArticlesSearchScreenState extends State<ArticlesSearchScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'المقالات الطبية الموثقة (${_articleResults.length})',
+                        'المقالات (${_articleResults.length})',
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1B1320)),
                       ),
                     ],

@@ -26,7 +26,12 @@ import '../screens/health/medication_tracker_screen.dart';
 import '../screens/health/health_measurements_screen.dart';
 import '../screens/messaging/chat_list_screen.dart';
 import '../screens/messaging/chat_room_screen.dart';
+import '../screens/trackers/weight_tracker_screen.dart';
+import '../screens/pregnancy/hospital_bag_screen.dart';
+import '../screens/pregnancy/exercises_screen.dart';
+import '../screens/pregnancy/pregnancy_calendar_screen.dart';
 import '../services/admin_service.dart';
+import 'play_compliance.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -41,6 +46,10 @@ class AppRoutes {
   static const String kickCounter = '/kick-counter';
   static const String babyDashboard = '/baby';
   static const String vaccinationSchedule = '/vaccinations';
+  static const String weightTracker = '/weight-tracker';
+  static const String hospitalBag = '/hospital-bag';
+  static const String exercises = '/exercises';
+  static const String pregnancyCalendar = '/pregnancy-calendar';
   static const String community = '/community';
   static const String createPost = '/create-post';
   static const String postDetail = '/post';
@@ -55,6 +64,9 @@ class AppRoutes {
   static const String medicationTracker = '/medications';
   static const String healthMeasurements = '/health-measurements';
   static const String chats = '/chats';
+
+  /// وجهة العودة بعد تسجيل الدخول (إذا دخلت الزائرة من رابط أداة محميّة)
+  static String? redirectAfterLogin;
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -108,6 +120,22 @@ class AppRoutes {
         builder: (context, state) => const VaccinationSchedule(),
       ),
       GoRoute(
+        path: weightTracker,
+        builder: (context, state) => const WeightTrackerScreen(),
+      ),
+      GoRoute(
+        path: hospitalBag,
+        builder: (context, state) => const HospitalBagScreen(),
+      ),
+      GoRoute(
+        path: exercises,
+        builder: (context, state) => const ExercisesScreen(),
+      ),
+      GoRoute(
+        path: pregnancyCalendar,
+        builder: (context, state) => const PregnancyCalendarScreen(),
+      ),
+      GoRoute(
         path: community,
         builder: (context, state) => const CommunityScreen(),
       ),
@@ -123,10 +151,12 @@ class AppRoutes {
       ),
       GoRoute(
         path: aiChat,
+        redirect: (context, state) => kHideMedicalFeatures ? home : null,
         builder: (context, state) => const AIChatScreen(),
       ),
       GoRoute(
         path: doctors,
+        redirect: (context, state) => kHideMedicalFeatures ? home : null,
         builder: (context, state) => const DoctorsListScreen(),
       ),
       GoRoute(
@@ -165,10 +195,12 @@ class AppRoutes {
       ),
       GoRoute(
         path: medicationTracker,
+        redirect: (context, state) => kHideMedicalFeatures ? home : null,
         builder: (context, state) => const MedicationTrackerScreen(),
       ),
       GoRoute(
         path: healthMeasurements,
+        redirect: (context, state) => kHideMedicalFeatures ? home : null,
         builder: (context, state) => const HealthMeasurementsScreen(),
       ),
       GoRoute(

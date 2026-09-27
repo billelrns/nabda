@@ -965,7 +965,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                     const SmartArticlesCarousel(
                       categoryFilter: 'pregnancy',
                       sectionTitle: 'مقالات الحمل والولادة التفاعلية',
-                      sectionSubtitle: 'دليل شامل وموثق من انغراس البويضة حتى الولادة',
+                      sectionSubtitle: 'دليل شامل من انغراس البويضة حتى الولادة',
                     ),
                     const SizedBox(height: 16),
                     // ─── Health Trackers Banner ───

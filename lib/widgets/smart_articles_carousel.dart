@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../data/smart_interactive_articles_data.dart';
 import '../screens/articles/smart_article_detail_screen.dart';
-import '../screens/articles/smart_articles_list_screen.dart';
+import '../screens/articles/articles_list_screen.dart';
+import '../screens/articles/articles_hub_screen.dart';
 
 /// كاروسال عرض المقالات التفاعلية الذكية في شاشات التطبيق
 class SmartArticlesCarousel extends StatelessWidget {
@@ -13,7 +14,7 @@ class SmartArticlesCarousel extends StatelessWidget {
     super.key,
     this.categoryFilter,
     this.sectionTitle = 'مقالات حصرية وإرشادية',
-    this.sectionSubtitle = 'محتوى طبي وتفاعلي موثق لصحتكِ وجمالكِ',
+    this.sectionSubtitle = 'مقالات تفاعلية لصحتك وجمالك',
   });
 
   @override
@@ -61,15 +62,24 @@ class SmartArticlesCarousel extends StatelessWidget {
                 ),
                 InkWell(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SmartArticlesListScreen(
-                          initialCategory: categoryFilter,
-                          initialTitle: sectionTitle,
+                    if (categoryFilter != null && categoryFilter!.isNotEmpty) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ArticlesListScreen(
+                            categoryId: categoryFilter!,
+                            categoryName: sectionTitle,
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ArticlesHubScreen(),
+                        ),
+                      );
+                    }
                   },
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
@@ -82,7 +92,7 @@ class SmartArticlesCarousel extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'الموسوعة (100+) 📖',
+                          'اكتشفي المزيد 📖',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w800,

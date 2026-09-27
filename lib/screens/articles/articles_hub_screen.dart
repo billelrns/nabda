@@ -121,7 +121,7 @@ class _ArticlesHubScreenState extends State<ArticlesHubScreen> {
         Text('$total مقال تثقيفي وتفاعلي',
           style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
         const SizedBox(height: 6),
-        const Text('أضخم موسوعة رقمية موثقة لصحة المرأة والأمومة والطفل بـ 28 تصنيفاً تخصصياً',
+        const Text('مقالات تثقيفية مبسّطة لصحة المرأة والأمومة والطفل',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white70, fontSize: 13.5, height: 1.4)),
         const SizedBox(height: 14),

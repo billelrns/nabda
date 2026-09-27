@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../widgets/nabda_ui.dart';
+import '../config/play_compliance.dart';
 
 // ──────────────────────────────────────────────────────────
 //  Nabda Onboarding — Inspired by Healofy & WeMoms
@@ -966,12 +967,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ),
                   _fertField(
                     'هل لديك حالة معروفة؟',
-                    _dropStr<String>(_condition, const {
+                    _dropStr<String>(_condition, filterConditionOptions(const {
                       'none': 'لا شيء',
                       'pcos': 'تكيّس المبايض (PCOS)',
                       'thyroid': 'الغدة الدرقية',
                       'other': 'أخرى',
-                    }, (v) => setState(() => _condition = v)),
+                    }), (v) => setState(() => _condition = v)),
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -1333,7 +1334,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           _fertField('عمرك', _dropStr<String>(_pregAge,
             const {'18-24': '18 - 24', '25-34': '25 - 34', '35-39': '35 - 39', '40+': '40 فأكثر'}, (v) => setState(() => _pregAge = v))),
           _fertField('هل لديك حالة صحية خلال الحمل؟', _dropStr<String>(_pregCondition,
-            const {'none': 'لا شيء', 'diabetes': 'سكري الحمل', 'hypertension': 'ارتفاع الضغط', 'nausea': 'غثيان شديد', 'other': 'أخرى'}, (v) => setState(() => _pregCondition = v))),
+            filterConditionOptions(const {'none': 'لا شيء', 'diabetes': 'سكري الحمل', 'hypertension': 'ارتفاع الضغط', 'nausea': 'غثيان شديد', 'other': 'أخرى'}), (v) => setState(() => _pregCondition = v))),
           const SizedBox(height: 8),
         ]))),
       _saving ? const Center(child: CircularProgressIndicator(color: _pink))
@@ -1407,7 +1408,7 @@ class TermsOfServicePage extends StatelessWidget {
             ),
             _SectionTitle('3. أهلية الاستخدام'),
             _SectionBody(
-              'يجب أن يكون عمرك 16 سنة على الأقل لاستخدام هذا التطبيق. باستخدامك للتطبيق، فإنكِ تؤكدين أنك تستوفين هذا الشرط. إذا كنتِ تحت 18 سنة، يجب الحصول على موافقة ولي الأمر.',
+              'يجب أن يكون عمرك 18 سنة على الأقل لاستخدام هذا التطبيق. باستخدامك للتطبيق، فإنكِ تؤكدين أنك تستوفين هذا الشرط.',
             ),
             _SectionTitle('4. الحساب والتسجيل'),
             _SectionBody(
@@ -1559,7 +1560,8 @@ class PrivacyPolicyPage extends StatelessWidget {
               'لديكِ الحقوق التالية فيما يتعلق ببياناتك الشخصية:\n'
               '• الوصول: يمكنكِ طلب نسخة من بياناتك.\n'
               '• التصحيح: يمكنكِ تعديل بياناتك من ملفك الشخصي.\n'
-              '• الحذف: يمكنكِ طلب حذف حسابك وجميع بياناتك.\n'
+              '• الحذف: يمكنكِ حذف حسابك وجميع بياناتك مباشرة من التطبيق.\n'
+              '  (ما يبقى بعد الحذف: رسائلك في المحادثات الثنائية لأنها تخصّ طرفين، وسجلّات طلبات المتجر كالتزام محاسبي. ما عدا ذلك يُحذف نهائياً).\n'
               '• الاعتراض: يمكنكِ إلغاء الاشتراك في الإشعارات.\n\n'
               'لممارسة هذه الحقوق، تواصلي معنا عبر البريد الإلكتروني.',
             ),
@@ -1590,7 +1592,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             _SectionTitle('11. التواصل معنا'),
             _SectionBody(
               'لأي أسئلة أو مخاوف حول خصوصيتك، تواصلي معنا:\n'
-              '• البريد الإلكتروني: privacy@nabda-app.com\n'
+              '• البريد الإلكتروني: privacy@nabda.online\n'
               '• من خلال صفحة "عن نبضة" في التطبيق',
             ),
             SizedBox(height: 20),

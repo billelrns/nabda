@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/smart_article.dart';
 import '../../services/smart_articles_service.dart';
 import '../../services/favorites_service.dart';
+import '../../utils/article_text.dart';
+import '../../utils/article_tools.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
   final SmartArticle article;
@@ -354,8 +356,8 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
               // أقسام المقال
               ...article.sections.map((section) => _buildSectionWidget(section, themeColor)),
 
-              // بطاقة الأداة التفاعلية إن وجدت
-              if (article.toolTitle != null && article.toolTitle!.isNotEmpty)
+              // بطاقة الأداة التفاعلية إن وجدت في القائمة البيضاء
+              if (hasArticleTool(article.toolType) && article.toolTitle != null && article.toolTitle!.isNotEmpty)
                 _buildToolCard(themeColor),
 
               // الأسئلة الشائعة
@@ -404,8 +406,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF2C2C2C)),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.verified, size: 14, color: Color(0xFF00897B)),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -527,10 +527,13 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Text(
-            section.content,
-            style: const TextStyle(fontSize: 15, height: 1.7, color: Color(0xFF333333)),
-          ),
+          ...splitParagraphs(section.content).map((p) => Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: RichArabic(
+                  p,
+                  style: const TextStyle(fontSize: 15, height: 1.75, color: Color(0xFF333333)),
+                ),
+              )),
         ],
       ),
     );
@@ -588,12 +591,17 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('الأداة: ${widget.article.toolTitle ?? ""} متاحة داخل تبويب الأدوات بالصفحة الرئيسية'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                final builder = getArticleToolBuilder(widget.article.toolType);
+                if (builder != null) {
+                  Navigator.push(context, MaterialPageRoute(builder: builder));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('الأداة: ${widget.article.toolTitle ?? ""} متاحة داخل تبويب الأدوات بالصفحة الرئيسية'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
               },
               icon: const Icon(Icons.arrow_forward, size: 16),
               label: const Text('افتحي الأداة الآن', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -621,7 +629,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
               Icon(Icons.help_outline, color: themeColor, size: 22),
               const SizedBox(width: 8),
               const Text(
-                'الأسئلة الشائعة والإجابات المعتمدة',
+                'الأسئلة الشائعة',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1F1A20)),
               ),
             ],
@@ -645,9 +653,15 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                    child: Text(
-                      faq.answer,
-                      style: const TextStyle(fontSize: 13, height: 1.6, color: Color(0xFF4A4A4A)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: splitParagraphs(faq.answer).map((p) => Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: RichArabic(
+                              p,
+                              style: const TextStyle(fontSize: 13, height: 1.6, color: Color(0xFF4A4A4A)),
+                            ),
+                          )).toList(),
                     ),
                   ),
                 ],
@@ -673,7 +687,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
             const Icon(Icons.menu_book_outlined, size: 18, color: Color(0xFF00897B)),
             const SizedBox(width: 8),
             const Text(
-              'المراجع والمصادر الطبية المعتمدة',
+              'للاستزادة: مصادر عالمية موثوقة',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF00897B)),
             ),
           ],
@@ -682,7 +696,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
           Padding(
             padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
             child: Text(
-              'تم إعداد هذا المحتوى وتدقيقه وفقاً لأحدث البروتوكولات الإكلينيكية الصادرة عن:\n'
+              'جهات عالمية موثوقة للاستزادة في صحة المرأة والحمل (وليست مراجع كُتب منها هذا المقال):\n'
               '• الكلية الأمريكية لأطباء النساء والتوليد (ACOG Guidelines)\n'
               '• المعهد الوطني للصحة والرعاية المتميزة (NICE UK)\n'
               '• منظمة الصحة العالمية (WHO — Maternal & Child Health)\n'

@@ -1029,7 +1029,7 @@ Widget _publicSectionBody(String key, VoidCallback onLogin) {
       return _PublicJoinPrompt(
         emoji: '👥',
         title: 'انضمّي إلى مجتمع الأمّهات',
-        sub: 'شاركي تجاربكِ واسألي أمّهات وخبيرات يفهمن رحلتكِ. سجّلي الدخول للمشاركة.',
+        sub: 'شاركي تجاربكِ واسألي أمهات يفهمن رحلتكِ. سجلي الدخول للمشاركة.',
         onLogin: onLogin,
       );
     case 'pregnancy':
@@ -6830,7 +6830,7 @@ class _CycleArticlesSection extends StatelessWidget {
         // Then add static articles
         for (final entry in _cycleArticles.entries) {
           merged.putIfAbsent(entry.key, () => []);
-          merged[entry.key]!.addAll(entry.value);
+          merged[entry.key]!.addAll(entry.value.where((a) => !isHiddenArticleTitle(a['title'])));
         }
 
         return Column(
@@ -7094,6 +7094,9 @@ class _BabyArticlesSection extends StatelessWidget {
     final allArticles = <String, List<Map<String, String>>>{};
     allArticles.addAll(_babyArticles);
     allArticles.addAll(babyCareAgeArticles);
+    // نسخة الحساب الشخصي: لا مقالات أمراض وعلاج (play_compliance.dart)
+    allArticles.updateAll((_, list) =>
+        list.where((a) => !isHiddenArticleTitle(a['title'])).toList());
 
     for (final entry in allArticles.entries) {
       // Always show 'صحة الطفل العامة' regardless of age
