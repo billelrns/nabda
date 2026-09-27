@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../widgets/nabda_ui.dart';
-import '../config/play_compliance.dart';
 
 // ──────────────────────────────────────────────────────────
 //  Nabda Onboarding — Inspired by Healofy & WeMoms
@@ -51,13 +50,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   int _tryMonths = 6; // 3 / 6 / 12 / 24
   String _age = '25-34'; // 18-24 / 25-34 / 35-39 / 40+
   String _regular = 'yes'; // yes / no
-  String _condition = 'none'; // none / pcos / thyroid / other
+  String _condition = 'none'; // none / other
 
   // أنا حامل → pregnancyProfile
   bool _firstPregnancy = true;
   String _pregBabies = 'single';   // single / twins / more
   String _pregAge = '25-34';       // 18-24 / 25-34 / 35-39 / 40+
-  String _pregCondition = 'none';  // none / diabetes / hypertension / nausea / other
+  String _pregCondition = 'none';  // none / nausea / other
   // عندي طفل → babyProfile
   String _babyGender = 'male';     // male / female
   String _feeding = 'breast';      // breast / formula / mixed
@@ -967,12 +966,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ),
                   _fertField(
                     'هل لديك حالة معروفة؟',
-                    _dropStr<String>(_condition, filterConditionOptions(const {
+                    _dropStr<String>(_condition, const {
                       'none': 'لا شيء',
-                      'pcos': 'تكيّس المبايض (PCOS)',
-                      'thyroid': 'الغدة الدرقية',
                       'other': 'أخرى',
-                    }), (v) => setState(() => _condition = v)),
+                    }, (v) => setState(() => _condition = v)),
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -1334,7 +1331,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           _fertField('عمرك', _dropStr<String>(_pregAge,
             const {'18-24': '18 - 24', '25-34': '25 - 34', '35-39': '35 - 39', '40+': '40 فأكثر'}, (v) => setState(() => _pregAge = v))),
           _fertField('هل لديك حالة صحية خلال الحمل؟', _dropStr<String>(_pregCondition,
-            filterConditionOptions(const {'none': 'لا شيء', 'diabetes': 'سكري الحمل', 'hypertension': 'ارتفاع الضغط', 'nausea': 'غثيان شديد', 'other': 'أخرى'}), (v) => setState(() => _pregCondition = v))),
+            const {'none': 'لا شيء', 'nausea': 'غثيان شديد', 'other': 'أخرى'}, (v) => setState(() => _pregCondition = v))),
           const SizedBox(height: 8),
         ]))),
       _saving ? const Center(child: CircularProgressIndicator(color: _pink))

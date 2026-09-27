@@ -27,24 +27,6 @@ bool isHiddenSubcategory(String? subcategoryId) =>
     subcategoryId != null &&
     kMedicalSubcategories.contains(subcategoryId);
 
-/// حالات مرضية لا تُجمع ولا يُبنى عليها محتوى مخصّص في نسخة الحساب الشخصي
-/// (إدارة الأمراض = ميزة طبية).
-const Set<String> kMedicalConditions = {'diabetes', 'hypertension', 'pcos', 'thyroid'};
-
-/// هل الحالة المسجّلة حالة مرضية مخفية؟
-bool isHiddenCondition(Object? condition) =>
-    kHideMedicalFeatures && condition is String && kMedicalConditions.contains(condition);
-
-/// يحذف خيارات الأمراض من قوائم «هل لديك حالة صحية؟».
-Map<String, String> filterConditionOptions(Map<String, String> options) =>
-    kHideMedicalFeatures
-        ? {for (final e in options.entries) if (!kMedicalConditions.contains(e.key)) e.key: e.value}
-        : options;
-
-/// قيمة آمنة للقائمة المنسدلة (قيمة محفوظة سابقًا لم تعد ضمن الخيارات → 'none').
-String safeCondition(String? condition) =>
-    (condition == null || isHiddenCondition(condition)) ? 'none' : condition;
-
 /// مقالات ثابتة داخل التبويبات (خارج الموسوعة) موضوعها مرض وعلاجه.
 const Set<String> kMedicalArticleTitles = {
   'متلازمة تكيس المبايض',

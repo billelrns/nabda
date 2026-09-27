@@ -39,6 +39,10 @@ SECTION_TITLES = {
     'أهم التفاصيل والإرشادات الطبية': 'أهم التفاصيل والإرشادات',
 }
 
+REFS_TITLES = {'📚 المصادر والمراجع الطبية المعتمدة', '📚 للاستزادة: مصادر عالمية موثوقة'}
+DISCLAIMER_MARK = '**تنويه طبي إرشادي:**'
+DISCLAIMER_TITLE = '⚠️ تنويه'
+
 REFS_PREFIX = ('هذه جهات عالمية موثوقة للاستزادة في الموضوع، وليست مراجع '
                'اعتمد عليها هذا المقال حرفيًا:\n')
 
@@ -81,12 +85,25 @@ def clean(article, stats):
             if t.startswith('📚') and not sec.get('content', '').startswith(REFS_PREFIX):
                 sec['content'] = REFS_PREFIX + sec.get('content', '')
                 stats['refs'] += 1
+        if sec.get('title') in REFS_TITLES:
+            # قرار المالك (27 سبتمبر): حذف قائمة الجهات (WHO/ACOG/Mayo…) كليًا؛
+            # يبقى التنويه الطبي وحده في قسم «⚠️ تنويه».
+            body = sec.get('content', '')
+            k = body.find(DISCLAIMER_MARK)
+            if k >= 0:
+                sec['title'] = DISCLAIMER_TITLE
+                sec['content'] = body[k + len(DISCLAIMER_MARK):].strip()
+            else:
+                sec['_drop'] = True
+            stats['refs_removed'] += 1
         for key in ('content', 'calloutTip', 'calloutWarning'):
             if isinstance(sec.get(key), str):
                 new = fix_text(sec[key])
                 if new != sec[key]:
                     sec[key] = new
                     stats['text'] += 1
+    if any(s.get('_drop') for s in article.get('sections', []) or []):
+        article['sections'] = [s for s in article['sections'] if not s.get('_drop')]
     for faq in article.get('faqs', []) or []:
         for key in ('question', 'answer'):
             if isinstance(faq.get(key), str):
@@ -102,7 +119,7 @@ def main():
         data = json.loads(raw)
         if json.dumps(data, ensure_ascii=False, indent=2) != raw.rstrip('\n'):
             sys.exit(f'Format mismatch, refusing to rewrite: {path}')
-        stats = {'author': 0, 'badge': 0, 'section_title': 0, 'refs': 0, 'text': 0}
+        stats = {'author': 0, 'badge': 0, 'section_title': 0, 'refs': 0, 'refs_removed': 0, 'text': 0}
         for a in data['articles']:
             clean(a, stats)
         out = json.dumps(data, ensure_ascii=False, indent=2)

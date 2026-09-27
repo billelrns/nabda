@@ -621,7 +621,10 @@
   // 8) جلب المنتجات من Firestore
   db.collection('products').orderBy('createdAt', 'desc').get()
     .then(snap => {
-      allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // أقسام أُزيلت من المتجر: الفيتامينات والمكملات والأجهزة الطبية
+      const HIDDEN_CATEGORIES = ['فيتامينات ومكملات', 'مكملات غذائية', 'أطعمة ومكملات', 'أجهزة طبية'];
+      allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .filter(p => !HIDDEN_CATEGORIES.includes(p.category || ''));
       renderCategories();
       renderProducts();
     })

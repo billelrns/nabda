@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/pregnancy_week_articles.dart' show pregnancyMonthArForWeek;
+import '../../utils/fetus_size.dart';
 
 const Color _bg = Color(0xFFFFF5F7);
 const Color _card = Colors.white;
@@ -114,9 +115,10 @@ class _FetusSizeScreenState extends State<FetusSizeScreen> {
           ),
           child: Column(
             children: [
-              Text(data.emoji, style: const TextStyle(fontSize: 100)),
+              // الفاكهة والاسم من المصدر الموحّد — مطابقان تماماً لبقية الشاشات
+              Text(FetusSize.emoji(week), style: const TextStyle(fontSize: 100)),
               const SizedBox(height: 16),
-              Text('بحجم ${data.fruitName}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: data.bgColor)),
+              Text('بحجم ${FetusSize.name(week)}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: data.bgColor)),
               const SizedBox(height: 8),
               Wrap(
                 alignment: WrapAlignment.center,
@@ -256,9 +258,9 @@ const Map<int, _FetusWeekData> _weekData = {
     developments: ['الأظافر تبدأ بالنمو', 'العظام تبدأ بالتصلب', 'الكلى تنتج البول'], momTip: 'تناولي الأطعمة الغنية بالكالسيوم لدعم عظام طفلك'),
   11: _FetusWeekData(emoji: '🍋', fruitName: 'تين', length: '4.1 سم', weight: '7 غ', bgColor: Color(0xFFFFC107),
     developments: ['الرأس يشكل نصف الطول', 'براعم الأسنان تتشكل', 'الحبل السري يعمل بكفاءة'], momTip: 'قد تلاحظين اختفاء الغثيان تدريجيًا'),
-  12: _FetusWeekData(emoji: '🍑', fruitName: 'ليمون', length: '5.4 سم', weight: '14 غ', bgColor: Color(0xFFFF9800),
+  12: _FetusWeekData(emoji: '🥝', fruitName: 'كيوي', length: '5.4 سم', weight: '14 غ', bgColor: Color(0xFF8BC34A),
     developments: ['الأعضاء كلها تشكلت', 'الجنين يتثاءب ويمص إبهامه', 'نهاية المرحلة الحرجة'], momTip: 'نهاية الثلث الأول — أخبري عائلتك بالخبر السعيد!'),
-  13: _FetusWeekData(emoji: '🥝', fruitName: 'كيوي', length: '7.4 سم', weight: '23 غ', bgColor: Color(0xFF8BC34A),
+  13: _FetusWeekData(emoji: '🍋', fruitName: 'ليمونة', length: '7.4 سم', weight: '23 غ', bgColor: Color(0xFFFFC107),
     developments: ['بصمات الأصابع تتشكل', 'الحبال الصوتية تتطور', 'المبايض أو الخصيتين تتطور'], momTip: 'بداية الثلث الثاني — ستشعرين بطاقة أكبر'),
   14: _FetusWeekData(emoji: '🍊', fruitName: 'برتقالة صغيرة', length: '8.7 سم', weight: '43 غ', bgColor: Color(0xFFFF9800),
     developments: ['الجنين يستطيع العبوس والتحديق', 'الغدة الدرقية تعمل', 'الشعر الناعم (الزغب) يظهر'], momTip: 'مارسي رياضة المشي الخفيف يوميًا'),

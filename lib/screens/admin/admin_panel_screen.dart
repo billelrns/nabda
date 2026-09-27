@@ -152,6 +152,16 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 onTap: () => _push(_UsersManagementScreen()),
               ),
 
+            // Content & User Reports
+            if (_admin.hasPermission(Permission.viewUsers) || _admin.hasPermission(Permission.banUsers))
+              _ModuleCard(
+                title: 'مراجعة البلاغات والشكاوى',
+                subtitle: 'بلاغات المنشورات، التعليقات، والذكاء الاصطناعي',
+                emoji: '🚩',
+                color: const Color(0xFFD32F2F),
+                onTap: () => _push(const _ReportsManagementScreen()),
+              ),
+
             // Coupons
             if (_admin.hasPermission(Permission.manageCoupons))
               _ModuleCard(
@@ -413,6 +423,7 @@ Widget _statusBadge(String status) {
     case 'shipped': c = Colors.purple; t = 'تم الشحن'; break;
     case 'delivered': c = Colors.green; t = 'مكتمل'; break;
     case 'cancelled': c = Colors.red; t = 'ملغي'; break;
+    case 'waitlist': c = Colors.amber.shade900; t = 'قائمة الانتظار ⏳'; break;
     default: c = Colors.grey; t = status;
   }
   return Container(
@@ -426,92 +437,164 @@ Widget _statusBadge(String status) {
 //  2. ORDERS MANAGEMENT
 // ═══════════════════════════════════════════════
 class _OrdersManagementScreen extends StatelessWidget {
-  final _statuses = const ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-  final _statusAr = const {'pending': 'جديد', 'processing': 'قيد التجهيز', 'shipped': 'تم الشحن', 'delivered': 'مكتمل', 'cancelled': 'ملغي'};
+  final _statuses = const ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'waitlist'];
+  final _statusAr = const {'pending': 'جديد', 'processing': 'قيد التجهيز', 'shipped': 'تم الشحن', 'delivered': 'مكتمل', 'cancelled': 'ملغي', 'waitlist': 'قائمة الانتظار'};
+
+  Widget _buildOrderCard(BuildContext context, DocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    final isWaitlist = (d['status'] ?? 'pending') == 'waitlist';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          _statusBadge(d['status'] ?? 'pending'),
+          const Spacer(),
+          Text('#${doc.id.substring(0, 8)}', style: TextStyle(fontSize: 11, color: _text2)),
+        ]),
+        const SizedBox(height: 10),
+        Text(d['productName'] ?? 'منتج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _text1)),
+        const SizedBox(height: 4),
+        Row(children: [
+          Icon(Icons.person, size: 14, color: _text2), const SizedBox(width: 4),
+          Text(d['customerName'] ?? '', style: TextStyle(fontSize: 12, color: _text2)),
+          const SizedBox(width: 16),
+          Icon(Icons.phone, size: 14, color: _text2), const SizedBox(width: 4),
+          Text(d['phone'] ?? '', style: TextStyle(fontSize: 12, color: _text2)),
+        ]),
+        if (d['address'] != null && (d['address'] as String).isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Row(children: [
+            Icon(Icons.location_on_outlined, size: 14, color: _text2), const SizedBox(width: 4),
+            Expanded(child: Text(d['address'], style: TextStyle(fontSize: 12, color: _text2), maxLines: 1, overflow: TextOverflow.ellipsis)),
+          ]),
+        ],
+        const SizedBox(height: 8),
+        Row(children: [
+          Text(d['total'] ?? d['totalDisplay'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _teal)),
+          const Spacer(),
+          if (isWaitlist)
+            ElevatedButton.icon(
+              onPressed: () async {
+                await doc.reference.update({'status': 'pending'});
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('تم تحويل الطلب إلى طلب جديد (pending) بنجاح ✓'),
+                    backgroundColor: Color(0xFF00897B),
+                  ));
+                }
+              },
+              icon: const Icon(Icons.arrow_forward, size: 16),
+              label: const Text('تحويل إلى طلب', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _teal,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            )
+          else
+            PopupMenuButton<String>(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('تغيير الحالة', style: TextStyle(fontSize: 12, color: _teal, fontWeight: FontWeight.bold)),
+                  SizedBox(width: 4),
+                  Icon(Icons.keyboard_arrow_down, size: 16, color: _teal),
+                ]),
+              ),
+              onSelected: (status) async {
+                await doc.reference.update({'status': status});
+                final userId = d['userId'] as String?;
+                if (userId != null) {
+                  await NotificationService().createOrderNotification(
+                    userId: userId,
+                    orderId: doc.id,
+                    newStatus: status,
+                    productName: d['productName'] ?? 'طلبك',
+                  );
+                }
+              },
+              itemBuilder: (_) => _statuses.map((s) => PopupMenuItem(
+                value: s,
+                child: Text(_statusAr[s] ?? s),
+              )).toList(),
+            ),
+        ]),
+      ]),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
-      backgroundColor: _bg,
-      appBar: AppBar(centerTitle: true, title: const Text('📦 إدارة الطلبات', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
-        backgroundColor: _card, foregroundColor: _teal, elevation: 0, surfaceTintColor: Colors.transparent),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('orders').orderBy('createdAt', descending: true).snapshots(),
-        builder: (context, snap) {
-          if (!snap.hasData || snap.data!.docs.isEmpty) {
-            return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Text('📦', style: TextStyle(fontSize: 60)),
-              const SizedBox(height: 16),
-              Text('لا توجد طلبات بعد', style: TextStyle(fontSize: 16, color: _text2)),
-            ]));
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: snap.data!.docs.length,
-            itemBuilder: (_, i) {
-              final doc = snap.data!.docs[i];
-              final d = doc.data() as Map<String, dynamic>;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(16)),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    _statusBadge(d['status'] ?? 'pending'),
-                    const Spacer(),
-                    Text('#${doc.id.substring(0, 8)}', style: TextStyle(fontSize: 11, color: _text2)),
-                  ]),
-                  const SizedBox(height: 10),
-                  Text(d['productName'] ?? 'منتج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _text1)),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    Icon(Icons.person, size: 14, color: _text2), const SizedBox(width: 4),
-                    Text(d['customerName'] ?? '', style: TextStyle(fontSize: 12, color: _text2)),
-                    const SizedBox(width: 16),
-                    Icon(Icons.phone, size: 14, color: _text2), const SizedBox(width: 4),
-                    Text(d['phone'] ?? '', style: TextStyle(fontSize: 12, color: _text2)),
-                  ]),
-                  const SizedBox(height: 8),
-                  Row(children: [
-                    Text(d['total'] ?? '', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _teal)),
-                    const Spacer(),
-                    // Status changer
-                    PopupMenuButton<String>(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: _teal.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Text('تغيير الحالة', style: TextStyle(fontSize: 12, color: _teal, fontWeight: FontWeight.bold)),
-                          const SizedBox(width: 4),
-                          Icon(Icons.keyboard_arrow_down, size: 16, color: _teal),
-                        ]),
-                      ),
-                      onSelected: (status) async {
-                        await doc.reference.update({'status': status});
-                        // Send notification to customer
-                        final userId = d['userId'] as String?;
-                        if (userId != null) {
-                          await NotificationService().createOrderNotification(
-                            userId: userId,
-                            orderId: doc.id,
-                            newStatus: status,
-                            productName: d['productName'] ?? 'طلبك',
-                          );
-                        }
-                      },
-                      itemBuilder: (_) => _statuses.map((s) => PopupMenuItem(
-                        value: s,
-                        child: Text(_statusAr[s] ?? s),
-                      )).toList(),
-                    ),
-                  ]),
-                ]),
-              );
-            },
-          );
-        },
+    return DefaultTabController(
+      length: 2,
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: _bg,
+          appBar: AppBar(
+            centerTitle: true,
+            title: const Text('📦 إدارة الطلبات', style: TextStyle(fontWeight: FontWeight.bold, color: _text1)),
+            backgroundColor: _card,
+            foregroundColor: _teal,
+            elevation: 0,
+            surfaceTintColor: Colors.transparent,
+            bottom: const TabBar(
+              tabs: [
+                Tab(text: '📦 كل الطلبات'),
+                Tab(text: '⏳ قائمة الانتظار'),
+              ],
+              indicatorColor: _teal,
+              labelColor: _teal,
+              unselectedLabelColor: _text2,
+            ),
+          ),
+          body: TabBarView(
+            children: [
+              // Tab 1: All Orders
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('orders').orderBy('createdAt', descending: true).snapshots(),
+                builder: (context, snap) {
+                  if (!snap.hasData || snap.data!.docs.isEmpty) {
+                    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      const Text('📦', style: TextStyle(fontSize: 60)),
+                      const SizedBox(height: 16),
+                      Text('لا توجد طلبات بعد', style: TextStyle(fontSize: 16, color: _text2)),
+                    ]));
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: snap.data!.docs.length,
+                    itemBuilder: (context, i) => _buildOrderCard(context, snap.data!.docs[i]),
+                  );
+                },
+              ),
+              // Tab 2: Waitlist Orders
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('orders').where('status', isEqualTo: 'waitlist').snapshots(),
+                builder: (context, snap) {
+                  if (!snap.hasData || snap.data!.docs.isEmpty) {
+                    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      const Text('⏳', style: TextStyle(fontSize: 60)),
+                      const SizedBox(height: 16),
+                      Text('لا توجد طلبات في قائمة الانتظار حالياً', style: TextStyle(fontSize: 16, color: _text2)),
+                    ]));
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: snap.data!.docs.length,
+                    itemBuilder: (context, i) => _buildOrderCard(context, snap.data!.docs[i]),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
-    ));
+    );
   }
 }
 
@@ -536,15 +619,12 @@ class _ProductsManagementScreenState extends State<_ProductsManagementScreen> wi
     'pregnancy': [
       {'name': 'وسادة الحمل المريحة', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '3500 د.ج', 'category': 'راحة الحامل'},
       {'name': 'كريم علامات التمدد', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1800 د.ج', 'category': 'العناية بالبشرة'},
-      {'name': 'حمض الفوليك 400mcg', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '950 د.ج', 'category': 'مكملات غذائية'},
       {'name': 'حزام دعم البطن', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '2200 د.ج', 'category': 'راحة الحامل'},
       {'name': 'زيت اللوز للتدليك', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1200 د.ج', 'category': 'العناية بالبشرة'},
-      {'name': 'فيتامينات ما قبل الولادة', 'image': 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80', 'price': '2800 د.ج', 'category': 'مكملات غذائية'},
     ],
     'cycle': [
       {'name': 'قربة ماء ساخن', 'image': 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=300&q=80', 'price': '800 د.ج', 'category': 'تخفيف الألم'},
       {'name': 'شاي البابونج العضوي', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '650 د.ج', 'category': 'مشروبات صحية'},
-      {'name': 'مكمل المغنيسيوم', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1500 د.ج', 'category': 'مكملات غذائية'},
       {'name': 'فوط صحية قطنية', 'image': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=300&q=80', 'price': '450 د.ج', 'category': 'نظافة شخصية'},
     ],
     'baby': [
@@ -554,7 +634,6 @@ class _ProductsManagementScreenState extends State<_ProductsManagementScreen> wi
       {'name': 'رضاعة مضادة للمغص', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '1800 د.ج', 'category': 'تغذية الطفل'},
     ],
     'home': [
-      {'name': 'فيتامين D3 للنساء', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1400 د.ج', 'category': 'مكملات غذائية'},
       {'name': 'كريم ترطيب طبيعي', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1600 د.ج', 'category': 'العناية بالبشرة'},
       {'name': 'شاي أعشاب مهدئ', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '700 د.ج', 'category': 'مشروبات صحية'},
     ],
@@ -708,10 +787,16 @@ class _ProductsManagementScreenState extends State<_ProductsManagementScreen> wi
                 ],
               ]),
               const SizedBox(height: 6),
-              if (d['category'] != null) Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: _teal.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
-                child: Text(d['category'], style: const TextStyle(fontSize: 10, color: _teal, fontWeight: FontWeight.w600)),
+              Row(
+                children: [
+                  if (d['category'] != null) Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: _teal.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+                    child: Text(d['category'], style: const TextStyle(fontSize: 10, color: _teal, fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(width: 6),
+                  _availabilityBadge(d['availability'] as String? ?? 'active'),
+                ],
               ),
               if (imageUrls.length > 1) Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -738,6 +823,29 @@ class _ProductsManagementScreenState extends State<_ProductsManagementScreen> wi
   Widget _imgPlaceholder(String? emoji) => Container(width: 100, height: 100,
     color: _teal.withOpacity(0.08),
     child: Center(child: Text(emoji ?? '🛍️', style: const TextStyle(fontSize: 32))));
+
+  Widget _availabilityBadge(String availability) {
+    switch (availability) {
+      case 'coming_soon':
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
+          child: const Text('🔜 قريبًا', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
+        );
+      case 'out_of_stock':
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(color: Colors.grey.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
+          child: const Text('⛔ نفد', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+        );
+      default:
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(color: Colors.green.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+          child: const Text('✅ متوفّر', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
+        );
+    }
+  }
 
   Widget _actionBtn(IconData icon, Color color, VoidCallback onTap) => InkWell(
     onTap: onTap, borderRadius: BorderRadius.circular(8),
@@ -1149,6 +1257,7 @@ class _AddProductScreenState extends State<_AddProductScreen> {
   final _emojiC = TextEditingController(text: '🛍️');
   final _slugC = TextEditingController(); // مختصر رابط المنتج (URL slug)
   String _category = 'ملابس الحمل';
+  String _availability = 'active'; // 'active' | 'coming_soon' | 'out_of_stock'
   bool get _isEditing => widget.docId != null;
 
   /// توليد slug تلقائي من اسم المنتج أو الوصف (يتحوّل مسافات إلى شرطات)
@@ -1209,8 +1318,8 @@ class _AddProductScreenState extends State<_AddProductScreen> {
 
   final _categories = [
     'ملابس الحمل', 'لوازم الرضيع', 'ملابس المولود', 'الرضاعة والتغذية', 'الحفاضات والنظافة',
-    'عناية بالحامل', 'فيتامينات ومكملات', 'حقيبة الولادة', 'ألعاب وتحفيز', 'راحة الأم',
-    'كتب وأدلة', 'أجهزة طبية', 'تذكارات وهدايا', 'سفر وتنقل', 'ديكور غرفة الطفل'
+    'عناية بالحامل', 'حقيبة الولادة', 'ألعاب وتحفيز', 'راحة الأم',
+    'كتب وأدلة', 'تذكارات وهدايا', 'سفر وتنقل', 'ديكور غرفة الطفل'
   ];
 
   @override
@@ -1225,6 +1334,7 @@ class _AddProductScreenState extends State<_AddProductScreen> {
       _emojiC.text = d['emoji'] ?? '🛍️';
       _category = d['category'] ?? 'ملابس الحمل';
       if (!_categories.contains(_category)) _category = 'ملابس الحمل';
+      _availability = (d['availability'] as String?) ?? 'active';
 
       // Load product gallery images
       final imageUrls = d['imageUrls'] as List<dynamic>? ?? [];
@@ -1623,6 +1733,7 @@ class _AddProductScreenState extends State<_AddProductScreen> {
         'videoType': finalVideoType,
         'videoThumbnail': videoThumbnailUrl,
         'showVideoInFeed': _showVideoInFeed,
+        'availability': _availability,
 
         'updatedAt': FieldValue.serverTimestamp(),
       };
@@ -1638,10 +1749,41 @@ class _AddProductScreenState extends State<_AddProductScreen> {
         debugPrint('Product created: ${docRef.id}');
       }
       debugPrint('=== SAVE PRODUCT SUCCESS ===');
+
+      int waitlistCount = 0;
+      if (_availability == 'active') {
+        try {
+          final pId = widget.docId ?? '';
+          final pName = _nameC.text.trim();
+          final q = await FirebaseFirestore.instance.collection('orders').where('status', isEqualTo: 'waitlist').get();
+          for (final doc in q.docs) {
+            final od = doc.data();
+            if (od['productName'] == pName) {
+              waitlistCount++;
+            } else {
+              final items = od['items'] as List<dynamic>? ?? [];
+              for (final it in items) {
+                if (it is Map && (it['productId'] == pId || it['name'] == pName)) {
+                  waitlistCount++;
+                  break;
+                }
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
       if (mounted) {
+        final msg = waitlistCount > 0
+            ? '${_isEditing ? "تم حفظ التعديلات ✓" : "تم حفظ المنتج بنجاح ✓"}\n🔔 تنبيه: لديك $waitlistCount طلبات في قائمة الانتظار على هذا المنتج'
+            : (_isEditing ? 'تم حفظ التعديلات ✓' : 'تم حفظ المنتج بنجاح ✓');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_isEditing ? 'تم حفظ التعديلات ✓' : 'تم حفظ المنتج بنجاح ✓'),
-            backgroundColor: const Color(0xFF00897B), duration: const Duration(seconds: 2)));
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: const Color(0xFF00897B),
+            duration: Duration(seconds: waitlistCount > 0 ? 5 : 2),
+          ),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -1715,6 +1857,60 @@ class _AddProductScreenState extends State<_AddProductScreen> {
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
                         items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 14)))).toList(),
                         onChanged: (v) => setState(() => _category = v!),
+                      ),
+                      const SizedBox(height: 10),
+                      // Availability choice chips
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _card,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _teal.withOpacity(0.2)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('حالة توفر المنتج:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _text1)),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ChoiceChip(
+                                    label: const Center(child: Text('✅ متوفّر')),
+                                    selected: _availability == 'active',
+                                    selectedColor: Colors.green.withOpacity(0.2),
+                                    onSelected: (s) {
+                                      if (s) setState(() => _availability = 'active');
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: ChoiceChip(
+                                    label: const Center(child: Text('🔜 قريبًا')),
+                                    selected: _availability == 'coming_soon',
+                                    selectedColor: Colors.orange.withOpacity(0.2),
+                                    onSelected: (s) {
+                                      if (s) setState(() => _availability = 'coming_soon');
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: ChoiceChip(
+                                    label: const Center(child: Text('⛔ نفد')),
+                                    selected: _availability == 'out_of_stock',
+                                    selectedColor: Colors.grey.withOpacity(0.3),
+                                    onSelected: (s) {
+                                      if (s) setState(() => _availability = 'out_of_stock');
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -5422,13 +5618,11 @@ class _AdsManagementScreenState extends State<_AdsManagementScreen> {
 // ═══════════════════════════════════════════════
 
 const _specTopicKeys = [
-  'twins', 'diabetes', 'htn', 'nausea', 'firstPreg', 'cesareanPrep',
-  'formula', 'mixed', 'firstChild', 'preterm', 'cesarean', 'irregular', 'pcos', 'thyroid',
+  'twins', 'nausea', 'firstPreg', 'cesareanPrep',
+  'formula', 'mixed', 'firstChild', 'preterm', 'cesarean', 'irregular',
 ];
 const _specTopicLabels = {
   'twins': 'الحمل بتوأم',
-  'diabetes': 'سكري الحمل',
-  'htn': 'ارتفاع الضغط في الحمل',
   'nausea': 'غثيان الحمل',
   'firstPreg': 'دليل الحمل الأول',
   'formula': 'الرضاعة الصناعية',
@@ -5438,8 +5632,6 @@ const _specTopicLabels = {
   'cesareanPrep': 'الاستعداد للولادة القيصرية',
   'cesarean': 'التعافي بعد الولادة القيصرية',
   'irregular': 'الدورة غير المنتظمة',
-  'pcos': 'تكيّس المبايض',
-  'thyroid': 'الغدة الدرقية',
 };
 
 class _SpecializedArticlesTab extends StatefulWidget {
@@ -5943,6 +6135,322 @@ class _WhatsAppSupportScreenState extends State<_WhatsAppSupportScreen> {
                 ),
               ),
             ]),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  REPORTS MANAGEMENT SCREEN (CONTENT & AI)
+// ═══════════════════════════════════════════════
+class _ReportsManagementScreen extends StatefulWidget {
+  const _ReportsManagementScreen({Key? key}) : super(key: key);
+
+  @override
+  State<_ReportsManagementScreen> createState() => _ReportsManagementScreenState();
+}
+
+class _ReportsManagementScreenState extends State<_ReportsManagementScreen> {
+  String _filter = 'all'; // 'all', 'pending', 'resolved'
+
+  String _targetLabel(String targetType) {
+    switch (targetType) {
+      case 'community_post':
+        return 'منشور مجتمع';
+      case 'comment':
+        return 'تعليق';
+      case 'ai_response':
+        return 'إجابة ذكاء اصطناعي';
+      case 'direct_chat':
+        return 'محادثة خاصة';
+      default:
+        return targetType;
+    }
+  }
+
+  Color _targetColor(String targetType) {
+    switch (targetType) {
+      case 'community_post':
+        return Colors.blue;
+      case 'comment':
+        return Colors.teal;
+      case 'ai_response':
+        return Colors.purple;
+      case 'direct_chat':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Future<void> _deleteReportedContent(String targetType, String targetId, String reportId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('حذف المحتوى المبلغ عنه'),
+          content: const Text('هل أنتِ متأكدة من حذف هذا المحتوى نهائياً؟'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('حذف', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        if (targetType == 'community_post') {
+          await FirebaseFirestore.instance.collection('community_posts').doc(targetId).delete();
+        }
+        await FirebaseFirestore.instance.collection('reports').doc(reportId).update({
+          'status': 'action_taken',
+          'resolvedAt': FieldValue.serverTimestamp(),
+          'action': 'deleted_content',
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم حذف المحتوى وتحديث البلاغ')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('خطأ أثناء الحذف: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _dismissReport(String reportId) async {
+    try {
+      await FirebaseFirestore.instance.collection('reports').doc(reportId).update({
+        'status': 'dismissed',
+        'resolvedAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم تجاهل البلاغ وإغلاقه')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteReport(String reportId) async {
+    try {
+      await FirebaseFirestore.instance.collection('reports').doc(reportId).delete();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم حذف سجل البلاغ')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Query query = FirebaseFirestore.instance.collection('reports').orderBy('createdAt', descending: true);
+    if (_filter == 'pending') {
+      query = query.where('status', isEqualTo: 'pending');
+    } else if (_filter == 'resolved') {
+      query = query.where('status', whereIn: ['action_taken', 'dismissed']);
+    }
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F5F8),
+        appBar: AppBar(
+          centerTitle: true,
+          title: const Text('مراجعة البلاغات', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          backgroundColor: const Color(0xFFD32F2F),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  const Text('الحالة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(width: 12),
+                  ChoiceChip(
+                    label: const Text('الكل'),
+                    selected: _filter == 'all',
+                    onSelected: (s) => setState(() => _filter = 'all'),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('قيد المراجعة'),
+                    selected: _filter == 'pending',
+                    onSelected: (s) => setState(() => _filter = 'pending'),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('تمت المعالجة'),
+                    selected: _filter == 'resolved',
+                    onSelected: (s) => setState(() => _filter = 'resolved'),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: query.snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: Color(0xFFD32F2F)));
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('خطأ: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+                  }
+                  final docs = snapshot.data?.docs ?? [];
+                  if (docs.isEmpty) {
+                    return const Center(
+                      child: Text('لا توجد بلاغات مسجلة حالياً', style: TextStyle(color: Colors.grey)),
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final doc = docs[index];
+                      final data = doc.data() as Map<String, dynamic>;
+                      final reportId = doc.id;
+                      final targetType = data['targetType'] as String? ?? 'مجهول';
+                      final targetId = data['targetId'] as String? ?? '';
+                      final targetUserId = data['targetUserId'] as String? ?? '';
+                      final reason = data['reason'] as String? ?? 'غير محدد';
+                      final note = data['note'] as String? ?? '';
+                      final content = data['content'] as String? ?? '';
+                      final status = data['status'] as String? ?? 'pending';
+                      final isPending = status == 'pending';
+                      final ts = data['createdAt'];
+                      String dateStr = '';
+                      if (ts is Timestamp) {
+                        final dt = ts.toDate();
+                        dateStr = '${dt.year}/${dt.month}/${dt.day} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+                      }
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 1.5,
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: _targetColor(targetType).withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      _targetLabel(targetType),
+                                      style: TextStyle(color: _targetColor(targetType), fontWeight: FontWeight.bold, fontSize: 11),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isPending ? Colors.amber.withOpacity(0.15) : Colors.green.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      isPending ? 'قيد المراجعة' : (status == 'action_taken' ? 'تم اتخاذ إجراء' : 'تم التجاهل'),
+                                      style: TextStyle(
+                                        color: isPending ? Colors.orange.shade800 : Colors.green.shade800,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  if (dateStr.isNotEmpty)
+                                    Text(dateStr, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text('السبب: $reason', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              if (note.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text('ملاحظة المبلغة: $note', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+                              ],
+                              if (content.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey.shade300),
+                                  ),
+                                  child: Text('المحتوى المبلغ عنه:\n$content', style: TextStyle(fontSize: 12, color: Colors.grey.shade800, height: 1.4)),
+                                ),
+                              ],
+                              const SizedBox(height: 6),
+                              Text('المستخدم المستهدف: $targetUserId', style: TextStyle(color: Colors.grey.shade500, fontSize: 10)),
+                              const Divider(height: 20),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  if (isPending) ...[
+                                    if (targetType == 'community_post')
+                                      TextButton.icon(
+                                        icon: const Icon(Icons.delete_forever, color: Colors.red, size: 16),
+                                        label: const Text('حذف المنشور', style: TextStyle(color: Colors.red, fontSize: 12)),
+                                        onPressed: () => _deleteReportedContent(targetType, targetId, reportId),
+                                      ),
+                                    TextButton.icon(
+                                      icon: const Icon(Icons.close, color: Colors.grey, size: 16),
+                                      label: const Text('تجاهل', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                      onPressed: () => _dismissReport(reportId),
+                                    ),
+                                  ],
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
+                                    tooltip: 'حذف السجل',
+                                    onPressed: () => _deleteReport(reportId),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

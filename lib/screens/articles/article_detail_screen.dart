@@ -363,8 +363,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
               // الأسئلة الشائعة
               if (article.faqs.isNotEmpty) _buildFaqsSection(themeColor),
 
-              // المراجع المعتمدة
-              _buildReferencesSection(themeColor),
               const SizedBox(height: 32),
 
               // مقالات ذات صلة
@@ -666,43 +664,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReferencesSection(Color themeColor) {
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: ExpansionTile(
-        title: Row(
-          children: [
-            const Icon(Icons.menu_book_outlined, size: 18, color: Color(0xFF00897B)),
-            const SizedBox(width: 8),
-            const Text(
-              'للاستزادة: مصادر عالمية موثوقة',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF00897B)),
-            ),
-          ],
-        ),
-        children: const [
-          Padding(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
-            child: Text(
-              'جهات عالمية موثوقة للاستزادة في صحة المرأة والحمل (وليست مراجع كُتب منها هذا المقال):\n'
-              '• الكلية الأمريكية لأطباء النساء والتوليد (ACOG Guidelines)\n'
-              '• المعهد الوطني للصحة والرعاية المتميزة (NICE UK)\n'
-              '• منظمة الصحة العالمية (WHO — Maternal & Child Health)\n'
-              '• قاعدة بيانات المكتبة الوطنية الأمريكية للطب (PubMed / NIH)\n'
-              '• الجمعية الملكية لأطباء النساء والتوليد (RCOG)',
-              style: TextStyle(fontSize: 12, height: 1.7, color: Color(0xFF6E6E6E)),
             ),
           ),
         ],

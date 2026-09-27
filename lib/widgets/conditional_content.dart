@@ -8,7 +8,6 @@ import '../utils/article_images.dart';
 import 'nabda_article_ad.dart';
 import 'article_engagement_bar.dart';
 import '../utils/article_text.dart';
-import '../config/play_compliance.dart';
 
 
 /// أقسام محتوى متخصّص تظهر حسب ملف المستخدمة وداخل تبويبها الصحيح فقط.
@@ -293,8 +292,6 @@ class ConditionalContentSection extends StatelessWidget {
     if (stage == 'pregnant') {
       final p = (d['pregnancyProfile'] as Map?) ?? {};
       if (p['babies'] == 'twins' || p['babies'] == 'more') { out.add(const _Topic('👶👶', 'الحمل بتوأم', 'twins', Color(0xFFE91E63))); }
-      if (!kHideMedicalFeatures && p['condition'] == 'diabetes') { out.add(const _Topic('🩸', 'سكري الحمل', 'diabetes', Color(0xFFEF5350))); }
-      if (!kHideMedicalFeatures && p['condition'] == 'hypertension') { out.add(const _Topic('🩺', 'ارتفاع الضغط في الحمل', 'htn', Color(0xFF7E57C2))); }
       if (p['condition'] == 'nausea') { out.add(const _Topic('🤢', 'غثيان الحمل', 'nausea', Color(0xFF66BB6A))); }
       if (p['firstPregnancy'] == true) { out.add(const _Topic('🌸', 'دليل الحمل الأول', 'firstPreg', Color(0xFFEC407A))); }
       // الاستعداد للولادة القيصرية — تظهر في الحمل عند تسجيل خطة قيصرية (الشهر الثامن)
@@ -313,8 +310,6 @@ class ConditionalContentSection extends StatelessWidget {
       if (p['regular'] == 'no') out.add(const _Topic('📅', 'الدورة غير المنتظمة', 'irregular', Color(0xFFFF7043)));
     } else if (stage == 'planning') {
       final fp = (d['fertilityProfile'] as Map?) ?? {};
-      if (!kHideMedicalFeatures && fp['condition'] == 'pcos') out.add(const _Topic('🩺', 'تكيّس المبايض', 'pcos', Color(0xFF7E57C2)));
-      if (!kHideMedicalFeatures && fp['condition'] == 'thyroid') out.add(const _Topic('🦋', 'الغدة الدرقية', 'thyroid', Color(0xFF42A5F5)));
     }
     return out;
   }

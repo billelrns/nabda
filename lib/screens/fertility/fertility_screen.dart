@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/news_section.dart';
 import '../../widgets/conditional_content.dart';
-import '../../config/play_compliance.dart';
 import '../../widgets/smart_articles_carousel.dart';
 import '../../widgets/smart_article_carousel.dart';
 
@@ -401,7 +400,8 @@ class _FertilityScreenState extends State<FertilityScreen> {
     int months = (fp?['tryMonths'] as num?)?.toInt() ?? 6;
     String age = fp?['age'] as String? ?? '25-34';
     String regular = fp?['regular'] as String? ?? 'yes';
-    String condition = safeCondition(fp?['condition'] as String?);
+    // لا يُسأل عن الحالات المرضية (قرار المالك — 27 سبتمبر 2026)
+    const condition = 'none';
     showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
       builder: (_) => StatefulBuilder(builder: (ctx, setS) => Directionality(textDirection: TextDirection.rtl,
@@ -430,16 +430,6 @@ class _FertilityScreenState extends State<FertilityScreen> {
               DropdownMenuItem(value: 'yes', child: Text('نعم، منتظمة')),
               DropdownMenuItem(value: 'no', child: Text('لا، غير منتظمة')),
             ], onChanged: (v) => setS(() => regular = v ?? 'yes')),
-            if (!kHideMedicalFeatures) ...[
-            const SizedBox(height: 8),
-            const Text('هل لديك حالة معروفة؟', style: TextStyle(fontWeight: FontWeight.w700)),
-            DropdownButton<String>(isExpanded: true, value: condition, items: const [
-              DropdownMenuItem(value: 'none', child: Text('لا شيء')),
-              DropdownMenuItem(value: 'pcos', child: Text('تكيّس المبايض (PCOS)')),
-              DropdownMenuItem(value: 'thyroid', child: Text('الغدة الدرقية')),
-              DropdownMenuItem(value: 'other', child: Text('أخرى')),
-            ], onChanged: (v) => setS(() => condition = v ?? 'none')),
-            ],
             const SizedBox(height: 18),
             _gradientButton('احصلي على التوجيه', Icons.auto_awesome, () {
               final profile = {'tryMonths': months, 'age': age, 'regular': regular, 'condition': condition};
@@ -468,8 +458,6 @@ class _FertilityScreenState extends State<FertilityScreen> {
     }
     b.writeln('');
     if (regular == 'no') b.writeln('• دورتك غير منتظمة: قد يدل على مشكلة في الإباضة، وهي من أكثر أسباب التأخر وأكثرها قابلية للعلاج. يُنصح بفحص الهرمونات.');
-    if (condition == 'pcos') b.writeln('• تكيّس المبايض من أشيع أسباب ضعف الإباضة. غالباً يساعد إنقاص الوزن البسيط وأدوية تنشيط الإباضة (بإشراف طبي).');
-    else if (condition == 'thyroid') b.writeln('• اختلال الغدة الدرقية يؤثر على الخصوبة والحمل — تأكدي من ضبطها مع طبيبك.');
     b.writeln('');
     b.writeln('خطوات مفيدة الآن:');
     b.writeln('• حمض الفوليك يومياً (400-800 ميكروغرام) قبل الحمل.');

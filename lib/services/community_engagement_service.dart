@@ -18,7 +18,7 @@ class CommunityEngagementService {
   static const Map<String, Map<String, dynamic>> badgeDefinitions = {
     'official': {'label': 'حساب رسمي', 'icon': 'verified', 'color': 0xFF00897B},
     'active': {'label': 'مساهمة نشطة', 'icon': 'local_fire_department', 'color': 0xFFFF9800},
-    'expert': {'label': 'خبيرة', 'icon': 'workspace_premium', 'color': 0xFF9C27B0},
+    'expert': {'label': 'نجمة المجتمع', 'icon': 'workspace_premium', 'color': 0xFF9C27B0},
     'helpful': {'label': 'مفيدة', 'icon': 'favorite', 'color': 0xFFE91E63},
     'new_mom': {'label': 'أم جديدة', 'icon': 'child_care', 'color': 0xFF2196F3},
     'top_contributor': {'label': 'أفضل مساهمة', 'icon': 'emoji_events', 'color': 0xFFFFB300},

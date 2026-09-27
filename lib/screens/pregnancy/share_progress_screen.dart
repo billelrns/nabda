@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
+import '../../services/pregnancy_dates_service.dart';
+import '../../utils/fetus_size.dart';
+import '../../widgets/nabda_ui.dart' show WombFloatingFetus;
 // Note: For actual sharing, add share_plus package. For now we show sharable cards.
 
 const Color _bg = Color(0xFFFFF5F7);
@@ -52,27 +55,21 @@ class _ShareProgressScreenState extends State<ShareProgressScreen> {
       final doc = await _userDoc.get();
       final data = doc.data() as Map<String, dynamic>? ?? {};
 
-      final lmpStr = data['lastPeriodDate'] as String?;
-      final dueDateStr = data['dueDate'] as String?;
-      final weekFromData = (data['pregnancyWeek'] as num?)?.toInt() ??
-          (data['weight_tracker_profile']?['current_week'] as num?)?.toInt() ?? 0;
-
-      DateTime? lmp = lmpStr != null ? DateTime.tryParse(lmpStr) : null;
-      DateTime? due = dueDateStr != null ? DateTime.tryParse(dueDateStr) : null;
-      if (due == null && lmp != null) due = lmp.add(const Duration(days: 280));
-
-      int week = weekFromData;
-      if (lmp != null) week = DateTime.now().difference(lmp).inDays ~/ 7;
-
-      int remaining = due != null ? max(0, due.difference(DateTime.now()).inDays) : 0;
-      int trim = week <= 13 ? 1 : week <= 26 ? 2 : 3;
+      // ── المصدر الموحّد لتواريخ الحمل (نفس الرئيسية وصفحة الحمل) ──
+      final pd = PregnancyDates.fromUserData(data);
+      final week = pd.week;
+      final remaining = max(0, pd.daysLeft);
 
       setState(() {
         _currentWeek = week;
         _daysRemaining = remaining;
-        _trimester = trim;
-        _babySize = _getBabySize(week);
-        _userName = (data['displayName'] as String?) ?? 'أم نبضة';
+        _trimester = pd.trimester;
+        _babySize = week > 0 ? FetusSize.labeled(week) : '';
+        _userName = (data['name'] as String?)?.trim().isNotEmpty == true
+            ? data['name'] as String
+            : ((data['displayName'] as String?)?.trim().isNotEmpty == true
+                ? data['displayName'] as String
+                : 'أم نبضة');
         _loaded = true;
       });
     } catch (_) {
@@ -80,18 +77,9 @@ class _ShareProgressScreenState extends State<ShareProgressScreen> {
     }
   }
 
-  String _getBabySize(int w) {
-    if (w < 8) return 'حبة فاصوليا 🫘';
-    if (w < 12) return 'ليمونة 🍋';
-    if (w < 16) return 'برتقالة 🍊';
-    if (w < 20) return 'موزة 🍌';
-    if (w < 24) return 'ذرة 🌽';
-    if (w < 28) return 'باذنجان 🍆';
-    if (w < 32) return 'جوز هند 🥥';
-    if (w < 36) return 'أناناس 🍍';
-    if (w < 40) return 'بطيخة 🍉';
-    return 'يقطينة 🎃';
-  }
+  /// مسار صورة الجنين للأسبوع الحالي
+  String get _fetusAsset =>
+      'assets/images/fetus_hd/week_${_currentWeek.clamp(4, 41)}.png';
 
   @override
   Widget build(BuildContext context) {
@@ -200,54 +188,120 @@ class _ShareProgressScreenState extends State<ShareProgressScreen> {
     }
   }
 
-  Widget _weekCard() {
+  // ═══════════════════════════════════════════════════════════════
+  //  بطاقات المشاركة — خلفيات نبضة المائية (وردي ناعم)
+  // ═══════════════════════════════════════════════════════════════
+  static const _ink = Color(0xFF4A2233);      // نص أساسي داكن
+  static const _inkSoft = Color(0xFF8C6577);  // نص ثانوي
+  static const _gold = Color(0xFFB08B4F);     // لمسة ذهبية
+
+  /// إطار موحّد: صورة الخلفية + شعار نبضة + توقيع الأم
+  /// [art] يوضع في المنطقة العلوية (داخل الحلقة/الإكليل في الخلفية)
+  /// [child] النصوص في النصف السفلي حيث الخلفية نظيفة
+  Widget _cardShell({
+    required String asset,
+    required Color fallback,
+    required Widget child,
+    Widget? art,
+    double artSize = 150,
+  }) {
     return Container(
-      height: 320,
+      height: 430,
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [const Color(0xFFE91E63), const Color(0xFFFF6090)], begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFFE91E63).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
+        boxShadow: [
+          BoxShadow(color: fallback.withOpacity(0.22), blurRadius: 18, offset: const Offset(0, 8)),
+        ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          // Decorative circles
-          Positioned(right: -30, top: -30, child: _decorCircle(100, Colors.white.withOpacity(0.08))),
-          Positioned(left: -20, bottom: -20, child: _decorCircle(80, Colors.white.withOpacity(0.06))),
-          Positioned(right: 40, bottom: 20, child: _decorCircle(40, Colors.white.withOpacity(0.05))),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-                      child: const Text('نبضة 💗', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
+          Image.asset(
+            asset,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [const Color(0xFFFDF0F3), fallback.withOpacity(0.18)],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
                 ),
-                const Spacer(),
-                Text('الأسبوع', style: TextStyle(fontSize: 18, color: Colors.white.withOpacity(0.8))),
-                Text('$_currentWeek', style: const TextStyle(fontSize: 72, fontWeight: FontWeight.bold, color: Colors.white, height: 1)),
-                const SizedBox(height: 4),
-                Text('من 40 أسبوع', style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.7))),
-                const SizedBox(height: 12),
-                // Progress bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: (_currentWeek / 40).clamp(0.0, 1.0),
-                    minHeight: 8,
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // شعار نبضة
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.72),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _gold.withOpacity(0.35), width: 0.8),
                   ),
+                  child: const Text('نبضة 💗',
+                      style: TextStyle(color: _ink, fontSize: 12.5, fontWeight: FontWeight.w800)),
                 ),
                 const SizedBox(height: 8),
-                Text(_userName, style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6))),
+                // ── العنصر البصري داخل الحلقة العلوية للخلفية ──
+                SizedBox(
+                  height: artSize,
+                  child: Center(child: art ?? const SizedBox.shrink()),
+                ),
+                // ── النصوص في النصف السفلي النظيف ──
+                Expanded(child: Center(child: child)),
+                Text(_userName.isEmpty ? 'أم نبضة' : _userName,
+                    style: const TextStyle(fontSize: 12.5, color: _inkSoft, fontWeight: FontWeight.w600)),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// الجنين داخل الرحم — دائرة صغيرة أنيقة
+  Widget _fetusArt(double size) => Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: _gold.withOpacity(0.55), width: 2),
+          boxShadow: [
+            BoxShadow(color: _gold.withOpacity(0.20), blurRadius: 14, spreadRadius: 1),
+          ],
+        ),
+        child: ClipOval(
+          child: WombFloatingFetus(fetusAsset: _fetusAsset, size: size),
+        ),
+      );
+
+  Widget _weekCard() {
+    return _cardShell(
+      asset: 'assets/images/share_cards/card_week.png',
+      fallback: const Color(0xFFE0195B),
+      artSize: 156,
+      art: _fetusArt(150),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('الأسبوع', style: TextStyle(fontSize: 16, color: _inkSoft, fontWeight: FontWeight.w600)),
+          Text('$_currentWeek',
+              style: const TextStyle(fontSize: 62, fontWeight: FontWeight.w900, color: _ink, height: 1.02)),
+          const Text('من 40 أسبوعاً', style: TextStyle(fontSize: 13.5, color: _inkSoft)),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: 180,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: (_currentWeek / 40).clamp(0.0, 1.0),
+                minHeight: 7,
+                backgroundColor: Colors.white.withOpacity(0.6),
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFE0195B)),
+              ),
             ),
           ),
         ],
@@ -256,36 +310,28 @@ class _ShareProgressScreenState extends State<ShareProgressScreen> {
   }
 
   Widget _countdownCard() {
-    return Container(
-      height: 320,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF00897B), Color(0xFF4DB6AC)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF00897B).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
-      ),
-      child: Stack(
+    return _cardShell(
+      asset: 'assets/images/share_cards/card_countdown.png',
+      fallback: const Color(0xFF00897B),
+      artSize: 150,
+      art: _fetusArt(144),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Positioned(left: -30, top: -30, child: _decorCircle(100, Colors.white.withOpacity(0.07))),
-          Positioned(right: -15, bottom: -15, child: _decorCircle(70, Colors.white.withOpacity(0.05))),
-          Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text('نبضة 💗', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                const Spacer(),
-                const Text('⏳', style: TextStyle(fontSize: 48)),
-                const SizedBox(height: 10),
-                Text('$_daysRemaining', style: const TextStyle(fontSize: 64, fontWeight: FontWeight.bold, color: Colors.white, height: 1)),
-                Text('يوم متبقي لموعد الولادة', style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.8))),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(14)),
-                  child: Text('${_daysRemaining ~/ 7} أسبوع و ${_daysRemaining % 7} أيام', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ],
+          Text('$_daysRemaining',
+              style: const TextStyle(fontSize: 60, fontWeight: FontWeight.w900, color: _ink, height: 1.02)),
+          const Text('يوم متبقٍ لموعد الولادة',
+              style: TextStyle(fontSize: 14.5, color: _inkSoft, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.68),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _gold.withOpacity(0.3), width: 0.8),
             ),
+            child: Text('${_daysRemaining ~/ 7} أسبوعاً و ${_daysRemaining % 7} أيام',
+                style: const TextStyle(color: _ink, fontWeight: FontWeight.w700, fontSize: 12.5)),
           ),
         ],
       ),
@@ -293,35 +339,30 @@ class _ShareProgressScreenState extends State<ShareProgressScreen> {
   }
 
   Widget _babySizeCard() {
-    final emoji = _babySize.split(' ').last;
-    final name = _babySize.split(' ').first;
-    return Container(
-      height: 320,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF7B1FA2), Color(0xFFBA68C8)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF7B1FA2).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
-      ),
-      child: Stack(
+    final emoji = _currentWeek > 0 ? FetusSize.emoji(_currentWeek) : '🌱';
+    final name = _currentWeek > 0 ? FetusSize.name(_currentWeek) : '';
+    return _cardShell(
+      asset: 'assets/images/share_cards/card_size.png',
+      fallback: const Color(0xFFF57C00),
+      artSize: 156,
+      // الفاكهة داخل الهالة، والجنين بجانبها بحجم أصغر
+      art: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Positioned(right: -20, top: -20, child: _decorCircle(90, Colors.white.withOpacity(0.07))),
-          Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text('نبضة 💗', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                const Spacer(),
-                Text(emoji, style: const TextStyle(fontSize: 80)),
-                const SizedBox(height: 12),
-                Text('طفلي بحجم $name', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
-                const SizedBox(height: 6),
-                Text('الأسبوع $_currentWeek من الحمل', style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.7))),
-                const Spacer(),
-                Text(_userName, style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5))),
-              ],
-            ),
-          ),
+          ClipOval(child: WombFloatingFetus(fetusAsset: _fetusAsset, size: 96)),
+          const SizedBox(width: 10),
+          Text(emoji, style: const TextStyle(fontSize: 72)),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('طفلي بحجم $name',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: _ink)),
+          const SizedBox(height: 4),
+          Text('الأسبوع $_currentWeek من الحمل',
+              style: const TextStyle(fontSize: 13.5, color: _inkSoft)),
         ],
       ),
     );
@@ -329,33 +370,19 @@ class _ShareProgressScreenState extends State<ShareProgressScreen> {
 
   Widget _achievementCard() {
     final trimesterName = ['', 'الأول', 'الثاني', 'الثالث'][_trimester];
-    return Container(
-      height: 320,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFFFF6F00), Color(0xFFFFB74D)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFFFF6F00).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
-      ),
-      child: Stack(
+    return _cardShell(
+      asset: 'assets/images/share_cards/card_achievement.png',
+      fallback: const Color(0xFFB08B4F),
+      artSize: 150,
+      art: _fetusArt(128),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Positioned(left: -25, bottom: -25, child: _decorCircle(90, Colors.white.withOpacity(0.07))),
-          Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text('نبضة 💗', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                const Spacer(),
-                const Text('🏆', style: TextStyle(fontSize: 60)),
-                const SizedBox(height: 12),
-                const Text('أنا في الثلث', style: TextStyle(fontSize: 18, color: Colors.white)),
-                Text(trimesterName, style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white)),
-                Text('من رحلة الحمل!', style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.8))),
-                const Spacer(),
-                Text(_userName, style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5))),
-              ],
-            ),
-          ),
+          const Text('أنا في الثلث', style: TextStyle(fontSize: 16, color: _inkSoft, fontWeight: FontWeight.w600)),
+          Text(trimesterName,
+              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: _ink, height: 1.12)),
+          Text('الأسبوع $_currentWeek من رحلة الحمل',
+              style: const TextStyle(fontSize: 13.5, color: _inkSoft)),
         ],
       ),
     );
@@ -363,40 +390,31 @@ class _ShareProgressScreenState extends State<ShareProgressScreen> {
 
   Widget _progressCard() {
     final progress = (_currentWeek / 40 * 100).toInt();
-    return Container(
-      height: 320,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF1565C0), Color(0xFF42A5F5)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF1565C0).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
-      ),
-      child: Stack(
-        children: [
-          Positioned(right: -30, top: -30, child: _decorCircle(100, Colors.white.withOpacity(0.06))),
-          Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text('نبضة 💗', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                const Spacer(),
-                SizedBox(
-                  width: 140, height: 140,
-                  child: CustomPaint(
-                    painter: _ProgressCirclePainter(progress / 100),
-                    child: Center(
-                      child: Text('$progress%', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white)),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text('من رحلة الحمل مكتملة', style: TextStyle(fontSize: 17, color: Colors.white, fontWeight: FontWeight.bold)),
-                Text('الأسبوع $_currentWeek من 40', style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.7))),
-                const Spacer(),
-                Text(_userName, style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5))),
-              ],
+    return _cardShell(
+      asset: 'assets/images/share_cards/card_progress.png',
+      fallback: const Color(0xFF7E57C2),
+      artSize: 150,
+      art: SizedBox(
+        width: 146,
+        height: 146,
+        child: CustomPaint(
+          painter: _ProgressCirclePainter(progress / 100),
+          child: Center(
+            child: ClipOval(
+              child: WombFloatingFetus(fetusAsset: _fetusAsset, size: 108),
             ),
           ),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('$progress%',
+              style: const TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: _ink, height: 1.05)),
+          const Text('من رحلة الحمل مكتملة',
+              style: TextStyle(fontSize: 15, color: _ink, fontWeight: FontWeight.w800)),
+          Text('الأسبوع $_currentWeek من 40',
+              style: const TextStyle(fontSize: 13, color: _inkSoft)),
         ],
       ),
     );
@@ -499,7 +517,7 @@ class _ProgressCirclePainter extends CustomPainter {
     final radius = size.width / 2 - 8;
 
     canvas.drawCircle(center, radius, Paint()
-      ..color = Colors.white.withOpacity(0.2)
+      ..color = Colors.white.withOpacity(0.75)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10);
 
@@ -509,7 +527,7 @@ class _ProgressCirclePainter extends CustomPainter {
       2 * pi * progress,
       false,
       Paint()
-        ..color = Colors.white
+        ..color = const Color(0xFFE0195B)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 10
         ..strokeCap = StrokeCap.round,

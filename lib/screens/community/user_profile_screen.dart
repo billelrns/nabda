@@ -261,7 +261,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     'official': ('حساب رسمي', Icons.verified, _teal),
     'active': ('مساهمة نشطة', Icons.local_fire_department, Color(0xFFFF9800)),
     'helpful': ('مفيدة', Icons.favorite, _pink),
-    'expert': ('خبيرة', Icons.workspace_premium, Color(0xFF9C27B0)),
+    'expert': ('نجمة المجتمع', Icons.workspace_premium, Color(0xFF9C27B0)),
     'new_mom': ('أم جديدة', Icons.child_care, Color(0xFF2196F3)),
     'top_contributor': ('أفضل مساهمة', Icons.emoji_events, Color(0xFFFFB300)),
   };

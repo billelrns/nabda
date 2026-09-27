@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../config/play_compliance.dart';
 
 /// بطاقة نصائح مخصّصة تُحسب من بيانات الاستبيانات وتظهر أعلى كل تبويب.
 /// مستقلّة بذاتها: تقرأ وثيقة المستخدمة داخليًا، فتُدرَج بسطر واحد في أي مكان.
@@ -69,13 +68,7 @@ class PersonalizedTipsCard extends StatelessWidget {
       if (p['babies'] == 'twins' || p['babies'] == 'more') {
         out.add('حملكِ بتوأم: احتياجكِ من السعرات والحديد والفولات أعلى، ومتابعتكِ الطبية أكثر تكراراً.');
       }
-      if (isHiddenCondition(p['condition'])) {
-        // نسخة الحساب الشخصي: لا نصائح إدارة أمراض (play_compliance.dart)
-      } else if (p['condition'] == 'diabetes') {
-        out.add('مع سكري الحمل: راقبي سكر الدم، قلّلي السكريات السريعة، وقسّمي وجباتكِ، والتزمي بمواعيد الطبيب.');
-      } else if (p['condition'] == 'hypertension') {
-        out.add('مع ارتفاع الضغط: راقبي ضغطكِ، قلّلي الملح، وراجعي الطبيب فوراً عند صداع شديد أو تورّم أو اضطراب رؤية.');
-      } else if (p['condition'] == 'nausea') {
+      if (p['condition'] == 'nausea') {
         out.add('للغثيان الشديد: وجبات صغيرة متكرّرة والزنجبيل وتجنّب الروائح المحفّزة؛ راجعي الطبيب إن منعكِ الأكل والشرب.');
       }
       if (p['firstPregnancy'] == true) {

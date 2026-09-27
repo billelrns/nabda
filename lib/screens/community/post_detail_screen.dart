@@ -10,6 +10,8 @@ import '../../services/community_engagement_service.dart';
 import '../../models/community_post_model.dart';
 import 'user_profile_screen.dart';
 import '../../widgets/follow_button.dart';
+import '../../services/report_service.dart';
+import '../../services/admin_service.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
@@ -25,6 +27,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final TextEditingController _commentController = TextEditingController();
   final FocusNode _commentFocus = FocusNode();
   bool _isSubmittingComment = false;
+  CommunityPostModel? _cachedPost;
 
   // ── حالة المفضلة والتنبيهات والإخفاء ──
   bool _isFavorite = false;
@@ -125,6 +128,57 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       }
     } catch (_) {
       if (mounted) setState(() => _notifOn = was);
+    }
+  }
+
+  /// الكاتبة نفسها أو المالك/المشرف. قواعد Firestore (community_posts →
+  /// allow delete) تفرض الشرط نفسه على الخادم.
+  bool get _canDelete {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final post = _cachedPost;
+    if (uid == null || post == null) return false;
+    return post.userId == uid ||
+        AdminService().hasPermission(Permission.manageUsers);
+  }
+
+  Future<void> _deletePost() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('حذف المنشور'),
+          content: const Text('هل أنتِ متأكدة من حذف هذا المنشور نهائياً؟'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('إلغاء')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('حذف', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok != true) return;
+    try {
+      // التعليقات مصفوفة داخل الوثيقة نفسها — تُحذف معها.
+      await FirebaseFirestore.instance
+          .collection('community_posts')
+          .doc(widget.postId)
+          .delete();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم حذف المنشور')));
+      Navigator.of(context).pop();
+    } on FirebaseException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.code == 'permission-denied'
+            ? 'لا تملكين صلاحية حذف هذا المنشور'
+            : 'تعذّر الحذف — تحقّقي من الاتصال'),
+        backgroundColor: Colors.red,
+      ));
     }
   }
 
@@ -281,8 +335,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           actions: [
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
-              onSelected: (v) {
+              onSelected: (v) async {
                 switch (v) {
+                  case 'delete':
+                    await _deletePost();
+                    break;
                   case 'fav':
                     _toggleFavorite();
                     break;
@@ -292,9 +349,34 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   case 'notif':
                     _togglePostNotifications();
                     break;
+                  case 'report':
+                    if (_cachedPost != null) {
+                      await ReportService.showReportDialog(
+                        context: context,
+                        targetType: 'community_post',
+                        targetId: widget.postId,
+                        targetUserId: _cachedPost!.userId,
+                        contentSnippet: _cachedPost!.content,
+                      );
+                    }
+                    break;
+                  case 'block':
+                    if (_cachedPost != null) {
+                      await ReportService.blockUser(context, _cachedPost!.userId);
+                    }
+                    break;
                 }
               },
               itemBuilder: (_) => [
+                if (_canDelete)
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(children: [
+                      Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                      SizedBox(width: 10),
+                      Text('حذف المنشور', style: TextStyle(color: Colors.red)),
+                    ]),
+                  ),
                 PopupMenuItem(
                   value: 'fav',
                   child: Row(children: [
@@ -324,6 +406,22 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     Text('إخفاء هذا المنشور'),
                   ]),
                 ),
+                const PopupMenuItem(
+                  value: 'report',
+                  child: Row(children: [
+                    Icon(Icons.flag_outlined, size: 20, color: Colors.amber),
+                    SizedBox(width: 10),
+                    Text('إبلاغ عن هذا المنشور'),
+                  ]),
+                ),
+                const PopupMenuItem(
+                  value: 'block',
+                  child: Row(children: [
+                    Icon(Icons.block, size: 20, color: Colors.red),
+                    SizedBox(width: 10),
+                    Text('حظر هذه المستخدمة'),
+                  ]),
+                ),
               ],
             ),
           ],
@@ -342,6 +440,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     );
                   }
                   final post = snapshot.data;
+                  _cachedPost = post;
                   if (post == null) {
                     return const Center(
                       child: Text('لم يتم العثور على المنشور'),
@@ -697,6 +796,46 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         fontSize: 11,
                       ),
                     ),
+                    if (!isTeamComment && (comment['userId']?.toString().isNotEmpty ?? false)) ...[
+                      const SizedBox(width: 4),
+                      PopupMenuButton<String>(
+                        icon: Icon(Icons.more_vert, size: 16, color: Colors.grey.shade400),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onSelected: (val) async {
+                          final commentAuthorUid = comment['userId']?.toString() ?? '';
+                          if (val == 'report') {
+                            await ReportService.showReportDialog(
+                              context: context,
+                              targetType: 'comment',
+                              targetId: comment['id']?.toString() ?? '${widget.postId}_${createdAt.millisecondsSinceEpoch}',
+                              targetUserId: commentAuthorUid,
+                              contentSnippet: text,
+                            );
+                          } else if (val == 'block') {
+                            await ReportService.blockUser(context, commentAuthorUid);
+                          }
+                        },
+                        itemBuilder: (ctx) => [
+                          const PopupMenuItem(
+                            value: 'report',
+                            child: Row(children: [
+                              Icon(Icons.flag_outlined, color: Colors.amber, size: 16),
+                              SizedBox(width: 8),
+                              Text('إبلاغ عن التعليق', style: TextStyle(fontSize: 13)),
+                            ]),
+                          ),
+                          const PopupMenuItem(
+                            value: 'block',
+                            child: Row(children: [
+                              Icon(Icons.block, color: Colors.red, size: 16),
+                              SizedBox(width: 8),
+                              Text('حظر المستخدمة', style: TextStyle(fontSize: 13)),
+                            ]),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 5),

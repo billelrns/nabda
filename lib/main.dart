@@ -48,6 +48,7 @@ import 'screens/admin/admin_panel_screen.dart';
 import 'config/theme.dart';
 import 'config/secrets.dart';
 import 'config/play_compliance.dart';
+import 'config/shop_config.dart';
 import 'screens/onboarding_screen.dart' show OnboardingScreen, PrivacyPolicyPage, TermsOfServicePage;
 import 'screens/splash_screen.dart';
 import 'screens/intro_screen.dart';
@@ -1049,7 +1050,7 @@ class _PublicShop extends StatelessWidget {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(color: Color(0xFFE91E63))));
         }
-        final docs = snap.data?.docs ?? [];
+        final docs = (snap.data?.docs ?? []).where((d) => !isHiddenProduct(d.data() as Map)).toList();
         if (docs.isEmpty) {
           return const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('لا توجد منتجات بعد', style: TextStyle(color: Color(0xFF9B8F95)))));
         }
@@ -1616,6 +1617,7 @@ class AppNotifs {
         final m = d.data();
         final name = (m['name'] ?? '').toString().trim();
         if (name.isEmpty) continue;
+        if (isHiddenProduct(m)) continue;
         products.add({
           'name': name,
           'price': (m['price'] ?? '').toString().trim(),
@@ -7580,17 +7582,13 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
     'pregnancy': [
       {'name': 'وسادة الحمل المريحة', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '3500 د.ج', 'category': 'راحة الحامل'},
       {'name': 'كريم علامات التمدد', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1800 د.ج', 'category': 'العناية بالبشرة'},
-      {'name': 'حمض الفوليك 400mcg', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '950 د.ج', 'category': 'مكملات غذائية'},
       {'name': 'حزام دعم البطن', 'image': 'https://images.unsplash.com/photo-1584839404210-0a5d92ea4861?w=300&q=80', 'price': '2200 د.ج', 'category': 'راحة الحامل'},
       {'name': 'زيت اللوز للتدليك', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1200 د.ج', 'category': 'العناية بالبشرة'},
-      {'name': 'فيتامينات ما قبل الولادة', 'image': 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80', 'price': '2800 د.ج', 'category': 'مكملات غذائية'},
     ],
     'cycle': [
       {'name': 'قربة ماء ساخن', 'image': 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=300&q=80', 'price': '800 د.ج', 'category': 'تخفيف الألم'},
       {'name': 'شاي البابونج العضوي', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '650 د.ج', 'category': 'مشروبات صحية'},
-      {'name': 'مكمل المغنيسيوم', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1500 د.ج', 'category': 'مكملات غذائية'},
       {'name': 'فوط صحية قطنية', 'image': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=300&q=80', 'price': '450 د.ج', 'category': 'نظافة شخصية'},
-      {'name': 'زيت زهرة الربيع', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1100 د.ج', 'category': 'مكملات طبيعية'},
       {'name': 'كمادة حرارية كهربائية', 'image': 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=300&q=80', 'price': '2500 د.ج', 'category': 'تخفيف الألم'},
     ],
     'baby': [
@@ -7602,12 +7600,9 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
       {'name': 'لهاية سيليكون طبية', 'image': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=80', 'price': '350 د.ج', 'category': 'مستلزمات الطفل'},
     ],
     'home': [
-      {'name': 'فيتامين D3 للنساء', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1400 د.ج', 'category': 'مكملات غذائية'},
       {'name': 'كريم ترطيب طبيعي', 'image': 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80', 'price': '1600 د.ج', 'category': 'العناية بالبشرة'},
       {'name': 'شاي أعشاب مهدئ', 'image': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80', 'price': '700 د.ج', 'category': 'مشروبات صحية'},
-      {'name': 'أوميغا 3 طبيعي', 'image': 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80', 'price': '2200 د.ج', 'category': 'مكملات غذائية'},
       {'name': 'سيروم فيتامين C', 'image': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&q=80', 'price': '1900 د.ج', 'category': 'العناية بالبشرة'},
-      {'name': 'حديد + فوليك أسيد', 'image': 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=300&q=80', 'price': '1100 د.ج', 'category': 'مكملات غذائية'},
     ],
     'news': [
       {'name': 'كتاب أمومة سعيدة', 'image': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&q=80', 'price': '1500 د.ج', 'category': 'كتب ومراجع'},
@@ -8177,7 +8172,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   String get _levelName {
     if (_totalPoints >= 1000) return 'ملكة نبضة';
-    if (_totalPoints >= 600) return 'خبيرة';
+    if (_totalPoints >= 600) return 'متألّقة';
     if (_totalPoints >= 300) return 'متقدمة';
     if (_totalPoints >= 100) return 'نشيطة';
     if (_totalPoints >= 30) return 'مبتدئة';
@@ -8640,7 +8635,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       {'name': 'مبتدئة', 'emoji': '🌱', 'points': 30},
       {'name': 'نشيطة', 'emoji': '🔥', 'points': 100},
       {'name': 'متقدمة', 'emoji': '💎', 'points': 300},
-      {'name': 'خبيرة', 'emoji': '🌟', 'points': 600},
+      {'name': 'متألّقة', 'emoji': '🌟', 'points': 600},
       {'name': 'ملكة نبضة', 'emoji': '👑', 'points': 1000},
     ];
     final currentIdx = _levelIndex;

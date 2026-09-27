@@ -1821,22 +1821,6 @@ html_template = """<!DOCTYPE html>
             ${toolBannerHtml}
             ${faqsHtml}
 
-            <div class="resources-collapsible">
-              <button class="resources-btn" onclick="toggleResources()">
-                <span>📚 للاستزادة: مصادر عالمية موثوقة</span>
-                <span id="resourcesArrow">▼</span>
-              </button>
-              <div class="resources-body" id="resourcesBody">
-                <p>جهات عالمية موثوقة للاستزادة في صحة المرأة والحمل (وليست مراجع كُتب منها هذا المقال):</p>
-                <ul style="padding-right: 22px; margin-top: 8px;">
-                  <li>الكلية الأمريكية لأطباء النساء والتوليد (ACOG Guidelines)</li>
-                  <li>المعهد الوطني للصحة والرعاية المتميزة (NICE UK)</li>
-                  <li>منظمة الصحة العالمية (WHO — Maternal & Child Health)</li>
-                  <li>قاعدة بيانات المكتبة الوطنية الأمريكية للطب (PubMed / NIH)</li>
-                  <li>الجمعية الملكية لأطباء النساء والتوليد (RCOG)</li>
-                </ul>
-              </div>
-            </div>
           </div>
 
           <div class="modal-sidebar">

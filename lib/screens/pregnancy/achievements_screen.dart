@@ -37,12 +37,12 @@ class _AchievementsScreenState extends State<AchievementsScreen> with TickerProv
       _Achievement('trimester_2', 'الثلث الثاني', 'أكملي الثلث الثاني (26 أسبوع)', '🌺', 75),
       _Achievement('trimester_3', 'الثلث الثالث', 'ادخلي الثلث الثالث', '🌻', 100),
       _Achievement('due_date', 'يوم الولادة', 'وصلتِ ليوم الولادة المتوقع!', '👶', 200),
-      _Achievement('baby_size_fan', 'خبيرة الأحجام', 'تصفحي جميع أحجام الجنين', '🍉', 30),
+      _Achievement('baby_size_fan', 'عاشقة الأحجام', 'تصفحي جميع أحجام الجنين', '🍉', 30),
     ]),
     _AchievementCategory('الصحة', Icons.favorite, const Color(0xFF00897B), [
       _Achievement('first_weight', 'أول وزن', 'سجلي وزنك لأول مرة', '⚖️', 10),
       _Achievement('weight_5', 'متابعة منتظمة', 'سجلي وزنك 5 مرات', '📊', 25),
-      _Achievement('weight_20', 'خبيرة المتابعة', 'سجلي وزنك 20 مرة', '🏆', 75),
+      _Achievement('weight_20', 'مثابرة المتابعة', 'سجلي وزنك 20 مرة', '🏆', 75),
       _Achievement('vitamins_day', 'فيتامينات اليوم', 'سجلي جميع فيتاميناتك في يوم واحد', '💊', 15),
       _Achievement('vitamins_week', 'أسبوع صحي', 'سجلي فيتاميناتك لمدة أسبوع متواصل', '🌟', 50),
       _Achievement('exercise_first', 'أول تمرين', 'أكملي أول تمرين', '🏃‍♀️', 10),
@@ -180,7 +180,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> with TickerProv
 
   String get _level {
     if (_totalPoints >= 1000) return 'ملكة نبضة 👑';
-    if (_totalPoints >= 600) return 'خبيرة 🌟';
+    if (_totalPoints >= 600) return 'متألّقة 🌟';
     if (_totalPoints >= 300) return 'متقدمة 💎';
     if (_totalPoints >= 100) return 'نشيطة 🔥';
     if (_totalPoints >= 30) return 'مبتدئة 🌱';
@@ -265,7 +265,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> with TickerProv
       {'name': 'مبتدئة', 'emoji': '🌱', 'points': 30},
       {'name': 'نشيطة', 'emoji': '🔥', 'points': 100},
       {'name': 'متقدمة', 'emoji': '💎', 'points': 300},
-      {'name': 'خبيرة', 'emoji': '🌟', 'points': 600},
+      {'name': 'متألّقة', 'emoji': '🌟', 'points': 600},
       {'name': 'ملكة نبضة', 'emoji': '👑', 'points': 1000},
     ];
     final currentIdx = _levelIndex;
