@@ -6,7 +6,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:image_picker/image_picker.dart';
+import 'services/report_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,6 +30,7 @@ import 'widgets/nabda_ui.dart';
 import 'widgets/nabda_animated_logo.dart';
 import 'utils/article_images.dart';
 import 'utils/fetus_size.dart';
+import 'utils/fetus_metrics.dart';
 import 'widgets/nabda_article_ad.dart';
 import 'widgets/article_engagement_bar.dart';
 
@@ -43,10 +46,14 @@ import 'data/baby_care_age_articles.dart';
 import 'services/auth_service.dart';
 import 'screens/admin/admin_panel_screen.dart';
 import 'config/theme.dart';
+import 'config/secrets.dart';
+import 'config/play_compliance.dart';
 import 'screens/onboarding_screen.dart' show OnboardingScreen, PrivacyPolicyPage, TermsOfServicePage;
 import 'screens/splash_screen.dart';
 import 'screens/intro_screen.dart';
 import 'screens/baby_names/baby_names_screen.dart';
+import 'screens/baby/vaccination_schedule.dart';
+import 'screens/pregnancy/kick_counter_screen.dart';
 import 'screens/trackers/weight_tracker_screen.dart';
 import 'screens/trackers/health_trackers_screen.dart';
 import 'screens/doctors/doctors_list_screen.dart';
@@ -64,7 +71,6 @@ import 'widgets/cycle_calendar.dart';
 import 'widgets/conditional_content.dart';
 import 'widgets/smart_articles_carousel.dart';
 import 'widgets/smart_article_carousel.dart';
-import 'screens/articles/smart_article_detail_screen.dart';
 import 'screens/articles/smart_articles_list_screen.dart';
 import 'screens/articles/articles_hub_screen.dart';
 import 'screens/articles/articles_search_screen.dart';
@@ -223,17 +229,31 @@ void main() async {
           );
   } catch (_) {}
 
-  // تجاهل أخطاء Firestore الداخلية (ca9) على الويب
-  FlutterError.onError = (details) {
-    final msg = details.exceptionAsString();
-    if (msg.contains('FIRESTORE') && msg.contains('ASSERTION')) return;
-    FlutterError.presentError(details);
-  };
-  PlatformDispatcher.instance.onError = (error, stack) {
-    final msg = error.toString();
-    if (msg.contains('FIRESTORE') && msg.contains('ASSERTION')) return true;
-    return false;
-  };
+  // تهيئة Firebase Crashlytics وتجاهل أخطاء Firestore الداخلية (ca9) على الويب
+  if (!kIsWeb) {
+    FlutterError.onError = (details) {
+      final msg = details.exceptionAsString();
+      if (msg.contains('FIRESTORE') && msg.contains('ASSERTION')) return;
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      final msg = error.toString();
+      if (msg.contains('FIRESTORE') && msg.contains('ASSERTION')) return true;
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  } else {
+    FlutterError.onError = (details) {
+      final msg = details.exceptionAsString();
+      if (msg.contains('FIRESTORE') && msg.contains('ASSERTION')) return;
+      FlutterError.presentError(details);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      final msg = error.toString();
+      if (msg.contains('FIRESTORE') && msg.contains('ASSERTION')) return true;
+      return false;
+    };
+  }
 
   // Register FCM background handler
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -708,11 +728,20 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 }
 
 // يفتح صفحة الدخول من الصفحة العامّة، ويُغلق نفسه تلقائيًا بعد نجاح الدخول
-// فتظهر البوّابة الجذرية بالداش بورد.
+// فتظهر البوّابة الجذرية بالداش بورد أو الأداة المطلوبة.
 class _LoginThenPop extends StatelessWidget {
   /// الوضع الابتدائي لشاشة المصادقة (يُمرّر إلى LoginPage).
   final bool? initialIsRegister;
-  const _LoginThenPop({this.initialIsRegister});
+  final String? contextualTitle;
+  final String? contextualSubtitle;
+  final VoidCallback? onBrowseWithoutAccount;
+  const _LoginThenPop({
+    this.initialIsRegister,
+    this.contextualTitle,
+    this.contextualSubtitle,
+    this.onBrowseWithoutAccount,
+  });
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -723,7 +752,12 @@ class _LoginThenPop extends StatelessWidget {
             if (Navigator.of(context).canPop()) Navigator.of(context).pop();
           });
         }
-        return LoginPage(initialIsRegister: initialIsRegister);
+        return LoginPage(
+          initialIsRegister: initialIsRegister,
+          contextualTitle: contextualTitle,
+          contextualSubtitle: contextualSubtitle,
+          onBrowseWithoutAccount: onBrowseWithoutAccount,
+        );
       },
     );
   }
@@ -740,20 +774,102 @@ String _sectionToUrlPath(String key) {
     case 'cycle': return '/cycle';
     case 'community': return '/community';
     case 'shop': return '/shop';
+    case 'vaccinations': return '/vaccinations';
+    case 'weightTracker': return '/weight-tracker';
+    case 'kickCounter': return '/kick-counter';
+    case 'hospitalBag': return '/hospital-bag';
+    case 'exercises': return '/exercises';
+    case 'pregnancyCal': return '/pregnancy-calendar';
     default: return '/';
   }
 }
 
+String _toolLoginReason(String key) {
+  switch (key) {
+    case 'vaccinations': return 'سجّلي الدخول لحفظ جدول تطعيمات طفلكِ وتلقي التنبيهات';
+    case 'weightTracker': return 'سجّلي الدخول لمتابعة وزنكِ المثالي ومنحنى نمو الحمل';
+    case 'kickCounter': return 'سجّلي الدخول لحفظ سجل ركلات الجنين والاطمئنان عليه';
+    case 'hospitalBag': return 'سجّلي الدخول لتنظيم وتعديل قائمة حقيبة الولادة';
+    case 'exercises': return 'سجّلي الدخول للوصول إلى تمارين اللياقة الآمنة للحمل';
+    case 'pregnancyCal': return 'سجّلي الدخول لتوثيق ملاحظاتكِ ومتابعة تقويم الحمل';
+    default: return 'سجّلي الدخول لحفظ بياناتكِ ومتابعة رحلتكِ الصحية';
+  }
+}
+
+Widget _getProtectedToolWidget(String key) {
+  switch (key) {
+    case 'vaccinations': return const VaccinationSchedule();
+    case 'weightTracker': return const WeightTrackerScreen();
+    case 'kickCounter': return const KickCounterScreen();
+    case 'hospitalBag': return const HospitalBagScreen();
+    case 'exercises': return const ExercisesScreen();
+    case 'pregnancyCal': return const PregnancyCalendarScreen();
+    default: return const VaccinationSchedule();
+  }
+}
+
 void _openPublicSection(BuildContext context, String key) {
-  void goLogin() => Navigator.push(context, MaterialPageRoute(
-      builder: (_) => const _LoginThenPop(initialIsRegister: false)));
-  void goSignup() => Navigator.push(context, MaterialPageRoute(
-      builder: (_) => const _LoginThenPop(initialIsRegister: true)));
+  void goLogin([String? reason]) => Navigator.push(context, MaterialPageRoute(
+      builder: (_) => _LoginThenPop(
+        initialIsRegister: false,
+        contextualTitle: reason != null ? 'تسجيل الدخول' : null,
+        contextualSubtitle: reason,
+      )));
+  void goSignup([String? reason]) => Navigator.push(context, MaterialPageRoute(
+      builder: (_) => _LoginThenPop(
+        initialIsRegister: true,
+        contextualTitle: reason != null ? 'إنشاء حساب جديد' : null,
+        contextualSubtitle: reason,
+      )));
 
   // 🌐 تحديث URL على المتصفّح (ويب فقط) — مثل nabda.online/shop
   setWebPath(_sectionToUrlPath(key));
 
-  // أسماء المواليد → شاشة أسماء الأطفال
+  // 1. الأدوات المحمية (تتطلب حساباً لحفظ ومزامنة البيانات)
+  const protectedKeys = [
+    'vaccinations',
+    'weightTracker',
+    'kickCounter',
+    'hospitalBag',
+    'exercises',
+    'pregnancyCal',
+  ];
+
+  if (protectedKeys.contains(key)) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => _getProtectedToolWidget(key),
+      )).then((_) => resetWebPath());
+    } else {
+      final reason = _toolLoginReason(key);
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => _LoginThenPop(
+          initialIsRegister: false,
+          contextualTitle: 'ميزة تتطلب حساباً',
+          contextualSubtitle: reason,
+          onBrowseWithoutAccount: () {
+            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+            Navigator.push(context, MaterialPageRoute(
+              builder: (_) => _getProtectedToolWidget(key),
+            )).then((_) => resetWebPath());
+          },
+        ),
+      )).then((_) {
+        // بعد نجاح الدخول: فتح الأداة نفسها مباشرة بدلاً من الرئيسية
+        if (FirebaseAuth.instance.currentUser != null) {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => _getProtectedToolWidget(key),
+          )).then((_) => resetWebPath());
+        } else {
+          resetWebPath();
+        }
+      });
+    }
+    return;
+  }
+
+  // 2. أسماء المواليد → شاشة أسماء الأطفال
   if (key == 'babyNames' || key == 'baby-names') {
     Navigator.push(context, MaterialPageRoute(
         builder: (_) => const BabyNamesScreen()))
@@ -761,7 +877,7 @@ void _openPublicSection(BuildContext context, String key) {
     return;
   }
 
-  // بقيّة الأقسام (الحمل/الطفل/الدورة/المجتمع/المتجر) → صفحة قسم عامّة
+  // 3. بقيّة الأقسام (الحمل/الطفل/الدورة/المجتمع/المتجر) → صفحة قسم عامّة
   Navigator.push(context, MaterialPageRoute(builder: (_) => WebPublicSection(
     title: _publicSectionTitle(key),
     body: _publicSectionBody(key, goLogin),
@@ -1167,7 +1283,7 @@ class NotifService {
             icon: '@mipmap/ic_launcher',
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.alarmClock,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time, // يتكرر يومياً في نفس الوقت
@@ -1314,7 +1430,7 @@ class AppNotifs {
     try {
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id, title, body, _todayAt(h, m), _d(ch, name),
-        androidScheduleMode: AndroidScheduleMode.alarmClock,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
@@ -1327,7 +1443,7 @@ class AppNotifs {
     try {
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id, title, body, when, _d(ch, name),
-        androidScheduleMode: AndroidScheduleMode.alarmClock,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
     } catch (_) {}
@@ -1797,7 +1913,16 @@ class LoginPage extends StatefulWidget {
   ///   - true → افتحي مباشرةً على «إنشاء حساب».
   ///   - false → افتحي مباشرةً على «تسجيل الدخول».
   final bool? initialIsRegister;
-  const LoginPage({Key? key, this.initialIsRegister}) : super(key: key);
+  final String? contextualTitle;
+  final String? contextualSubtitle;
+  final VoidCallback? onBrowseWithoutAccount;
+  const LoginPage({
+    Key? key,
+    this.initialIsRegister,
+    this.contextualTitle,
+    this.contextualSubtitle,
+    this.onBrowseWithoutAccount,
+  }) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -2094,11 +2219,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     SlideTransition(
                       position: _titleSlide,
                       child: Column(children: [
-                        Text(isRegister ? '\u0627\u0646\u0636\u0645\u064A \u0625\u0644\u064A\u0646\u0627' : '\u0645\u0631\u062D\u0628\u0627\u064B \u0628\u0639\u0648\u062F\u062A\u0643',
-                          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF2D2D3A))),
+                        Text(widget.contextualTitle ?? (isRegister ? 'انضمي إلينا' : 'مرحباً بعودتك'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF2D2D3A))),
                         const SizedBox(height: 6),
-                        Text(isRegister ? '\u0623\u0646\u0634\u0626\u064A \u062D\u0633\u0627\u0628\u0643 \u0648\u0627\u0633\u062A\u0645\u062A\u0639\u064A \u0628\u062E\u062F\u0645\u0627\u062A\u0646\u0627' : '\u0633\u062C\u0644\u064A \u0627\u0644\u062F\u062E\u0648\u0644 \u0644\u0645\u062A\u0627\u0628\u0639\u0629 \u0635\u062D\u062A\u0643',
-                          style: TextStyle(fontSize: 15, color: Colors.grey.shade500)),
+                        Text(widget.contextualSubtitle ?? (isRegister ? 'أنشئي حسابكِ واستمتعي بخدماتنا' : 'سجّلي الدخول لمتابعة صحتكِ'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 14.5, color: Colors.grey.shade600)),
                       ]),
                     ),
                     const SizedBox(height: 30),
@@ -2185,12 +2312,24 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     const SizedBox(height: 16),
                     // Toggle
                     FadeTransition(opacity: _formFade, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text(isRegister ? '\u0644\u062F\u064A\u0643 \u062D\u0633\u0627\u0628 \u0628\u0627\u0644\u0641\u0639\u0644\u061F ' : '\u0644\u064A\u0633 \u0644\u062F\u064A\u0643 \u062D\u0633\u0627\u0628\u061F ', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+                      Text(isRegister ? 'لديكِ حساب بالفعل؟ ' : 'ليس لديكِ حساب؟ ', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
                       GestureDetector(
                         onTap: () { setState(() { isRegister = !isRegister; msg = ''; }); _restartAnimation(); },
-                        child: Text(isRegister ? '\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644' : '\u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628',
+                        child: Text(isRegister ? 'تسجيل الدخول' : 'إنشاء حساب',
                           style: TextStyle(fontWeight: FontWeight.bold, color: isRegister ? const Color(0xFF00897B) : const Color(0xFFE91E63), fontSize: 14))),
                     ])),
+                    if (widget.onBrowseWithoutAccount != null) ...[
+                      const SizedBox(height: 16),
+                      FadeTransition(
+                        opacity: _formFade,
+                        child: TextButton.icon(
+                          onPressed: widget.onBrowseWithoutAccount,
+                          icon: const Icon(Icons.arrow_back_rounded, size: 18, color: Color(0xFF00897B)),
+                          label: const Text('تصفّح الأداة بلا حساب',
+                            style: TextStyle(color: Color(0xFF00897B), fontWeight: FontWeight.bold, fontSize: 14)),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 30),
                   ],
                 ),
@@ -2265,16 +2404,37 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     }
   }
 
+  /// زرّ فيسبوك مخفي حتى يُفعَّل مزوّد Facebook في Firebase Authentication
+  /// (App ID + App Secret من Facebook for Developers). زرّ يُظهر خطأً لكل
+  /// مختبِرة ومراجِع أسوأ من زرّ غائب. لإعادته: اجعلها true.
+  static const bool _showFacebook = false;
+
   Widget _socialButtons() {
     final showApple = kIsWeb || Theme.of(context).platform == TargetPlatform.iOS;
     return Column(children: [
       _socialBtn('المتابعة بحساب Google', Colors.white, const Color(0xFF2D2D3A),
         Icons.g_mobiledata_rounded, const Color(0xFF4285F4),
         () => _socialSignIn(_authSvc.signInWithGoogle), border: true),
+      if (_showFacebook) ...[
+        const SizedBox(height: 10),
+        _socialBtn('المتابعة بفيسبوك', const Color(0xFF1877F2), Colors.white,
+          Icons.facebook, Colors.white,
+          () => _socialSignIn(_authSvc.signInWithFacebook)),
+      ],
+      // الموافقة على الشروط لمن تدخل بحساب اجتماعي (لا تمرّ بشاشة التسجيل)
       const SizedBox(height: 10),
-      _socialBtn('المتابعة بفيسبوك', const Color(0xFF1877F2), Colors.white,
-        Icons.facebook, Colors.white,
-        () => _socialSignIn(_authSvc.signInWithFacebook)),
+      Wrap(alignment: WrapAlignment.center, children: [
+        Text('بمتابعتكِ تُوافقين على ', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
+        GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsOfServicePage())),
+          child: const Text('شروط الاستخدام', style: TextStyle(fontSize: 11.5, color: Color(0xFF00897B), fontWeight: FontWeight.w700)),
+        ),
+        Text(' و', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
+        GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyPage())),
+          child: const Text('سياسة الخصوصية', style: TextStyle(fontSize: 11.5, color: Color(0xFF00897B), fontWeight: FontWeight.w700)),
+        ),
+      ]),
       if (showApple) ...[
         const SizedBox(height: 10),
         _socialBtn('المتابعة بـ Apple', Colors.black, Colors.white,
@@ -2808,6 +2968,7 @@ class _MainNavState extends State<MainNav> {
                   _navItem(context, '📅', 'متابعة الدورة', tabIndex: 1),
                   _navItem(context, '👶', 'رعاية الطفل', tabIndex: 3),
                   _navItem(context, '💕', 'الخصوبة', onTap: () => _soon(context)),
+                  if (!kHideMedicalFeatures)
                   _navItem(context, '🩺', 'الأطباء',
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DoctorsListScreen()))),
                   _navItem(context, '📈', 'صحتي',
@@ -2818,7 +2979,7 @@ class _MainNavState extends State<MainNav> {
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WomensFiqhScreen()))),
                   _navItem(context, '🌙', 'قضاء الصيام',
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QadaaScreen()))),
-                  _navItem(context, '📚', 'موسوعة نبضة (6,982)',
+                  _navItem(context, '📚', 'مكتبة نبضة',
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticlesHubScreen()))),
                   _sidebarDivider(line),
                   // ── حسابي ──
@@ -3121,10 +3282,15 @@ class _HomePageState extends State<HomePage> {
                           child: _buildQuickGrid(),
                         ),
 
-                        // ════════════ AI ASSISTANT CARD ════════════
+                        // ════════════ AI ASSISTANT + COMMUNITY CARDS ════════════
+                        if (!kHideMedicalFeatures)
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
                           child: _buildAICard(),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
+                          child: _buildCommunityCard(),
                         ),
 
                         // ════════════ DAILY TIPS (horizontal scroll) ════════════
@@ -3317,7 +3483,7 @@ const SizedBox(height: 30),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '6,982 مقالاً موثقاً • 18 أداة ذكية وحاسبة طبية',
+                        'آلاف المقالات • أدوات ذكية للحمل والدورة',
                         style: TextStyle(
                           fontSize: 11,
                           color: _ink3,
@@ -3458,8 +3624,9 @@ const SizedBox(height: 30),
     final pct = (week / total).clamp(0.0, 1.0);
     final remaining = total - week;
 
-    // حجم الجنين — مصدر موحّد مع قسم الحمل (lib/utils/fetus_size.dart)
-    final fetusSize = FetusSize.labeled(week);
+    // حجم ومقاييس الجنين — مصدر طبي موحّد (lib/utils/fetus_metrics.dart)
+    final fetusMetrics = FetusMetrics.forWeek(week);
+    final fetusSize = '${fetusMetrics.emoji} ${fetusMetrics.fruit}';
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -3564,8 +3731,8 @@ const SizedBox(height: 30),
             child: Row(
               children: [
                 _metricCell(fetusSize, 'حجم الجنين', true, false, animateEmoji: true),
-                _metricCell('${(week * 1.3).toStringAsFixed(0)} سم', 'الطول', false, false),
-                _metricCell('${(week * 28).toStringAsFixed(0)} غ', 'الوزن', false, true),
+                _metricCell(fetusMetrics.length, 'الطول', false, false),
+                _metricCell(fetusMetrics.weight, 'الوزن', false, true),
               ],
             ),
           ),
@@ -3858,7 +4025,126 @@ const SizedBox(height: 30),
   }
 
   // ─────────── AI ASSISTANT CARD ───────────
-  Widget _buildAICard() {
+  Widget _buildAICard() => _buildFeatureCard(
+        bgAsset: 'assets/images/home_ai_bg.jpg',
+        tint: const Color(0xFF231C42),
+        badge: 'مساعدة ذكية',
+        badgeColor: const Color(0xFF4DDFCB),
+        icon: Icons.auto_awesome,
+        title: 'اسألي مساعد نبضة الذكي',
+        subtitle: 'إجابات فورية مخصّصة لأسبوع حملكِ ✨',
+        cta: 'ابدئي محادثة',
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AIChatPage())),
+      );
+
+  Widget _buildCommunityCard() => _buildFeatureCard(
+        bgAsset: 'assets/images/home_community_bg.jpg',
+        tint: const Color(0xFF6E1B45),
+        badge: 'مجتمع الأمهات',
+        badgeColor: const Color(0xFFFFB3CF),
+        icon: Icons.diversity_1_rounded,
+        title: 'لستِ وحدكِ في هذه الرحلة',
+        subtitle: 'شاركي تجربتكِ واسألي أمهات يمررن بما تمرّين به 💕',
+        cta: 'ادخلي المجتمع',
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityScreen())),
+      );
+
+  /// بطاقة كبيرة بصورة خلفية: الصورة تملأ البطاقة وتدرّج داكن من جهة النص
+  /// (اليمين في RTL) يضمن وضوح الكتابة، والشخصيات تبقى ظاهرة يسارًا.
+  Widget _buildFeatureCard({
+    required String bgAsset,
+    required Color tint,
+    required String badge,
+    required Color badgeColor,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String cta,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 186,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          color: tint,
+          boxShadow: [
+            BoxShadow(color: tint.withOpacity(0.32), blurRadius: 30, offset: const Offset(0, 14)),
+          ],
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(bgAsset, fit: BoxFit.cover, alignment: Alignment.centerLeft,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerRight,
+                  end: Alignment.centerLeft,
+                  colors: [tint.withOpacity(0.94), tint.withOpacity(0.72), tint.withOpacity(0.0)],
+                  stops: const [0.0, 0.48, 0.9],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 20, 18),
+              child: Row(children: [
+                Expanded(
+                  flex: 62,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.16),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(icon, size: 13, color: badgeColor),
+                          const SizedBox(width: 5),
+                          Text(badge, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: badgeColor)),
+                        ]),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white, height: 1.3)),
+                      const SizedBox(height: 4),
+                      Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.82), height: 1.45)),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: Colors.white.withOpacity(0.28), width: 0.6),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Text(cta, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                          const SizedBox(width: 6),
+                          const Icon(Icons.arrow_back_ios, color: Colors.white, size: 13),
+                        ]),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(flex: 38),
+              ]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // النسخة السابقة لبطاقة المساعد (تدرّج بلا صورة) — محفوظة للرجوع إليها.
+  // ignore: unused_element
+  Widget _buildAICardLegacy() {
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AIChatPage())),
       child: Container(
@@ -4042,7 +4328,7 @@ const SizedBox(height: 30),
       _QAData(Icons.nightlight_round, 'قضاء الصيام', 'متتبّع أيام القضاء', '',
         [_lavender, _lavender2],
         () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QadaaScreen()))),
-      _QAData(Icons.auto_stories, 'موسوعة نبضة', '6,982 مقالاً', '',
+      _QAData(Icons.auto_stories, 'مكتبة نبضة', '+5,900 مقال', '',
         [const Color(0xFFE91E63), const Color(0xFFC2185B)],
         () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticlesHubScreen()))),
     ];
@@ -4067,8 +4353,7 @@ const SizedBox(height: 30),
       // ملاحظة: "المساعد الذكي" مُتاح من البطاقة الكبيرة أعلاه، فأُزيل من هنا لتجنّب التكرار
       _ChipData('👶', 'رعاية الطفل', const Color(0xFFFFD9E5), () => widget.onCardTap?.call(3),
           asset: 'assets/icons_3d/icon_baby_care.png'),
-      _ChipData('👥', 'مجتمع الأمهات', _sky, () => Navigator.push(context, MaterialPageRoute(builder: (_) => CommunityScreen())),
-          asset: 'assets/icons_3d/icon_community.png'),
+      // «مجتمع الأمهات» صار بطاقة كبيرة تحت المساعد الذكي — أُزيل من هنا لتجنّب التكرار
       _ChipData('💚', 'العادات الصحية', _teal50, () => Navigator.push(context, MaterialPageRoute(builder: (_) => HealthTrackersScreen())),
           asset: 'assets/icons_3d/icon_habits.png'),
       _ChipData('📖', 'مراحل الحمل', _peach50, () => Navigator.push(context, MaterialPageRoute(builder: (_) => PregnancyWeeksScreen())),
@@ -8247,6 +8532,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
                 }),
                 _menuItem(tr('edit_name'), Icons.edit, Colors.teal, () => _editName(context)),
+                if (kShowLanguagePicker)
                 _menuItem(tr('language'), Icons.language, Colors.indigo, () => _showLanguagePicker(context)),
                 _menuItem(tr('reset_data'), Icons.refresh, Colors.orange, () async {
                   final confirm = await showDialog<bool>(
@@ -8801,6 +9087,84 @@ class _CommunityPageState extends State<CommunityPage> {
                                 Text(tr(catKey), style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
                               ]),
                             ),
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onSelected: (val) async {
+                                final authorUid = post['userId'] ?? '';
+                                if (val == 'report') {
+                                  await ReportService.showReportDialog(
+                                    context: context,
+                                    targetType: 'community_post',
+                                    targetId: doc.id,
+                                    targetUserId: authorUid,
+                                    contentSnippet: post['text'] ?? '',
+                                  );
+                                } else if (val == 'block') {
+                                  await ReportService.blockUser(context, authorUid);
+                                } else if (val == 'delete') {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (c) => Directionality(
+                                      textDirection: TextDirection.rtl,
+                                      child: AlertDialog(
+                                        title: const Text('حذف المنشور'),
+                                        content: const Text('هل أنتِ متأكدة من حذف هذا المنشور نهائياً؟'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(c, false),
+                                            child: const Text('إلغاء'),
+                                          ),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                            onPressed: () => Navigator.pop(c, true),
+                                            child: const Text('حذف', style: TextStyle(color: Colors.white)),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                  if (confirm == true) {
+                                    await doc.reference.delete();
+                                  }
+                                }
+                              },
+                              itemBuilder: (ctx) {
+                                final isAuthor = (post['userId'] == uid && uid.isNotEmpty);
+                                if (isAuthor) {
+                                  return [
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(children: [
+                                        Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('حذف المنشور', style: TextStyle(color: Colors.red)),
+                                      ]),
+                                    ),
+                                  ];
+                                } else {
+                                  return [
+                                    const PopupMenuItem(
+                                      value: 'report',
+                                      child: Row(children: [
+                                        Icon(Icons.flag_outlined, color: Colors.amber, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('إبلاغ عن المنشور'),
+                                      ]),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'block',
+                                      child: Row(children: [
+                                        Icon(Icons.block, color: Colors.red, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('حظر هذه المستخدمة'),
+                                      ]),
+                                    ),
+                                  ];
+                                }
+                              },
+                            ),
                           ]),
                         ),
                         // Post text
@@ -9161,7 +9525,8 @@ class _AIChatPageState extends State<AIChatPage> {
   List<Map<String, String>> messages = [];
   List<Map<String, dynamic>> _chatHistory = [];
   bool _isLoading = false;
-  final String _apiKey = 'AIzaSyB09gZH8igVPtC0yfPA5Twfp3KU0dC-kTI';
+  // المفتاح في lib/config/secrets.dart (مستثنى من git) — لا تُعِده هنا.
+  final String _apiKey = kGeminiApiKey;
 
   // Quick suggestion buttons
   final quickQuestions = [
@@ -9173,14 +9538,74 @@ class _AIChatPageState extends State<AIChatPage> {
     'نصائح للرضاعة الطبيعية',
   ];
 
+  String _formatTime(DateTime dt) {
+    final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final m = dt.minute.toString().padLeft(2, '0');
+    final period = dt.hour >= 12 ? 'م' : 'ص';
+    return '$h:$m $period';
+  }
+
   @override
   void initState() {
     super.initState();
     // Welcome message
     messages.add({
       'role': 'assistant',
-      'text': 'مرحباً! أنا المساعد الذكي لتطبيق نبضة. يمكنني مساعدتك في أسئلة صحة المرأة والحمل ورعاية الطفل.\n\nاختاري سؤالاً أو اكتبي سؤالك بالأسفل \u{1F49C}',
+      'text': 'مرحباً! أنا المساعد الذكي لتطبيق نبضة. يمكنني مساعدتك في أسئلة صحة المرأة والحمل ورعاية الطفل.\n\nاختاري سؤالاً أو اكتبي سؤالك بالأسفل 🌸',
+      'time': _formatTime(DateTime.now()),
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAiConsent();
+    });
+  }
+
+  Future<void> _checkAiConsent() async {
+    final prefs = await SharedPreferences.getInstance();
+    final consented = prefs.getBool('ai_consent_v1') ?? false;
+    if (!consented && mounted) {
+      final agreed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.privacy_tip_outlined, color: Color(0xFFEC407A)),
+                SizedBox(width: 8),
+                Text('تنبيه الخصوصية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: const Text(
+              'مساعد نبضة الذكي يعمل بواسطة Google Gemini.\n\n'
+              'أسئلتك تُرسَل إلى خوادم Google لمعالجتها ولا تُستعمل لتدريب النماذج.\n\n'
+              '⚠️ يُرجى عدم إدخال معلومات تعريفية شخصية أو نتائج تحاليل أو بيانات صحية حساسة تخصّك.',
+              style: TextStyle(fontSize: 13, height: 1.6),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('إلغاء والعودة', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEC407A),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('موافقة ومتابعة', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (agreed == true) {
+        await prefs.setBool('ai_consent_v1', true);
+      } else {
+        if (mounted) Navigator.pop(context);
+      }
+    }
   }
 
   // ===== Smart Health Knowledge Base =====
@@ -9279,7 +9704,7 @@ class _AIChatPageState extends State<AIChatPage> {
     final sysText = 'أنت مساعد صحي ذكي اسمك نبضة، متخصص في صحة المرأة. أجب دائماً بالعربية. تخصصاتك: الدورة، الحمل، الولادة، رعاية الطفل، التغذية. أجب بإيجاز. إذا تطلب السؤال تشخيصاً طبياً انصحي بزيارة الطبيب.';
 
     try {
-      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$_apiKey';
+      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$_apiKey';
       final body = jsonEncode({
         'systemInstruction': {'parts': [{'text': sysText}]},
         'contents': _chatHistory,
@@ -9297,26 +9722,37 @@ class _AIChatPageState extends State<AIChatPage> {
         _chatHistory.add({'role': 'model', 'parts': [{'text': reply}]});
         return reply;
       }
-    } catch (_) {}
+      // غير 200 (مفتاح/فوترة/نموذج): سجّل الرمز بدل ابتلاعه صامتًا —
+      // هذا الابتلاع أخفى ثلاثة أعطال متتالية (403 ثم 404 ثم 402).
+      debugPrint('Gemini HTTP ${response.statusCode}: ${response.body.length > 300 ? response.body.substring(0, 300) : response.body}');
+    } catch (e) {
+      debugPrint('Gemini call failed: $e');
+    }
 
-    // Fallback: smart local replies
-    return _getSmartReply(userMessage);
+    // سؤال المستخدمة سُجّل في السجلّ ولم يُجَب — أزِله كي لا يتراكم سياق بلا ردود.
+    if (_chatHistory.isNotEmpty) _chatHistory.removeLast();
+
+    // Fallback صريح: لا نقدّم الإجابة المحلية كأنها من الذكاء الاصطناعي.
+    return 'المساعد الذكي غير متاح مؤقتًا. إليكِ إجابة من قاعدة معرفة نبضة:\n\n'
+        + _getSmartReply(userMessage);
   }
 
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
+    final timeStr = _formatTime(DateTime.now());
     _msgController.clear();
 
     setState(() {
-      messages.add({'role': 'user', 'text': text});
+      messages.add({'role': 'user', 'text': text, 'time': timeStr});
       _isLoading = true;
     });
     _scrollToBottom();
 
     try {
       String reply = await _callGemini(text);
+      final replyTime = _formatTime(DateTime.now());
       setState(() {
-        messages.add({'role': 'assistant', 'text': reply});
+        messages.add({'role': 'assistant', 'text': reply, 'time': replyTime});
         _isLoading = false;
       });
       DB.userDoc.collection('chat_history').add({
@@ -9325,10 +9761,12 @@ class _AIChatPageState extends State<AIChatPage> {
         'timestamp': FieldValue.serverTimestamp(),
       });
     } catch (e) {
+      final replyTime = _formatTime(DateTime.now());
       setState(() {
         messages.add({
           'role': 'assistant',
           'text': _getSmartReply(text),
+          'time': replyTime,
         });
         _isLoading = false;
       });
@@ -9337,15 +9775,60 @@ class _AIChatPageState extends State<AIChatPage> {
   }
 
   void _scrollToBottom() {
-    Future.delayed(Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
       }
     });
+  }
+
+  Future<void> _confirmClearChat() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.delete_outline, color: Color(0xFFEC407A)),
+              SizedBox(width: 8),
+              Text('مسح المحادثة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text('هل ترغبين في مسح جميع رسائل المحادثة الحالية؟'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEC407A),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('مسح', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirm == true && mounted) {
+      setState(() {
+        messages.clear();
+        messages.add({
+          'role': 'assistant',
+          'text': 'تم مسح المحادثة. كيف يمكنني مساعدتك؟ 🌸',
+          'time': _formatTime(DateTime.now()),
+        });
+      });
+      _chatHistory.clear();
+    }
   }
 
   @override
@@ -9353,142 +9836,332 @@ class _AIChatPageState extends State<AIChatPage> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(centerTitle: true,
-          title: Text('المساعد الذكي'),
-          backgroundColor: Colors.teal,
+        backgroundColor: const Color(0xFFFFF8FB),
+        appBar: AppBar(
+          centerTitle: true,
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFEC407A), Color(0xFFF06292)],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+              ),
+            ),
+          ),
           foregroundColor: Colors.white,
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset('assets/images/logo_nabda.png', width: 26, height: 26, fit: BoxFit.contain),
+              const SizedBox(width: 8),
+              const Text('المساعد الذكي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+            ],
+          ),
           actions: [
             IconButton(
-              icon: Icon(Icons.delete_outline),
-              onPressed: () {
-                setState(() {
-                  messages.clear();
-                  messages.add({
-                    'role': 'assistant',
-                    'text': 'تم مسح المحادثة. كيف يمكنني مساعدتك؟ \u{1F49C}'
-                  });
-                });
-                _chatHistory.clear();
-              },
+              icon: const Icon(Icons.delete_outline),
               tooltip: 'مسح المحادثة',
+              onPressed: _confirmClearChat,
             ),
           ],
         ),
-        body: Column(children: [
-          // Messages
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: EdgeInsets.all(16),
-              itemCount: messages.length + (_isLoading ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == messages.length && _isLoading) {
-                  return _typingIndicator();
-                }
-                final msg = messages[index];
-                bool isUser = msg['role'] == 'user';
-                return _chatBubble(msg['text']!, isUser);
-              },
-            ),
-          ),
-          // Quick suggestions (show only at start)
-          if (messages.length <= 1)
+        body: Column(
+          children: [
+            // Amber compliance warning banner with 3px amber right border
             Container(
-              height: 44,
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: quickQuestions.map((q) => Padding(
-                  padding: EdgeInsets.only(left: 8),
-                  child: ActionChip(
-                    label: Text(q, style: TextStyle(fontSize: 12)),
-                    backgroundColor: Colors.teal.shade50,
-                    onPressed: () => _sendMessage(q),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFF3E0),
+                border: Border(right: BorderSide(color: Color(0xFFFFB300), width: 3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Color(0xFFE65100), size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '⚠️ إجابات مساعد نبضة إرشادية فقط وقد تحتوي أخطاء. للحالات الطبية أو الطارئة استشيري طبيبتكِ مباشرة.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFE65100), fontWeight: FontWeight.w600, height: 1.4),
+                    ),
                   ),
-                )).toList(),
+                ],
               ),
             ),
-          if (messages.length <= 1) SizedBox(height: 8),
-          // Input bar
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -1))],
-            ),
-            child: SafeArea(
-              child: Row(children: [
-                Expanded(
-                  child: TextField(
-                    controller: _msgController,
-                    decoration: InputDecoration(
-                      hintText: 'اكتبي سؤالك هنا...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
+            // Background pattern + messages
+            Expanded(
+              child: Stack(
+                children: [
+                  // Pattern background (max opacity 0.16)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFFFF8FB), Color(0xFFFDF3F7)],
+                        ),
                       ),
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child: Opacity(
+                        opacity: 0.16,
+                        child: Image.asset(
+                          'assets/images/chat_bg_pattern.png',
+                          repeat: ImageRepeat.repeat,
+                          scale: 2.2,
+                        ),
+                      ),
                     ),
-                    onSubmitted: _sendMessage,
-                    textInputAction: TextInputAction.send,
                   ),
-                ),
-                SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: Colors.teal,
-                  child: IconButton(
-                    icon: Icon(Icons.send, color: Colors.white, size: 20),
-                    onPressed: () => _sendMessage(_msgController.text),
+                  // Messages list
+                  ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                    itemCount: messages.length + (_isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == messages.length && _isLoading) {
+                        return _typingIndicator();
+                      }
+                      final msg = messages[index];
+                      final isUser = msg['role'] == 'user';
+                      return _chatBubble(msg['text']!, isUser, msg['time']);
+                    },
                   ),
-                ),
-              ]),
+                ],
+              ),
             ),
-          ),
-        ]),
+            // Quick suggestions chips (show only at start, hide after first user question)
+            if (!messages.any((m) => m['role'] == 'user'))
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: quickQuestions.map((q) => ActionChip(
+                    label: Text(
+                      q,
+                      style: const TextStyle(fontSize: 12.5, color: Color(0xFFAD1457), fontWeight: FontWeight.w600),
+                    ),
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: Color(0xFFF8BBD0), width: 1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    elevation: 1,
+                    shadowColor: const Color(0x14AD1457),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    onPressed: () => _sendMessage(q),
+                  )).toList(),
+                ),
+              ),
+            // Input bar with SafeArea
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(color: Color(0x14AD1457), blurRadius: 10, offset: Offset(0, -2)),
+                ],
+              ),
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF8FB),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: const Color(0xFFF8BBD0), width: 1),
+                        ),
+                        child: TextField(
+                          controller: _msgController,
+                          textDirection: TextDirection.rtl,
+                          style: const TextStyle(fontSize: 14.5, color: Color(0xFF1B1320)),
+                          decoration: const InputDecoration(
+                            hintText: 'اكتبي سؤالك هنا...',
+                            hintStyle: TextStyle(color: Color(0xFFB49AA8), fontSize: 14),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                          ),
+                          onSubmitted: _sendMessage,
+                          textInputAction: TextInputAction.send,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFEC407A), Color(0xFFF06292)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x3DEC407A),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                        onPressed: () => _sendMessage(_msgController.text),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _chatBubble(String text, bool isUser) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.start : MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.teal.shade100,
-              child: Icon(Icons.smart_toy, size: 18, color: Colors.teal),
+  Widget _chatBubble(String text, bool isUser, String? time) {
+    final maxBubbleWidth = MediaQuery.of(context).size.width * 0.78;
+
+    final Widget avatar;
+    if (isUser) {
+      final user = FirebaseAuth.instance.currentUser;
+      final photo = user?.photoURL;
+      final name = user?.displayName ?? '';
+      final initial = name.trim().isNotEmpty ? name.trim().characters.first : '';
+
+      avatar = CircleAvatar(
+        radius: 19,
+        backgroundColor: const Color(0xFFF8BBD0),
+        backgroundImage: (photo != null && photo.isNotEmpty) ? NetworkImage(photo) : null,
+        child: (photo == null || photo.isEmpty)
+            ? (initial.isNotEmpty
+                ? Text(initial, style: const TextStyle(color: Color(0xFFAD1457), fontWeight: FontWeight.w800, fontSize: 15))
+                : const Icon(Icons.person, color: Color(0xFFAD1457), size: 20))
+            : null,
+      );
+    } else {
+      avatar = Container(
+        width: 38,
+        height: 38,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [Color(0xFFFFF0F5), Color(0xFFFFE0EC)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x14AD1457),
+              blurRadius: 6,
+              offset: Offset(0, 2),
             ),
-            SizedBox(width: 8),
           ],
-          Flexible(
-            child: Container(
-              padding: EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: isUser ? Colors.teal.shade100 : Colors.grey.shade100,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                  bottomLeft: isUser ? Radius.circular(16) : Radius.circular(4),
-                  bottomRight: isUser ? Radius.circular(4) : Radius.circular(16),
+        ),
+        padding: const EdgeInsets.all(5),
+        child: Image.asset('assets/images/logo_nabda.png', fit: BoxFit.contain),
+      );
+    }
+
+    final bubble = Column(
+      crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              gradient: isUser
+                  ? const LinearGradient(
+                      colors: [Color(0xFFF48FB1), Color(0xFFEC407A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              color: isUser ? null : Colors.white.withOpacity(0.94),
+              border: isUser ? null : Border.all(color: const Color(0xFFF8BBD0), width: 1),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(18),
+                topRight: const Radius.circular(18),
+                bottomLeft: Radius.circular(isUser ? 18 : 4),
+                bottomRight: Radius.circular(isUser ? 4 : 18),
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14AD1457),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.8,
+                  color: isUser ? Colors.white : const Color(0xFF3A2F38),
                 ),
               ),
-              child: Text(text, style: TextStyle(fontSize: 15, height: 1.5)),
             ),
           ),
-          if (isUser) ...[
-            SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.teal,
-              child: Icon(Icons.person, size: 18, color: Colors.white),
+        ),
+        if (time != null && time.isNotEmpty) ...[
+          const SizedBox(height: 3),
+          Padding(
+            padding: EdgeInsets.only(
+              right: isUser ? 4 : 0,
+              left: isUser ? 0 : 4,
             ),
-          ],
+            child: Text(
+              time,
+              style: const TextStyle(fontSize: 10, color: Color(0xFFB49AA8)),
+            ),
+          ),
+        ],
+        if (!isUser) ...[
+          const SizedBox(height: 2),
+          InkWell(
+            onTap: () {
+              ReportService.showReportDialog(
+                context: context,
+                targetType: 'ai_response',
+                targetId: 'gemini_${DateTime.now().millisecondsSinceEpoch}',
+                targetUserId: 'system_ai',
+                contentSnippet: text,
+              );
+            },
+            borderRadius: BorderRadius.circular(4),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.flag_outlined, size: 13, color: Color(0xFFB49AA8)),
+                  SizedBox(width: 4),
+                  Text('إبلاغ عن هذه الإجابة', style: TextStyle(fontSize: 11, color: Color(0xFFB49AA8))),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        textDirection: isUser ? TextDirection.rtl : TextDirection.ltr,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          avatar,
+          const SizedBox(width: 8),
+          Flexible(child: bubble),
         ],
       ),
     );
@@ -9496,39 +10169,105 @@ class _AIChatPageState extends State<AIChatPage> {
 
   Widget _typingIndicator() {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        CircleAvatar(radius: 16, backgroundColor: Colors.teal.shade100,
-          child: Icon(Icons.smart_toy, size: 18, color: Colors.teal)),
-        SizedBox(width: 8),
-        Container(
-          padding: EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-              bottomLeft: Radius.circular(4),
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        textDirection: TextDirection.ltr,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [Color(0xFFFFF0F5), Color(0xFFFFE0EC)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(color: Color(0x14AD1457), blurRadius: 6, offset: Offset(0, 2)),
+              ],
+            ),
+            padding: const EdgeInsets.all(5),
+            child: Image.asset('assets/images/logo_nabda.png', fit: BoxFit.contain),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.94),
+              border: Border.all(color: const Color(0xFFF8BBD0), width: 1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+                bottomRight: Radius.circular(18),
+                bottomLeft: Radius.circular(4),
+              ),
+              boxShadow: const [
+                BoxShadow(color: Color(0x14AD1457), blurRadius: 8, offset: Offset(0, 2)),
+              ],
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _PulsingDot(delayMs: 0),
+                SizedBox(width: 5),
+                _PulsingDot(delayMs: 200),
+                SizedBox(width: 5),
+                _PulsingDot(delayMs: 400),
+              ],
             ),
           ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            _dot(0), SizedBox(width: 4),
-            _dot(150), SizedBox(width: 4),
-            _dot(300),
-          ]),
-        ),
-      ]),
+        ],
+      ),
     );
   }
+}
 
-  Widget _dot(int delayMs) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.3, end: 1.0),
-      duration: Duration(milliseconds: 600),
-      curve: Curves.easeInOut,
-      builder: (_, val, child) => Opacity(opacity: val, child: child),
-      child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.teal.shade300, shape: BoxShape.circle)),
+class _PulsingDot extends StatefulWidget {
+  final int delayMs;
+  const _PulsingDot({Key? key, required this.delayMs}) : super(key: key);
+
+  @override
+  State<_PulsingDot> createState() => _PulsingDotState();
+}
+
+class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
+    _anim = Tween<double>(begin: 0.3, end: 1.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _ctrl.repeat(reverse: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Opacity(
+        opacity: _anim.value,
+        child: Container(
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFEC407A),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
     );
   }
 }

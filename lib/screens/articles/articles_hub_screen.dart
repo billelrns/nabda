@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/smart_article.dart';
 import '../../services/smart_articles_service.dart';
+import '../../config/play_compliance.dart';
 import 'articles_list_screen.dart';
 import 'article_detail_screen.dart';
 import 'articles_search_screen.dart';
@@ -53,13 +54,13 @@ class _ArticlesHubScreenState extends State<ArticlesHubScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('موسوعة نبضة الطبية', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text('مكتبة نبضة', style: TextStyle(fontWeight: FontWeight.bold)),
           backgroundColor: const Color(0xFFE91E63),
           foregroundColor: Colors.white,
           actions: [
             IconButton(
               icon: const Icon(Icons.search),
-              tooltip: 'بحث في 6,982 مقالاً',
+              tooltip: 'بحث في المقالات',
               onPressed: () => Navigator.push(context, MaterialPageRoute(
                 builder: (_) => const ArticlesSearchScreen(),
               )),
@@ -71,7 +72,7 @@ class _ArticlesHubScreenState extends State<ArticlesHubScreen> {
           : ListView(children: [
               _buildHero(),
               const SizedBox(height: 12),
-              _buildSectionHeader('الأقسام والتصنيفات الطبية 📚', 'تصفحي مقالات نبضة الموزعة سريرياً حسب مجالكِ'),
+              _buildSectionHeader('الأقسام والتصنيفات 📚', 'تصفحي مقالات نبضة حسب اهتمامكِ'),
               const SizedBox(height: 12),
               _buildCategoriesList(),
               const SizedBox(height: 24),
@@ -117,7 +118,7 @@ class _ArticlesHubScreenState extends State<ArticlesHubScreen> {
       child: Column(children: [
         const Icon(Icons.auto_stories, size: 44, color: Colors.white),
         const SizedBox(height: 10),
-        Text('$total مقال طبي وتفاعلي موثّق',
+        Text('$total مقال تثقيفي وتفاعلي',
           style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
         const SizedBox(height: 6),
         const Text('أضخم موسوعة رقمية موثقة لصحة المرأة والأمومة والطفل بـ 28 تصنيفاً تخصصياً',
@@ -160,7 +161,9 @@ class _ArticlesHubScreenState extends State<ArticlesHubScreen> {
           final count = _stats?[catKey] ?? 0;
           final emoji = categoryEmojis[catKey] ?? '📖';
           final color = Color(categoryColors[catKey] ?? 0xFFE91E63);
-          final subcats = subcategoriesByCategory[catKey] ?? [];
+          final subcats = (subcategoriesByCategory[catKey] ?? const <String>[])
+              .where((s) => !isHiddenSubcategory(s))
+              .toList();
 
           return Container(
             margin: const EdgeInsets.only(bottom: 14),
@@ -279,7 +282,7 @@ class _ArticlesHubScreenState extends State<ArticlesHubScreen> {
           children: [
             const Text('🔥 الأكثر قراءة وتفاعلاً',
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-            Text('من بين 6,982 مقالاً', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+            Text('من مكتبة نبضة', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
           ],
         ),
         const SizedBox(height: 12),

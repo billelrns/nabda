@@ -5,6 +5,7 @@ import 'dart:async';
 import 'weight_tracker_screen.dart';
 import '../health/medication_tracker_screen.dart';
 import '../health/health_measurements_screen.dart';
+import '../../config/play_compliance.dart';
 
 // ─── Theme ───
 const Color _bg = Color(0xFFFFF5F7);
@@ -125,6 +126,7 @@ class HealthTrackersScreen extends StatelessWidget {
               color: const Color(0xFF29B6F6),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _WaterTrackerScreen())),
             ),
+            if (!kHideMedicalFeatures) ...[
             const SizedBox(height: 12),
             _TrackerCard(
               title: 'الأدوية والفيتامينات',
@@ -141,6 +143,7 @@ class HealthTrackersScreen extends StatelessWidget {
               color: const Color(0xFFEF5350),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthMeasurementsScreen())),
             ),
+            ],
             const SizedBox(height: 30),
           ],
         ),

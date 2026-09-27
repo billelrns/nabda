@@ -23,6 +23,8 @@ import '../../services/pregnancy_dates_service.dart';
 import '../../widgets/due_date_card.dart';
 import '../../widgets/nabda_article_ad.dart';
 import '../../widgets/article_engagement_bar.dart';
+import '../articles/articles_list_screen.dart';
+import '../articles/articles_hub_screen.dart';
 
 
 
@@ -383,6 +385,24 @@ class PregnancyWeeksScreen extends StatelessWidget {
             categoryId: 'pregnancy',
             title: '📚 المزيد من مقالات الحمل',
             maxItems: 10,
+          ),
+          const SizedBox(height: 16),
+          const SmartArticleCarousel(
+            categoryId: 'health',
+            title: '🥗 صحة المرأة والرشاقة والتغذية',
+            maxItems: 8,
+          ),
+          const SizedBox(height: 16),
+          const SmartArticleCarousel(
+            categoryId: 'beauty',
+            title: '💄 جمالي وعنايتي بالبشرة والشعر',
+            maxItems: 8,
+          ),
+          const SizedBox(height: 16),
+          const SmartArticleCarousel(
+            categoryId: 'marriage',
+            title: '💍 العلاقة الزوجية والسكينة الأسرية',
+            maxItems: 8,
           ),
         ],
       ),
@@ -989,39 +1009,44 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [_pink.withOpacity(0.08), _teal.withOpacity(0.06)],
-                          begin: Alignment.centerRight,
-                          end: Alignment.centerLeft,
+                    GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticlesHubScreen())),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [_pink.withOpacity(0.08), _teal.withOpacity(0.06)],
+                            begin: Alignment.centerRight,
+                            end: Alignment.centerLeft,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: _pink.withOpacity(0.2)),
                         ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: _pink.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(12),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: _pink.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.explore, color: _pink, size: 22),
                             ),
-                            child: const Icon(Icons.explore, color: _pink, size: 22),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('اكتشفي المزيد 💡', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
-                                SizedBox(height: 2),
-                                Text('مقالات ونصائح في مختلف المجالات', style: TextStyle(fontSize: 13, color: _textSecondary)),
-                              ],
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('اكتشفي المزيد 💡', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+                                  SizedBox(height: 2),
+                                  Text('مكتبة نبضة: آلاف المقالات في الحمل والعافية', style: TextStyle(fontSize: 13, color: _textSecondary)),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                            const Icon(Icons.arrow_back_ios, size: 16, color: _teal),
+                          ],
+                        ),
                       ),
                     ),
 
@@ -1257,7 +1282,12 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const _AllArticlesScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const ArticlesListScreen(
+                        categoryId: 'pregnancy',
+                        categoryName: 'الحمل والولادة',
+                      ),
+                    ),
                   );
                 },
                 child: const Row(
@@ -1581,14 +1611,33 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
               ),
               GestureDetector(
                 onTap: () {
+                  String subId = '';
+                  String catId = 'pregnancy';
+                  if (cat.name.contains('التغذية')) {
+                    catId = 'pregnancy';
+                    subId = 'preg_nutrition_vitamins';
+                  } else if (cat.name.contains('الرضاعة') || cat.name.contains('المولود')) {
+                    catId = 'baby';
+                    subId = 'baby_breastfeeding_food';
+                  } else if (cat.name.contains('النفسية') || cat.name.contains('النوم')) {
+                    catId = 'health';
+                    subId = 'health_mental_wellness';
+                  } else if (cat.name.contains('التمارين') || cat.name.contains('الجسم')) {
+                    catId = 'pregnancy';
+                    subId = 'preg_symptoms_weeks';
+                  }
                   Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => _CategoryArticlesScreen(category: cat),
+                    builder: (_) => ArticlesListScreen(
+                      categoryId: catId,
+                      categoryName: cat.name,
+                      initialSubcategoryId: subId.isNotEmpty ? subId : null,
+                    ),
                   ));
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('عرض الكل', style: TextStyle(color: _teal, fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text('اكتشفي المزيد', style: TextStyle(color: _teal, fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(width: 4),
                     Icon(Icons.arrow_back_ios, size: 12, color: _teal),
                   ],

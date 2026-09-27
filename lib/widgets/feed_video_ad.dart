@@ -243,7 +243,7 @@ class _FeedVideoAdState extends State<FeedVideoAd> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
-                        'إعلان مميز',
+                        'منتج مميز',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 10,

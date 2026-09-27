@@ -75,4 +75,6 @@ The app requires Firebase before it can run:
 - Build machine has ~7 GB RAM: `android/gradle.properties` is tuned (Xmx2048m, C2 off, 1 worker). Don't lower Xmx below 2048m — `mergeDexRelease` OOMs at 1024m. Avoid `flutter clean` before every build.
 - Bump `version:` in `pubspec.yaml` (versionCode) for every Play upload. First upload was `1.0.0+2` to Closed testing (Alpha), testers via Google Group `nabda-testers@googlegroups.com`.
 - Play declarations: Ads = No (the shop's `FeedVideoAd` only promotes own products), no Advertising ID, Data safety declares Crashlytics + FCM IDs. Update these before adding any ad SDK.
-- Pending for next build: rename "إعلان مميز" label in `lib/widgets/feed_video_ad.dart`; hide language switch until translations are complete.
+- **Personal Play account ⇒ no medical features.** `1.0.0+2` was rejected (Play Console Requirements: medical apps need an Organization account). `lib/config/play_compliance.dart` → `kHideMedicalFeatures = true` hides medication tracker, BP/sugar log, doctors directory, AI assistant, and 5 medical article subcategories. Flip to `false` only after moving to an Organization account. Any new medical-ish feature must be gated by this flag.
+- Never attribute content to doctors or a "medical team" — there is none. Article `author` is always `kEditorialAuthor` («فريق تحرير نبضة»).
+- `kShowLanguagePicker = false` until EN/FR translations are complete.

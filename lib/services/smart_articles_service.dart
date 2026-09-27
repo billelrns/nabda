@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import '../models/smart_article.dart';
+import '../config/play_compliance.dart';
 
 class SmartArticlesService {
   static final SmartArticlesService _instance = SmartArticlesService._internal();
@@ -26,6 +27,8 @@ class SmartArticlesService {
       final data = jsonDecode(jsonStr) as Map<String, dynamic>;
       final list = (data['articles'] as List)
           .map((a) => SmartArticle.fromJson(a as Map<String, dynamic>))
+          // نسخة الحساب الشخصي: لا مقالات أمراض/فحوصات/علاج (play_compliance.dart)
+          .where((a) => !isHiddenSubcategory(a.subcategoryId))
           .toList();
       _cache = list;
       return list;

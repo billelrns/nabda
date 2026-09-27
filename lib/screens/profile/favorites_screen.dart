@@ -130,7 +130,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             title: 'محتوى المقال',
             content: preview.isNotEmpty
                 ? preview
-                : 'محتوى المقال متاح في موسوعة نبضة الطبية الشاملة.',
+                : 'محتوى المقال متاح في مكتبة نبضة.',
           ),
         ],
         faqs: const [],
@@ -337,7 +337,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'احفظي مقالات موسوعة نبضة (6,982 مقالاً) بالضغط على زر 🔖 لتصلي إليها بسهولة في أي وقت حتى بدون إنترنت.',
+              'احفظي مقالات مكتبة نبضة بالضغط على زر 🔖 لتصلي إليها بسهولة في أي وقت حتى بدون إنترنت.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey.shade500, fontSize: 14, height: 1.5),
             ),
