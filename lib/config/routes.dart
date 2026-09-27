@@ -109,6 +109,7 @@ class AppRoutes {
       ),
       GoRoute(
         path: kickCounter,
+        redirect: (context, state) => kHideMedicalFeatures ? home : null,
         builder: (context, state) => const KickCounterScreen(),
       ),
       GoRoute(

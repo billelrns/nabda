@@ -12,6 +12,7 @@ import '../trackers/health_trackers_screen.dart';
 import '../../widgets/news_section.dart';
 import '../../widgets/personalized_tips.dart';
 import '../../widgets/conditional_content.dart';
+import '../../config/play_compliance.dart';
 import '../../services/dynamic_content_service.dart';
 import '../../widgets/nabda_ui.dart';
 import '../../widgets/names_articles_carousel.dart';
@@ -948,8 +949,8 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Medical checklist
-                    if (widget.currentWeek != null) ...[
+                    // Medical checklist + kick counter: مخفيّان في نسخة الحساب الشخصي (play_compliance.dart)
+                    if (widget.currentWeek != null && !kHideMedicalFeatures) ...[
                       _buildMedicalChecklist(trimester, color),
                       const SizedBox(height: 14),
                       // Kick counter

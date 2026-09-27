@@ -377,7 +377,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
           ),
           const SizedBox(height: 50),
-          _featurePill(Icons.pregnant_woman, 'متابعة الحمل'),
+          _featurePill(Icons.pregnant_woman, 'رحلة الحمل'),
           const SizedBox(height: 12),
           _featurePill(Icons.calendar_today, 'تتبع الدورة'),
           const SizedBox(height: 12),
@@ -460,7 +460,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 _stageCard(
                   emoji: '🤰',
                   title: 'أنا حامل',
-                  subtitle: 'متابعة الحمل أسبوعاً بأسبوع',
+                  subtitle: 'رحلة الحمل أسبوعاً بأسبوع',
                   value: 'pregnant',
                   color: const Color(0xFFE91E63),
                 ),

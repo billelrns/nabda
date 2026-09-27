@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/play_compliance.dart';
 import 'package:go_router/go_router.dart';
 
 class PregnancyDashboard extends StatelessWidget {
@@ -87,6 +88,7 @@ class PregnancyDashboard extends StatelessWidget {
               doctor: 'د. فاطمة',
             ),
             const SizedBox(height: 30),
+            if (!kHideMedicalFeatures)
             ElevatedButton.icon(
               onPressed: () => context.go('/kick-counter'),
               icon: const Icon(Icons.touch_app),

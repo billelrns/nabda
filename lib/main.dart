@@ -799,13 +799,13 @@ String _toolLoginReason(String key) {
 
 Widget _getProtectedToolWidget(String key) {
   switch (key) {
-    case 'vaccinations': return const VaccinationSchedule();
+    case 'vaccinations': return kHideMedicalFeatures ? const HospitalBagScreen() : const VaccinationSchedule();
     case 'weightTracker': return const WeightTrackerScreen();
-    case 'kickCounter': return const KickCounterScreen();
+    case 'kickCounter': return kHideMedicalFeatures ? const PregnancyCalendarScreen() : const KickCounterScreen();
     case 'hospitalBag': return const HospitalBagScreen();
     case 'exercises': return const ExercisesScreen();
     case 'pregnancyCal': return const PregnancyCalendarScreen();
-    default: return const VaccinationSchedule();
+    default: return const HospitalBagScreen();
   }
 }
 
@@ -2969,7 +2969,7 @@ class _MainNavState extends State<MainNav> {
                   _navItem(context, '🛍️', AppLocalizations.t('shop'), tabIndex: 4),
                   _navItem(context, '✨', 'الدعم الذكي', onTap: () => _soon(context)),
                   _sidebarDivider(line),
-                  _navItem(context, '🤰', 'متابعة الحمل', tabIndex: 2),
+                  _navItem(context, '🤰', 'رحلة الحمل', tabIndex: 2),
                   _navItem(context, '📅', 'متابعة الدورة', tabIndex: 1),
                   _navItem(context, '👶', 'رعاية الطفل', tabIndex: 3),
                   _navItem(context, '💕', 'الخصوبة', onTap: () => _soon(context)),
@@ -3018,7 +3018,7 @@ class _MainNavState extends State<MainNav> {
   String _stageLabel(String? s) {
     switch (s) {
       case 'pregnant':
-        return 'متابعة الحمل';
+        return 'رحلة الحمل';
       case 'cycle':
         return 'متابعة الدورة';
       case 'planning':
@@ -3908,7 +3908,7 @@ const SizedBox(height: 30),
     if (isPregnant) {
       final int daysLeft = ((40 - _pregnancyWeek) * 7).clamp(0, 280);
       cards = [
-        _QAData(Icons.pregnant_woman, 'متابعة الحمل', 'الأسبوع $_pregnancyWeek', 'من 40 أسبوعاً',
+        _QAData(Icons.pregnant_woman, 'رحلة الحمل', 'الأسبوع $_pregnancyWeek', 'من 40 أسبوعاً',
           [const Color(0xFFFF6BA3), _pink], () => widget.onCardTap?.call(2),
           asset: 'assets/icons_3d/icon_pregnancy.png'),
         _QAData(Icons.timer, 'العدّ التنازلي', '$daysLeft يوم', 'حتى الولادة',
@@ -3929,7 +3929,7 @@ const SizedBox(height: 30),
           asset: 'assets/icons_3d/icon_cycle.png'),
         weightCard,
         // دعوة لتفعيل متابعة الحمل عند الحاجة
-        _QAData(Icons.pregnant_woman, 'متابعة الحمل', 'غير مفعّلة', 'فعّليها هنا',
+        _QAData(Icons.pregnant_woman, 'رحلة الحمل', 'غير مفعّلة', 'فعّليها هنا',
           [const Color(0xFFFF6BA3), _pink], () => widget.onCardTap?.call(2),
           asset: 'assets/icons_3d/icon_pregnancy.png'),
       ];
@@ -5440,7 +5440,7 @@ class _PregnancyPageState extends State<PregnancyPage> {
           padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
           child: const Padding(
             padding: EdgeInsets.symmetric(vertical: 14),
-            child: Center(child: Text('متابعة الحمل', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
+            child: Center(child: Text('رحلة الحمل', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
           ),
         ),
         Expanded(

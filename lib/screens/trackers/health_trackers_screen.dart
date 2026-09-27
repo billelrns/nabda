@@ -61,7 +61,7 @@ class HealthTrackersScreen extends StatelessWidget {
                       children: [
                         Text('تتبعي صحتك', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                         SizedBox(height: 4),
-                        Text('سجّلي قياساتك اليومية لمتابعة صحتك وصحة جنينك', style: TextStyle(fontSize: 13, color: Colors.white70)),
+                        Text('سجّلي عاداتكِ اليومية: الوزن والنوم والماء', style: TextStyle(fontSize: 13, color: Colors.white70)),
                       ],
                     ),
                   ),
@@ -78,6 +78,8 @@ class HealthTrackersScreen extends StatelessWidget {
               color: const Color(0xFF5C6BC0),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeightTrackerScreen())),
             ),
+            // ضغط الدم · الانقباضات · حركات الجنين: أدوات رصد طبي — مخفية (play_compliance.dart)
+            if (!kHideMedicalFeatures) ...[
             const SizedBox(height: 12),
             _TrackerCard(
               title: 'ضغط الدم',
@@ -102,6 +104,7 @@ class HealthTrackersScreen extends StatelessWidget {
               color: const Color(0xFFAB47BC),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _KickCounterScreen())),
             ),
+            ],
             const SizedBox(height: 12),
             _TrackerCard(
               title: 'نمو البطن',

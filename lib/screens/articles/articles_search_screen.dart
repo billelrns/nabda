@@ -264,6 +264,7 @@ class _ArticlesSearchScreenState extends State<ArticlesSearchScreen> {
     'health_measurements',
     'medications',
     'vaccinations',
+    'kick_counter',
     'ai_chat',
     'doctors',
   };

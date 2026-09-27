@@ -78,7 +78,7 @@ The app requires Firebase before it can run:
 - **Personal Play account ⇒ no medical features.** `1.0.0+2` was rejected (Play Console Requirements: medical apps need an Organization account). `lib/config/play_compliance.dart` → `kHideMedicalFeatures = true` hides medication tracker, BP/sugar log, doctors directory, AI assistant, and 5 medical article subcategories. Flip to `false` only after moving to an Organization account. Any new medical-ish feature must be gated by this flag.
 - Never attribute content to doctors or a "medical team" — there is none. Article `author` is always `kEditorialAuthor` («فريق تحرير نبضة»).
 - `kShowLanguagePicker = false` until EN/FR translations are complete.
-- Vaccination tracking is a Medical feature per Google ("Disease prevention and public health" lists vaccination tracking) — gated by `kHideMedicalFeatures`, as are vaccine/medication reminders.
+- Vaccination tracking is a Medical feature per Google ("Disease prevention and public health" lists vaccination tracking) — gated by `kHideMedicalFeatures`, as are vaccine/medication reminders, the kick counter, contraction timer, BP tracker and the prenatal medical checklist. Pregnancy is labelled «رحلة الحمل» (not «متابعة»).
 - The Gemini assistant ships as a **non-medical lifestyle assistant** (`kShowLifestyleAssistant`, `kAssistantSystemPrompt`, `isMedicalQuestion()` pre-filter in `play_compliance.dart`). Never add health Q&A, dosages, or symptom answers to it or its offline KB.
 - Supplements and medical devices are not sold: `lib/config/shop_config.dart` → `isHiddenProduct()` must wrap every product list/stream.
 - Repeated Play rejections for the same policy can escalate to suspension — don't resubmit speculatively.
