@@ -549,7 +549,7 @@ class NabdaAds {
       _cacheAt = now;
       _orders.clear();
       final prodSnap = await FirebaseFirestore.instance.collection('dynamic_products').limit(20).get();
-      _products = prodSnap.docs.map((d) => d.data() as Map<String, dynamic>).where((p) => !isHiddenProduct(p)).toList();
+      _products = prodSnap.docs.map((d) => d.data()).where((p) => !isHiddenProduct(p)).toList();
     } catch (_) {
       _cache ??= [];
     }
