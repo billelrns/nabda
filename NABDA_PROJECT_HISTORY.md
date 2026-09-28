@@ -1879,6 +1879,17 @@ aabc7c2 - feat: improved products & users management with profiles & role promot
 
 **يبقى في الحمل**: الأسبوع وحجم الجنين بالفاكهة · العدّ التنازلي · حقيبة الولادة · اليوميات · التقويم · المقالات.
 
+### 29-م · ✅ الجواب الرسمي من دعم Google (28 سبتمبر — التذكرة 1-4674000042361)
+> «Is the app eligible for a personal account? **No.** Even with the removed features, core functionalities like **period tracking, ovulation tracking, and the week-by-week pregnancy guide** classify your application as a Health App… Pregnancy guides and fertility window tracking directly pertain to reproductive health… Google Play policy requires distribution via a verified **Organization account**.»
+
+**النتيجة**: الإخفاء لا يحل المشكلة — حتى تتبّع الدورة وحده يكفي لاشتراط حساب منظّمة. **القرار: التحويل إلى حساب منظّمة** (تحويل الحساب الحالي نفسه، فيبقى التطبيق و`com.nabda.womenhealth`).
+
+**خطوات Google**: Developer account ← About you ← التحقق من الموقع (✅ `nabda.online` موثَّق منذ 24 سبتمبر) ← Change account type ← ملف دفع للمنظّمة **برقم D-U-N-S** ← بيانات المنظّمة ← وثائق التحقق ← Confirm. ⚠️ لا رجوع من منظّمة إلى شخصي.
+
+**المطلوب أولًا**: كيان قانوني (EURL أو مقاول ذاتي إن قبله D&B) ← D-U-N-S بنفس الاسم والعنوان حرفيًا.
+
+**بعد التحويل**: `kHideMedicalFeatures = false` يعيد الميزات المخفية · إقرار Health apps كامل وصادق (بما فيه Reproductive and sexual health وما يلزم) · تبقى تصحيحات الصدق والمتجر (بلا مكملات/أجهزة، بلا أطباء وهميين، بلا قسم مصادر) نهائية.
+
 **عن إعادة المحاولة**: الرفض الواحد لا يُحتسب ضد الحساب، لكن **الرفض المتكرر لنفس السياسة** قد يتصاعد إلى تعليق التطبيق (strike) ثم إنهاء الحساب. لا يُعاد الرفع إلا بعد جواب دعم Google أو بثقة عالية.
 
 ---
