@@ -117,7 +117,14 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const NabdaAnimatedLogo(size: 220),
+                      // الوضع الأفقي بحجم 220 يبلغ عرضه ≈ 603 نقطة (220 × 2.74)
+                      // فيتجاوز شاشة الهاتف (~390) ويُقصّ القلب. الوضع العمودي
+                      // (القلبان فوق والكلمة تحت) مخصّص للشاشات الضيقة، والحجم
+                      // يُحسب من عرض الشاشة كي لا يُقصّ على أي جهاز.
+                      NabdaAnimatedLogo(
+                        size: (MediaQuery.of(context).size.width * 0.46).clamp(120.0, 200.0),
+                        orientation: NabdaLogoOrientation.vertical,
+                      ),
                       const SizedBox(height: 18),
                       FadeTransition(
                         opacity: _taglineFade,

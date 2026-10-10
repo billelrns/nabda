@@ -1,0 +1,4 @@
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=nabda
+storeFile=C:/keys/nabda-release.jks

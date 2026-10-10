@@ -1,0 +1,68 @@
+{
+  "_note": "لقطات متجر نبضة — 1080x1920. عدّل headline/sub هنا ثم أعد تشغيل build_store_shots.py. src = اسم الملف داخل marketing/store/raw/",
+  "brand": {
+    "pink": "#E91E63",
+    "deep": "#AD1457",
+    "teal": "#00897B",
+    "blush": "#FFF1F5",
+    "ink": "#4A3B42"
+  },
+  "shots": [
+    {
+      "id": "01_week",
+      "src": "01_week.png",
+      "headline": "كل أسبوع… نبضة جديدة",
+      "sub": "تابعي نموّ جنينك يومًا بيوم",
+      "theme": "pink"
+    },
+    {
+      "id": "02_encyclopedia",
+      "src": "02_encyclopedia.png",
+      "headline": "موسوعة صحية بالعربية",
+      "sub": "أكثر من 6900 مقال ودليل مُبسَّط",
+      "theme": "teal"
+    },
+    {
+      "id": "03_names",
+      "src": "03_names.png",
+      "headline": "اسم طفلك… ومعناه",
+      "sub": "أكثر من 1700 اسم عربي وأسماء التوائم",
+      "theme": "pink"
+    },
+    {
+      "id": "04_cycle",
+      "src": "04_cycle.png",
+      "headline": "دورتك تحت السيطرة",
+      "sub": "تنبّؤ بالإباضة وتذكير بالمواعيد",
+      "theme": "pink"
+    },
+    {
+      "id": "05_baby",
+      "src": "05_baby.png",
+      "headline": "من الولادة إلى الخطوة الأولى",
+      "sub": "تغذية ونوم وتطوّر شهرًا بشهر",
+      "theme": "teal"
+    },
+    {
+      "id": "06_tools",
+      "src": "06_tools.png",
+      "headline": "أدوات تُستعمل كل يوم",
+      "sub": "عدّاد الركلات · حقيبة الولادة · يومياتي",
+      "theme": "pink"
+    },
+    {
+      "id": "07_community",
+      "src": "07_community.png",
+      "headline": "لستِ وحدك",
+      "sub": "مجتمع أمهات يتبادلن التجربة",
+      "theme": "pink"
+    },
+    {
+      "id": "08_ai",
+      "src": "08_ai.png",
+      "headline": "اسألي… وتجيبك نبضة",
+      "sub": "مساعد ذكي يفهم أسئلتك بالعربية",
+      "theme": "teal"
+    }
+  ]
+}

@@ -1,10 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'partner_service.dart';
+
 // ─── Cart Item Model ───
 class CartItem {
   final String id; // unique key = productName hash
+  /// معرّف المنتج في Firestore. فارغ للمنتجات القديمة المضافة قبل
+  /// إضافة هذا الحقل — يُستعمل لفحص التوفّر عند الدفع.
+  final String productId;
   final String name;
   final String emoji;
   final String category;
@@ -15,6 +22,7 @@ class CartItem {
 
   CartItem({
     required this.id,
+    this.productId = '',
     required this.name,
     required this.emoji,
     required this.category,
@@ -27,6 +35,7 @@ class CartItem {
   double get total => priceValue * quantity;
 
   Map<String, dynamic> toMap() => {
+    'productId': productId,
     'name': name,
     'emoji': emoji,
     'category': category,
@@ -34,6 +43,25 @@ class CartItem {
     'priceDisplay': priceDisplay,
     'quantity': quantity,
   };
+
+  /// للسلّة المشتركة بين الزوجين — يحفظ اللون أيضاً ليبقى العرض متطابقاً
+  Map<String, dynamic> toSharedMap() => {
+        ...toMap(),
+        'id': id,
+        'color': color.value,
+      };
+
+  factory CartItem.fromSharedMap(Map<String, dynamic> m) => CartItem(
+        id: m['id'] as String? ?? '${m['name']}'.hashCode.toString(),
+        productId: m['productId'] as String? ?? '',
+        name: m['name'] as String? ?? '',
+        emoji: m['emoji'] as String? ?? '🛍️',
+        category: m['category'] as String? ?? '',
+        priceValue: (m['priceValue'] as num?)?.toDouble() ?? 0,
+        priceDisplay: m['priceDisplay'] as String? ?? '',
+        color: Color((m['color'] as num?)?.toInt() ?? 0xFFE0195B),
+        quantity: (m['quantity'] as num?)?.toInt() ?? 1,
+      );
 }
 
 // ─── Order Model ───
@@ -120,11 +148,124 @@ class OrderModel {
 
 // ─── Cart Service (Singleton) ───
 class CartService extends ChangeNotifier {
+  /// أسعار التوصيل الافتراضية بالدينار (تُحوَّل للعملة المحلية عند العرض).
+  /// المصدر الوحيد: صفحة المنتج والسلّة تقرآن من هنا.
+  static const double kHomeDeliveryDzd = 500.0;
+  static const double kOfficePickupDzd = 300.0;
+
   static final CartService _instance = CartService._internal();
   factory CartService() => _instance;
   CartService._internal();
 
   final List<CartItem> _items = [];
+
+  // ══════════════════════════════════════════════════════════
+  //  السلّة المشتركة بين الزوجين (couples/{id}/cart/current)
+  //  عند الاقتران تصبح السلّة واحدة: ما تضيفه الزوجة يظهر عند الزوج
+  //  فوراً، ويمكنه هو إتمام الطلب والدفع عنها.
+  // ══════════════════════════════════════════════════════════
+  String? _coupleId;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _sub;
+
+  /// لمنع حلقة الصدى: نتجاهل اللقطة الناتجة عن كتابتنا نحن.
+  bool _applyingRemote = false;
+
+  bool get isShared => _coupleId != null;
+
+  DocumentReference<Map<String, dynamic>>? get _cartRef => _coupleId == null
+      ? null
+      : FirebaseFirestore.instance
+          .collection('couples')
+          .doc(_coupleId)
+          .collection('cart')
+          .doc('current');
+
+  /// يُفعّل المزامنة المشتركة. آمن للاستدعاء المتكرّر — يُستدعى من
+  /// الهيكل عند الإقلاع **ومن شاشة السلّة والمتجر عند الفتح**، لأن
+  /// الاعتماد على نقطة واحدة جعل السلّة تبدو فارغة إن سبق فتحُها
+  /// انتهاءَ الاشتراك.
+  Future<void> enableCoupleSync(String coupleId) async {
+    final sameLink = _coupleId == coupleId && _sub != null;
+    _coupleId = coupleId;
+
+    // ① سحب فوري: لا ننتظر أوّل لقطة من البثّ
+    try {
+      final snap = await _cartRef?.get();
+      final d = snap?.data();
+      if (d != null) {
+        final raw = (d['items'] as List?) ?? [];
+        final remote = raw
+            .map((e) => CartItem.fromSharedMap(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        _mergeRemote(remote);
+      }
+    } catch (e) {
+      debugPrint('cart sync pull: $e');
+    }
+
+    // ② ادفع ما لدينا محلياً (قد يكون فيه ما ليس عندهم)
+    if (_items.isNotEmpty) await _pushRemote();
+
+    if (sameLink) return; // البثّ قائم بالفعل
+
+    await _sub?.cancel();
+    _sub = _cartRef?.snapshots().listen((snap) {
+      final me = FirebaseAuth.instance.currentUser?.uid;
+      final d = snap.data();
+      if (d == null) return;
+      if (d['updatedBy'] == me) return; // كتابتنا نحن — لا تُعِد تطبيقها
+      final raw = (d['items'] as List?) ?? [];
+      _applyingRemote = true;
+      _items
+        ..clear()
+        ..addAll(raw.map((e) =>
+            CartItem.fromSharedMap(Map<String, dynamic>.from(e as Map))));
+      _applyingRemote = false;
+      debugPrint('cart sync: applied ${_items.length} remote items');
+      notifyListeners();
+    }, onError: (e) => debugPrint('cart sync stream: $e'));
+  }
+
+  /// يدمج السلّة البعيدة مع المحلية (اتّحاد بأكبر كمية) حتى لا يفقد
+  /// أيّ طرف ما أضافه قبل اكتمال الربط.
+  void _mergeRemote(List<CartItem> remote) {
+    for (final r in remote) {
+      final i = _items.indexWhere((x) => x.id == r.id);
+      if (i < 0) {
+        _items.add(r);
+      } else if (r.quantity > _items[i].quantity) {
+        _items[i].quantity = r.quantity;
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> disableCoupleSync() async {
+    await _sub?.cancel();
+    _sub = null;
+    _coupleId = null;
+  }
+
+  Future<void> _pushRemote({bool silent = false}) async {
+    final ref = _cartRef;
+    if (ref == null || _applyingRemote) return;
+    try {
+      await ref.set({
+        'items': _items.map((i) => i.toSharedMap()).toList(),
+        'updatedBy': FirebaseAuth.instance.currentUser?.uid,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      debugPrint('cart sync: pushed ${_items.length} items');
+    } catch (e) {
+      debugPrint('cart sync push: $e');
+    }
+  }
+
+  /// يُفعّل المزامنة إن كان الحساب مرتبطاً — تُستدعى من أي شاشة سلّة/متجر.
+  Future<void> ensureCoupleSync() async {
+    final id = await PartnerService.currentCoupleId();
+    if (id != null) await enableCoupleSync(id);
+  }
 
   List<CartItem> get items => List.unmodifiable(_items);
   int get itemCount => _items.fold(0, (sum, item) => sum + item.quantity);
@@ -142,6 +283,7 @@ class CartService extends ChangeNotifier {
     required String priceDisplay,
     required Color color,
     int quantity = 1,
+    String productId = '',
   }) {
     final id = name.hashCode.toString();
     final existing = _items.indexWhere((i) => i.id == id);
@@ -151,6 +293,7 @@ class CartService extends ChangeNotifier {
     } else {
       _items.add(CartItem(
         id: id,
+        productId: productId,
         name: name,
         emoji: emoji,
         category: category,
@@ -161,12 +304,22 @@ class CartService extends ChangeNotifier {
       ));
     }
     notifyListeners();
+    _pushRemote();
+    // نبّه الطرف الآخر أنّ منتجاً أُضيف إلى سلّتهما المشتركة
+    if (isShared) {
+      PartnerService.notify(
+        type: 'cart_add',
+        title: 'أُضيف إلى سلّتكما',
+        body: '$name — $priceDisplay',
+      );
+    }
   }
 
   // ─── Remove item ───
   void removeItem(String id) {
     _items.removeWhere((i) => i.id == id);
     notifyListeners();
+    _pushRemote();
   }
 
   // ─── Update quantity ───
@@ -179,6 +332,7 @@ class CartService extends ChangeNotifier {
     if (idx >= 0) {
       _items[idx].quantity = newQty;
       notifyListeners();
+      _pushRemote();
     }
   }
 
@@ -186,6 +340,7 @@ class CartService extends ChangeNotifier {
   void clear() {
     _items.clear();
     notifyListeners();
+    _pushRemote();
   }
 
   // ─── Place order → Firestore ───
@@ -233,6 +388,34 @@ class CartService extends ChangeNotifier {
           .collection('orders')
           .doc(docRef.id)
           .set(order.toMap());
+
+      // ── الطلب المشترك: يظهر للطرف الآخر مع اسم من أتمّه ──
+      if (isShared) {
+        final byPartner =
+            await PartnerService.localRole() == PartnerService.rolePartner;
+        try {
+          await FirebaseFirestore.instance
+              .collection('couples')
+              .doc(_coupleId)
+              .collection('orders')
+              .doc(docRef.id)
+              .set({
+            'orderId': docRef.id,
+            'placedBy': user.uid,
+            'placedByRole': byPartner ? 'partner' : 'mother',
+            'customerName': customerName,
+            'totalDisplay': totalDisplay,
+            'itemCount': itemCount,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        } catch (_) {/* أفضل-جهد */}
+
+        await PartnerService.notify(
+          type: 'order_placed',
+          title: byPartner ? 'زوجك أتمّ الطلب ✅' : 'زوجتك أتمّت الطلب ✅',
+          body: '$totalDisplay — الدفع عند الاستلام',
+        );
+      }
 
       clear();
       return docRef.id;

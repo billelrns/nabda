@@ -96,8 +96,11 @@ class _SupportScreenState extends State<SupportScreen> {
     try {
       String? imageUrl;
       if (_screenshotBytes != null) {
+        // المسار يحوي uid: تشترطه قواعد Storage (support_attachments/{uid}/…)
+        // وإلّا رُفض الرفع وفشل إرسال الطلب كلّه متى أُرفقت صورة.
+        final sUid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
         final storageRef = FirebaseStorage.instance
-            .ref('support_attachments/${DateTime.now().millisecondsSinceEpoch}_${_screenshotName ?? "screen.jpg"}');
+            .ref('support_attachments/$sUid/${DateTime.now().millisecondsSinceEpoch}_${_screenshotName ?? "screen.jpg"}');
         final uploadTask = await storageRef.putData(
           _screenshotBytes!,
           SettableMetadata(contentType: 'image/jpeg'),

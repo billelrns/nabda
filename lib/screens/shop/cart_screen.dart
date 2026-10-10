@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+
+import '../../utils/voice.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/cart_service.dart';
 import '../../services/country_currency_service.dart';
 import '../../services/payment_service.dart';
 import '../../services/notification_service.dart';
+import '../../data/algeria_locations.dart';
+import '../../data/regions_data.dart';
 
 // ─── Theme ───
 const Color _bg = Color(0xFFFFF5F7);
@@ -30,6 +35,9 @@ class _CartScreenState extends State<CartScreen> {
   void initState() {
     super.initState();
     _cart.addListener(_refresh);
+    // السلّة مشتركة بين الزوجين عند الاقتران — نضمن الاشتراك هنا أيضاً
+    // حتى لا تظهر فارغة إن فُتحت قبل اكتمال الاشتراك عند الإقلاع.
+    _cart.ensureCoupleSync();
   }
 
   @override
@@ -104,14 +112,14 @@ class _CartScreenState extends State<CartScreen> {
             child: const Center(child: Text('🛒', style: TextStyle(fontSize: 50))),
           ),
           const SizedBox(height: 20),
-          const Text('سلتك فارغة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _text1)),
+          Text(V.t('سلتك فارغة'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _text1)),
           const SizedBox(height: 8),
-          Text('تصفحي المتجر وأضيفي منتجات لسلتك', style: TextStyle(fontSize: 14, color: _text2)),
+          Text(V.t('تصفحي المتجر وأضيفي منتجات لسلتك'), style: TextStyle(fontSize: 14, color: _text2)),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.storefront),
-            label: const Text('تصفح المتجر', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: Text(V.verb('تصفحي المتجر'), style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: _teal, foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
@@ -223,9 +231,9 @@ class _CartScreenState extends State<CartScreen> {
         children: [
           _summaryRow('المنتجات (${_cart.itemCount})', _fmtPrice(_cart.subtotal)),
           const SizedBox(height: 8),
-          _summaryRow('التوصيل', 'مجاني'),
+          _summaryRow('التوصيل', 'يُحدَّد في الخطوة التالية'),
           const Divider(height: 24),
-          _summaryRow('المجموع', _fmtPrice(_cart.subtotal), isBold: true),
+          _summaryRow('المجموع (دون التوصيل)', _fmtPrice(_cart.subtotal), isBold: true),
         ],
       ),
     );
@@ -325,24 +333,42 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
   final _nameC = TextEditingController();
   final _phoneC = TextEditingController();
   final Map<String, TextEditingController> _addressControllers = {};
+  String? _selectedWilaya;
+  String? _selectedCommune;
+  bool _locLoaded = false;
   String? _selectedPayment;
   bool _isLoading = false;
+  String _shippingMethod = 'home'; // 'home' | 'office'
+
+  double get _shippingCost => _shippingMethod == 'home'
+      ? CartService.kHomeDeliveryDzd
+      : CartService.kOfficePickupDzd;
+
+  double get _grandTotal => _cart.subtotal + _shippingCost;
 
   @override
   void initState() {
     super.initState();
     _currency.addListener(_refresh);
     _initAddressFields();
+    AlgeriaLocations.ensureLoaded().then((_) {
+      if (mounted) setState(() => _locLoaded = true);
+    });
+    CountryRegions.ensureLoaded().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   void _initAddressFields() {
     for (final c in _addressControllers.values) c.dispose();
     _addressControllers.clear();
+    _selectedWilaya = null;
+    _selectedCommune = null;
     for (final field in _currency.currentCountry.addressFields) {
       _addressControllers[field.key] = TextEditingController();
     }
     final methods = _currency.currentCountry.paymentMethods;
-    _selectedPayment = methods.isNotEmpty ? methods.first.id : null;
+    _selectedPayment = methods.isNotEmpty ? methods.first.id : 'cod';
   }
 
   @override
@@ -368,18 +394,76 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
     return '$result ${country.currencySymbol}';
   }
 
+  /// أسماء منتجات السلّة التي لم تعد `availability == 'active'`.
+  /// المنتجات بلا `productId` (المضافة قبل إضافة الحقل، أو منتجات
+  /// العرض التوضيحي) تُتجاوَز — لا وثيقة لها في Firestore أصلاً.
+  Future<List<String>> _findUnavailableItems() async {
+    final out = <String>[];
+    for (final item in _cart.items) {
+      if (item.productId.isEmpty) continue;
+      try {
+        final snap = await FirebaseFirestore.instance
+            .collection('products')
+            .doc(item.productId)
+            .get();
+        if (!snap.exists) {
+          out.add(item.name);
+          continue;
+        }
+        final av = (snap.data()?['availability'] as String?) ?? 'active';
+        if (av != 'active') out.add(item.name);
+      } catch (_) {
+        // تعذّر الفحص (شبكة) — لا نمنع الطلب بسبب عطل شبكة،
+        // فالأدمن يراجع الطلبات يدوياً قبل الشحن.
+      }
+    }
+    return out;
+  }
+
   Future<void> _placeOrder() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
     final user = FirebaseAuth.instance.currentUser;
 
+    // 0. فحص التوفّر: المنتج قد يصبح «قريبًا» أو «نفد» بعد إضافته إلى
+    // السلّة. بدون هذا الفحص يمرّ الطلب ويُخصم من مخزون غير موجود.
+    final unavailable = await _findUnavailableItems();
+    if (unavailable.isNotEmpty) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        await showDialog<void>(
+          context: context,
+          builder: (c) => Directionality(
+            textDirection: TextDirection.rtl,
+            child: AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('منتجات لم تعد متوفّرة'),
+              content: Text(
+                'لم تعد هذه المنتجات متاحة للطلب:\n\n'
+                '${unavailable.map((n) => '• $n').join('\n')}\n\n'
+                'احذفيها من السلّة لإتمام الطلب.',
+                style: const TextStyle(height: 1.6),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(c),
+                  child: const Text('حسنًا'),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     // 1. Process payment first
     final paymentResult = await PaymentService().processPayment(
       paymentMethod: _selectedPayment ?? 'cod',
-      amount: _cart.subtotal,
+      amount: _grandTotal,
       currency: _currency.currentCountry.currencyCode,
-      customerName: _nameC.text,
+      customerName: _nameC.text.trim(),
       customerEmail: user?.email ?? '',
       orderId: DateTime.now().millisecondsSinceEpoch.toString(),
     );
@@ -395,21 +479,31 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
       return;
     }
 
-    // 2. Build address string
+    // 2. Build address string (الاسم والهاتف صريحان بالأعلى، لا تكرار)
     final addressParts = <String>[];
-    for (final field in _currency.currentCountry.addressFields) {
-      final val = _addressControllers[field.key]?.text ?? '';
-      if (val.isNotEmpty) addressParts.add('${field.labelAr}: $val');
+    if (_currency.currentCountry.code == 'DZ') {
+      if (_selectedWilaya != null && _selectedWilaya!.isNotEmpty) {
+        addressParts.add('الولاية: $_selectedWilaya');
+      }
+      if (_selectedCommune != null && _selectedCommune!.isNotEmpty) {
+        addressParts.add('البلدية: $_selectedCommune');
+      }
+    } else {
+      for (final field in _currency.currentCountry.addressFields) {
+        final val = _addressControllers[field.key]?.text.trim() ?? '';
+        if (val.isNotEmpty) addressParts.add('${field.labelAr}: $val');
+      }
     }
 
     // 3. Save order to Firestore
     final orderId = await _cart.placeOrder(
-      customerName: _nameC.text,
-      phone: _phoneC.text,
-      address: addressParts.join(' | '),
+      customerName: _nameC.text.trim(),
+      phone: _phoneC.text.trim(),
+      address: '${addressParts.join(' | ')} (${_shippingMethod == 'home' ? 'توصيل للمنزل' : 'استلام من مكتب التوصيل'})',
       country: _currency.currentCountry.nameAr,
       paymentMethod: paymentResult.paymentMethod ?? _selectedPayment ?? 'cod',
-      totalDisplay: _fmtPrice(_cart.subtotal),
+      totalDisplay: _fmtPrice(_grandTotal),
+      shipping: _shippingCost,
     );
 
     // 4. Create notification for user
@@ -574,54 +668,196 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                 // ─── Address ───
                 const Text('عنوان التوصيل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _text1)),
                 const SizedBox(height: 12),
-                ...fields.map((field) {
-                  if (!_addressControllers.containsKey(field.key)) {
-                    _addressControllers[field.key] = TextEditingController();
-                  }
-                  return Padding(
+                if (country.code == 'DZ') ...[
+                  // 1. Wilaya dropdown (69 ولاية كاملة من AlgeriaLocations.wilayas)
+                  Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: TextFormField(
-                      controller: _addressControllers[field.key],
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedWilaya,
                       decoration: InputDecoration(
-                        labelText: field.labelAr,
+                        labelText: 'الولاية',
+                        prefixIcon: const Icon(Icons.map_outlined, color: _teal),
                         filled: true, fillColor: _card,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
                         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
                         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _teal, width: 1.5)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
-                      validator: field.required ? (v) => (v == null || v.isEmpty) ? 'هذا الحقل مطلوب' : null : null,
+                      items: AlgeriaLocations.wilayas.map((w) {
+                        return DropdownMenuItem(value: w, child: Text(w));
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedWilaya = val;
+                          _selectedCommune = null;
+                          _addressControllers['wilaya']?.text = val ?? '';
+                          _addressControllers['commune']?.text = '';
+                        });
+                      },
+                      validator: (v) => (v == null || v.isEmpty) ? 'يرجى اختيار الولاية' : null,
                     ),
-                  );
-                }),
+                  ),
+                  // 2. Commune dropdown (مرتبطة بالولاية المختارة)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedCommune,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'البلدية',
+                        prefixIcon: const Icon(Icons.location_city_outlined, color: _teal),
+                        filled: true, fillColor: _card,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _teal, width: 1.5)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                      hint: Text(
+                        _selectedWilaya == null
+                            ? 'اختاري الولاية أولاً'
+                            : (!_locLoaded ? 'جارٍ تحميل البلديات...' : 'اختاري البلدية'),
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      items: AlgeriaLocations.communesFor(AlgeriaLocations.idFromLabel(_selectedWilaya) ?? 0)
+                          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                          .toList(),
+                      onChanged: _selectedWilaya == null
+                          ? null
+                          : (val) {
+                              setState(() {
+                                _selectedCommune = val;
+                                _addressControllers['commune']?.text = val ?? '';
+                              });
+                            },
+                      validator: (v) => (v == null || v.isEmpty) ? 'يرجى اختيار البلدية' : null,
+                    ),
+                  ),
+                ] else ...[
+                  ...fields.map((field) {
+                    if (!_addressControllers.containsKey(field.key)) {
+                      _addressControllers[field.key] = TextEditingController();
+                    }
+                    final countryRegions = CountryRegions.regionsFor(country.code);
+                    if (field.key == 'state' && countryRegions != null && countryRegions.isNotEmpty) {
+                      final currentVal = _addressControllers['state']?.text;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: DropdownButtonFormField<String>(
+                          value: (currentVal != null && countryRegions.contains(currentVal)) ? currentVal : null,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: field.labelAr,
+                            prefixIcon: const Icon(Icons.map_outlined, color: _teal),
+                            filled: true, fillColor: _card,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _teal, width: 1.5)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          ),
+                          hint: Text('اختاري ${field.labelAr}', style: const TextStyle(fontSize: 14)),
+                          items: countryRegions.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                          onChanged: (val) {
+                            setState(() {
+                              _addressControllers['state']?.text = val ?? '';
+                            });
+                          },
+                          validator: field.required ? (v) => (v == null || v.isEmpty) ? 'يرجى اختيار ${field.labelAr}' : null : null,
+                        ),
+                      );
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: TextFormField(
+                        controller: _addressControllers[field.key],
+                        decoration: InputDecoration(
+                          labelText: field.labelAr,
+                          filled: true, fillColor: _card,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _teal, width: 1.5)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        ),
+                        validator: field.required ? (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null : null,
+                      ),
+                    );
+                  }),
+                ],
                 const SizedBox(height: 16),
+
+                // ─── Delivery method ───
+                const Text('طريقة التوصيل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _text1)),
+                const SizedBox(height: 12),
+                _deliveryOption(
+                  id: 'home',
+                  icon: Icons.home_rounded,
+                  title: 'التوصيل إلى المنزل',
+                  subtitle: 'يصلكِ الطلب إلى باب البيت',
+                  price: CartService.kHomeDeliveryDzd,
+                ),
+                const SizedBox(height: 8),
+                _deliveryOption(
+                  id: 'office',
+                  icon: Icons.storefront_rounded,
+                  title: 'الاستلام من مكتب التوصيل',
+                  subtitle: 'تستلمينه من أقرب مكتب في ولايتكِ — أرخص',
+                  price: CartService.kOfficePickupDzd,
+                ),
+                const SizedBox(height: 20),
 
                 // ─── Payment ───
                 const Text('طريقة الدفع', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _text1)),
                 const SizedBox(height: 12),
-                ...payments.map((pm) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selectedPayment = pm.id),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: _selectedPayment == pm.id ? _teal.withOpacity(0.06) : _card,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: _selectedPayment == pm.id ? _teal : Colors.grey[200]!, width: _selectedPayment == pm.id ? 1.5 : 1),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(pm.icon, style: const TextStyle(fontSize: 22)),
-                          const SizedBox(width: 12),
-                          Text(pm.nameAr, style: TextStyle(fontWeight: FontWeight.bold, color: _selectedPayment == pm.id ? _teal : _text1, fontSize: 14)),
-                          const Spacer(),
-                          if (_selectedPayment == pm.id) const Icon(Icons.check_circle, color: _teal, size: 22),
-                        ],
+                if (payments.length <= 1)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: _teal.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _teal.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('💵', style: TextStyle(fontSize: 22)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: RichText(
+                            text: const TextSpan(
+                              style: TextStyle(fontSize: 14, color: _text1, fontFamily: 'Tajawal'),
+                              children: [
+                                TextSpan(text: 'الدفع عند الاستلام', style: TextStyle(fontWeight: FontWeight.bold)),
+                                TextSpan(text: ' — تدفعين نقدًا عند وصول الطلب'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...payments.map((pm) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedPayment = pm.id),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: _selectedPayment == pm.id ? _teal.withOpacity(0.06) : _card,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: _selectedPayment == pm.id ? _teal : Colors.grey[200]!, width: _selectedPayment == pm.id ? 1.5 : 1),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(pm.icon, style: const TextStyle(fontSize: 22)),
+                            const SizedBox(width: 12),
+                            Text(pm.nameAr, style: TextStyle(fontWeight: FontWeight.bold, color: _selectedPayment == pm.id ? _teal : _text1, fontSize: 14)),
+                            const Spacer(),
+                            if (_selectedPayment == pm.id) const Icon(Icons.check_circle, color: _teal, size: 22),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                )),
+                  )),
                 const SizedBox(height: 24),
 
                 // ─── Total ───
@@ -633,9 +869,12 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                     children: [
                       _summaryRow('المنتجات', _fmtPrice(_cart.subtotal)),
                       const SizedBox(height: 8),
-                      _summaryRow('التوصيل', 'مجاني'),
+                      _summaryRow(
+                        _shippingMethod == 'home' ? 'التوصيل للمنزل' : 'الاستلام من المكتب',
+                        _fmtPrice(_shippingCost),
+                      ),
                       const Divider(height: 20),
-                      _summaryRow('المجموع الكلي', _fmtPrice(_cart.subtotal), isBold: true),
+                      _summaryRow('المجموع الكلي', _fmtPrice(_grandTotal), isBold: true),
                     ],
                   ),
                 ),
@@ -690,6 +929,51 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
         Text(label, style: TextStyle(fontSize: isBold ? 16 : 14, fontWeight: isBold ? FontWeight.bold : FontWeight.normal, color: isBold ? _text1 : _text2)),
         Text(value, style: TextStyle(fontSize: isBold ? 18 : 14, fontWeight: isBold ? FontWeight.bold : FontWeight.normal, color: isBold ? _teal : _text1)),
       ],
+    );
+  }
+
+  /// بطاقة اختيار طريقة التوصيل مع سعرها بالعملة المحلية.
+  Widget _deliveryOption({
+    required String id,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required double price,
+  }) {
+    final selected = _shippingMethod == id;
+    return GestureDetector(
+      onTap: () => setState(() => _shippingMethod = id),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: selected ? _teal.withOpacity(0.06) : _card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: selected ? _teal : Colors.grey[200]!, width: selected ? 1.5 : 1),
+        ),
+        child: Row(
+          children: [
+            Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off,
+                color: selected ? _teal : Colors.grey, size: 22),
+            const SizedBox(width: 10),
+            Icon(icon, color: _teal, size: 24),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: selected ? _teal : _text1)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(fontSize: 12, color: _text2)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(_fmtPrice(price),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: selected ? _teal : _text1)),
+          ],
+        ),
+      ),
     );
   }
 

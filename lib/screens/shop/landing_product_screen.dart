@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:nabda_app/services/country_currency_service.dart';
+import 'package:nabda_app/services/cart_service.dart';
+import 'package:nabda_app/screens/shop/cart_screen.dart';
 import 'package:nabda_app/data/algeria_locations.dart';
+import 'package:nabda_app/data/regions_data.dart';
 
 class LandingProductScreen extends StatefulWidget {
   final Map<String, dynamic> productData;
@@ -21,10 +24,12 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
   final _phoneC = TextEditingController();
   final _communeC = TextEditingController();
   final _stateC = TextEditingController(); // For other countries
+  final _notifyPhoneC = TextEditingController(); // For coming_soon notification
 
   // State selections
   String? _selectedWilaya; // For Algeria dropdown (format: "NN- name")
   String? _selectedCommune; // For Algeria commune dropdown
+  String? _selectedRegion; // For other countries with dropdown regions
   bool _locLoaded = false; // أصبحت بيانات البلديات جاهزة؟
   String _shippingMethod = 'home'; // 'home' or 'pickup'
   int _quantity = 1;
@@ -35,39 +40,24 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
   bool _isOrdering = false;
   int _currentImageIndex = 0;
 
-  // Static list of Algerian Wilayas
-  final List<String> _wilayas = [
-    '01- أدرار', '02- الشلف', '03- الأغواط', '04- أم البواقي', '05- باتنة',
-    '06- بجاية', '07- بسكرة', '08- بشار', '09- البليدة', '10- البويرة',
-    '11- تمنراست', '12- تبسة', '13- تلمسان', '14- تيارت', '15- تيزي وزو',
-    '16- الجزائر', '17- الجلفة', '18- جيجل', '19- سطيف', '20- سعيدة',
-    '21- سكيكدة', '22- سيدي بلعباس', '23- عنابة', '24- قالمة', '25- قسنطينة',
-    '26- المدية', '27- مستغانم', '28- المسيلة', '29- معسكر', '30- ورقلة',
-    '31- وهران', '32- البيض', '33- إليزي', '34- برج بوعريريج', '35- بومرداس',
-    '36- الطارف', '37- تندوف', '38- تسمسيلت', '39- الوادي', '40- خنشلة',
-    '41- سوق أهراس', '42- تيبازة', '43- ميلة', '44- عين الدفلى', '45- النعامة',
-    '46- عين تموشنت', '47- غرداية', '48- غليزان', '49- تيميمون', '50- برج باجي مختار',
-    '51- أولاد جلال', '52- بني عباس', '53- عين صالح', '54- عين قزام', '55- تقرت',
-    '56- جانت', '57- المغير', '58- المنيعة',
-    '59- آفلو', '60- بريكة', '61- القنطرة', '62- بئر العاتر', '63- العريشة',
-    '64- قصر الشلالة', '65- عين وسارة', '66- مسعد', '67- قصر البخاري', '68- بوسعادة',
-    '69- الأبيض سيدي الشيخ'
-  ];
+  /// رقم الولاية المختارة (1..69) من كلاس AlgeriaLocations
+  int? get _selectedWilayaId => AlgeriaLocations.idFromLabel(_selectedWilaya);
 
-  /// رقم الولاية المختارة (1..69) المستخرج من بادئة النص "NN- ...".
-  int? get _selectedWilayaId {
-    if (_selectedWilaya == null) return null;
-    return int.tryParse(_selectedWilaya!.split('-').first.trim());
-  }
+  String get _availability => (widget.productData['availability'] as String?) ?? 'active';
+  bool get _isOutOfStock => _availability == 'out_of_stock';
+  bool get _isComingSoon => _availability == 'coming_soon';
 
   @override
   void initState() {
     super.initState();
     _currencySvc.addListener(_onCurrencyChange);
 
-    // حمّل بيانات البلديات الجزائرية (للقائمة المنسدلة المرتبطة بالولاية)
+    // حمّل بيانات البلديات الجزائرية وقوائم المناطق للدول الأخرى
     AlgeriaLocations.ensureLoaded().then((_) {
       if (mounted) setState(() => _locLoaded = true);
+    });
+    CountryRegions.ensureLoaded().then((_) {
+      if (mounted) setState(() {});
     });
 
     // Auto-select default offer if exists
@@ -93,11 +83,93 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
     _phoneC.dispose();
     _communeC.dispose();
     _stateC.dispose();
+    _notifyPhoneC.dispose();
     super.dispose();
   }
 
   void _onCurrencyChange() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _submitNotifyMe() async {
+    final phone = _notifyPhoneC.text.trim();
+    if (phone.isEmpty || phone.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('يرجى إدخال رقم هاتف صحيح 📱'),
+        backgroundColor: Colors.orange,
+      ));
+      return;
+    }
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final productId = widget.productData['id'] ?? '';
+      final productName = widget.productData['name'] ?? '';
+      await FirebaseFirestore.instance.collection('waitlist').add({
+        'phone': phone,
+        'userId': uid,
+        'productId': productId,
+        'productName': productName,
+        'status': 'waitlist',
+        'type': 'coming_soon_notification',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        _notifyPhoneC.clear();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('تم تسجيل رقمكِ، وسنُعلمك أول من يتوفّر المنتج بإذن الله ✓'),
+          backgroundColor: Color(0xFF00897B),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('خطأ: $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
+  }
+
+  void _addToCart() {
+    if (!_validateOptions()) return;
+
+    final productName = widget.productData['name'] ?? '';
+    final productEmoji = widget.productData['emoji'] ?? '🛍️';
+    final productCategory = widget.productData['category'] ?? 'عام';
+
+    CartService().addItem(
+      name: productName,
+      emoji: productEmoji,
+      category: productCategory,
+      priceValue: _unitPrice,
+      priceDisplay: _formatPrice(_unitPrice),
+      color: _teal,
+      quantity: _quantity,
+      productId: (widget.productData['id'] ?? '').toString(),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Expanded(child: Text('أُضيف إلى السلّة ✓')),
+          ],
+        ),
+        action: SnackBarAction(
+          label: 'عرض السلّة',
+          textColor: Colors.white,
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
+          },
+        ),
+        backgroundColor: const Color(0xFF00897B),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   // Calculate prices based on selection (offer vs standard price)
@@ -113,7 +185,10 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
     return _unitPrice * _quantity;
   }
 
-  double get _shippingCost {
+  double get _shippingCost => _shippingCostFor(_shippingMethod);
+
+  /// سعر التوصيل لطريقة معيّنة ('home' أو 'pickup') — لعرض السعرين معًا.
+  double _shippingCostFor(String method) {
     final sh = widget.productData['shipping'] as Map<String, dynamic>? ?? {};
     
     // Check if selected offer grants free shipping
@@ -129,14 +204,14 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
     final customShippingPickup = sh['customShippingPickup'] ?? false;
     final customShippingPickupPrice = (sh['customShippingPickupPrice'] ?? 0.0).toDouble();
 
-    if (_shippingMethod == 'home') {
+    if (method == 'home') {
       if (freeShipping) return 0.0;
       if (customShipping) return customShippingPrice;
-      return 500.0; // standard Home Delivery DZD
+      return CartService.kHomeDeliveryDzd;
     } else {
       if (freeShipping || freeShippingPickupOnly) return 0.0;
       if (customShippingPickup) return customShippingPickupPrice;
-      return 300.0; // standard Pickup DZD
+      return CartService.kOfficePickupDzd;
     }
   }
 
@@ -203,6 +278,7 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
     setState(() => _isOrdering = true);
 
     try {
+      final isWaitlist = _isOutOfStock;
       final country = _currencySvc.currentCountry;
 
       // Address construction
@@ -259,7 +335,7 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
         'shipping': _shippingCost,
         'totalAmount': _totalAmount,
         'totalDisplay': _formatPrice(_totalAmount),
-        'status': 'pending',
+        'status': isWaitlist ? 'waitlist' : 'pending',
         'createdAt': FieldValue.serverTimestamp(),
         'couponCode': null,
         'discount': 0.0,
@@ -268,10 +344,10 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
         'total': _formatPrice(_totalAmount),
       };
 
-      // 0. تحقّق من توفّر المخزون قبل إنشاء الطلب (المنتج مُتتبَّع عندما stock > 0؛ stock==0 = غير محدود)
+      // 0. تحقّق من توفّر المخزون قبل إنشاء الطلب (في حال الطلبات العادية غير قائمة الانتظار)
       final stockSettings = widget.productData['settings'] as Map<String, dynamic>? ?? {};
       final stockBackorder = stockSettings['allowBackorder'] ?? false;
-      if (productId.toString().isNotEmpty && stockBackorder != true) {
+      if (!isWaitlist && productId.toString().isNotEmpty && stockBackorder != true) {
         final pSnap = await FirebaseFirestore.instance.collection('products').doc(productId).get();
         final pStock = (pSnap.data()?['stock'] as int?) ?? 0;
         if (pStock > 0 && _quantity > pStock) {
@@ -297,6 +373,59 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
           .collection('orders')
           .doc(docRef.id)
           .set(localOrderMap);
+
+      // إذا كان المنتج نافد المخزون: يُسجّل الطلب كقائمة انتظار ولا يُخصم من المخزون
+      if (isWaitlist) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => Directionality(
+              textDirection: TextDirection.rtl,
+              child: AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 70, height: 70,
+                      decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
+                      child: const Center(child: Text('⛔', style: TextStyle(fontSize: 36))),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('نفدت الكمية مؤقّتًا', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textPrimary)),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'سجّلنا طلبك، وسنتّصل بكِ على الرقم الذي أدخلتِه فور وصول الكمية الجديدة — وستكونين في المقدّمة.',
+                      style: TextStyle(fontSize: 14, color: _textSecondary, height: 1.6),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context); // dialog
+                          Navigator.pop(context); // landing screen
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00897B),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text('حسنًا', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+        return;
+      }
 
       // Decrement stock if stock management is set
       try {
@@ -385,6 +514,39 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
           foregroundColor: _teal,
           elevation: 0.5,
           surfaceTintColor: Colors.transparent,
+          actions: [
+            AnimatedBuilder(
+              animation: CartService(),
+              builder: (context, _) {
+                final cart = CartService();
+                return GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen())),
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 12),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: _teal.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+                          child: const Icon(Icons.shopping_cart_outlined, color: _teal, size: 22),
+                        ),
+                        if (cart.isNotEmpty)
+                          Positioned(
+                            right: 0, top: 2,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(color: Color(0xFFE91E63), shape: BoxShape.circle),
+                              child: Text('${cart.itemCount}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         body: _isOrdering
             ? const Center(
@@ -841,223 +1003,378 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
 
                           const Divider(height: 50),
 
-                          // 6. Direct COD Checkout Form
-                          Container(
-                            key: const ValueKey('checkout_form'),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: _teal.withOpacity(0.3), width: 1.5),
-                              boxShadow: [BoxShadow(color: _teal.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4))],
-                            ),
-                            child: Form(
-                              key: _formKey,
+                          // 6. Coming Soon card or Direct COD Checkout Form
+                          if (_isComingSoon) ...[
+                            Container(
+                              key: const ValueKey('coming_soon_card'),
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF8E1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.amber.shade400, width: 1.5),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.amber.withOpacity(0.08),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(color: _teal.withOpacity(0.1), shape: BoxShape.circle),
-                                        child: const Icon(Icons.flash_on, color: _teal, size: 20),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      const Text('طلب سريع (الدفع عند الاستلام)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: _textPrimary)),
-                                    ],
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.shade100,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Text('🔜', style: TextStyle(fontSize: 32)),
                                   ),
                                   const SizedBox(height: 16),
-
-                                  // Name Field
-                                  TextFormField(
-                                    controller: _nameC,
-                                    decoration: InputDecoration(
-                                      labelText: 'الاسم الكامل للمستلم',
-                                      helperText: '(يمكنكِ كتابة اسم زوجكِ)',
-                                      prefixIcon: const Icon(Icons.person_outline, color: _teal),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  const Text(
+                                    'هذا المنتج قيد التحضير',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFE65100),
                                     ),
-                                    validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى كتابة الاسم الكامل' : null,
-                                  ),
-                                  const SizedBox(height: 12),
-
-                                  // Phone Field
-                                  TextFormField(
-                                    controller: _phoneC,
-                                    keyboardType: TextInputType.phone,
-                                    decoration: InputDecoration(
-                                      labelText: 'رقم الهاتف (الرجاء التأكد منه)',
-                                      prefixIcon: const Icon(Icons.phone_outlined, color: _teal),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                    ),
-                                    validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى كتابة رقم الهاتف للاتصال' : null,
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  // Shipping choice
-                                  const Text('طريقة الشحن والتوصيل 🚚', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _textPrimary)),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: ChoiceChip(
-                                          label: const Center(child: Text('توصيل للمنزل')),
-                                          selected: _shippingMethod == 'home',
-                                          selectedColor: _teal.withOpacity(0.12),
-                                          onSelected: (selected) {
-                                            if (selected) setState(() => _shippingMethod = 'home');
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: ChoiceChip(
-                                          label: const Center(child: Text('استلام من المكتب')),
-                                          selected: _shippingMethod == 'pickup',
-                                          selectedColor: _teal.withOpacity(0.12),
-                                          onSelected: (selected) {
-                                            if (selected) setState(() => _shippingMethod = 'pickup');
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-
-                                  // Dynamic Location picker: Algeria vs others
-                                  if (country.code == 'DZ') ...[
-                                    // Algeria: Wilaya dropdown
-                                    DropdownButtonFormField<String>(
-                                      value: _selectedWilaya,
-                                      decoration: InputDecoration(
-                                        labelText: 'الولاية',
-                                        prefixIcon: const Icon(Icons.map_outlined, color: _teal),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                      ),
-                                      items: _wilayas.map((w) {
-                                        return DropdownMenuItem(value: w, child: Text(w));
-                                      }).toList(),
-                                      onChanged: (val) => setState(() {
-                                        _selectedWilaya = val;
-                                        _selectedCommune = null; // إعادة ضبط البلدية عند تغيير الولاية
-                                      }),
-                                      validator: (v) => v == null ? 'يرجى اختيار الولاية' : null,
-                                    ),
-                                    const SizedBox(height: 12),
-
-                                    // Commune dropdown (مرتبط بالولاية المختارة)
-                                    DropdownButtonFormField<String>(
-                                      value: _selectedCommune,
-                                      isExpanded: true,
-                                      decoration: InputDecoration(
-                                        labelText: 'البلدية',
-                                        prefixIcon: const Icon(Icons.location_city_outlined, color: _teal),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                      ),
-                                      hint: Text(
-                                        _selectedWilaya == null
-                                            ? 'اختاري الولاية أولاً'
-                                            : (!_locLoaded ? 'جارٍ تحميل البلديات...' : 'اختاري البلدية'),
-                                        style: const TextStyle(fontSize: 14),
-                                      ),
-                                      items: AlgeriaLocations.communesFor(_selectedWilayaId ?? 0)
-                                          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                                          .toList(),
-                                      onChanged: _selectedWilaya == null
-                                          ? null
-                                          : (val) => setState(() => _selectedCommune = val),
-                                      validator: (v) => (v == null || v.isEmpty) ? 'يرجى اختيار البلدية' : null,
-                                    ),
-                                  ] else ...[
-                                    // Other countries: State Text field
-                                    TextFormField(
-                                      controller: _stateC,
-                                      decoration: InputDecoration(
-                                        labelText: 'المحافظة / الولاية',
-                                        prefixIcon: const Icon(Icons.map_outlined, color: _teal),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                      ),
-                                      validator: (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    
-                                    // Commune/City Text field
-                                    TextFormField(
-                                      controller: _communeC,
-                                      decoration: InputDecoration(
-                                        labelText: 'المدينة / المنطقة',
-                                        prefixIcon: const Icon(Icons.location_city_outlined, color: _teal),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                      ),
-                                      validator: (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
-                                    ),
-                                  ],
-                                  
-                                  const Divider(height: 40),
-
-                                  // Invoice summary
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('المجموع الفرعي:', style: TextStyle(color: _textSecondary)),
-                                      Text(_formatPrice(_subtotal), style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
-                                    ],
                                   ),
                                   const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('مصاريف التوصيل:', style: TextStyle(color: _textSecondary)),
-                                      Text(
-                                        _shippingCost == 0.0 ? 'مجاني' : _formatPrice(_shippingCost),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: _shippingCost == 0.0 ? Colors.green : _textPrimary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Divider(height: 24),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('المجموع الإجمالي:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary)),
-                                      Text(
-                                        _formatPrice(_totalAmount),
-                                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _teal),
-                                      ),
-                                    ],
+                                  const Text(
+                                    'سيكون متاحًا للطلب قريبًا — اتركي رقمكِ ونُعلمكِ أول من يتوفّر',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 14, color: _textSecondary, height: 1.5),
                                   ),
                                   const SizedBox(height: 20),
-
-                                  // Submit button
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 54,
-                                    child: ElevatedButton.icon(
-                                      onPressed: _placeDirectOrder,
-                                      icon: const Icon(Icons.flash_on),
-                                      label: const Text('اطلبي الآن (الدفع عند الاستلام)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: _teal,
-                                        foregroundColor: Colors.white,
-                                        elevation: 4,
-                                        shadowColor: _teal.withOpacity(0.4),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextFormField(
+                                          controller: _notifyPhoneC,
+                                          keyboardType: TextInputType.phone,
+                                          textDirection: TextDirection.ltr,
+                                          textAlign: TextAlign.right,
+                                          decoration: InputDecoration(
+                                            hintText: 'رقم الهاتف للاتصال',
+                                            prefixIcon: const Icon(Icons.phone_android, color: Colors.amber),
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                              borderSide: BorderSide(color: Colors.amber.shade300),
+                                            ),
+                                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(width: 10),
+                                      ElevatedButton(
+                                        onPressed: _submitNotifyMe,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFFE65100),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          elevation: 2,
+                                        ),
+                                        child: const Text(
+                                          'أعلميني',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
-                          ),
+                          ] else ...[
+                            Container(
+                              key: const ValueKey('checkout_form'),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: _teal.withOpacity(0.3), width: 1.5),
+                                boxShadow: [BoxShadow(color: _teal.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4))],
+                              ),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(color: _teal.withOpacity(0.1), shape: BoxShape.circle),
+                                          child: const Icon(Icons.flash_on, color: _teal, size: 20),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          _isOutOfStock ? 'طلب تسجيل في قائمة الانتظار' : 'طلب سريع (الدفع عند الاستلام)',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: _textPrimary),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Name Field
+                                    TextFormField(
+                                      controller: _nameC,
+                                      decoration: InputDecoration(
+                                        labelText: 'الاسم الكامل للمستلم',
+                                        helperText: '(يمكنكِ كتابة اسم زوجكِ)',
+                                        prefixIcon: const Icon(Icons.person_outline, color: _teal),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                      ),
+                                      validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى كتابة الاسم الكامل' : null,
+                                    ),
+                                    const SizedBox(height: 12),
+
+                                    // Phone Field
+                                    TextFormField(
+                                      controller: _phoneC,
+                                      keyboardType: TextInputType.phone,
+                                      decoration: InputDecoration(
+                                        labelText: 'رقم الهاتف (الرجاء التأكد منه)',
+                                        prefixIcon: const Icon(Icons.phone_outlined, color: _teal),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                      ),
+                                      validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى كتابة رقم الهاتف للاتصال' : null,
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Shipping choice
+                                    const Text('طريقة الشحن والتوصيل 🚚', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _textPrimary)),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: ChoiceChip(
+                                            label: Center(child: Text(
+                                              'توصيل للمنزل\n${_shippingCostFor('home') == 0 ? 'مجاني' : _formatPrice(_shippingCostFor('home'))}',
+                                              textAlign: TextAlign.center,
+                                            )),
+                                            selected: _shippingMethod == 'home',
+                                            selectedColor: _teal.withOpacity(0.12),
+                                            onSelected: (selected) {
+                                              if (selected) setState(() => _shippingMethod = 'home');
+                                            },
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: ChoiceChip(
+                                            label: Center(child: Text(
+                                              'استلام من المكتب\n${_shippingCostFor('pickup') == 0 ? 'مجاني' : _formatPrice(_shippingCostFor('pickup'))}',
+                                              textAlign: TextAlign.center,
+                                            )),
+                                            selected: _shippingMethod == 'pickup',
+                                            selectedColor: _teal.withOpacity(0.12),
+                                            onSelected: (selected) {
+                                              if (selected) setState(() => _shippingMethod = 'pickup');
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+
+                                    // Dynamic Location picker: Algeria vs others
+                                    if (country.code == 'DZ') ...[
+                                      // Algeria: Wilaya dropdown
+                                      DropdownButtonFormField<String>(
+                                        value: _selectedWilaya,
+                                        decoration: InputDecoration(
+                                          labelText: 'الولاية',
+                                          prefixIcon: const Icon(Icons.map_outlined, color: _teal),
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                        ),
+                                        items: AlgeriaLocations.wilayas.map((w) {
+                                          return DropdownMenuItem(value: w, child: Text(w));
+                                        }).toList(),
+                                        onChanged: (val) => setState(() {
+                                          _selectedWilaya = val;
+                                          _selectedCommune = null; // إعادة ضبط البلدية عند تغيير الولاية
+                                        }),
+                                        validator: (v) => v == null ? 'يرجى اختيار الولاية' : null,
+                                      ),
+                                      const SizedBox(height: 12),
+
+                                      // Commune dropdown (مرتبط بالولاية المختارة)
+                                      DropdownButtonFormField<String>(
+                                        value: _selectedCommune,
+                                        isExpanded: true,
+                                        decoration: InputDecoration(
+                                          labelText: 'البلدية',
+                                          prefixIcon: const Icon(Icons.location_city_outlined, color: _teal),
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                        ),
+                                        hint: Text(
+                                          _selectedWilaya == null
+                                              ? 'اختاري الولاية أولاً'
+                                              : (!_locLoaded ? 'جارٍ تحميل البلديات...' : 'اختاري البلدية'),
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                        items: AlgeriaLocations.communesFor(_selectedWilayaId ?? 0)
+                                            .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                            .toList(),
+                                        onChanged: _selectedWilaya == null
+                                            ? null
+                                            : (val) => setState(() => _selectedCommune = val),
+                                        validator: (v) => (v == null || v.isEmpty) ? 'يرجى اختيار البلدية' : null,
+                                      ),
+                                    ] else ...[
+                                      // Other countries
+                                      Builder(builder: (context) {
+                                        final hasRegions = CountryRegions.hasRegions(country.code);
+                                        final stateField = country.addressFields.firstWhere(
+                                          (f) => f.key == 'state',
+                                          orElse: () => const AddressField(key: 'state', labelAr: 'المنطقة / المحافظة', labelEn: 'State/Province'),
+                                        );
+                                        if (hasRegions) {
+                                          final regions = CountryRegions.regionsFor(country.code) ?? [];
+                                          return DropdownButtonFormField<String>(
+                                            value: _selectedRegion,
+                                            isExpanded: true,
+                                            decoration: InputDecoration(
+                                              labelText: stateField.labelAr,
+                                              prefixIcon: const Icon(Icons.map_outlined, color: _teal),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                            ),
+                                            items: regions.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                                            onChanged: (val) => setState(() {
+                                              _selectedRegion = val;
+                                              _stateC.text = val ?? '';
+                                            }),
+                                            validator: (v) => (v == null || v.isEmpty) ? 'يرجى اختيار ${stateField.labelAr}' : null,
+                                          );
+                                        } else {
+                                          return TextFormField(
+                                            controller: _stateC,
+                                            decoration: InputDecoration(
+                                              labelText: stateField.labelAr,
+                                              prefixIcon: const Icon(Icons.map_outlined, color: _teal),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                            ),
+                                            validator: (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
+                                          );
+                                        }
+                                      }),
+                                      const SizedBox(height: 12),
+                                      
+                                      // Commune/City Text field
+                                      TextFormField(
+                                        controller: _communeC,
+                                        decoration: InputDecoration(
+                                          labelText: 'المدينة / المنطقة',
+                                          prefixIcon: const Icon(Icons.location_city_outlined, color: _teal),
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                        ),
+                                        validator: (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
+                                      ),
+                                    ],
+                                    
+                                    const Divider(height: 40),
+
+                                    // Invoice summary
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('المجموع الفرعي:', style: TextStyle(color: _textSecondary)),
+                                        Text(_formatPrice(_subtotal), style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('مصاريف التوصيل:', style: TextStyle(color: _textSecondary)),
+                                        Text(
+                                          _shippingCost == 0.0 ? 'مجاني' : _formatPrice(_shippingCost),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: _shippingCost == 0.0 ? Colors.green : _textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const Divider(height: 24),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('المجموع الإجمالي:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary)),
+                                        Text(
+                                          _formatPrice(_totalAmount),
+                                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _teal),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 20),
+
+                                    // Submit buttons (الزرّان: اطلبي الآن + أضيفي إلى السلة)
+                                    // 1. Primary Button: ⚡ اطلبي الآن — الدفع عند الاستلام (Filled, 54px, #00897B)
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 54,
+                                      child: ElevatedButton.icon(
+                                        onPressed: _isOrdering ? null : _placeDirectOrder,
+                                        icon: _isOrdering
+                                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                            : const Icon(Icons.flash_on),
+                                        label: Text(
+                                          _isOutOfStock
+                                              ? 'اطلبي الآن (تسجيل في قائمة الانتظار)'
+                                              : 'اطلبي الآن — الدفع عند الاستلام',
+                                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: _teal,
+                                          foregroundColor: Colors.white,
+                                          elevation: 4,
+                                          shadowColor: _teal.withOpacity(0.4),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+
+                                    // 2. Secondary Button: 🛒 أضيفي إلى السلة (Outlined, 50px, border #00897B)
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 50,
+                                      child: OutlinedButton.icon(
+                                        onPressed: (_availability == 'active') ? _addToCart : null,
+                                        icon: const Icon(Icons.shopping_cart_outlined, size: 20),
+                                        label: Text(
+                                          _isOutOfStock ? 'أضيفي إلى السلة (غير متوفّر)' : 'أضيفي إلى السلة',
+                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: _teal,
+                                          disabledForegroundColor: Colors.grey.shade400,
+                                          side: BorderSide(
+                                            color: (_availability == 'active') ? _teal : Colors.grey.shade300,
+                                            width: 1.5,
+                                          ),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 40),
                         ],
                       ),

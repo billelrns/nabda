@@ -1,0 +1,177 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     شعار «نبضة» المتحرك — نسخة الويب (SVG خالص، بلا صور، بلا مكتبات)
+     • القلبان النابضان على اليمين  (الأم ~60 ن/د · الطفل ~140 ن/د)
+     • الكلمة على اليسار — مسار فيكتور من خط Almarai ExtraBold
+     • نقاط الحروف الخمس صارت قلوباً تقفز وتتزحلق على الحرف
+     الكلمة مرسومة كمسار، فلا تتغيّر أبداً مهما اختلف الخط أو المتصفح.
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="nabda-logo" style="width:640px">
+<svg viewBox="0 0 3553 1150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="نبضة">
+  <title>نبضة</title>
+
+  <defs>
+    <radialGradient id="nbBody" cx="30%" cy="24%" r="88%">
+      <stop offset="0%"   stop-color="#FF9BC4"/>
+      <stop offset="38%"  stop-color="#F0347C"/>
+      <stop offset="74%"  stop-color="#E0195B"/>
+      <stop offset="100%" stop-color="#A80D48"/>
+    </radialGradient>
+    <radialGradient id="nbBaby" cx="32%" cy="26%" r="86%">
+      <stop offset="0%"   stop-color="#FFFFFF"/>
+      <stop offset="30%"  stop-color="#FFE4EF"/>
+      <stop offset="70%"  stop-color="#FFD6E3"/>
+      <stop offset="100%" stop-color="#F48CB3"/>
+    </radialGradient>
+    <radialGradient id="nbCavity" cx="40%" cy="68%" r="80%">
+      <stop offset="0%"   stop-color="#F8BBD0" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#FFD6E3" stop-opacity=".92"/>
+    </radialGradient>
+    <linearGradient id="nbRim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#fff" stop-opacity=".78"/>
+      <stop offset="45%"  stop-color="#fff" stop-opacity=".05"/>
+      <stop offset="100%" stop-color="#FF8FBB" stop-opacity=".45"/>
+    </linearGradient>
+    <linearGradient id="nbWord" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#F0347C"/>
+      <stop offset="100%" stop-color="#C2185B"/>
+    </linearGradient>
+
+    <filter id="nbSoft"  x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+    <filter id="nbSoft2" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="nbSoft3" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+
+    <!-- قلب وحدة: صندوق 0..100 -->
+    <path id="nbHeart" d="M50 32C36 6 4 12 4 38C4 60 28 74 50 92C72 74 96 60 96 38C96 12 64 6 50 32Z"/>
+
+    <!-- القلب الصغير اللامع المستعمل مكان النقاط -->
+    <g id="nbDotHeart">
+      <use href="#nbHeart" x="-50" y="-50" fill="url(#nbBody)"/>
+      <use href="#nbHeart" x="-50" y="-50" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3.4"/>
+      <ellipse cx="-21" cy="-26" rx="17" ry="10" fill="#fff" fill-opacity=".62" filter="url(#nbSoft3)"/>
+      <ellipse cx="-26" cy="-30" rx="5.5" ry="3.4" fill="#fff" fill-opacity=".95"/>
+    </g>
+  </defs>
+
+  <!-- ═════════ القلبان النابضان (اليمين) ═════════ -->
+  <g transform="translate(2403 0)">
+    <g class="nb-mother" transform-origin="575 575">
+      <!-- توهّج + ظل -->
+      <use href="#nbHeart" x="0" y="0" width="1150" height="1150"
+           transform="scale(11.5)" fill="#F0347C" fill-opacity=".26" filter="url(#nbSoft)"/>
+      <g transform="translate(0 52)">
+        <use href="#nbHeart" transform="scale(11.5)" fill="#9E0B3F" fill-opacity=".20" filter="url(#nbSoft)"/>
+      </g>
+      <!-- الجسم الزجاجي -->
+      <use href="#nbHeart" transform="scale(11.5)" fill="url(#nbBody)"/>
+      <!-- التجويف الذي يحتضن الصغير -->
+      <g transform="translate(575 610)">
+        <use href="#nbHeart" transform="scale(7.13)" x="-50" y="-50" fill="url(#nbCavity)" filter="url(#nbSoft2)"/>
+      </g>
+      <!-- لمعات -->
+      <ellipse cx="333" cy="276" rx="207" ry="138" fill="#fff" fill-opacity=".60" filter="url(#nbSoft)"/>
+      <ellipse cx="270" cy="236" rx="66"  ry="43"  fill="#fff" fill-opacity=".92" filter="url(#nbSoft3)"/>
+      <ellipse cx="805" cy="345" rx="58"  ry="115" fill="#fff" fill-opacity=".32"
+               filter="url(#nbSoft2)" transform="rotate(-28 805 345)"/>
+      <!-- حافة زجاجية -->
+      <use href="#nbHeart" transform="scale(11.5)" fill="none" stroke="url(#nbRim)" stroke-width="1.2"/>
+    </g>
+
+    <!-- قلب الطفل -->
+    <g class="nb-baby" transform-origin="575 610">
+      <g transform="translate(575 610)">
+        <use href="#nbHeart" transform="scale(3.92)" x="-50" y="-50" fill="#fff" fill-opacity=".34" filter="url(#nbSoft2)"/>
+        <use href="#nbHeart" transform="scale(3.92)" x="-50" y="-50" fill="url(#nbBaby)"/>
+        <ellipse cx="-66" cy="-78" rx="66" ry="39" fill="#fff" fill-opacity=".85" filter="url(#nbSoft3)"/>
+        <ellipse cx="-82" cy="-92" rx="21" ry="13" fill="#fff" fill-opacity=".98"/>
+        <use href="#nbHeart" transform="scale(3.92)" x="-50" y="-50"
+             fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="0.9"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═════════ الكلمة (اليسار) ═════════ -->
+  <g transform="translate(0 133.5)">
+    <!-- جسم الكلمة: مسار فيكتور بلا نقاط — الشكل ثابت لا يتغيّر -->
+    <path fill="url(#nbWord)" d="M446 193L446 537Q446 543 450 547Q454 551 462 551L496 551L496 680L417 680Q366 680 324 640Q275 689 206 689L205 689L203 689Q103 689 46 606Q0 541 0 451Q0 341 70 269Q133 204 227 204Q278 204 328 225L369 193ZM291 344Q267 338 246 338Q202 338 177 368Q152 398 152 451Q152 501 179.5 533Q207 565 251 565Q268 565 291 560ZM823 343Q950 207 1123 207Q1247 207 1330 281Q1407 350 1407 456L1407 512Q1407 524 1408 551L1439 551L1439 680L1420 680L1382 634L1380 634Q1342 680 1283 680L489 680L489 551L669 551L669 220L823 220ZM1253 473Q1252 408 1201 370Q1159 339 1104 339Q984 339 884 457Q878 467 863 488Q835 529 822 551L1238 551Q1253 551 1253 537ZM1766 220L1766 542Q1766 546 1767 551L1816 551L1816 680L1785 680L1741 634L1739 634Q1701 680 1641 680L1432 680L1432 551L1592 551Q1601 551 1606 545Q1612 540 1612 531L1612 220ZM2143 220L2143 556Q2143 600 2114 635Q2076 680 2018 680L1809 680L1809 551L1974 551Q1980 551 1984 548Q1989 544 1989 537L1989 220Z"/>
+
+    <!-- النقاط الخمس صارت قلوباً — كل قلب في مكان نقطته تماماً -->
+    <g class="nb-dot d1"><g class="nb-hop"><use href="#nbDotHeart" transform="translate(2065 78) scale(1.95)"/></g></g>
+    <g class="nb-dot d2"><g class="nb-hop"><use href="#nbDotHeart" transform="translate(1688 804.5) scale(1.95)"/></g></g>
+    <g class="nb-dot d3"><g class="nb-hop"><use href="#nbDotHeart" transform="translate(1058 78) scale(1.95)"/></g></g>
+    <g class="nb-dot d4"><g class="nb-hop"><use href="#nbDotHeart" transform="translate(368 78) scale(1.95)"/></g></g>
+    <g class="nb-dot d5"><g class="nb-hop"><use href="#nbDotHeart" transform="translate(188.5 78) scale(1.95)"/></g></g>
+  </g>
+</svg>
+</div>
+
+<style>
+.nabda-logo{display:inline-block;line-height:0}
+.nabda-logo svg{width:100%;height:auto;overflow:visible}
+
+/* نبض الأم: لَب-دَب ثم راحة — ~60 نبضة/دقيقة */
+@keyframes nbMother{
+  0%{transform:scale(1)}      12%{transform:scale(1.075)}
+  24%{transform:scale(.985)}  36%{transform:scale(1.045)}
+  56%{transform:scale(1)}     100%{transform:scale(1)}
+}
+/* نبض الجنين: أسرع بكثير — ~140 نبضة/دقيقة */
+@keyframes nbBaby{
+  0%{transform:scale(1)}   30%{transform:scale(1.14)}
+  70%{transform:scale(1)}  100%{transform:scale(1)}
+}
+/* تمايل الصغير كطفل في الرحم */
+@keyframes nbSway{
+  0%,100%{transform:translateX(-9px) rotate(-2.6deg)}
+  50%    {transform:translateX(9px)  rotate(2.6deg)}
+}
+.nb-mother{animation:nbMother 1s ease-in-out infinite}
+.nb-baby{animation:nbBaby .43s ease-in-out infinite,nbSway 2.6s ease-in-out infinite}
+
+/* ── القلوب فوق الحروف: تستريح، تقفز، تتزحلق على الحرف، ترجع ──
+   translate = الانزلاق الأفقي على الحرف · nb-hop = القفزة والسحق  */
+@keyframes nbSlide{
+  0%,52%   {transform:translateX(0)}
+  64%      {transform:translateX(-46px)}
+  78%      {transform:translateX(-46px)}
+  92%,100% {transform:translateX(0)}
+}
+@keyframes nbHop{
+  0%,50%  {transform:translateY(0)   scaleX(1)    scaleY(1)}
+  55%     {transform:translateY(6px) scaleX(1.14) scaleY(.86)}
+  66%     {transform:translateY(-96px) scaleX(.90) scaleY(1.12) rotate(-9deg)}
+  78%     {transform:translateY(-96px) scaleX(.94) scaleY(1.06) rotate(7deg)}
+  90%     {transform:translateY(8px)  scaleX(1.18) scaleY(.82)}
+  96%     {transform:translateY(0)    scaleX(.96)  scaleY(1.04)}
+  100%    {transform:translateY(0)    scaleX(1)    scaleY(1)}
+}
+/* رفرفة خفيفة أثناء الراحة حتى لا تبدو جامدة */
+@keyframes nbIdle{
+  0%,100%{transform:translateY(0) rotate(0)}
+  50%    {transform:translateY(-7px) rotate(3deg)}
+}
+.nb-dot{animation:nbSlide 4.2s cubic-bezier(.34,1.4,.5,1) infinite}
+.nb-hop{animation:nbHop 4.2s cubic-bezier(.3,1.5,.5,1) infinite,
+                  nbIdle 2.1s ease-in-out infinite}
+.nb-dot.d1{animation-delay:0s}      .nb-dot.d1 .nb-hop{animation-delay:0s,.0s}
+.nb-dot.d2{animation-delay:-.85s}   .nb-dot.d2 .nb-hop{animation-delay:-.85s,-.4s}
+.nb-dot.d3{animation-delay:-1.7s}   .nb-dot.d3 .nb-hop{animation-delay:-1.7s,-.9s}
+.nb-dot.d4{animation-delay:-2.55s}  .nb-dot.d4 .nb-hop{animation-delay:-2.55s,-1.3s}
+.nb-dot.d5{animation-delay:-3.4s}   .nb-dot.d5 .nb-hop{animation-delay:-3.4s,-1.7s}
+/* النقطة السفلية (حرف الباء) تتزحلق في الاتجاه المعاكس */
+.nb-dot.d2{animation-name:nbSlideDown}
+@keyframes nbSlideDown{
+  0%,52%   {transform:translateX(0)}
+  64%,78%  {transform:translateX(52px)}
+  92%,100% {transform:translateX(0)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .nb-mother,.nb-baby,.nb-dot,.nb-hop{animation:none!important}
+}
+</style>

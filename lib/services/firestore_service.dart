@@ -142,14 +142,22 @@ class FirestoreService {
 
     query = query.orderBy('createdAt', descending: true);
 
-    if (category != null && category.isNotEmpty) {
-      query = query.where('category', isEqualTo: category);
-    }
+    // ⚠️ التصفية بالتصنيف تتمّ محلّيًا لا في الاستعلام: الجمع بين
+    // where('category') و orderBy('createdAt') يتطلّب فهرسًا مركّبًا في
+    // Firestore، وغيابه كان يُفشل كل التصنيفات عدا «الكل»
+    // («حدث خطأ في تحميل المنشورات»). تغذية «الكل» تجلب نفس الوثائق أصلًا،
+    // فلا كلفة قراءة إضافية.
+    final wantCategory =
+        (category != null && category.isNotEmpty) ? category : null;
 
     return query.snapshots().map((snapshot) {
       var list = snapshot.docs
           .map((doc) => CommunityPostModel.fromJson(doc.data() as Map<String, dynamic>))
           .toList();
+
+      if (wantCategory != null) {
+        list = list.where((post) => post.category == wantCategory).toList();
+      }
 
       // إذا لم يتم طلب نادٍ خاص (cohortKey = null)، نستبعد منشورات الأندية من التغذية العامة
       if (cohortKey == null || cohortKey.isEmpty) {

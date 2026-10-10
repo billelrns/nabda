@@ -14,52 +14,127 @@
       "**/node_modules/**"
     ],
     "rewrites": [
-      { "source": "/shop", "destination": "/shop.html" },
-      { "source": "/shop/**", "destination": "/shop.html" },
-      { "source": "**", "destination": "/index.html" }
+      {
+        "source": "/shop",
+        "destination": "/shop.html"
+      },
+      {
+        "source": "/shop/**",
+        "destination": "/shop.html"
+      },
+      {
+        "source": "/articles",
+        "destination": "/articles.html"
+      },
+      {
+        "source": "/articles/**",
+        "destination": "/articles.html"
+      },
+      {
+        "source": "/landing",
+        "destination": "/landing.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ],
     "headers": [
       {
         "source": "**",
         "headers": [
-          { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains; preload" },
-          { "key": "X-Content-Type-Options", "value": "nosniff" },
-          { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-          { "key": "Permissions-Policy", "value": "camera=(self), microphone=(), geolocation=(self), payment=()" },
-          { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://apis.google.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' blob: data: https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.cloudfunctions.net https://www.gstatic.com https://fonts.gstatic.com https://fonts.googleapis.com https://generativelanguage.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://firebaselogging-pa.googleapis.com https://firebase.googleapis.com https://content-firebaseappcheck.googleapis.com https://firestore.googleapis.com https://storage.googleapis.com https://fcmregistrations.googleapis.com https://ipapi.co https://api.country.is https://ipinfo.io https://open.er-api.com https://api.exchangerate-api.com wss://*.firebaseio.com; frame-src 'self' https://nabda-app-ca864.firebaseapp.com https://accounts.google.com https://appleid.apple.com https://*.facebook.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" }
+          {
+            "key": "Strict-Transport-Security",
+            "value": "max-age=31536000; includeSubDomains; preload"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "X-Frame-Options",
+            "value": "SAMEORIGIN"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "Permissions-Policy",
+            "value": "camera=(self), microphone=(), geolocation=(self), payment=()"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://apis.google.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' blob: data: https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.cloudfunctions.net https://www.gstatic.com https://fonts.gstatic.com https://fonts.googleapis.com https://generativelanguage.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://firebaselogging-pa.googleapis.com https://firebase.googleapis.com https://content-firebaseappcheck.googleapis.com https://firestore.googleapis.com https://storage.googleapis.com https://fcmregistrations.googleapis.com https://ipapi.co https://api.country.is https://ipinfo.io https://open.er-api.com https://api.exchangerate-api.com https://formspree.io wss://*.firebaseio.com; frame-src 'self' https://nabda-app-ca864.firebaseapp.com https://accounts.google.com https://appleid.apple.com https://*.facebook.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://formspree.io"
+          }
         ]
       },
       {
         "source": "/index.html",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
         ]
       },
       {
         "source": "/flutter_service_worker.js",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
         ]
       },
       {
         "source": "**/*.@(js|css|woff|woff2|ttf|otf|png|jpg|jpeg|svg|webp|ico|wasm)",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
         ]
       },
       {
         "source": "/canvaskit/**",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
         ]
       },
       {
         "source": "/assets/**",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
         ]
       }
     ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "nabda-app-ca864",
+          "appId": "1:911912460091:android:aa9f2ec93356eb285b611e",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "nabda-app-ca864",
+          "configurations": {
+            "android": "1:911912460091:android:aa9f2ec93356eb285b611e",
+            "ios": "1:911912460091:ios:2a36513a54eace8d5b611e",
+            "web": "1:911912460091:web:a53336443c06b82d5b611e"
+          }
+        }
+      }
+    }
   }
 }

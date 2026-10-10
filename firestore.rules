@@ -42,7 +42,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && isOwner(userId);
       allow create: if isAuthenticated() && isOwner(userId);
       allow update: if isAuthenticated() && isOwner(userId);
-      allow delete: if false; // لا أحد يحذف حسابه من الكلاينت
+      allow delete: if isAuthenticated() && isOwner(userId);
 
       // ❌ أُزيلت قراءة الأدمن — اُستبدلت بـ /users_directory/{uid}
 
@@ -103,7 +103,7 @@ service cloud.firestore {
       allow update: if isOwnerOrSupervisor()
         && request.resource.data.diff(resource.data).affectedKeys()
            .hasOnly(['isBanned', 'role', 'bannedAt', 'bannedReason', 'updatedAt']);
-      allow delete: if false;
+      allow delete: if isAuthenticated() && isOwner(userId);
     }
 
     // ─── الدورة الشهرية ───────────────────────────────────────────
@@ -188,7 +188,7 @@ service cloud.firestore {
         || (
           request.resource.data.userId == null &&
           request.resource.data.source == 'website' &&
-          request.resource.data.status == 'pending' &&
+          request.resource.data.status in ['pending', 'waitlist'] &&
           request.resource.data.customerName is string &&
           request.resource.data.customerName.size() > 1 &&
           request.resource.data.customerName.size() < 120 &&
@@ -204,6 +204,27 @@ service cloud.firestore {
       // تحديث الحالة: الأدمن فقط
       allow update: if isOwnerOrSupervisor();
       allow delete: if false;
+    }
+
+    // ─── قائمة الانتظار والإشعار عند التوفر ────────────────────────
+    match /waitlist/{docId} {
+      // مصادقة إجبارية: نموذج «أعلميني» يُعرض داخل التطبيق والطلب يتطلّب
+      // تسجيل الدخول أصلاً، فاشتراطها لا يمنع أي مستخدمة — لكنه يمنع
+      // الكتابة الآلية غير المحدودة من الخارج.
+      // hasOnly ضروري: بدونه يكتب المهاجم حقولاً ضخمة في كل وثيقة.
+      allow create: if isAuthenticated()
+                    && request.resource.data.keys().hasOnly(
+                         ['phone', 'userId', 'productId', 'productName',
+                          'status', 'type', 'createdAt'])
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.phone is string
+                    && request.resource.data.phone.size() >= 8
+                    && request.resource.data.phone.size() <= 30
+                    && request.resource.data.productId is string
+                    && request.resource.data.productId.size() > 0
+                    && request.resource.data.productName is string
+                    && request.resource.data.productName.size() <= 200;
+      allow read, update, delete: if isActiveStaff();
     }
 
     // ─── المنتجات ─────────────────────────────────────────────────
@@ -233,7 +254,9 @@ service cloud.firestore {
     // الإنشاء متاح للجميع (حتى غير المسجّلات قد تحتاج الدعم)،
     // والقراءة والإدارة للطاقم فقط.
     match /support_requests/{reqId} {
-      allow create: if request.resource.data.message is string
+      // عام عمدًا (للزائرات)، لكن بعدد حقول محدود كي لا تُحشى الوثيقة.
+      allow create: if request.resource.data.keys().size() <= 20
+                    && request.resource.data.message is string
                     && request.resource.data.message.size() > 0
                     && request.resource.data.message.size() < 5000;
       allow read, update, delete: if isActiveStaff();
@@ -306,7 +329,8 @@ service cloud.firestore {
     // الإنشاء عام (مستخدم غير مسجّل لأنه نسي كلمة المرور)
     // القراءة والتحديث والحذف للأدمن فقط
     match /password_reset_requests/{reqId} {
-      allow create: if request.resource.data.identifier is string
+      allow create: if request.resource.data.keys().size() <= 8
+                    && request.resource.data.identifier is string
                     && request.resource.data.identifier.size() > 0
                     && request.resource.data.identifier.size() < 100;
       allow read, update, delete: if isOwnerOrSupervisor();
@@ -349,6 +373,58 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAuthenticated();
       allow update, delete: if isOwnerOrSupervisor();
+    }
+
+    // ─── اقتران الزوجين (وضع الأب) ────────────────────────────────
+    // 🔒 مبدأ التصميم: الزوج **لا يصل أبداً** إلى /users/{uid} الخاصّة بالزوجة
+    //    (القاعدة أعلاه تمنع ذلك مطلقاً). بدلاً من ذلك يكتب تطبيق الزوجة
+    //    **لقطة منقّاة** في couples/{id}/shared/* تحتوي الحمل والطفل فقط.
+    //    بيانات الدورة الشهرية لا تُنسخ إلى هنا إطلاقاً.
+    //
+    //    معرّف الوثيقة = كود الاقتران (6 خانات)، لذا `list` ممنوع تماماً:
+    //    الكود وحده هو المفتاح، ولا يمكن تصفّح الدعوات.
+    match /couples/{coupleId} {
+      function isMember() {
+        return isAuthenticated() && (
+          resource.data.motherUid == request.auth.uid ||
+          resource.data.partnerUid == request.auth.uid
+        );
+      }
+      function isLivePendingInvite() {
+        return resource.data.status == 'pending' &&
+               resource.data.expiresAt > request.time;
+      }
+
+      // الزوجة تنشئ الدعوة باسمها فقط، وبلا شريك بعد
+      allow create: if isAuthenticated()
+        && request.resource.data.motherUid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.partnerUid == null;
+
+      // العضوان يقرآن دائماً؛ وأيّ مسجّل يقرأ دعوة معلّقة سارية ليتحقّق من الكود.
+      // الوثيقة الجذر لا تحمل أيّ بيانات صحّية — فقط اسم الزوجة وحالة الدعوة.
+      allow get: if isMember() || (isAuthenticated() && isLivePendingInvite());
+      allow list: if false;
+
+      // الزوج يستردّ الدعوة مرّة واحدة ويضع نفسه شريكاً دون تغيير صاحبتها
+      allow update: if isMember()
+        || (isAuthenticated()
+            && isLivePendingInvite()
+            && resource.data.motherUid != request.auth.uid
+            && request.resource.data.partnerUid == request.auth.uid
+            && request.resource.data.status == 'linked'
+            && request.resource.data.motherUid == resource.data.motherUid);
+
+      // أيّ من الطرفين يفكّ الارتباط متى شاء
+      allow delete: if isMember();
+
+      // اللقطة المشتركة والقوائم والأسماء — للعضوين فقط
+      match /{sub=**} {
+        allow read, write: if isAuthenticated() && (
+          get(/databases/$(database)/documents/couples/$(coupleId)).data.motherUid == request.auth.uid ||
+          get(/databases/$(database)/documents/couples/$(coupleId)).data.partnerUid == request.auth.uid
+        );
+      }
     }
 
     // ─── البلاغات والشكاوى ──────────────────────────────────────────

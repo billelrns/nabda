@@ -68,6 +68,11 @@ google-services.json
 GoogleService-Info.plist
 firebase_options.dart
 
+# Service accounts / admin credentials — NEVER commit
+**/serviceAccount.json
+**/serviceAccountKey.json
+*-firebase-adminsdk-*.json
+
 # Environment
 .env
 .env.*
@@ -84,3 +89,56 @@ Thumbs.db
 nabda.apk
 .claude/
 _archive_data/
+nabda-import/node_modules/
+android/hs_err_pid*.log
+android/replay_pid*.log
+
+# مفاتيح التطبيق — لا تُرفع أبدًا (غوغل تعطّل المفاتيح المنشورة تلقائيًا)
+lib/config/secrets.dart
+
+# Dialogue audio output files
+brand_nabda/dialogues/out/
+
+# ════════════════════════════════════════════════════════════════
+#  سكربتات المزامنة الخطرة — لا تُرفع ولا تُستعمل أبداً
+#  هذه تستعمل /MIR فتمسح الوجهة بالكامل. تسبّبت في فقدان أيام من
+#  العمل حين دهست C:\nabda_app وD: وOneDrive معاً (أغسطس 2026).
+#  أُبقيت هنا لتُمنع من العودة إلى المستودع إن أُعيد إنشاؤها.
+# ════════════════════════════════════════════════════════════════
+nabda_sync_all.bat
+nabda_sync_all.ps1
+sync_all.bat
+sync_to_d.bat
+copy_to_nabda.bat
+
+# سكربتات الاسترجاع المؤقّتة (انتهت مهمّتها)
+RESCUE_step*.bat
+fix_git_push.bat
+finish_rebase_and_push.bat
+deploy_rules.bat
+
+# مخرجات تشخيص مؤقّتة
+_rescue/
+_analyze.txt
+_analyze2.txt
+_culprit.txt
+_deleted.txt
+_modified.txt
+_theirs.txt
+analyze.txt
+scratch/
+
+# نسخ احتياطية للبيانات (الأصل في Firestore وفي سجلّ git)
+*.bak
+*.before-clean.bak
+*.before-drop.bak
+assets/data/*backup_*.json
+assets/data/*.bak*
+
+# فيديوهات التسويق — ثقيلة جداً على git (الحدّ 100MB لكل ملف)
+marketing/video/
+marketing/video_v1/
+marketing/video_v2/
+brand_nabda/promo_render/
+*.mp4
+*.mov

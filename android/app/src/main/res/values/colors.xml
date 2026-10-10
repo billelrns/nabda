@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- خلفية أيقونة التطبيق التكيّفية (adaptive icon) — القيمة الأصلية، لا تُغيَّر -->
     <color name="ic_launcher_background">#FFF5F8</color>
+
+    <!-- خلفية شاشة الإقلاع — وردي نبضة الفاتح جداً (نفس لون شاشة Splash) -->
+    <color name="nabdaSplashBg">#FFF5F9</color>
 </resources>

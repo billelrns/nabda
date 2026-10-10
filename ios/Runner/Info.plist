@@ -53,11 +53,19 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>يحتاج نبضة إلى الوصول لصورك لاختيار صورة ملفك الشخصي أو صورة طفلك.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>يحتاج نبضة إلى الكاميرا لالتقاط صورة ملفك الشخصي أو صورة طفلك.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>يحتاج نبضة إلى الإذن لحفظ الصور في معرض هاتفك.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>يستعمل نبضة موقعك عند طلبك فقط للبحث عن أقرب طبيبة نساء أو مستشفى ولادة.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>

@@ -23,6 +23,11 @@ class SmartArticle {
   final int originalViews;
   final String imagePath;
   final String? photoTag;
+  final String? subcategoryId;
+  final String? subcategoryName;
+  final String? specialty;
+  final String? subcategoryEmoji;
+  final List<String> tags;
 
   const SmartArticle({
     required this.id,
@@ -47,16 +52,26 @@ class SmartArticle {
     required this.originalViews,
     required this.imagePath,
     this.photoTag,
+    this.subcategoryId,
+    this.subcategoryName,
+    this.specialty,
+    this.subcategoryEmoji,
+    this.tags = const [],
   });
 
   factory SmartArticle.fromJson(Map<String, dynamic> json) {
     final hex = (json['themeColorHex'] as String? ?? '#00897B').replaceAll('#', '');
+    final catId = json['categoryId'] ?? '';
+    final subId = json['subcategoryId'];
+    final subName = json['subcategoryName'] ?? (subId != null ? subcategoryNames[subId] : null);
+    final subEmoji = json['subcategoryEmoji'] ?? (subId != null ? subcategoryEmojis[subId] : null);
+
     return SmartArticle(
       id: json['id'] ?? '',
       originalId: json['originalId']?.toString() ?? '',
       rank: json['rank'] ?? 0,
-      categoryId: json['categoryId'] ?? '',
-      categoryName: json['categoryName'] ?? '',
+      categoryId: catId,
+      categoryName: json['categoryName'] ?? (categoryNames[catId] ?? ''),
       title: json['title'] ?? '',
       originalTitle: json['originalTitle'],
       readTime: json['readTime'] ?? '5 دقائق',
@@ -78,6 +93,11 @@ class SmartArticle {
       originalViews: json['originalViews'] ?? 0,
       imagePath: json['imagePath'] ?? 'assets/images/logo_nabda.png',
       photoTag: json['photoTag'],
+      subcategoryId: subId,
+      subcategoryName: subName,
+      specialty: json['specialty'],
+      subcategoryEmoji: subEmoji,
+      tags: (json['tags'] as List? ?? []).map((t) => t.toString()).toList(),
     );
   }
 }
@@ -123,7 +143,6 @@ const Map<String, String> categoryEmojis = {
 };
 
 /// خريطة categoryId → لون ثيم — ألوان نبضة الرسمية بعد التنظيف
-/// (متطابقة مع القيم في smart_2500_articles.json بعد تشغيل المرحلة 0)
 const Map<String, int> categoryColors = {
   'pregnancy': 0xFFE91E63,       // Nabda pink (وردي أساسي)
   'beauty': 0xFFFF6090,          // Nabda soft pink (وردي ناعم)
@@ -135,9 +154,148 @@ const Map<String, int> categoryColors = {
   'baby': 0xFF29B6F6,            // light blue (أزرق لطيف للرضع)
 };
 
+/// خريطة التصنيفات الفرعية لكل قسم رئيسي
+const Map<String, List<String>> subcategoriesByCategory = {
+  'pregnancy': [
+    'preg_nutrition_vitamins',
+    'preg_labor_delivery',
+    'preg_health_tests',
+    'preg_symptoms_weeks',
+    'preg_postpartum',
+  ],
+  'baby': [
+    'baby_development_growth',
+    'baby_breastfeeding_food',
+    'baby_sleep_routine',
+    'baby_health_care',
+    'baby_safety_gear',
+  ],
+  'baby_care': [
+    'baby_development_growth',
+    'baby_breastfeeding_food',
+    'baby_sleep_routine',
+    'baby_health_care',
+    'baby_safety_gear',
+  ],
+  'fertility': [
+    'fert_ovulation_cycle',
+    'fert_boost_tips',
+    'fert_pcos_hormones',
+    'fert_ivf_medical',
+  ],
+  'health': [
+    'health_nutrition_fitness',
+    'health_diseases_prevention',
+    'health_mental_wellness',
+    'health_hormones_lifestyle',
+    'health_period_cycle',
+  ],
+  'womens_health': [
+    'health_nutrition_fitness',
+    'health_diseases_prevention',
+    'health_mental_wellness',
+    'health_hormones_lifestyle',
+    'health_period_cycle',
+  ],
+  'beauty': [
+    'beauty_skincare',
+    'beauty_haircare',
+    'beauty_body_perfume',
+    'beauty_natural_recipes',
+    'beauty_pregnancy_safe',
+  ],
+  'marriage': [
+    'marr_communication',
+    'marr_conflicts_solutions',
+    'marr_parenting_partnership',
+    'marr_intimacy',
+  ],
+};
+
+/// أسماء التصنيفات الفرعية
+const Map<String, String> subcategoryNames = {
+  // Pregnancy
+  'preg_nutrition_vitamins': 'تغذية وفيتامينات الحامل',
+  'preg_labor_delivery': 'المخاض والولادة والتحضير',
+  'preg_health_tests': 'فحوصات وسونار ومتاعب الحمل',
+  'preg_symptoms_weeks': 'أعراض الحمل وتطور الجنين',
+  'preg_postpartum': 'ما بعد الولادة والنفاس',
+
+  // Baby
+  'baby_development_growth': 'مراحل النمو والتطور',
+  'baby_breastfeeding_food': 'الرضاعة والتغذية والفطام',
+  'baby_sleep_routine': 'نوم الرضيع والروتين والبكاء',
+  'baby_health_care': 'صحة الرضيع والتطعيمات',
+  'baby_safety_gear': 'سلامة الطفل ومستلزماته',
+
+  // Fertility
+  'fert_ovulation_cycle': 'حساب التبويض وعلامات الخصوبة',
+  'fert_boost_tips': 'تعزيز الخصوبة وفرص الحمل',
+  'fert_pcos_hormones': 'تكيس المبايض واضطراب الهرمونات',
+  'fert_ivf_medical': 'الفحوصات والحقن المجهري',
+
+  // Health
+  'health_nutrition_fitness': 'الرشاقة وإنقاص الوزن والطبخ',
+  'health_diseases_prevention': 'الأمراض النسائية والوقاية',
+  'health_mental_wellness': 'الصحة النفسية والاسترخاء',
+  'health_hormones_lifestyle': 'الهرمونات ونمط الحياة',
+  'health_period_cycle': 'الدورة الشهرية وأعراضها',
+
+  // Beauty
+  'beauty_skincare': 'العناية بالبشرة والوجه والنضارة',
+  'beauty_haircare': 'العناية بالشعر ومنع التساقط',
+  'beauty_body_perfume': 'العناية بالجسم والتعطير',
+  'beauty_natural_recipes': 'الوصفات والخلطات الطبيعية',
+  'beauty_pregnancy_safe': 'الجمال الآمن للحوامل والأمهات',
+
+  // Marriage
+  'marr_communication': 'التفاهم والحوار ولغات الحب',
+  'marr_conflicts_solutions': 'إدارة الخلافات والضغوط',
+  'marr_parenting_partnership': 'الشراكة الوالدية وبناء الأسرة',
+  'marr_intimacy': 'العلاقة الحميمة والانسجام',
+};
+
+/// إيموجي التصنيفات الفرعية
+const Map<String, String> subcategoryEmojis = {
+  'preg_nutrition_vitamins': '🥗',
+  'preg_labor_delivery': '🏥',
+  'preg_health_tests': '🔬',
+  'preg_symptoms_weeks': '🤰',
+  'preg_postpartum': '🌸',
+
+  'baby_development_growth': '🧸',
+  'baby_breastfeeding_food': '🍼',
+  'baby_sleep_routine': '😴',
+  'baby_health_care': '👶',
+  'baby_safety_gear': '🛡️',
+
+  'fert_ovulation_cycle': '🗓️',
+  'fert_boost_tips': '🌸',
+  'fert_pcos_hormones': '🩺',
+  'fert_ivf_medical': '🔬',
+
+  'health_nutrition_fitness': '🥗',
+  'health_diseases_prevention': '🩺',
+  'health_mental_wellness': '🕊️',
+  'health_hormones_lifestyle': '💗',
+  'health_period_cycle': '🩸',
+
+  'beauty_skincare': '💄',
+  'beauty_haircare': '💇‍♀️',
+  'beauty_body_perfume': '✨',
+  'beauty_natural_recipes': '🌿',
+  'beauty_pregnancy_safe': '🤰',
+
+  'marr_communication': '💍',
+  'marr_conflicts_solutions': '🕊️',
+  'marr_parenting_partnership': '👨‍👩‍👧',
+  'marr_intimacy': '💕',
+};
+
 /// ألوان نبضة الرسمية للمرجع
 const int kNabdaPink = 0xFFE91E63;        // اللون الأساسي
 const int kNabdaTeal = 0xFF00897B;         // اللون الثانوي
 const int kNabdaCream = 0xFFFFF8FB;        // خلفية دافئة
 const int kNabdaSoftPink = 0xFFFF6090;     // وردي ناعم
 const int kNabdaLavender = 0xFF7E57C2;     // بنفسجي أنثوي
+

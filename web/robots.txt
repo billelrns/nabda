@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /tools/
+Allow: /articles.html
+Allow: /shop
+
+Sitemap: https://nabda.online/sitemap.xml

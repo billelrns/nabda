@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+
+import '../../utils/voice.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,6 +15,7 @@ import '../../widgets/news_section.dart';
 import '../../widgets/personalized_tips.dart';
 import '../../widgets/conditional_content.dart';
 import '../../config/play_compliance.dart';
+import '../../config/shop_config.dart';
 import '../../services/dynamic_content_service.dart';
 import '../../widgets/nabda_ui.dart';
 import '../../widgets/names_articles_carousel.dart';
@@ -1269,9 +1272,9 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'مقالات مفيدة لكِ',
-                    style: TextStyle(
+                  Text(
+                    V.t('مقالات مفيدة لكِ'),
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: _textPrimary,
@@ -3183,8 +3186,11 @@ class _DiscoverDetailScreen extends StatelessWidget {
                             .map((doc) => DynamicContentService.docToProduct(doc))
                             .toList();
                         // ترتيب المنتجات حسب قربها من موضوع المقال
+                        // لا مكملات ولا أجهزة طبية في المنتجات المقترحة (shop_config.dart)
                         final allProducts = NabdaAds.rankProducts<Map<String, String>>(
-                          <Map<String, String>>[...dynamicProducts, ..._pregnancyProducts],
+                          <Map<String, String>>[...dynamicProducts, ..._pregnancyProducts]
+                              .where((p) => !isHiddenProduct(p))
+                              .toList(),
                           '${article.title} ${article.content}',
                         );
                         return SizedBox(

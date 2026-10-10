@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../utils/voice.dart';
+
 import '../services/pregnancy_dates_service.dart';
 
 /// بطاقة «تاريخ الولادة المتوقّع» — تعرض التاريخ ومصدره وتتيح التعديل
@@ -220,7 +222,7 @@ class _DueDateCardState extends State<DueDateCard> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        due == null ? 'لم يُحدَّد بعد — اضغطي للإضافة' : _fmt(due),
+                        due == null ? V.t('لم يُحدَّد بعد — اضغطي للإضافة') : _fmt(due),
                         style: TextStyle(
                           fontSize: due == null ? 13.5 : 16.5,
                           fontWeight: FontWeight.w800,

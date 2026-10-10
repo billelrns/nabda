@@ -75,6 +75,15 @@ service firebase.storage {
       allow delete: if isOwner(userId) || isStaff();
     }
 
+    // ─── مرفقات الدعم الفنّي (لقطات شاشة من شاشة الدعم) ─────────
+    // كانت تسقط في «منع كل شيء» أدناه، فيفشل إرسال طلب الدعم كلّه متى
+    // أُرفقت صورة. الرفع لصاحبة الحساب، والقراءة لها وللطاقم.
+    match /support_attachments/{uid}/{file} {
+      allow read: if isOwner(uid) || isStaff();
+      allow create: if isOwner(uid) && isImage() && maxBytes(5 * 1024 * 1024);
+      allow delete: if isOwner(uid) || isStaff();
+    }
+
     // ─── ملفّات إداريّة عامّة (لوحة الأدمن) ──────────────────────
     // كل ملفّات الأدمن (تحميلات، نسخ احتياطي مرئي، إلخ) محصورة بالطاقم.
     match /admin/{allPaths=**} {

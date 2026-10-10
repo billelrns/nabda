@@ -54,28 +54,29 @@ class CountryData {
 }
 
 // ─── Standard Address Fields ───
-const _nameField = AddressField(key: 'name', labelAr: 'الاسم الكامل', labelEn: 'Full Name');
-const _phoneField = AddressField(key: 'phone', labelAr: 'رقم الهاتف', labelEn: 'Phone');
-const _streetField = AddressField(key: 'street', labelAr: 'العنوان / الشارع', labelEn: 'Street Address');
+// ملاحظة: الاسم ورقم الهاتف يُعرضان كحقلين صريحين في أعلى الاستمارة
+// (_nameC و _phoneC في cart_screen.dart) ولا يوضعان ضمن addressFields
+// لمنع التكرار — لذلك لا تعريف لهما هنا عمداً.
+const _streetField = AddressField(key: 'street', labelAr: 'العنوان التفصيلي', labelEn: 'Street Address');
 const _cityField = AddressField(key: 'city', labelAr: 'المدينة', labelEn: 'City');
-const _stateField = AddressField(key: 'state', labelAr: 'الولاية', labelEn: 'State/Province');
-const _zipField = AddressField(key: 'zip', labelAr: 'الرمز البريدي', labelEn: 'Postal Code', required: false);
-const _notesField = AddressField(key: 'notes', labelAr: 'ملاحظات التوصيل', labelEn: 'Delivery Notes', required: false);
+const _stateField = AddressField(key: 'state', labelAr: 'المنطقة / المحافظة', labelEn: 'State/Province');
+const _notesField = AddressField(key: 'notes', labelAr: 'ملاحظات التوصيل (اختياري)', labelEn: 'Delivery Notes', required: false);
 
-// Algeria-specific
+// تسميات المناطق الخاصة حسب الدولة
 const _communeField = AddressField(key: 'commune', labelAr: 'البلدية', labelEn: 'Commune');
 const _wilayaField = AddressField(key: 'wilaya', labelAr: 'الولاية', labelEn: 'Wilaya');
-
-// Saudi-specific
-const _districtField = AddressField(key: 'district', labelAr: 'الحي', labelEn: 'District');
-const _buildingField = AddressField(key: 'building', labelAr: 'رقم المبنى', labelEn: 'Building Number', required: false);
-
-// Egypt-specific
-const _governorateField = AddressField(key: 'governorate', labelAr: 'المحافظة', labelEn: 'Governorate');
-const _landmarkField = AddressField(key: 'landmark', labelAr: 'علامة مميزة', labelEn: 'Landmark', required: false);
+const _governorateField = AddressField(key: 'state', labelAr: 'المحافظة', labelEn: 'Governorate');
+const _regionField = AddressField(key: 'state', labelAr: 'المنطقة', labelEn: 'Region');
+const _emirateField = AddressField(key: 'state', labelAr: 'الإمارة', labelEn: 'Emirate');
+const _moroccoRegionField = AddressField(key: 'state', labelAr: 'الجهة', labelEn: 'Region');
+const _tunisiaWilayaField = AddressField(key: 'state', labelAr: 'الولاية', labelEn: 'Wilaya');
+const _qatarMunicipalityField = AddressField(key: 'state', labelAr: 'البلدية / المنطقة', labelEn: 'Municipality');
 
 // ─── Standard Payment Methods ───
 const _cod = PaymentMethod(id: 'cod', nameAr: 'الدفع عند الاستلام', nameEn: 'Cash on Delivery', icon: '💵', isDefault: true);
+
+// ⏸️ معطّلة حتى وصل بوّابة دفع حقيقية. لإعادة التفعيل: أضفها إلى
+// paymentMethods للدولة المعنيّة بعد أن يعالج payment_service الدفع فعلًا.
 const _visa = PaymentMethod(id: 'visa', nameAr: 'فيزا', nameEn: 'Visa', icon: '💳');
 const _mastercard = PaymentMethod(id: 'mastercard', nameAr: 'ماستركارد', nameEn: 'Mastercard', icon: '💳');
 const _ccp = PaymentMethod(id: 'ccp', nameAr: 'بريد الجزائر CCP', nameEn: 'Algerie Poste CCP', icon: '🏦');
@@ -96,103 +97,103 @@ final List<CountryData> supportedCountries = [
     code: 'DZ', nameAr: 'الجزائر', nameEn: 'Algeria', flag: '🇩🇿',
     currencyCode: 'DZD', currencyNameAr: 'دينار جزائري', currencyNameEn: 'Algerian Dinar',
     currencySymbol: 'د.ج', phonePrefix: '+213', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _wilayaField, _communeField],
-    paymentMethods: [_cod, _dahabia, _cib, _ccp, _baridimob],
+    addressFields: [_wilayaField, _communeField],
+    paymentMethods: [_cod],
   ),
   // 🇸🇦 Saudi Arabia
   CountryData(
     code: 'SA', nameAr: 'السعودية', nameEn: 'Saudi Arabia', flag: '🇸🇦',
     currencyCode: 'SAR', currencyNameAr: 'ريال سعودي', currencyNameEn: 'Saudi Riyal',
     currencySymbol: 'ر.س', phonePrefix: '+966', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _districtField, _cityField, _buildingField, _zipField, _notesField],
-    paymentMethods: [_mada, _stcPay, _applePay, _visa, _mastercard, _cod],
+    addressFields: [_regionField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇪🇬 Egypt
   CountryData(
     code: 'EG', nameAr: 'مصر', nameEn: 'Egypt', flag: '🇪🇬',
     currencyCode: 'EGP', currencyNameAr: 'جنيه مصري', currencyNameEn: 'Egyptian Pound',
     currencySymbol: 'ج.م', phonePrefix: '+20', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _governorateField, _cityField, _landmarkField, _zipField, _notesField],
-    paymentMethods: [_cod, _vodafoneCash, _fawry, _instaPay, _visa, _mastercard],
+    addressFields: [_governorateField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇲🇦 Morocco
   CountryData(
     code: 'MA', nameAr: 'المغرب', nameEn: 'Morocco', flag: '🇲🇦',
     currencyCode: 'MAD', currencyNameAr: 'درهم مغربي', currencyNameEn: 'Moroccan Dirham',
     currencySymbol: 'د.م', phonePrefix: '+212', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _zipField, _notesField],
-    paymentMethods: [_cod, _visa, _mastercard],
+    addressFields: [_moroccoRegionField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇹🇳 Tunisia
   CountryData(
     code: 'TN', nameAr: 'تونس', nameEn: 'Tunisia', flag: '🇹🇳',
     currencyCode: 'TND', currencyNameAr: 'دينار تونسي', currencyNameEn: 'Tunisian Dinar',
     currencySymbol: 'د.ت', phonePrefix: '+216', decimalPlaces: 3,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _zipField, _notesField],
-    paymentMethods: [_cod, _visa, _mastercard],
+    addressFields: [_tunisiaWilayaField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇦🇪 UAE
   CountryData(
     code: 'AE', nameAr: 'الإمارات', nameEn: 'UAE', flag: '🇦🇪',
     currencyCode: 'AED', currencyNameAr: 'درهم إماراتي', currencyNameEn: 'UAE Dirham',
     currencySymbol: 'د.إ', phonePrefix: '+971', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _districtField, _cityField, _buildingField, _notesField],
-    paymentMethods: [_applePay, _visa, _mastercard, _cod],
+    addressFields: [_emirateField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇰🇼 Kuwait
   CountryData(
     code: 'KW', nameAr: 'الكويت', nameEn: 'Kuwait', flag: '🇰🇼',
     currencyCode: 'KWD', currencyNameAr: 'دينار كويتي', currencyNameEn: 'Kuwaiti Dinar',
     currencySymbol: 'د.ك', phonePrefix: '+965', decimalPlaces: 3,
-    addressFields: [_nameField, _phoneField, _streetField, _districtField, _cityField, _notesField],
-    paymentMethods: [_visa, _mastercard, _applePay, _cod],
+    addressFields: [_governorateField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇶🇦 Qatar
   CountryData(
     code: 'QA', nameAr: 'قطر', nameEn: 'Qatar', flag: '🇶🇦',
     currencyCode: 'QAR', currencyNameAr: 'ريال قطري', currencyNameEn: 'Qatari Riyal',
     currencySymbol: 'ر.ق', phonePrefix: '+974', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _districtField, _cityField, _buildingField, _notesField],
-    paymentMethods: [_visa, _mastercard, _applePay, _cod],
+    addressFields: [_qatarMunicipalityField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇧🇭 Bahrain
   CountryData(
     code: 'BH', nameAr: 'البحرين', nameEn: 'Bahrain', flag: '🇧🇭',
     currencyCode: 'BHD', currencyNameAr: 'دينار بحريني', currencyNameEn: 'Bahraini Dinar',
     currencySymbol: 'د.ب', phonePrefix: '+973', decimalPlaces: 3,
-    addressFields: [_nameField, _phoneField, _streetField, _districtField, _cityField, _buildingField, _notesField],
-    paymentMethods: [_visa, _mastercard, _applePay, _cod],
+    addressFields: [_governorateField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇴🇲 Oman
   CountryData(
     code: 'OM', nameAr: 'عُمان', nameEn: 'Oman', flag: '🇴🇲',
     currencyCode: 'OMR', currencyNameAr: 'ريال عماني', currencyNameEn: 'Omani Rial',
     currencySymbol: 'ر.ع', phonePrefix: '+968', decimalPlaces: 3,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _zipField, _notesField],
-    paymentMethods: [_visa, _mastercard, _cod],
+    addressFields: [_regionField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇯🇴 Jordan
   CountryData(
     code: 'JO', nameAr: 'الأردن', nameEn: 'Jordan', flag: '🇯🇴',
     currencyCode: 'JOD', currencyNameAr: 'دينار أردني', currencyNameEn: 'Jordanian Dinar',
     currencySymbol: 'د.أ', phonePrefix: '+962', decimalPlaces: 3,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _zipField, _notesField],
-    paymentMethods: [_cod, _visa, _mastercard],
+    addressFields: [_governorateField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇮🇶 Iraq
   CountryData(
     code: 'IQ', nameAr: 'العراق', nameEn: 'Iraq', flag: '🇮🇶',
     currencyCode: 'IQD', currencyNameAr: 'دينار عراقي', currencyNameEn: 'Iraqi Dinar',
     currencySymbol: 'د.ع', phonePrefix: '+964', decimalPlaces: 0,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _notesField],
-    paymentMethods: [_cod, _visa, _mastercard],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇱🇾 Libya
   CountryData(
     code: 'LY', nameAr: 'ليبيا', nameEn: 'Libya', flag: '🇱🇾',
     currencyCode: 'LYD', currencyNameAr: 'دينار ليبي', currencyNameEn: 'Libyan Dinar',
     currencySymbol: 'د.ل', phonePrefix: '+218', decimalPlaces: 3,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _notesField],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
     paymentMethods: [_cod],
   ),
   // 🇸🇩 Sudan
@@ -200,7 +201,7 @@ final List<CountryData> supportedCountries = [
     code: 'SD', nameAr: 'السودان', nameEn: 'Sudan', flag: '🇸🇩',
     currencyCode: 'SDG', currencyNameAr: 'جنيه سوداني', currencyNameEn: 'Sudanese Pound',
     currencySymbol: 'ج.س', phonePrefix: '+249', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _notesField],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
     paymentMethods: [_cod],
   ),
   // 🇾🇪 Yemen
@@ -208,7 +209,7 @@ final List<CountryData> supportedCountries = [
     code: 'YE', nameAr: 'اليمن', nameEn: 'Yemen', flag: '🇾🇪',
     currencyCode: 'YER', currencyNameAr: 'ريال يمني', currencyNameEn: 'Yemeni Rial',
     currencySymbol: 'ر.ي', phonePrefix: '+967', decimalPlaces: 0,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _notesField],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
     paymentMethods: [_cod],
   ),
   // 🇱🇧 Lebanon
@@ -216,15 +217,15 @@ final List<CountryData> supportedCountries = [
     code: 'LB', nameAr: 'لبنان', nameEn: 'Lebanon', flag: '🇱🇧',
     currencyCode: 'USD', currencyNameAr: 'دولار أمريكي', currencyNameEn: 'US Dollar',
     currencySymbol: '\$', phonePrefix: '+961', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _zipField, _notesField],
-    paymentMethods: [_cod, _visa, _mastercard],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇸🇾 Syria
   CountryData(
     code: 'SY', nameAr: 'سوريا', nameEn: 'Syria', flag: '🇸🇾',
     currencyCode: 'SYP', currencyNameAr: 'ليرة سورية', currencyNameEn: 'Syrian Pound',
     currencySymbol: 'ل.س', phonePrefix: '+963', decimalPlaces: 0,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _notesField],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
     paymentMethods: [_cod],
   ),
   // 🇵🇸 Palestine
@@ -232,15 +233,15 @@ final List<CountryData> supportedCountries = [
     code: 'PS', nameAr: 'فلسطين', nameEn: 'Palestine', flag: '🇵🇸',
     currencyCode: 'ILS', currencyNameAr: 'شيكل', currencyNameEn: 'Israeli Shekel',
     currencySymbol: '₪', phonePrefix: '+970', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _notesField],
-    paymentMethods: [_cod, _visa, _mastercard],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
   // 🇲🇷 Mauritania
   CountryData(
     code: 'MR', nameAr: 'موريتانيا', nameEn: 'Mauritania', flag: '🇲🇷',
     currencyCode: 'MRU', currencyNameAr: 'أوقية موريتانية', currencyNameEn: 'Mauritanian Ouguiya',
     currencySymbol: 'أ.م', phonePrefix: '+222', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _notesField],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
     paymentMethods: [_cod],
   ),
   // 🇩🇯 Djibouti
@@ -248,7 +249,7 @@ final List<CountryData> supportedCountries = [
     code: 'DJ', nameAr: 'جيبوتي', nameEn: 'Djibouti', flag: '🇩🇯',
     currencyCode: 'DJF', currencyNameAr: 'فرنك جيبوتي', currencyNameEn: 'Djiboutian Franc',
     currencySymbol: 'Fdj', phonePrefix: '+253', decimalPlaces: 0,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _notesField],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
     paymentMethods: [_cod],
   ),
   // 🇸🇴 Somalia
@@ -256,7 +257,7 @@ final List<CountryData> supportedCountries = [
     code: 'SO', nameAr: 'الصومال', nameEn: 'Somalia', flag: '🇸🇴',
     currencyCode: 'SOS', currencyNameAr: 'شلن صومالي', currencyNameEn: 'Somali Shilling',
     currencySymbol: 'Sh', phonePrefix: '+252', decimalPlaces: 0,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _stateField, _notesField],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
     paymentMethods: [_cod],
   ),
   // 🇰🇲 Comoros
@@ -264,7 +265,7 @@ final List<CountryData> supportedCountries = [
     code: 'KM', nameAr: 'جزر القمر', nameEn: 'Comoros', flag: '🇰🇲',
     currencyCode: 'KMF', currencyNameAr: 'فرنك قمري', currencyNameEn: 'Comorian Franc',
     currencySymbol: 'CF', phonePrefix: '+269', decimalPlaces: 0,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _notesField],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
     paymentMethods: [_cod],
   ),
   // 🇫🇷 France (diaspora)
@@ -272,8 +273,8 @@ final List<CountryData> supportedCountries = [
     code: 'FR', nameAr: 'فرنسا', nameEn: 'France', flag: '🇫🇷',
     currencyCode: 'EUR', currencyNameAr: 'يورو', currencyNameEn: 'Euro',
     currencySymbol: '€', phonePrefix: '+33', decimalPlaces: 2,
-    addressFields: [_nameField, _phoneField, _streetField, _cityField, _zipField, _notesField],
-    paymentMethods: [_visa, _mastercard, _applePay],
+    addressFields: [_stateField, _cityField, _streetField, _notesField],
+    paymentMethods: [_cod],
   ),
 ];
 

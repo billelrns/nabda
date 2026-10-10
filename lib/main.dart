@@ -29,7 +29,6 @@ import 'widgets/news_section.dart';
 import 'widgets/nabda_ui.dart';
 import 'widgets/nabda_animated_logo.dart';
 import 'utils/article_images.dart';
-import 'utils/fetus_size.dart';
 import 'utils/fetus_metrics.dart';
 import 'widgets/nabda_article_ad.dart';
 import 'widgets/article_engagement_bar.dart';
@@ -95,6 +94,13 @@ import 'web/web_pregnancy.dart';
 import 'web/web_public_home.dart';
 import 'web/url_helper.dart';
 import 'services/favorites_service.dart';
+// ── وضع الأب (اقتران الزوجين) ──
+import 'services/partner_service.dart';
+import 'screens/partner/partner_shell.dart';
+import 'screens/partner/role_choice_screen.dart';
+import 'screens/partner/invite_partner_screen.dart';
+import 'screens/partner/father_daily_tips.dart';
+import 'utils/voice.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -479,7 +485,45 @@ class AuthGate extends StatelessWidget {
                   }
                 });
               }
+              // ── وضع الأب ────────────────────────────────────────
+              // الأب يحصل على هيكل مختلف تماماً (PartnerShell) بلا أي
+              // تبويب نسائي. الحسابات القديمة بلا `role` تُعتبر أمّهات،
+              // فلا يتأثّر أيّ مستخدم حالي.
+              final role = ud['role'] as String?;
+              if (role == PartnerService.rolePartner) {
+                PartnerService.setLocalRole(PartnerService.rolePartner);
+                V.isFather = true;
+                // حوِّل مسارات البيانات إلى مرآة الزوجين قبل بناء الواجهة،
+                // فتعمل صفحتا الحمل والطفل عنده بالكامل.
+                final cid = ud['coupleId'] as String?;
+                DB.coupleId = cid;
+                DB.mirrorUserDoc = cid != null;
+                // بطاقة تاريخ الولادة تقرأ عبر PregnancyDates لا عبر DB،
+                // فيجب توجيهها إلى المرآة أيضاً.
+                PregnancyDates.overrideDoc = cid == null
+                    ? null
+                    : FirebaseFirestore.instance
+                        .collection('couples')
+                        .doc(cid)
+                        .collection('shared')
+                        .doc('userdoc');
+                return const PartnerShell();
+              }
+              V.isFather = false;
+              DB.mirrorUserDoc = false;
+              PregnancyDates.overrideDoc = null;
+              // الزوجة: سجلّ الطفل والأطفال يصبحان مشتركين عند الاقتران
+              DB.coupleId = ud['coupleId'] as String?;
+              // مستخدم جديد لم يختر دوره بعد → اسأله أولاً
+              if (role == null && !done) {
+                return const RoleChoiceScreen();
+              }
+
               if (!done) return OnboardingScreen(onDone: () {});
+
+              // الزوجة مرتبطة بزوجها → ادفعي اللقطة المنقّاة عند الإقلاع
+              syncPartnerSnapshotIfLinked();
+
               // المرحلة الفعلية من Firestore — والحمل النشط له الأولوية
               // (حسابات قديمة قد يكون فيها lifeStage = cycle رغم وجود حمل)
               final pd = PregnancyDates.fromUserData(ud);
@@ -1121,16 +1165,44 @@ class _PublicJoinPrompt extends StatelessWidget {
 // ==================== FIRESTORE HELPER ====================
 class DB {
   static String get uid => FirebaseAuth.instance.currentUser!.uid;
+
+  // ══════════════════════════════════════════════════════════════
+  //  تحويل المسارات في وضع الزوجين
+  //
+  //  • coupleId  : يُضبط عند الطرفين وقت الاقتران. يُحوّل سجلّ الطفل
+  //                والأطفال إلى ملكية مشتركة ← تزامن لحظي حقيقي.
+  //  • mirrorUserDoc : يُضبط **للأب فقط**. يُحوّل userDoc إلى مرآة
+  //                منقّاة من وثيقة الزوجة، فتعمل صفحتا الحمل والطفل
+  //                عنده بالكامل دون أن يصل إلى وثيقتها الحقيقية.
+  //
+  //  🔒 cycle_logs تبقى دائماً على مسار المستخدم نفسه — فعند الأب
+  //     تكون فارغة، ولا تُنسخ بيانات الدورة إلى المرآة إطلاقاً.
+  // ══════════════════════════════════════════════════════════════
+  static String? coupleId;
+  static bool mirrorUserDoc = false;
+
+  static DocumentReference get _coupleRoot =>
+      FirebaseFirestore.instance.collection('couples').doc(coupleId);
+
   static DocumentReference get userDoc =>
+      (mirrorUserDoc && coupleId != null)
+          ? _coupleRoot.collection('shared').doc('userdoc')
+          : FirebaseFirestore.instance.collection('users').doc(uid);
+
+  /// مسار المستخدم الحقيقي — لما يجب أن يبقى خاصاً بالحساب نفسه
+  static DocumentReference get ownUserDoc =>
       FirebaseFirestore.instance.collection('users').doc(uid);
+
   static CollectionReference get cycleLogs =>
-      userDoc.collection('cycle_logs');
-  static CollectionReference get babyLogs =>
-      userDoc.collection('baby_logs');
-  static CollectionReference get babies =>
-      userDoc.collection('babies');
+      ownUserDoc.collection('cycle_logs');
+  static CollectionReference get babyLogs => coupleId != null
+      ? _coupleRoot.collection('baby_logs')
+      : ownUserDoc.collection('baby_logs');
+  static CollectionReference get babies => coupleId != null
+      ? _coupleRoot.collection('babies')
+      : ownUserDoc.collection('babies');
   static CollectionReference babyLogsFor(String babyId) =>
-      userDoc.collection('babies').doc(babyId).collection('logs');
+      babies.doc(babyId).collection('logs');
   static CollectionReference get communityPosts =>
       FirebaseFirestore.instance.collection('community_posts');
 
@@ -1467,6 +1539,7 @@ class AppNotifs {
         [_tipsCh, '\u0646\u0635\u0627\u0626\u062D \u064A\u0648\u0645\u064A\u0629'],
         [_pregCh, '\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644 \u0648\u0627\u0644\u062F\u0648\u0631\u0629'],
         [_prodCh, '\u0639\u0631\u0648\u0636 \u0648\u0645\u0646\u062A\u062C\u0627\u062A \u0646\u0628\u0636\u0629'],
+        [_fatherCh, '\u0646\u0635\u0627\u0626\u062D \u0627\u0644\u0623\u0628'],
       ];
       for (final c in chs) {
         await a?.createNotificationChannel(
@@ -1488,6 +1561,32 @@ class AppNotifs {
       if (_on('pregnancy')) await _schedulePregnancyAndCycle(); else await _cancelRange(_pregBase, _pregBase + 19);
       if (_on('products')) await _scheduleProducts(); else await _cancelRange(_prodBase, _prodBase + 29);
       await _scheduleFertility();
+      await _scheduleFatherTips();
+    } catch (_) {}
+  }
+
+  // ── نصائح الأب اليومية (وضع الأب فقط) ───────────────────────
+  // تُجدول محلياً لـ14 يوماً قادماً، فتصل حتى والتطبيق مغلق وبلا خادم.
+  static const _fatherBase = 1500; // 1500-1513
+  static const _fatherCh = 'father_tips_channel';
+
+  static Future<void> _scheduleFatherTips() async {
+    try {
+      final role = await PartnerService.localRole();
+      if (role != PartnerService.rolePartner) {
+        await _cancelRange(_fatherBase, _fatherBase + 13);
+        return;
+      }
+      for (var i = 0; i < 14; i++) {
+        await _zonedOnce(
+          _fatherBase + i,
+          _fatherCh,
+          'نصائح الأب',
+          'نصيحة اليوم 💙',
+          FatherDailyTips.forOffset(i),
+          _inDaysAt(i, 9, 0),
+        );
+      }
     } catch (_) {}
   }
 
@@ -2986,6 +3085,10 @@ class _MainNavState extends State<MainNav> {
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QadaaScreen()))),
                   _navItem(context, '📚', 'مكتبة نبضة',
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticlesHubScreen()))),
+                  _sidebarDivider(line),
+                  // ── وضع الأب: دعوة الزوج لمتابعة الرحلة ──
+                  _navItem(context, '💑', 'أشركي زوجكِ',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InvitePartnerScreen()))),
                   _sidebarDivider(line),
                   // ── حسابي ──
                   _navItem(context, '🔖', 'مقالاتي المحفوظة',
@@ -7931,8 +8034,11 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                           .toList();
                       final staticProducts = _productsBySection[widget.section] ?? _productsBySection['home']!;
                       // ترتيب المنتجات حسب قربها من موضوع المقال
+                      // لا مكملات ولا أجهزة طبية في المنتجات المقترحة (shop_config.dart)
                       final allProducts = NabdaAds.rankProducts<Map<String, String>>(
-                        <Map<String, String>>[...dynamicProducts, ...staticProducts],
+                        <Map<String, String>>[...dynamicProducts, ...staticProducts]
+                            .where((p) => !isHiddenProduct(p))
+                            .toList(),
                         '$_title $_body',
                       );
                       return SizedBox(
@@ -8511,6 +8617,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 }),
                 _menuItem('الإنجازات والشارات', Icons.emoji_events, Colors.amber.shade700, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => AchievementsScreen()));
+                }),
+                // ── وضع الأب: دعوة الزوج ──
+                _menuItem('أشركي زوجكِ', Icons.favorite, const Color(0xFFE0195B), () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const InvitePartnerScreen()));
                 }),
 
                 // ══════════════ قسم «أخرى» ══════════════

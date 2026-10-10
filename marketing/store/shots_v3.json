@@ -1,0 +1,114 @@
+{
+  "_note": "لقطات متجر نبضة — النسخة 3 (أسلوب Flo، مطوَّر). المصادر في raw2/. عدّل النصوص هنا ثم شغّل build_store_v3.py",
+  "palette": {
+    "ink": "#2B2733",
+    "sub": "#6A5F70",
+    "blush": "#F8DCE4",
+    "sage": "#D9E8E1",
+    "lilac": "#E5DDF3",
+    "mint": "#D6ECE8",
+    "cream": "#F8E6D6",
+    "rose": "#FBD9DE"
+  },
+  "shots": [
+    {
+      "id": "01_hero",
+      "type": "hero",
+      "src": "hero_mother.png",
+      "pill1": "رفيقتكِ من الدورة",
+      "pill2": "إلى طفلكِ الأول",
+      "proof": "بالعربية · لكل أمّ في الوطن العربي"
+    },
+    {
+      "id": "02_cycle",
+      "src": "cycle_circle.png",
+      "lead": "كل شيء عن",
+      "big": "دورتكِ الشهرية",
+      "bg": "rose"
+    },
+    {
+      "id": "03_pregnancy",
+      "src": "pregnancy_week.png",
+      "lead": "تابعي جنينكِ",
+      "big": "أسبوعًا بأسبوع",
+      "bg": "mint"
+    },
+    {
+      "id": "04_fiqh",
+      "src": "fiqh.png",
+      "lead": "أحكام الطهارة والصلاة",
+      "big": "فقه المرأة",
+      "bg": "sage"
+    },
+    {
+      "id": "05_ttc",
+      "src": "ttc.png",
+      "lead": "نافذة الخصوبة",
+      "big": "وأفضل أيام المحاولة",
+      "bg": "blush"
+    },
+    {
+      "id": "06_baby",
+      "src": "baby_care.png",
+      "lead": "نموّ طفلكِ ووزنه",
+      "big": "شهرًا بشهر",
+      "bg": "rose"
+    },
+    {
+      "id": "07_names",
+      "src": "names_twins.png",
+      "lead": "أكثر من 1700 اسم عربي",
+      "big": "ومعنى كل اسم",
+      "bg": "lilac"
+    },
+    {
+      "id": "08_store",
+      "src": "store.png",
+      "lead": "متجر بالعملة المحلية",
+      "big": "كل مستلزماتكِ ومستلزمات رضيعكِ",
+      "bg": "cream"
+    }
+  ],
+  "privacy_shot": {
+    "id": "09_privacy",
+    "type": "privacy",
+    "src": "privacy_3d_1.jpg",
+    "lead": "بياناتكِ الصحّية",
+    "big": "لكِ وحدكِ",
+    "claims": [
+      "لا يقرأ بياناتكِ أحد — ولا حتى مسؤول التطبيق",
+      "انشري في المجتمع باسم مجهول متى شئتِ",
+      "مشفّرة على خوادم Google نقلًا وتخزينًا"
+    ]
+  },
+  "alternates": [
+    {
+      "id": "A1_ai",
+      "src": "ai_chat.png",
+      "lead": "اسألي أي سؤال",
+      "big": "مساعد ذكي بالعربية",
+      "bg": "mint"
+    },
+    {
+      "id": "A2_bag",
+      "src": "hospital_bag.png",
+      "lead": "45 عنصرًا في",
+      "big": "حقيبة الولادة",
+      "bg": "sage"
+    },
+    {
+      "id": "A3_symptoms",
+      "src": "cycle_symptoms.png",
+      "lead": "سجّلي مزاجكِ وأعراضكِ",
+      "big": "في ثانيتين",
+      "bg": "blush"
+    },
+    {
+      "id": "A4_qada",
+      "src": "qada.png",
+      "lead": "احفظي وتابعي",
+      "big": "أيام القضاء",
+      "bg": "lilac"
+    }
+  ]
+}

@@ -19,6 +19,16 @@ String? _pathToAction(String path) {
     case '/cycle': return 'cycle';
     case '/baby-names':
     case '/babyNames': return 'babyNames';
+    case '/vaccinations': return 'vaccinations';
+    case '/weight-tracker':
+    case '/weightTracker': return 'weightTracker';
+    case '/kick-counter':
+    case '/kickCounter': return 'kickCounter';
+    case '/hospital-bag':
+    case '/hospitalBag': return 'hospitalBag';
+    case '/exercises': return 'exercises';
+    case '/pregnancy-calendar':
+    case '/pregnancyCal': return 'pregnancyCal';
     case '/login': return 'login';
     case '/signup':
     case '/register': return 'signup';
@@ -107,6 +117,12 @@ class _WebPublicHomeState extends State<WebPublicHome> {
         case 'shop':
         case 'babyNames':
         case 'baby-names':
+        case 'vaccinations':
+        case 'weightTracker':
+        case 'kickCounter':
+        case 'hospitalBag':
+        case 'exercises':
+        case 'pregnancyCal':
           widget.onOpenSection(action);
           break;
         default:

@@ -8,7 +8,7 @@ import 'dart:math';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_event.dart';
 import '../../blocs/auth/auth_state.dart';
-import '../../services/auth_service.dart';
+import '../../config/routes.dart';
 import '../onboarding_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -138,7 +138,9 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                 }
               } catch (_) {}
               if (!context.mounted) return;
-              context.go('/home');
+              final target = AppRoutes.redirectAfterLogin ?? '/home';
+              AppRoutes.redirectAfterLogin = null;
+              context.go(target);
             } else if (state is AuthError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message), backgroundColor: Colors.red.shade400, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),

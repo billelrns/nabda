@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/baby_names_database.dart';
 import '../../data/twin_names_database.dart';
 import '../../data/names_articles_database.dart';
+import '../../widgets/nabda_article_ad.dart';
+import '../../widgets/article_engagement_bar.dart';
+
 
 // ══════════════════════════════════════════════════════════════
 // Baby Names Screen — Inspired by WeMoms with Islamic names filter
@@ -16,7 +19,17 @@ class BabyName {
   final int popularityRank;
   final List<String> countries;
   final bool isIslamic;
-  const BabyName(this.name, this.gender, this.meaning, this.popularityRank, this.countries, {this.isIslamic = false});
+  final List<String> famousPeople;
+
+  const BabyName(
+    this.name,
+    this.gender,
+    this.meaning,
+    this.popularityRank,
+    this.countries, {
+    this.isIslamic = false,
+    this.famousPeople = const [],
+  });
 }
 
 class BabyNamesScreen extends StatefulWidget {
@@ -107,15 +120,25 @@ class _BabyNamesScreenState extends State<BabyNamesScreen> with SingleTickerProv
       setState(() {
         _likesCount = counts;
         _likedByMe = myLikes;
-        // Sync personal favorites with global likes
-        _favorites = Set<String>.from(myLikes);
+        // دمج بدل استبدال: الاستبدال كان يمحو الأسماء المحفوظة في
+        // users/{uid}.favoriteNames إن لم توجد وثيقة إعجاب عامّة لها.
+        _favorites = {..._favorites, ...myLikes};
       });
     }
   }
 
   Future<void> _toggleFavorite(String name) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
+    if (uid == null) {
+      // كان يخرج بصمت فيبدو الزر «لا يستجيب»
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('سجّلي الدخول لحفظ الأسماء المفضّلة 💗'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+      return;
+    }
 
     final docRef = FirebaseFirestore.instance.collection('baby_name_likes').doc(name);
     final isLiked = _likedByMe.contains(name);
@@ -157,11 +180,21 @@ class _BabyNamesScreenState extends State<BabyNamesScreen> with SingleTickerProv
         });
       }
       // Also save to user's personal favorites
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      // set+merge بدل update: update يرمي استثناء إذا لم تكن وثيقة المستخدمة
+      // موجودة بعد، فيرتدّ القلب فوراً ويبدو الزر معطّلاً.
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'favoriteNames': _favorites.toList(),
-      });
-    } catch (_) {
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('toggleFavorite error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('تعذّر حفظ الاسم، تحقّقي من الاتصال'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
       // Revert on error
+      if (!mounted) return;
       setState(() {
         if (isLiked) {
           _likedByMe.add(name);
@@ -408,8 +441,13 @@ class _BabyNamesScreenState extends State<BabyNamesScreen> with SingleTickerProv
           ]),
           subtitle: Text(name.meaning, style: TextStyle(fontSize: 12, color: Colors.grey.shade500), maxLines: 1, overflow: TextOverflow.ellipsis),
           trailing: GestureDetector(
+            // opaque + padding: كانت منطقة اللمس ضيّقة جداً (أيقونة فقط بلا خلفية)
+            // فلا يستجيب الزر عند الضغط على الحواف أو الفراغ بين الأيقونة والرقم.
+            behavior: HitTestBehavior.opaque,
             onTap: () => _toggleFavorite(name.name),
-            child: Column(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(isFav ? Icons.favorite : Icons.favorite_border,
@@ -424,6 +462,7 @@ class _BabyNamesScreenState extends State<BabyNamesScreen> with SingleTickerProv
                   ),
                 ),
               ],
+              ),
             ),
           ),
           onTap: () => _showNameDetail(name),
@@ -746,6 +785,48 @@ class _BabyNamesScreenState extends State<BabyNamesScreen> with SingleTickerProv
                   )).toList()),
                 ]),
               )),
+              // Famous personalities (only if documented and not empty)
+              if (name.famousPeople.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9).withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF81C784).withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(children: [
+                          Icon(Icons.star_rounded, color: Color(0xFF2E7D32), size: 20),
+                          SizedBox(width: 8),
+                          Text('أبرز الشخصيات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF2E7D32))),
+                        ]),
+                        const SizedBox(height: 10),
+                        ...name.famousPeople.map((person) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('• ', style: TextStyle(fontSize: 15, color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
+                              Expanded(
+                                child: Text(
+                                  person,
+                                  style: const TextStyle(fontSize: 13.5, height: 1.5, color: Color(0xFF1B5E20), fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
               // Likes count display
               Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Container(
@@ -1077,6 +1158,7 @@ class BabyNameArticleDetailScreen extends StatelessWidget {
     }
 
     final paragraphs = article.body.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    final midPoint = (paragraphs.length / 2).floor();
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -1118,17 +1200,56 @@ class BabyNameArticleDetailScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1F1A20), height: 1.4),
               ),
               const Divider(height: 32, color: Color(0xFFFFF1F6)),
-              for (final p in paragraphs) ...[
+              for (int i = 0; i < paragraphs.length; i++) ...[
                 Text(
-                  p.trim(),
+                  paragraphs[i].trim(),
                   style: const TextStyle(fontSize: 16, height: 1.8, color: Color(0xFF4A434B)),
                 ),
                 const SizedBox(height: 18),
+                if (i == 1 && paragraphs.length > 3) ...[
+                  NabdaArticleAd(
+                    slot: 0,
+                    articleId: article.title,
+                    section: 'baby_names',
+                    articleTitle: article.title,
+                    articleBody: article.body,
+                    color: catColor,
+                  ),
+                  const SizedBox(height: 18),
+                ],
+                if (i == midPoint && paragraphs.length > 5 && midPoint > 1) ...[
+                  NabdaArticleAd(
+                    slot: 1,
+                    articleId: article.title,
+                    section: 'baby_names',
+                    articleTitle: article.title,
+                    articleBody: article.body,
+                    color: catColor,
+                  ),
+                  const SizedBox(height: 18),
+                ],
               ],
+              const SizedBox(height: 8),
+              ArticleEngagementBar(
+                articleId: article.title,
+                articleTitle: article.title,
+                section: 'baby_names',
+                color: catColor,
+              ),
+              const SizedBox(height: 18),
+              NabdaArticleAd(
+                slot: 2,
+                articleId: article.title,
+                section: 'baby_names',
+                articleTitle: article.title,
+                articleBody: article.body,
+                color: catColor,
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
 }

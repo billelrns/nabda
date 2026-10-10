@@ -5,6 +5,7 @@ import '../../data/womens_fiqh_data.dart';
 import '../../config/theme.dart';
 import '../qadaa/qadaa_screen.dart';
 import '../../widgets/qadaa_quick_card.dart';
+import '../../utils/article_text.dart';
 
 const Color _teal = Color(0xFF00897B);
 const Color _tealLight = Color(0xFFE0F2F1);
@@ -498,17 +499,20 @@ ${item.summary}
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            item.summary,
-                            style: TextStyle(
-                              fontSize: 14,
-                              height: 1.5,
-                              fontWeight: FontWeight.w500,
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.95)
-                                  : const Color(0xFF1B4D3E),
-                            ),
-                          ),
+                          ...splitParagraphs(item.summary).map((p) => Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: RichArabic(
+                                  p,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    height: 1.6,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark
+                                        ? Colors.white.withOpacity(0.95)
+                                        : const Color(0xFF1B4D3E),
+                                  ),
+                                ),
+                              )),
                         ],
                       ),
                     ),
@@ -579,11 +583,11 @@ ${item.summary}
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
+                              child: RichArabic(
                                 'الدليل: ${item.dalil}',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  height: 1.4,
+                                  height: 1.5,
                                   fontWeight: FontWeight.w500,
                                   color: isDark
                                       ? Colors.white70
@@ -668,11 +672,11 @@ ${item.summary}
             ),
           ),
           const SizedBox(height: 4),
-          Text(
+          RichArabic(
             text,
             style: TextStyle(
               fontSize: 13.5,
-              height: 1.45,
+              height: 1.55,
               color: isDark ? Colors.white70 : const Color(0xFF37474F),
             ),
           ),

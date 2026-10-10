@@ -9,6 +9,7 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_event.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../services/auth_service.dart';
+import '../../config/routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -64,6 +65,25 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     _formController.forward();
   }
 
+  /// إرسال بيانات الدخول — يُستدعى من الزر ومن زر «تم» في لوحة المفاتيح
+  void _submitLogin() {
+    final email = _emailController.text.trim();
+    final pass = _passwordController.text;
+    if (email.isEmpty || pass.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('أدخلي البريد وكلمة المرور'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    context.read<AuthBloc>().add(
+          AuthLoginRequested(email: email, password: pass),
+        );
+  }
+
   Future<void> _checkOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     final done = prefs.getBool('onboarding_done') ?? false;
@@ -104,7 +124,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                 }
               } catch (_) {}
               if (!context.mounted) return;
-              context.go('/home');
+              final target = AppRoutes.redirectAfterLogin ?? '/home';
+              AppRoutes.redirectAfterLogin = null;
+              context.go(target);
             } else if (state is AuthError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -199,6 +221,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   hint: '••••••••',
                                   icon: Icons.lock_rounded,
                                   isPassword: true,
+                                  onSubmitted: _submitLogin,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -220,12 +243,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                       width: double.infinity,
                                       height: 56,
                                       child: ElevatedButton(
-                                        onPressed: isLoading ? null : () {
-                                          context.read<AuthBloc>().add(AuthLoginRequested(
-                                            email: _emailController.text,
-                                            password: _passwordController.text,
-                                          ));
-                                        },
+                                        onPressed: isLoading ? null : _submitLogin,
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: const Color(0xFFE91E63),
                                           foregroundColor: Colors.white,
@@ -294,6 +312,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     required IconData icon,
     TextInputType? keyboardType,
     bool isPassword = false,
+    TextInputAction? textInputAction,
+    VoidCallback? onSubmitted,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -305,6 +325,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         controller: controller,
         keyboardType: keyboardType,
         obscureText: isPassword ? _obscurePassword : false,
+        // زر «تم» في لوحة المفاتيح يُرسل النموذج مباشرةً
+        textInputAction: textInputAction ??
+            (isPassword ? TextInputAction.done : TextInputAction.next),
+        onSubmitted: (_) => onSubmitted?.call(),
         style: const TextStyle(fontSize: 15),
         decoration: InputDecoration(
           labelText: label,

@@ -182,80 +182,122 @@ class _DataControlScreenState extends State<DataControlScreen> {
   }
 
   Future<void> _showDeleteAccountDialog() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final providers = user.providerData.map((p) => p.providerId).toList();
+    final isPasswordUser = providers.contains('password');
+
     final passwordController = TextEditingController();
     final confirmController = TextEditingController();
+    String? error;
+    bool busy = false;
 
     await showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('⚠️ حذف الحساب نهائياً'),
-        content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text(
-              'هذا الإجراء سيحذف كل بياناتك (الحمل، الدورة، الأطفال، الطلبات) '
-              'ولا يمكن استرجاعها. اكتبي «حذف» للتأكيد.',
-              textAlign: TextAlign.right,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: confirmController,
-              decoration: const InputDecoration(
-                labelText: 'اكتبي «حذف» للتأكيد',
-                border: OutlineInputBorder(),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => AlertDialog(
+          title: const Text('⚠️ حذف الحساب نهائياً'),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Text(
+                'هذا الإجراء سيحذف كل بياناتك (الحمل، الدورة، الأطفال، المنشورات) '
+                'ولا يمكن استرجاعها. اكتبي «حذف» للتأكيد.\n\n'
+                'ما يبقى بعد الحذف: رسائلك في المحادثات الثنائية (لأنها تخصّ طرفين)، '
+                'وسجلّات طلبات المتجر (التزام محاسبي). ما عدا ذلك يُحذف نهائياً.',
+                textAlign: TextAlign.right,
+                style: TextStyle(fontSize: 13, height: 1.4),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'كلمة المرور الحالية',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmController,
+                decoration: const InputDecoration(
+                  labelText: 'اكتبي «حذف» للتأكيد',
+                  border: OutlineInputBorder(),
+                ),
               ),
+              if (isPasswordUser) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'كلمة المرور الحالية',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+              if (error != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  margin: const EdgeInsets.only(top: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Text(
+                    error!,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: Colors.red.shade900, fontSize: 13),
+                  ),
+                ),
+            ]),
+          ),
+          actions: [
+            TextButton(
+              onPressed: busy ? null : () => Navigator.pop(ctx),
+              child: const Text('إلغاء'),
             ),
-          ]),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: busy
+                  ? null
+                  : () async {
+                      setSheetState(() => error = null);
+                      if (confirmController.text.trim() != 'حذف') {
+                        setSheetState(() => error = 'يجب كتابة كلمة «حذف» بالضبط');
+                        return;
+                      }
+                      if (isPasswordUser && passwordController.text.isEmpty) {
+                        setSheetState(() => error = 'أدخلي كلمة المرور');
+                        return;
+                      }
+
+                      setSheetState(() => busy = true);
+
+                      try {
+                        await AuthService().deleteAccount(
+                          recentPassword: isPasswordUser ? passwordController.text : null,
+                        );
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (mounted) {
+                          GoRouter.of(context).go('/onboarding');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('تم حذف حسابك بنجاح')),
+                          );
+                        }
+                      } catch (e) {
+                        final msg = e.toString().replaceFirst('Exception: ', '');
+                        setSheetState(() {
+                          error = msg;
+                          busy = false;
+                        });
+                      }
+                    },
+              child: busy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('حذف نهائياً', style: TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              if (confirmController.text.trim() != 'حذف') {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('يجب كتابة كلمة «حذف» بالضبط')),
-                );
-                return;
-              }
-              if (passwordController.text.isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('أدخلي كلمة المرور')),
-                );
-                return;
-              }
-              try {
-                await AuthService().deleteAccount(recentPassword: passwordController.text);
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (context.mounted) {
-                  GoRouter.of(context).go('/onboarding');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('تم حذف حسابك بنجاح')),
-                  );
-                }
-              } catch (e) {
-                final msg = e.toString().replaceFirst('Exception: ', '');
-                if (ctx.mounted) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    SnackBar(content: Text(msg), backgroundColor: Colors.red),
-                  );
-                }
-              }
-            },
-            child: const Text('حذف نهائياً', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }

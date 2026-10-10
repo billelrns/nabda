@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/user_model.dart';
 
 /// مصادقة نبضة: بريد + كلمة مرور، ودخول اجتماعي (Google / Facebook / Apple)
@@ -84,6 +85,124 @@ class AuthService {
   }
 
   // ===========================================================================
+  // حذف الحساب (مطلوب لسياسات المتاجر — شاشة التحكّم بالبيانات)
+  // ===========================================================================
+
+  /// يحذف بيانات المستخدمة من Firestore ثم يحذف حساب المصادقة.
+  /// [recentPassword] كلمة المرور الحالية — يُعاد بها التوثيق قبل الحذف،
+  /// لأن Firebase يشترط تسجيل دخول حديثاً للعمليات الحسّاسة.
+  Future<void> deleteAccount({String? recentPassword}) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
+
+    final providers = user.providerData.map((p) => p.providerId).toList();
+    final isPasswordUser = providers.contains('password');
+
+    // ⓪ إعادة التوثيق (بكلمة المرور أو بالمزوّد الاجتماعي)
+    if (isPasswordUser) {
+      if (recentPassword != null && recentPassword.isNotEmpty) {
+        final email = user.email;
+        if (email != null && email.isNotEmpty) {
+          try {
+            await user.reauthenticateWithCredential(
+              EmailAuthProvider.credential(email: email, password: recentPassword),
+            );
+          } on FirebaseAuthException catch (e) {
+            if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+              throw Exception('كلمة المرور غير صحيحة');
+            }
+            if (e.code == 'requires-recent-login') {
+              throw Exception('انتهت صلاحية جلستك — سجّلي الخروج ثم الدخول وأعيدي المحاولة');
+            }
+            rethrow;
+          }
+        }
+      }
+    } else {
+      final pid = providers.firstWhere((p) => p != 'password', orElse: () => '');
+      try {
+        if (pid == 'google.com') {
+          await user.reauthenticateWithProvider(GoogleAuthProvider());
+        } else if (pid == 'facebook.com') {
+          await user.reauthenticateWithProvider(FacebookAuthProvider());
+        } else if (pid == 'apple.com') {
+          await user.reauthenticateWithProvider(AppleAuthProvider());
+        }
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'requires-recent-login') {
+          throw Exception('انتهت صلاحية جلستك — سجّلي الخروج ثم الدخول وأعيدي المحاولة');
+        }
+        rethrow;
+      }
+    }
+
+    final db = FirebaseFirestore.instance;
+
+    // ① المجموعات الفرعية تحت /users/{uid}
+    for (final sub in const [
+      'followers', 'following', 'blocked', 'favorites',
+      'babies', 'baby_logs', 'cycle_logs', 'weight_tracker',
+      'vaccines', 'logs', 'journal', 'kicks', 'hospital_bag',
+    ]) {
+      while (true) {
+        final snap = await db.collection('users').doc(uid)
+            .collection(sub).limit(400).get();
+        if (snap.docs.isEmpty) break;
+        final batch = db.batch();
+        for (final d in snap.docs) { batch.delete(d.reference); }
+        await batch.commit();
+        if (snap.docs.length < 400) break;
+      }
+    }
+
+    // ② المجموعات العليا المرتبطة بالمستخدمة
+    for (final col in const ['cycles', 'pregnancies', 'babies', 'messages']) {
+      while (true) {
+        final snap = await db.collection(col)
+            .where('userId', isEqualTo: uid).limit(400).get();
+        if (snap.docs.isEmpty) break;
+        final batch = db.batch();
+        for (final d in snap.docs) { batch.delete(d.reference); }
+        await batch.commit();
+        if (snap.docs.length < 400) break;
+      }
+    }
+
+    // ③ منشورات المجتمع وحصّة الذكاء الاصطناعي
+    final posts = await db.collection('community_posts')
+        .where('userId', isEqualTo: uid).get();
+    for (final p in posts.docs) { await p.reference.delete(); }
+    try { await db.collection('ai_quota').doc(uid).delete(); } catch (_) {}
+
+    // ③-ب صورة الملف الشخصي في Storage — سياسة الخصوصية وإقرار Data Safety
+    // يَعِدان بحذف كل البيانات، والصورة منها. غيابها (object-not-found)
+    // طبيعي لمن لم ترفع صورة، فلا يُعدّ فشلاً.
+    try {
+      await FirebaseStorage.instance.ref('profile_photos/$uid.jpg').delete();
+    } catch (_) {}
+    try {
+      final att = await FirebaseStorage.instance
+          .ref('support_attachments/$uid').listAll();
+      for (final f in att.items) { await f.delete(); }
+    } catch (_) {}
+
+    // ④ الدليل العام ثم الوثيقة الأم
+    try { await db.collection('users_directory').doc(uid).delete(); } catch (_) {}
+    await db.collection('users').doc(uid).delete();
+
+    // ⑤ أخيراً: حساب المصادقة
+    try {
+      await user.delete();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        throw Exception('انتهت صلاحية جلستك — سجّلي الخروج ثم الدخول وأعيدي المحاولة');
+      }
+      rethrow;
+    }
+  }
+
+  // ===========================================================================
   // الدخول الاجتماعي
   // ===========================================================================
 
@@ -126,7 +245,11 @@ class AuthService {
       'mode': 'cycle',
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
+      // الموافقة تُعطى بسطر «بمتابعتك تُوافقين…» تحت أزرار الدخول الاجتماعي
+      // في شاشة الدخول؛ نسجّل وقتها ومصدرها بدل قيمة منطقية مجرّدة.
       'termsAccepted': true,
+      'termsAcceptedVia': 'social_signin_notice',
+      'termsAcceptedAt': FieldValue.serverTimestamp(),
       'cycleLength': 28,
       'lastPeriodStart': null,
       'pregnancyStartDate': null,
@@ -147,8 +270,8 @@ class AuthService {
       if (doc.exists) {
         return UserModel.fromJson(doc.data() as Map<String, dynamic>);
       }
-    } catch (e) {
-      throw Exception('خطأ في الحصول على بيانات المستخدم: $e');
+    } catch (_) {
+      throw Exception('تعذّر تحميل بياناتك — تحقّقي من الاتصال');
     }
     return null;
   }

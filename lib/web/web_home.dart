@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/dynamic_content_service.dart';
 import '../utils/article_images.dart';
+import '../utils/fetus_metrics.dart';
 
 // ألوان التصميم
 const _pink = Color(0xFFE91E63);
@@ -554,20 +555,8 @@ class WebHomeDashboard extends StatelessWidget {
   }
 
   _Fruit _fruitFor(int w) {
-    if (w <= 5) return const _Fruit('🌱', 'بذرة');
-    if (w <= 7) return const _Fruit('🫐', 'توتة');
-    if (w <= 9) return const _Fruit('🍒', 'كرزة');
-    if (w <= 11) return const _Fruit('🍓', 'فراولة');
-    if (w <= 13) return const _Fruit('🍋', 'ليمونة');
-    if (w <= 16) return const _Fruit('🍊', 'برتقالة');
-    if (w <= 19) return const _Fruit('🥑', 'أفوكادو');
-    if (w <= 22) return const _Fruit('🍌', 'موزة');
-    if (w <= 25) return const _Fruit('🌽', 'ذرة');
-    if (w <= 28) return const _Fruit('🥦', 'قرنبيط');
-    if (w <= 31) return const _Fruit('🥥', 'جوز هند');
-    if (w <= 34) return const _Fruit('🍍', 'أناناس');
-    if (w <= 37) return const _Fruit('🍈', 'شمّام');
-    return const _Fruit('🍉', 'بطيخة');
+    final m = FetusMetrics.forWeek(w);
+    return _Fruit(m.emoji, m.fruit);
   }
 }
 

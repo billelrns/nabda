@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../services/partner_service.dart';
+
 /// ═══════════════════════════════════════════════════════════════════
 ///  مخطّط نشاط الطفل لآخر 7 أيام — رضاعة • نوم • حفاضات
 ///  يقرأ من users/{uid}/baby_logs/{yyyy-MM-dd}
@@ -59,7 +61,12 @@ class _BabyLogsChartState extends State<BabyLogsChart> {
       if (mounted) setState(() => _loading = false);
       return;
     }
-    final base = FirebaseFirestore.instance.collection('users').doc(uid);
+    // عند الاقتران يصبح المصدر ملكية الزوجين (بعد الترحيل التلقائي)،
+    // وإلا يبقى ملكية المستخدمة وحدها.
+    final coupleId = await PartnerService.currentCoupleId();
+    final base = coupleId != null
+        ? FirebaseFirestore.instance.collection('couples').doc(coupleId)
+        : FirebaseFirestore.instance.collection('users').doc(uid);
     final col = widget.babyId == null
         ? base.collection('baby_logs')
         : base.collection('babies').doc(widget.babyId).collection('logs');

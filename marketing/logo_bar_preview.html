@@ -1,0 +1,137 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<title>نبضة — الشعار في الهيدر (الموقع + التطبيق)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,'Segoe UI',sans-serif;background:#FFF6FA;color:#2A1F26;
+padding:36px 20px 70px;display:flex;flex-direction:column;align-items:center;gap:34px}
+h1{font-size:18px;font-weight:600;opacity:.6}
+.lab{font-size:13px;opacity:.55;margin-bottom:10px;text-align:center}
+.wrap{width:100%;max-width:1000px}
+
+/* ── هيدر الموقع ── */
+.site{background:rgba(255,255,255,.35);backdrop-filter:blur(24px) saturate(160%);
+border:1px solid rgba(255,255,255,.5);border-radius:24px;box-shadow:0 10px 34px rgba(244,63,126,.1);
+padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nav{display:flex;gap:22px;font-size:14.5px;color:#4A434B;font-weight:700}
+.nav b{color:#F43F7E;font-weight:700}
+.btns{display:flex;gap:10px}
+.btn{font-size:13.5px;font-weight:700;padding:9px 18px;border-radius:999px;border:1px solid #F6CFDD;background:#fff;color:#3A2F36}
+.btn.p{background:#F43F7E;border-color:#F43F7E;color:#fff}
+
+/* ── شريط التطبيق ── */
+.phone{width:340px;margin:0 auto;background:#FFF3F8;border-radius:32px;padding:12px;border:1px solid #F6D9E5}
+.appbar{height:60px;background:rgba(255,255,255,.85);border-radius:22px;
+box-shadow:0 8px 24px rgba(31,26,32,.06);display:flex;align-items:center;padding:0 12px;gap:8px}
+.ic{width:38px;height:38px;border-radius:12px;background:#FFEDF4;display:grid;place-items:center;
+color:#F43F7E;font-size:17px}
+.av{width:40px;height:40px;border-radius:50%;background:conic-gradient(#F43F7E,#B39DDB,#4DB6AC,#FFCC9E,#F43F7E);padding:2px}
+.av i{display:block;width:100%;height:100%;border-radius:50%;background:#fff}
+.mid{flex:1;display:flex;justify-content:center}
+
+.sizes{display:flex;gap:34px;align-items:flex-end;justify-content:center;flex-wrap:wrap;
+background:#fff;border:1px solid #F1DFE8;border-radius:18px;padding:24px 28px}
+.sz{text-align:center}
+.sz span{display:block;font-size:12px;opacity:.5;margin-top:8px}
+.dark{background:#1A1016;border-color:#2A1E26}
+.dark .sz span{color:#E9D7E0}
+.nbl{display:block;width:auto;overflow:visible}
+</style></head><body>
+
+<h1>الشعار المتحرك في مكانه — معاينة بالحجم الحقيقي</h1>
+
+<div class="wrap">
+  <p class="lab">هيدر الموقع — nabda.online — ارتفاع 50px</p>
+  <div class="site">
+    <span id="s1"></span>
+    <div class="nav"><b>الرئيسية</b><span>الحمل</span><span>الطفل</span><span>الدورة</span><span>المجتمع</span><span>المتجر</span><span>الموسوعة</span></div>
+    <div class="btns"><span class="btn p">تسجيل الدخول</span><span class="btn">إنشاء حساب جديد</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <p class="lab">شريط التطبيق العلوي — ارتفاع 38px داخل شريط 60px</p>
+  <div class="phone"><div class="appbar">
+    <div class="ic">🔔</div>
+    <div class="mid"><span id="s2"></span></div>
+    <div class="av"><i></i></div>
+  </div></div>
+</div>
+
+<div class="wrap">
+  <p class="lab">مقاسات أخرى للاختبار</p>
+  <div class="sizes">
+    <div class="sz"><span id="s3"></span><span>28px — شريط مضغوط</span></div>
+    <div class="sz"><span id="s4"></span><span>38px — التطبيق</span></div>
+    <div class="sz"><span id="s5"></span><span>50px — الموقع</span></div>
+    <div class="sz"><span id="s6"></span><span>96px — صفحة الدخول</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <p class="lab">على خلفية داكنة</p>
+  <div class="sizes dark"><div class="sz"><span id="s7"></span><span>50px</span></div></div>
+</div>
+
+<style>
+@keyframes nblMo{0%{transform:scale(1)}8%{transform:scale(1.028)}13%{transform:scale(1.04)}
+ 20%{transform:scale(1.03)}32%{transform:scale(1.006)}46%{transform:scale(1.012)}60%,100%{transform:scale(1)}}
+@keyframes nblBa{0%{transform:scale(1)}9%{transform:scale(1.115)}19%{transform:scale(.985)}
+ 31%{transform:scale(1.058)}43%{transform:scale(.998)}56%,100%{transform:scale(1)}}
+@keyframes nblSw{0%,100%{transform:translate(-13px,-9px) rotate(-3.6deg)}50%{transform:translate(13px,9px) rotate(3.6deg)}}
+.nblMo{animation:nblMo 1.5s ease-in-out infinite}
+.nblBa{animation:nblBa .43s ease-in-out infinite,nblSw 3s ease-in-out infinite}
+@keyframes nbSl{0%,52%{transform:translateX(0)}64%,78%{transform:translateX(-55px)}92%,100%{transform:translateX(0)}}
+@keyframes nbSd{0%,52%{transform:translateX(0)}64%,78%{transform:translateX(62px)}92%,100%{transform:translateX(0)}}
+@keyframes nbHp{0%,50%{transform:translateY(0) scaleX(1) scaleY(1)}
+ 55%{transform:translateY(6px) scaleX(1.14) scaleY(.86)}
+ 66%{transform:translateY(-120px) scaleX(.9) scaleY(1.12) rotate(-9deg)}
+ 78%{transform:translateY(-120px) scaleX(.94) scaleY(1.06) rotate(7deg)}
+ 90%{transform:translateY(8px) scaleX(1.18) scaleY(.82)}
+ 96%{transform:translateY(0) scaleX(.96) scaleY(1.04)}
+ 100%{transform:translateY(0) scaleX(1) scaleY(1)}}
+@keyframes nbId{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-7px) rotate(3deg)}}
+.nbd{animation:nbSl 3s cubic-bezier(.34,1.4,.5,1) infinite}
+.nbp{animation:nbHp 3s cubic-bezier(.3,1.5,.5,1) infinite,nbId 1.5s ease-in-out infinite}
+.nbd.d2{animation-name:nbSd}
+.nbd.d1{animation-delay:0s}    .nbd.d1 .nbp{animation-delay:0s,0s}
+.nbd.d2{animation-delay:-.6s}  .nbd.d2 .nbp{animation-delay:-.6s,-.3s}
+.nbd.d3{animation-delay:-1.2s} .nbd.d3 .nbp{animation-delay:-1.2s,-.6s}
+.nbd.d4{animation-delay:-1.8s} .nbd.d4 .nbp{animation-delay:-1.8s,-.9s}
+.nbd.d5{animation-delay:-2.4s} .nbd.d5 .nbp{animation-delay:-2.4s,-1.2s}
+</style>
+
+<script>
+// القلبان المعتمدان — في الإنتاج استبدلهما بـ landing-assets/heart-big.png و heart-small.png
+var CDN='https://d2ol7oe51mr4n9.cloudfront.net/user_3DngLJtHaOKYTwAJGppvUUZgNwb/';
+var HB=CDN+'715a3ab9-cedb-4159-86aa-56f57dbf46a4.png';
+var HS=CDN+'a7291a69-2add-45fc-82fe-370516e21809.png';
+var SVG = '<svg class="nbl" viewBox="0 0 2820 1000" role="img" aria-label="نبضة" xmlns="http://www.w3.org/2000/svg">'
++'<defs>'
++'<radialGradient id="nblB" cx="30%" cy="24%" r="88%"><stop offset="0%" stop-color="#FF9BC4"/><stop offset="38%" stop-color="#F0347C"/><stop offset="74%" stop-color="#E0195B"/><stop offset="100%" stop-color="#A80D48"/></radialGradient>'
++'<radialGradient id="nblP" cx="32%" cy="26%" r="86%"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="30%" stop-color="#FFE4EF"/><stop offset="70%" stop-color="#FFD6E3"/><stop offset="100%" stop-color="#F48CB3"/></radialGradient>'
++'<radialGradient id="nblC" cx="40%" cy="68%" r="80%"><stop offset="0%" stop-color="#D9799B" stop-opacity=".62"/><stop offset="100%" stop-color="#FFD6E3" stop-opacity=".88"/></radialGradient>'
++'<linearGradient id="nblR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff" stop-opacity=".78"/><stop offset="45%" stop-color="#fff" stop-opacity=".05"/><stop offset="100%" stop-color="#FF8FBB" stop-opacity=".45"/></linearGradient>'
++'<linearGradient id="nblW" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0347C"/><stop offset="100%" stop-color="#C2185B"/></linearGradient>'
++'<filter id="nblF1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="26"/></filter>'
++'<filter id="nblF2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="13"/></filter>'
++'<filter id="nblF3" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>'
++'<path id="nblH" d="M50 32C36 6 4 12 4 38C4 60 28 74 50 92C72 74 96 60 96 38C96 12 64 6 50 32Z"/>'
++'<g id="nblD"><use href="#nblH" x="-50" y="-50" fill="url(#nblB)"/><use href="#nblH" x="-50" y="-50" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3.4"/><ellipse cx="-21" cy="-26" rx="17" ry="10" fill="#fff" fill-opacity=".62" filter="url(#nblF3)"/><ellipse cx="-26" cy="-30" rx="5.5" ry="3.4" fill="#fff" fill-opacity=".95"/></g>'
++'</defs>'
++'<image class="nblMo" href="'+HB+'" x="1779" y="40" width="1000" height="921" style="transform-origin:2279px 500px"/>'
++'<image class="nblBa" href="'+HS+'" x="2081" y="374" width="450" height="382" style="transform-origin:2306px 565px"/>'
++'<g transform="translate(40 168) scale(0.7508)">'
++'<path fill="url(#nblW)" d="M446 193L446 537Q446 543 450 547Q454 551 462 551L496 551L496 680L417 680Q366 680 324 640Q275 689 206 689L205 689L203 689Q103 689 46 606Q0 541 0 451Q0 341 70 269Q133 204 227 204Q278 204 328 225L369 193ZM291 344Q267 338 246 338Q202 338 177 368Q152 398 152 451Q152 501 179.5 533Q207 565 251 565Q268 565 291 560ZM823 343Q950 207 1123 207Q1247 207 1330 281Q1407 350 1407 456L1407 512Q1407 524 1408 551L1439 551L1439 680L1420 680L1382 634L1380 634Q1342 680 1283 680L489 680L489 551L669 551L669 220L823 220ZM1253 473Q1252 408 1201 370Q1159 339 1104 339Q984 339 884 457Q878 467 863 488Q835 529 822 551L1238 551Q1253 551 1253 537ZM1766 220L1766 542Q1766 546 1767 551L1816 551L1816 680L1785 680L1741 634L1739 634Q1701 680 1641 680L1432 680L1432 551L1592 551Q1601 551 1606 545Q1612 540 1612 531L1612 220ZM2143 220L2143 556Q2143 600 2114 635Q2076 680 2018 680L1809 680L1809 551L1974 551Q1980 551 1984 548Q1989 544 1989 537L1989 220Z"/>'
++'<g class="nbd d1"><g class="nbp"><use href="#nblD" transform="translate(2065 78) scale(1.95)"/></g></g>'
++'<g class="nbd d2"><g class="nbp"><use href="#nblD" transform="translate(1688 804.5) scale(1.95)"/></g></g>'
++'<g class="nbd d3"><g class="nbp"><use href="#nblD" transform="translate(1058 78) scale(1.95)"/></g></g>'
++'<g class="nbd d4"><g class="nbp"><use href="#nblD" transform="translate(368 78) scale(1.95)"/></g></g>'
++'<g class="nbd d5"><g class="nbp"><use href="#nblD" transform="translate(188.5 78) scale(1.95)"/></g></g>'
++'</g></svg>';
+[['s1',50],['s2',38],['s3',28],['s4',38],['s5',50],['s6',96],['s7',50]].forEach(function(p){
+  var el=document.getElementById(p[0]);
+  el.innerHTML=SVG;
+  el.firstChild.style.height=p[1]+'px';
+});
+</script>
+</body></html>

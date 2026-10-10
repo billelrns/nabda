@@ -46,7 +46,8 @@ class _IntroScreenState extends State<IntroScreen>
 
   Future<void> _finish() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('intro_seen', true);
+    await prefs.setBool('intro_seen_v2', true);
+    await prefs.setBool('intro_seen', true); // توافق خلفي
     if (!mounted) return;
     widget.onDone?.call();
   }
