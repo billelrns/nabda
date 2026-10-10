@@ -1,0 +1,2 @@
+assets/data/smart_2500_articles.json filter=lfs diff=lfs merge=lfs -text
+web/articles.html filter=lfs diff=lfs merge=lfs -text
