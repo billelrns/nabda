@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول وإنشاء حساب — نبضة</title>
+  <meta name="description" content="انضمي إلى منصة نبضة، رفيقتكِ الموثوقة لصحة المرأة ورحلة الحمل ورعاية طفلكِ.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+
+  <!-- Firebase Web SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <style>
+    .nb-auth-section {
+      padding: 40px 24px 80px;
+      min-height: calc(100vh - 200px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nb-auth-card {
+      max-width: 980px;
+      width: 100%;
+      background: #FFFFFF;
+      border-radius: var(--nb-radius-lg);
+      box-shadow: 0 24px 60px rgba(244, 63, 126, 0.12);
+      border: 1px solid rgba(240, 230, 238, 0.8);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+    }
+
+    /* Left Promo Banner */
+    .nb-auth-banner {
+      background: linear-gradient(135deg, #FFF1F6, #FDE8EF, #F8BBD0);
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nb-auth-banner-quote {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--nb-pink-deep);
+      line-height: 1.6;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .nb-auth-banner-img {
+      max-width: 90%;
+      height: auto;
+      margin: 0 auto;
+      object-fit: contain;
+      filter: drop-shadow(0 14px 30px rgba(244, 63, 126, 0.2));
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Right Form Area */
+    .nb-auth-form-wrap {
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .nb-auth-tabs {
+      display: flex;
+      background: var(--nb-bg-soft);
+      padding: 4px;
+      border-radius: var(--nb-radius-full);
+      margin-bottom: 28px;
+    }
+
+    .nb-auth-tab {
+      flex: 1;
+      padding: 10px 0;
+      text-align: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--nb-ink-3);
+      border-radius: var(--nb-radius-full);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .nb-auth-tab.active {
+      background: #FFFFFF;
+      color: var(--nb-pink);
+      box-shadow: 0 4px 12px rgba(244, 63, 126, 0.1);
+    }
+
+    .nb-form-group {
+      margin-bottom: 18px;
+    }
+
+    .nb-form-label {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--nb-ink-2);
+      margin-bottom: 8px;
+    }
+
+    .nb-google-btn {
+      width: 100%;
+      background: #FFFFFF;
+      border: 1.5px solid var(--nb-line);
+      border-radius: var(--nb-radius-full);
+      padding: 12px 20px;
+      font-weight: 700;
+      font-size: 14.5px;
+      color: var(--nb-ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .nb-google-btn:hover {
+      background: #FAF8FA;
+      border-color: #D6CAD4;
+      transform: translateY(-1px);
+    }
+
+    .nb-divider-text {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      color: var(--nb-ink-3);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .nb-divider-text::before, .nb-divider-text::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--nb-line);
+    }
+
+    .nb-divider-text::before { margin-left: 14px; }
+    .nb-divider-text::after { margin-right: 14px; }
+
+    /* Onboarding Modal */
+    .nb-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(31, 26, 32, 0.5);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .nb-modal-backdrop.show {
+      display: flex;
+    }
+
+    .nb-modal-box {
+      background: #FFFFFF;
+      border-radius: var(--nb-radius-lg);
+      padding: 36px 32px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+      animation: nbSlideIn 0.3s ease;
+    }
+
+    .nb-stage-option {
+      border: 2px solid var(--nb-line);
+      border-radius: var(--nb-radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.2s ease;
+    }
+
+    .nb-stage-option:hover, .nb-stage-option.selected {
+      border-color: var(--nb-pink);
+      background: var(--nb-bg-soft);
+    }
+
+    .nb-stage-icon {
+      font-size: 28px;
+    }
+
+    @media (max-width: 820px) {
+      .nb-auth-card {
+        grid-template-columns: 1fr;
+      }
+      .nb-auth-banner {
+        display: none;
+      }
+      .nb-auth-form-wrap {
+        padding: 32px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- هيدر الموقع الموحد -->
+  <header id="nb-header" style="min-height:96px"></header>
+
+  <main class="nb-auth-section">
+    <div class="nb-auth-card">
+
+      <!-- الجانب الترويجي الجذاب -->
+      <div class="nb-auth-banner">
+        <div>
+          <span style="display:inline-block;background:#fff;color:var(--nb-pink-deep);font-weight:800;font-size:12px;padding:4px 12px;border-radius:var(--nb-radius-full);margin-bottom:16px">
+            عالم نبضة الموثوق 💗
+          </span>
+          <h2 class="nb-auth-banner-quote">
+            «كل أم تستحق رعاية متكاملة، ومعرفة دقيقة، ومجتمعاً دافئاً يسندها في أجمل رحلات الحياة.»
+          </h2>
+        </div>
+        <img src="/landing-assets/slide-pregnancy.png" alt="رحلة الأمومة في نبضة" class="nb-auth-banner-img">
+        <div style="font-size:13px;color:var(--nb-ink-2);font-weight:700">
+          ✓ محتوى إرشادي موثوق أسبوعاً بأسبوع<br>
+          ✓ متابعة دقيقة لمراحل الحمل والطفولة<br>
+          ✓ مجتمع أمهات آمن وتجربة تسوق متكاملة
+        </div>
+      </div>
+
+      <!-- نموذج الدخول وإنشاء الحساب -->
+      <div class="nb-auth-form-wrap">
+        <div class="nb-auth-tabs">
+          <button class="nb-auth-tab active" id="tab-login" onclick="switchTab('login')">تسجيل الدخول</button>
+          <button class="nb-auth-tab" id="tab-signup" onclick="switchTab('signup')">إنشاء حساب جديد</button>
+        </div>
+
+        <button class="nb-google-btn" id="btn-google-auth">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          <span>المتابعة باستخدام Google</span>
+        </button>
+
+        <div class="nb-divider-text">أو باستخدام البريد الإلكتروني</div>
+
+        <!-- Form Login -->
+        <form id="form-login" onsubmit="handleEmailLogin(event)">
+          <div class="nb-form-group">
+            <label class="nb-form-label" for="login-email">البريد الإلكتروني</label>
+            <input type="email" id="login-email" class="nb-input" placeholder="name@example.com" required>
+          </div>
+          <div class="nb-form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <label class="nb-form-label" for="login-password" style="margin-bottom:0">كلمة المرور</label>
+              <a href="#" onclick="showForgotPassword(event)" style="font-size:12px;color:var(--nb-pink);font-weight:700">نسيتِ كلمة المرور؟</a>
+            </div>
+            <input type="password" id="login-password" class="nb-input" placeholder="••••••••" required>
+          </div>
+          <button type="submit" id="btn-submit-login" class="nb-btn-primary" style="width:100%;margin-top:8px">
+            تسجيل الدخول
+          </button>
+        </form>
+
+        <!-- Form Signup -->
+        <form id="form-signup" style="display:none" onsubmit="handleEmailSignup(event)">
+          <div class="nb-form-group">
+            <label class="nb-form-label" for="signup-name">الاسم أو اللقب</label>
+            <input type="text" id="signup-name" class="nb-input" placeholder="سارة" required>
+          </div>
+          <div class="nb-form-group">
+            <label class="nb-form-label" for="signup-email">البريد الإلكتروني</label>
+            <input type="email" id="signup-email" class="nb-input" placeholder="name@example.com" required>
+          </div>
+          <div class="nb-form-group">
+            <label class="nb-form-label" for="signup-password">كلمة المرور (6 أحرف أو أكثر)</label>
+            <input type="password" id="signup-password" class="nb-input" placeholder="••••••••" minlength="6" required>
+          </div>
+          <button type="submit" id="btn-submit-signup" class="nb-btn-primary" style="width:100%;margin-top:8px">
+            إنشاء الحساب والمتابعة
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Onboarding Stage Modal -->
+  <div class="nb-modal-backdrop" id="onboarding-modal">
+    <div class="nb-modal-box">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:36px;margin-bottom:8px">🌸</div>
+        <h3 style="font-size:20px;font-weight:800;color:var(--nb-ink)">أهلاً بكِ في نبضة!</h3>
+        <p style="font-size:13.5px;color:var(--nb-ink-3);margin-top:4px">اختاري مرحلتكِ الحالية لنخصص لكِ المحتوى المناسب:</p>
+      </div>
+
+      <div class="nb-stage-option" onclick="selectStage('pregnant')">
+        <span class="nb-stage-icon">🤰</span>
+        <div>
+          <div style="font-weight:800;font-size:15px;color:var(--nb-ink)">أنا حامل</div>
+          <div style="font-size:12px;color:var(--nb-ink-3)">متابعة تطور الجنين وأعراض الحمل أسبوعاً بأسبوع</div>
+        </div>
+      </div>
+
+      <div id="pregnant-date-field" style="display:none;margin-bottom:16px;padding:12px;background:var(--nb-bg-soft);border-radius:var(--nb-radius-sm)">
+        <label class="nb-form-label" style="font-size:12.5px">تاريخ أول يوم من آخر دورة شهرية:</label>
+        <input type="date" id="onboarding-preg-date" class="nb-input">
+      </div>
+
+      <div class="nb-stage-option" onclick="selectStage('baby')">
+        <span class="nb-stage-icon">👶</span>
+        <div>
+          <div style="font-weight:800;font-size:15px;color:var(--nb-ink)">لدي طفل جديد</div>
+          <div style="font-size:12px;color:var(--nb-ink-3)">تطور الطفل شهراً بشهر، الرضاعة والنوم والنمو</div>
+        </div>
+      </div>
+
+      <div id="baby-date-field" style="display:none;margin-bottom:16px;padding:12px;background:var(--nb-bg-soft);border-radius:var(--nb-radius-sm)">
+        <label class="nb-form-label" style="font-size:12.5px">تاريخ ميلاد الطفل:</label>
+        <input type="date" id="onboarding-baby-date" class="nb-input">
+      </div>
+
+      <div class="nb-stage-option" onclick="selectStage('trying')">
+        <span class="nb-stage-icon">🌱</span>
+        <div>
+          <div style="font-weight:800;font-size:15px;color:var(--nb-ink)">أخطط للحمل والإنجاب</div>
+          <div style="font-size:12px;color:var(--nb-ink-3)">حساب أيام التبويض، نصائح الخصوبة والأدعية</div>
+        </div>
+      </div>
+
+      <div class="nb-stage-option" onclick="selectStage('cycle')">
+        <span class="nb-stage-icon">🌸</span>
+        <div>
+          <div style="font-weight:800;font-size:15px;color:var(--nb-ink)">أتابع دورتي الشهرية</div>
+          <div style="font-size:12px;color:var(--nb-ink-3)">التقويم الشهري، التنبؤات والراحة اليومية</div>
+        </div>
+      </div>
+
+      <button class="nb-btn-primary" style="width:100%;margin-top:16px" onclick="saveOnboardingAndContinue()">
+        تأكيد وبدء رحلتي 💗
+      </button>
+    </div>
+  </div>
+
+  <!-- فوتر الموقع الموحد -->
+  <footer id="nb-footer"></footer>
+
+  <script type="module" src="/js/shell.js"></script>
+  <script type="module">
+    import { auth, db, googleProvider } from '/js/firebase-init.js';
+    import { nbToast } from '/js/shell.js';
+
+    // Parse URL params
+    const params = new URLSearchParams(window.location.search);
+    const initialMode = params.get('mode') || (window.location.pathname.includes('signup') ? 'signup' : 'login');
+    const nextUrl = params.get('next') || '/';
+
+    window.switchTab = function(mode) {
+      const isLogin = mode === 'login';
+      document.getElementById('tab-login').classList.toggle('active', isLogin);
+      document.getElementById('tab-signup').classList.toggle('active', !isLogin);
+      document.getElementById('form-login').style.display = isLogin ? 'block' : 'none';
+      document.getElementById('form-signup').style.display = isLogin ? 'none' : 'block';
+    };
+
+    if (initialMode === 'signup') {
+      window.switchTab('signup');
+    }
+
+    // Email Login
+    window.handleEmailLogin = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-password').value;
+      const btn = document.getElementById('btn-submit-login');
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'جاري التحقق...';
+        await auth.signInWithEmailAndPassword(email, pass);
+        nbToast('تم تسجيل الدخول بنجاح! أهلاً بكِ 💗', 'success');
+        setTimeout(() => { window.location.href = nextUrl; }, 600);
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'تسجيل الدخول';
+        console.error(err);
+        let msg = 'تعذر تسجيل الدخول. تأكدي من صحة البريد وكلمة المرور.';
+        if (err.code === 'auth/user-not-found') msg = 'لا يوجد حساب بهذا البريد الإلكتروني.';
+        if (err.code === 'auth/wrong-password') msg = 'كلمة المرور غير صحيحة.';
+        nbToast(msg, 'error');
+      }
+    };
+
+    // Email Signup
+    let pendingUser = null;
+    window.handleEmailSignup = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const pass = document.getElementById('signup-password').value;
+      const btn = document.getElementById('btn-submit-signup');
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'جاري إنشاء الحساب...';
+        const cred = await auth.createUserWithEmailAndPassword(email, pass);
+        await cred.user.updateProfile({ displayName: name });
+
+        pendingUser = {
+          uid: cred.user.uid,
+          displayName: name,
+          email: email
+        };
+
+        // Open Onboarding Modal to select stage
+        document.getElementById('onboarding-modal').classList.add('show');
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'إنشاء الحساب والمتابعة';
+        console.error(err);
+        let msg = 'تعذر إنشاء الحساب. حاولي مرة أخرى.';
+        if (err.code === 'auth/email-already-in-use') msg = 'هذا البريد مسجل مسبقاً. تفضلي بتسجيل الدخول.';
+        nbToast(msg, 'error');
+      }
+    };
+
+    // Google Sign in
+    document.getElementById('btn-google-auth').addEventListener('click', async () => {
+      try {
+        const result = await auth.signInWithPopup(googleProvider);
+        const user = result.user;
+        
+        // Check if user doc exists
+        const snap = await db.collection('users').doc(user.uid).get();
+        if (!snap.exists) {
+          pendingUser = {
+            uid: user.uid,
+            displayName: user.displayName || 'عضوة نبضة',
+            email: user.email || ''
+          };
+          document.getElementById('onboarding-modal').classList.add('show');
+        } else {
+          nbToast('أهلاً بعودتكِ 💗', 'success');
+          setTimeout(() => { window.location.href = nextUrl; }, 600);
+        }
+      } catch (err) {
+        console.error('Google Sign-in error:', err);
+        nbToast('تعذر تسجيل الدخول عبر Google. يمكنكِ استخدام البريد الإلكتروني.', 'error');
+      }
+    });
+
+    // Stage Selection Logic
+    let selectedStage = 'pregnant';
+    window.selectStage = function(stage) {
+      selectedStage = stage;
+      document.querySelectorAll('.nb-stage-option').forEach(el => el.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+
+      document.getElementById('pregnant-date-field').style.display = stage === 'pregnant' ? 'block' : 'none';
+      document.getElementById('baby-date-field').style.display = stage === 'baby' ? 'block' : 'none';
+    };
+
+    window.saveOnboardingAndContinue = async function() {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const profileData = {
+        uid: user.uid,
+        displayName: pendingUser?.displayName || user.displayName || 'عضوة نبضة',
+        email: user.email || '',
+        lifeStage: selectedStage,
+        goal: selectedStage === 'trying' ? 'trying' : (selectedStage === 'pregnant' ? 'pregnancy' : 'tracking'),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      if (selectedStage === 'pregnant') {
+        const d = document.getElementById('onboarding-preg-date').value;
+        if (d) {
+          profileData.pregnancyStartDate = firebase.firestore.Timestamp.fromDate(new Date(d));
+        } else {
+          // Default to 12 weeks ago if not specified
+          const defDate = new Date();
+          defDate.setDate(defDate.getDate() - (12 * 7));
+          profileData.pregnancyStartDate = firebase.firestore.Timestamp.fromDate(defDate);
+        }
+      } else if (selectedStage === 'baby') {
+        const bd = document.getElementById('onboarding-baby-date').value;
+        if (bd) {
+          profileData.babyBirthDate = firebase.firestore.Timestamp.fromDate(new Date(bd));
+        }
+      }
+
+      try {
+        await db.collection('users').doc(user.uid).set(profileData, { merge: true });
+        nbToast('تم إعداد حسابكِ بنجاح! مرحباً بكِ في نبضة 💗', 'success');
+        setTimeout(() => { window.location.href = nextUrl; }, 700);
+      } catch (err) {
+        console.error('Error saving profile:', err);
+        window.location.href = nextUrl;
+      }
+    };
+
+    // Forgot password
+    window.showForgotPassword = async function(e) {
+      e.preventDefault();
+      const email = prompt('أدخلي بريدكِ الإلكتروني المسجل لإرسال رابط إعادة تعيين كلمة المرور:');
+      if (!email) return;
+      try {
+        await auth.sendPasswordResetEmail(email.trim());
+        nbToast('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدكِ بنجاح ✓', 'success');
+      } catch (err) {
+        nbToast('تعذر إرسال الرابط. تأكدي من صحة البريد.', 'error');
+      }
+    };
+  </script>
+</body>
+</html>

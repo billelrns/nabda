@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حسابي — نبضة</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+
+  <!-- Firebase Web SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <style>
+    .nb-account-hero {
+      background: linear-gradient(135deg, #FFF1F6 0%, #FDE8EF 50%, #F8BBD0 100%);
+      padding: 40px 0 32px;
+      border-bottom: 1px solid var(--nb-line-pink);
+      position: relative;
+    }
+
+    .nb-hero-profile {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .nb-avatar-wrap {
+      position: relative;
+    }
+
+    .nb-large-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 4px solid #FFFFFF;
+      box-shadow: 0 8px 24px rgba(244, 63, 126, 0.2);
+      object-fit: cover;
+      background: var(--nb-pink-gradient);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 800;
+    }
+
+    .nb-avatar-edit-btn {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      background: #FFFFFF;
+      color: var(--nb-pink);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid var(--nb-line-pink);
+    }
+
+    .nb-profile-meta h1 {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--nb-ink);
+      margin-bottom: 6px;
+    }
+
+    .nb-badge-stage {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #FFFFFF;
+      color: var(--nb-pink-deep);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 5px 14px;
+      border-radius: var(--nb-radius-full);
+      box-shadow: 0 4px 12px rgba(244, 63, 126, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    /* ── Stats Row ── */
+    .nb-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin: -24px auto 32px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .nb-stat-card {
+      background: #FFFFFF;
+      border-radius: var(--nb-radius-md);
+      padding: 20px;
+      border: 1px solid var(--nb-line);
+      box-shadow: 0 8px 24px rgba(244, 63, 126, 0.06);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: transform 0.2s ease;
+    }
+
+    .nb-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(244, 63, 126, 0.12);
+    }
+
+    .nb-stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--nb-bg-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .nb-stat-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--nb-ink);
+    }
+
+    .nb-stat-lbl {
+      font-size: 12.5px;
+      color: var(--nb-ink-3);
+      font-weight: 600;
+    }
+
+    /* ── Account Navigation Tabs ── */
+    .nb-acc-tabs-bar {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid var(--nb-line);
+      margin-bottom: 32px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .nb-acc-tab {
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--nb-ink-3);
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      transition: color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nb-acc-tab:hover {
+      color: var(--nb-pink);
+    }
+
+    .nb-acc-tab.active {
+      color: var(--nb-pink);
+      font-weight: 800;
+    }
+
+    .nb-acc-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--nb-pink);
+      border-radius: var(--nb-radius-full);
+    }
+
+    /* ── Orders List ── */
+    .nb-order-card {
+      background: #FFFFFF;
+      border-radius: var(--nb-radius-md);
+      border: 1px solid var(--nb-line);
+      padding: 22px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    }
+
+    .nb-order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--nb-line);
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .nb-status-badge {
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: var(--nb-radius-full);
+    }
+
+    .status-pending { background: #FFF3E0; color: #E65100; }
+    .status-confirmed { background: #E0F2F1; color: #00796B; }
+    .status-shipped { background: #E3F2FD; color: #1565C0; }
+    .status-delivered { background: #E8F5E9; color: #2E7D32; }
+    .status-cancelled { background: #FFEBEE; color: #C62828; }
+
+    /* Timeline */
+    .nb-order-timeline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 16px 0;
+      position: relative;
+    }
+
+    .nb-order-timeline::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      right: 20px;
+      height: 2px;
+      background: var(--nb-line);
+      z-index: 1;
+    }
+
+    .nb-timeline-step {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--nb-ink-3);
+    }
+
+    .nb-step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 2px solid var(--nb-line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .nb-timeline-step.done .nb-step-dot {
+      background: var(--nb-teal);
+      border-color: var(--nb-teal);
+      color: #fff;
+    }
+
+    .nb-timeline-step.done {
+      color: var(--nb-teal);
+    }
+
+    .nb-timeline-step.active .nb-step-dot {
+      background: var(--nb-pink);
+      border-color: var(--nb-pink);
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(244, 63, 126, 0.2);
+    }
+
+    .nb-timeline-step.active {
+      color: var(--nb-pink);
+    }
+
+    .nb-loading-screen {
+      text-align: center;
+      padding: 80px 20px;
+      font-weight: 700;
+      color: var(--nb-ink-3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- هيدر الموقع الموحد -->
+  <header id="nb-header" style="min-height:96px"></header>
+
+  <div id="account-loading" class="nb-loading-screen">
+    <div style="font-size:36px;margin-bottom:12px">⏳</div>
+    <div>جاري تحميل بيانات حسابكِ...</div>
+  </div>
+
+  <div id="account-content" style="display:none">
+    <!-- Hero Header -->
+    <section class="nb-account-hero">
+      <div class="nb-container">
+        <div class="nb-hero-profile">
+          <div class="nb-avatar-wrap">
+            <div id="hero-avatar" class="nb-large-avatar">👤</div>
+            <label for="avatar-input" class="nb-avatar-edit-btn" title="تغيير الصورة">📷</label>
+            <input type="file" id="avatar-input" accept="image/*" style="display:none">
+          </div>
+
+          <div class="nb-profile-meta">
+            <h1 id="hero-name">اسم المستخدم</h1>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <span id="hero-stage-badge" class="nb-badge-stage">🤰 متابعة الحمل</span>
+              <span id="hero-join-date" style="font-size:13px;color:var(--nb-ink-3);font-weight:600">عضوة منذ مارس 2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main class="nb-container" style="padding-top:20px;padding-bottom:80px">
+
+      <!-- Stats Cards -->
+      <div class="nb-stats-grid">
+        <div class="nb-stat-card">
+          <div class="nb-stat-icon">🤰</div>
+          <div>
+            <div class="nb-stat-val" id="stat-journey-val">—</div>
+            <div class="nb-stat-lbl" id="stat-journey-lbl">مرحلة الرحلة</div>
+          </div>
+        </div>
+
+        <div class="nb-stat-card">
+          <div class="nb-stat-icon">📦</div>
+          <div>
+            <div class="nb-stat-val" id="stat-orders-val">0</div>
+            <div class="nb-stat-lbl">طلبات المتجر</div>
+          </div>
+        </div>
+
+        <div class="nb-stat-card">
+          <div class="nb-stat-icon">🔖</div>
+          <div>
+            <div class="nb-stat-val" id="stat-saved-val">0</div>
+            <div class="nb-stat-lbl">المقالات المحفوظة</div>
+          </div>
+        </div>
+
+        <div class="nb-stat-card">
+          <div class="nb-stat-icon">💬</div>
+          <div>
+            <div class="nb-stat-val" id="stat-posts-val">0</div>
+            <div class="nb-stat-lbl">منشوراتي في المجتمع</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="nb-acc-tabs-bar">
+        <div class="nb-acc-tab active" onclick="showTab('overview')">📊 نظرة عامة</div>
+        <div class="nb-acc-tab" onclick="showTab('orders')">📦 طلباتي</div>
+        <div class="nb-acc-tab" onclick="showTab('saved')">🔖 المحفوظات</div>
+        <div class="nb-acc-tab" onclick="showTab('settings')">⚙️ بياناتي والإعدادات</div>
+        <div class="nb-acc-tab" onclick="showTab('privacy')">🛡️ الخصوصية والحساب</div>
+      </div>
+
+      <!-- TAB 1: Overview -->
+      <div id="pane-overview" class="nb-tab-pane">
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px" class="nb-overview-grid">
+          <div>
+            <div class="nb-card" style="margin-bottom:24px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <h3 style="font-size:18px;font-weight:800;color:var(--nb-ink)">رحلتي اليوم 💗</h3>
+                <a href="/pregnancy" id="overview-journey-link" class="nb-btn-secondary" style="font-size:13px;padding:6px 16px">عرض التفاصيل الكاملة ←</a>
+              </div>
+              <p id="overview-journey-desc" style="font-size:14.5px;color:var(--nb-ink-2);line-height:1.7">
+                أهلاً بكِ في نبضة! تابعي كل ما يخص مرحلتكِ، نصائح التغذية المخصصة، وتطورات نمو طفلكِ خطوة بخطوة.
+              </p>
+            </div>
+
+            <!-- Recent Orders Preview -->
+            <div class="nb-card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <h3 style="font-size:18px;font-weight:800;color:var(--nb-ink)">آخر طلباتي 📦</h3>
+                <button onclick="showTab('orders')" style="font-size:13.5px;font-weight:700;color:var(--nb-pink)">عرض الكل</button>
+              </div>
+              <div id="overview-recent-orders">
+                <div style="text-align:center;padding:24px;color:var(--nb-ink-3);font-size:14px">لا توجد طلبات حديثة حالياً.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions & App Promo -->
+          <div>
+            <div class="nb-card" style="background:var(--nb-bg-soft);border:none;margin-bottom:20px">
+              <h4 style="font-size:16px;font-weight:800;color:var(--nb-pink-deep);margin-bottom:12px">📱 تطبيق نبضة الكامل</h4>
+              <p style="font-size:13px;color:var(--nb-ink-2);line-height:1.6;margin-bottom:16px">
+                استمتعي بالتنبيهات اليومية، الأدوات التفاعلية الذكية وتجربة استخدام فائقة السرعة على هاتفكِ.
+              </p>
+              <a href="/app/" class="nb-btn-primary" style="font-size:13px;padding:8px 18px;width:100%;text-align:center">
+                فتح النسخة الكاملة
+              </a>
+            </div>
+
+            <div class="nb-card">
+              <h4 style="font-size:15px;font-weight:800;margin-bottom:12px">روابط سريعة</h4>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <a href="/shop" style="font-size:13.5px;font-weight:700;color:var(--nb-ink-2);padding:6px 0">🛍️ تصفح المتجر</a>
+                <a href="/community" style="font-size:13.5px;font-weight:700;color:var(--nb-ink-2);padding:6px 0">💬 مجتمع الأمهات</a>
+                <a href="/articles" style="font-size:13.5px;font-weight:700;color:var(--nb-ink-2);padding:6px 0">📚 موسوعة المقالات</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Orders -->
+      <div id="pane-orders" class="nb-tab-pane" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2 style="font-size:20px;font-weight:800">قائمة طلباتي</h2>
+          <a href="/shop" class="nb-btn-primary" style="font-size:13.5px;padding:8px 20px">+ طلب جديد من المتجر</a>
+        </div>
+        <div id="orders-list-container">
+          <div style="text-align:center;padding:40px;color:var(--nb-ink-3)">جاري جلب الطلبات...</div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Saved Articles -->
+      <div id="pane-saved" class="nb-tab-pane" style="display:none">
+        <h2 style="font-size:20px;font-weight:800;margin-bottom:20px">المقالات المحفوظة</h2>
+        <div id="saved-articles-container" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:20px">
+          <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--nb-ink-3)">
+            لم تقومي بحفظ أي مقالات بعد. اضغطي على أيقونة الإشارة المرجعية 🔖 عند قراءة أي مقال للرجوع إليه هنا لاحقاً.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: Settings -->
+      <div id="pane-settings" class="nb-tab-pane" style="display:none">
+        <div class="nb-card" style="max-width:640px;margin:0 auto">
+          <h3 style="font-size:18px;font-weight:800;margin-bottom:24px">تعديل بيانات الحساب</h3>
+          <form id="profile-edit-form" onsubmit="handleProfileUpdate(event)">
+            <div class="nb-form-group">
+              <label class="nb-form-label" for="edit-name">الاسم أو اللقب</label>
+              <input type="text" id="edit-name" class="nb-input" required>
+            </div>
+
+            <div class="nb-form-group">
+              <label class="nb-form-label" for="edit-stage">المرحلة الحالية</label>
+              <select id="edit-stage" class="nb-input" onchange="handleStageChange(this.value)">
+                <option value="pregnant">حامل</option>
+                <option value="baby">لدي طفل جديد</option>
+                <option value="trying">أخطط للحمل</option>
+                <option value="cycle">أتابع دورتي الشهرية</option>
+              </select>
+            </div>
+
+            <div id="edit-preg-wrap" class="nb-form-group" style="display:none">
+              <label class="nb-form-label" for="edit-preg-date">تاريخ أول يوم من آخر دورة شهرية (لحساب أسابيع الحمل):</label>
+              <input type="date" id="edit-preg-date" class="nb-input">
+            </div>
+
+            <div id="edit-baby-wrap" class="nb-form-group" style="display:none">
+              <label class="nb-form-label" for="edit-baby-date">تاريخ ميلاد الطفل:</label>
+              <input type="date" id="edit-baby-date" class="nb-input">
+            </div>
+
+            <button type="submit" id="btn-save-profile" class="nb-btn-primary" style="margin-top:12px;width:100%">
+              حفظ التعديلات ✓
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 5: Privacy -->
+      <div id="pane-privacy" class="nb-tab-pane" style="display:none">
+        <div class="nb-card" style="max-width:640px;margin:0 auto">
+          <h3 style="font-size:18px;font-weight:800;margin-bottom:16px;color:var(--nb-ink)">الخصوصية وأمان الحساب</h3>
+          <p style="font-size:14px;color:var(--nb-ink-2);line-height:1.7;margin-bottom:24px">
+            بياناتكِ في نبضة مشفرة وخاصة بكِ تماماً. نلتزم بأعلى معايير حماية الخصوصية ولا نشارك بياناتكِ مع أي طرف خارجي.
+          </p>
+
+          <div style="border-top:1px solid var(--nb-line);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+            <div>
+              <h4 style="font-size:15px;font-weight:700">تنزيل نسخة من بياناتي</h4>
+              <p style="font-size:12.5px;color:var(--nb-ink-3);margin-bottom:8px">يمكنكِ تنزيل ملف يحتوي على كافة بياناتكِ المسجلة في نبضة بصيغة JSON.</p>
+              <button onclick="downloadMyData()" class="nb-btn-secondary" style="font-size:13px;padding:8px 18px">تنزيل ملف البيانات 📥</button>
+            </div>
+
+            <div style="border-top:1px solid var(--nb-line);padding-top:20px">
+              <h4 style="font-size:15px;font-weight:700;color:#D32F2F">حذف الحساب نهائياً</h4>
+              <p style="font-size:12.5px;color:var(--nb-ink-3);margin-bottom:8px">حذف حسابكِ سيؤدي إلى مسح كافة سجلاتكِ وبياناتكِ بشكل لا يمكن التراجع عنه.</p>
+              <a href="/delete-account.html" style="display:inline-block;color:#D32F2F;font-weight:800;font-size:13px;text-decoration:underline">
+                الانتقال إلى صفحة حذف الحساب والبيانات ←
+              </a>
+            </div>
+
+            <div style="border-top:1px solid var(--nb-line);padding-top:20px">
+              <button onclick="handleSignOutAll()" class="nb-btn-primary" style="background:#D32F2F;font-size:13.5px;padding:10px 22px">
+                تسجيل الخروج من الحساب 🚪
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- فوتر الموقع الموحد -->
+  <footer id="nb-footer"></footer>
+
+  <script type="module" src="/js/shell.js"></script>
+  <script type="module">
+    import { auth, db, storage } from '/js/firebase-init.js';
+    import { nbToast } from '/js/shell.js';
+
+    let currentUser = null;
+    let currentUserData = null;
+
+    // Check Auth State
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = '/login?next=/account';
+        return;
+      }
+      currentUser = user;
+      await loadUserData();
+    });
+
+    async function loadUserData() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid).get();
+        currentUserData = snap.exists ? snap.data() : {};
+        renderUserProfile();
+        await loadUserOrders();
+        loadSavedArticles();
+        document.getElementById('account-loading').style.display = 'none';
+        document.getElementById('account-content').style.display = 'block';
+
+        // Check URL Hash for tab
+        const hash = window.location.hash.replace('#', '') || 'overview';
+        showTab(hash);
+      } catch (err) {
+        console.error('Error loading account:', err);
+      }
+    }
+
+    function renderUserProfile() {
+      const name = currentUserData?.displayName || currentUser.displayName || 'عضوة نبضة';
+      const photo = currentUserData?.photoURL || currentUser.photoURL || '';
+
+      document.getElementById('hero-name').textContent = name;
+      document.getElementById('edit-name').value = name;
+
+      const avatarEl = document.getElementById('hero-avatar');
+      if (photo) {
+        avatarEl.innerHTML = `<img src="${photo}" alt="${name}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+      } else {
+        avatarEl.textContent = name.charAt(0).toUpperCase();
+      }
+
+      // Member since
+      if (currentUser.metadata?.creationTime) {
+        const date = new Date(currentUser.metadata.creationTime);
+        document.getElementById('hero-join-date').textContent = `عضوة منذ ${date.toLocaleDateString('ar-DZ', { month: 'long', year: 'numeric' })}`;
+      }
+
+      // Stage Calculation
+      const stage = currentUserData?.lifeStage || 'pregnant';
+      document.getElementById('edit-stage').value = stage;
+      handleStageChange(stage);
+
+      let stageText = '🤰 متابعة الحمل';
+      let journeyVal = '—';
+      let journeyDesc = '';
+
+      if (stage === 'pregnant') {
+        let week = 12;
+        if (currentUserData?.pregnancyStartDate) {
+          const start = currentUserData.pregnancyStartDate.toDate ? currentUserData.pregnancyStartDate.toDate() : new Date(currentUserData.pregnancyStartDate);
+          const days = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24));
+          week = Math.min(42, Math.max(1, Math.floor(days / 7)));
+          document.getElementById('edit-preg-date').value = start.toISOString().split('T')[0];
+        }
+        stageText = `🤰 الأسبوع ${week} من الحمل`;
+        journeyVal = `الأسبوع ${week}`;
+        journeyDesc = `أنتِ الآن في الأسبوع ${week} من رحلة حملكِ المباركة. جنينكِ ينمو ويكبر يوماً بعد يوم، احرصي على التغذية المتوازنة وشرب الماء الكافي.`;
+        document.getElementById('overview-journey-link').href = `/pregnancy/week-${week}`;
+      } else if (stage === 'baby') {
+        stageText = '👶 رعاية الطفل';
+        journeyVal = 'طفل جديد';
+        journeyDesc = 'مرحلة الأمومة الجديدة مليئة بالمحبة والاكتشافات. تابعي تطورات رضاعة طفلك ونومه ونموه شهراً بشهر.';
+        document.getElementById('overview-journey-link').href = '/baby';
+        if (currentUserData?.babyBirthDate) {
+          const bd = currentUserData.babyBirthDate.toDate ? currentUserData.babyBirthDate.toDate() : new Date(currentUserData.babyBirthDate);
+          document.getElementById('edit-baby-date').value = bd.toISOString().split('T')[0];
+        }
+      } else if (stage === 'trying') {
+        stageText = '🌱 التخطيط للحمل';
+        journeyVal = 'التخطيط';
+        journeyDesc = 'مرحلة الإعداد والاستعداد النفسي والجسدي المبارك. تابعي نافذة الخصوبة وأيام التبويض.';
+        document.getElementById('overview-journey-link').href = '/fertility';
+      } else {
+        stageText = '🌸 متابعة الدورة';
+        journeyVal = 'الدورة الشهرية';
+        journeyDesc = 'متابعة انتظام دورتكِ الشهرية والتنبؤات الدقيقة للراحة والاطمئنان.';
+        document.getElementById('overview-journey-link').href = '/cycle';
+      }
+
+      document.getElementById('hero-stage-badge').textContent = stageText;
+      document.getElementById('stat-journey-val').textContent = journeyVal;
+      document.getElementById('overview-journey-desc').textContent = journeyDesc;
+    }
+
+    // Orders fetching
+    async function loadUserOrders() {
+      try {
+        const snap = await db.collection('orders')
+          .where('userId', '==', currentUser.uid)
+          .get();
+
+        const orders = [];
+        snap.forEach(doc => orders.push({ id: doc.id, ...doc.data() }));
+
+        document.getElementById('stat-orders-val').textContent = orders.length;
+
+        const container = document.getElementById('orders-list-container');
+        const recentContainer = document.getElementById('overview-recent-orders');
+
+        if (orders.length === 0) {
+          container.innerHTML = `
+            <div style="text-align:center;padding:48px 20px;color:var(--nb-ink-3)">
+              <div style="font-size:48px;margin-bottom:12px">🛍️</div>
+              <div style="font-size:16px;font-weight:700;color:var(--nb-ink)">لا توجد طلبات سابقة</div>
+              <p style="font-size:13px;margin:8px 0 20px">استمتعي بتسوق أفضل منتجات الأم والطفل مع خدمة التوصيل والدفع عند الاستلام</p>
+              <a href="/shop" class="nb-btn-primary">تسوقي الآن</a>
+            </div>
+          `;
+          recentContainer.innerHTML = '<div style="text-align:center;padding:20px;color:var(--nb-ink-3);font-size:13.5px">لا توجد طلبات سابقة.</div>';
+          return;
+        }
+
+        const renderOrderHtml = (o) => {
+          const statusMap = {
+            pending: { text: 'قيد المراجعة', class: 'status-pending', step: 1 },
+            confirmed: { text: 'تم التأكيد', class: 'status-confirmed', step: 2 },
+            shipped: { text: 'قيد التوصيل', class: 'status-shipped', step: 3 },
+            delivered: { text: 'تم التسليم', class: 'status-delivered', step: 4 },
+            cancelled: { text: 'ملغى', class: 'status-cancelled', step: 0 }
+          };
+          const st = statusMap[o.status] || { text: o.status || 'قيد المراجعة', class: 'status-pending', step: 1 };
+          const dateStr = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('ar-DZ') : 'مؤخراً';
+
+          return `
+            <div class="nb-order-card">
+              <div class="nb-order-header">
+                <div>
+                  <div style="font-weight:800;font-size:15px;color:var(--nb-ink)">طلب #${o.id.slice(0, 8)}</div>
+                  <div style="font-size:12px;color:var(--nb-ink-3);margin-top:2px">بتاريخ ${dateStr} • ولاية ${o.wilaya || 'الجزائر'}</div>
+                </div>
+                <div class="nb-status-badge ${st.class}">${st.text}</div>
+              </div>
+
+              ${st.step > 0 ? `
+                <div class="nb-order-timeline">
+                  <div class="nb-timeline-step ${st.step >= 1 ? 'done' : ''} ${st.step === 1 ? 'active' : ''}">
+                    <div class="nb-step-dot">1</div>
+                    <span>قيد المراجعة</span>
+                  </div>
+                  <div class="nb-timeline-step ${st.step >= 2 ? 'done' : ''} ${st.step === 2 ? 'active' : ''}">
+                    <div class="nb-step-dot">2</div>
+                    <span>مؤكَّد</span>
+                  </div>
+                  <div class="nb-timeline-step ${st.step >= 3 ? 'done' : ''} ${st.step === 3 ? 'active' : ''}">
+                    <div class="nb-step-dot">3</div>
+                    <span>شُحن</span>
+                  </div>
+                  <div class="nb-timeline-step ${st.step >= 4 ? 'done' : ''} ${st.step === 4 ? 'active' : ''}">
+                    <div class="nb-step-dot">4</div>
+                    <span>سُلِّم</span>
+                  </div>
+                </div>
+              ` : ''}
+
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;padding-top:12px;border-top:1px solid var(--nb-line)">
+                <div style="font-weight:600;color:var(--nb-ink-2)">
+                  ${o.productName || 'منتج من المتجر'} ${o.quantity ? `(الكمية: ${o.quantity})` : ''}
+                </div>
+                <div style="font-weight:800;color:var(--nb-pink)">
+                  ${Number(o.totalPrice || o.unitPrice || 0).toLocaleString()} دج
+                </div>
+              </div>
+            </div>
+          `;
+        };
+
+        container.innerHTML = orders.map(renderOrderHtml).join('');
+        recentContainer.innerHTML = orders.slice(0, 2).map(renderOrderHtml).join('');
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+      }
+    }
+
+    // Saved Articles
+    function loadSavedArticles() {
+      let saved = [];
+      try {
+        const raw = localStorage.getItem('nb_saved_articles');
+        if (raw) saved = JSON.parse(raw);
+      } catch (_) {}
+
+      document.getElementById('stat-saved-val').textContent = saved.length;
+      const container = document.getElementById('saved-articles-container');
+
+      if (saved.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--nb-ink-3)">
+            <div style="font-size:40px;margin-bottom:8px">🔖</div>
+            <div style="font-weight:700;color:var(--nb-ink);font-size:15px">لا توجد مقالات محفوظة بعد</div>
+            <div style="font-size:13px;margin-top:4px">تصفحي موسوعة نبضة واحفظي المقالات المهمة للرجوع إليها هنا</div>
+            <a href="/articles" class="nb-btn-primary" style="margin-top:16px;font-size:13px;padding:8px 20px">تصفح المقالات</a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = saved.map(item => `
+        <div class="nb-card" style="padding:16px">
+          <h4 style="font-size:15px;font-weight:800;margin-bottom:8px;line-height:1.4">
+            <a href="/article/${item.id}">${item.title}</a>
+          </h4>
+          <p style="font-size:12.5px;color:var(--nb-ink-3);margin-bottom:12px">${item.summary || ''}</p>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <a href="/article/${item.id}" style="color:var(--nb-pink);font-size:13px;font-weight:700">قراءة المقال ←</a>
+            <button onclick="removeSavedArticle('${item.id}')" style="color:#D32F2F;font-size:12px;font-weight:600">إزالة</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.removeSavedArticle = function(id) {
+      try {
+        let saved = JSON.parse(localStorage.getItem('nb_saved_articles') || '[]');
+        saved = saved.filter(x => x.id !== id);
+        localStorage.setItem('nb_saved_articles', JSON.stringify(saved));
+        loadSavedArticles();
+        nbToast('تمت إزالة المقال من المحفوظات', 'info');
+      } catch (_) {}
+    };
+
+    // Tab Switching
+    window.showTab = function(tabName) {
+      window.location.hash = tabName;
+      document.querySelectorAll('.nb-acc-tab').forEach((el, idx) => {
+        const tabs = ['overview', 'orders', 'saved', 'settings', 'privacy'];
+        el.classList.toggle('active', tabs[idx] === tabName);
+      });
+
+      document.querySelectorAll('.nb-tab-pane').forEach(el => el.style.display = 'none');
+      const pane = document.getElementById(`pane-${tabName}`);
+      if (pane) pane.style.display = 'block';
+    };
+
+    // Stage field toggle
+    window.handleStageChange = function(stage) {
+      document.getElementById('edit-preg-wrap').style.display = stage === 'pregnant' ? 'block' : 'none';
+      document.getElementById('edit-baby-wrap').style.display = stage === 'baby' ? 'block' : 'none';
+    };
+
+    // Profile Update
+    window.handleProfileUpdate = async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-save-profile');
+      btn.disabled = true;
+      btn.textContent = 'جاري الحفظ...';
+
+      const name = document.getElementById('edit-name').value.trim();
+      const stage = document.getElementById('edit-stage').value;
+
+      const updateData = {
+        displayName: name,
+        lifeStage: stage,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      if (stage === 'pregnant') {
+        const pd = document.getElementById('edit-preg-date').value;
+        if (pd) updateData.pregnancyStartDate = firebase.firestore.Timestamp.fromDate(new Date(pd));
+      } else if (stage === 'baby') {
+        const bd = document.getElementById('edit-baby-date').value;
+        if (bd) updateData.babyBirthDate = firebase.firestore.Timestamp.fromDate(new Date(bd));
+      }
+
+      try {
+        await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
+        await currentUser.updateProfile({ displayName: name });
+        btn.disabled = false;
+        btn.textContent = 'حفظ التعديلات ✓';
+        nbToast('تم تحديث بياناتكِ بنجاح 💗', 'success');
+        await loadUserData();
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'حفظ التعديلات ✓';
+        console.error(err);
+        nbToast('حدث خطأ أثناء حفظ البيانات.', 'error');
+      }
+    };
+
+    // Avatar upload
+    document.getElementById('avatar-input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        nbToast('جاري رفع صورتكِ...', 'info');
+        const ref = storage.ref(`profile_photos/${currentUser.uid}/${Date.now()}_${file.name}`);
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+
+        await db.collection('users').doc(currentUser.uid).set({ photoURL: url }, { merge: true });
+        await currentUser.updateProfile({ photoURL: url });
+
+        nbToast('تم تغيير الصورة الشخصية بنجاح ✓', 'success');
+        await loadUserData();
+      } catch (err) {
+        console.error('Avatar upload error:', err);
+        nbToast('تعذر رفع الصورة. تأكدي من حجمها وصيغتها.', 'error');
+      }
+    });
+
+    // Download My Data
+    window.downloadMyData = function() {
+      const exportObj = {
+        user: {
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          createdAt: currentUser.metadata?.creationTime
+        },
+        profile: currentUserData,
+        exportedAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nabda_my_data_${currentUser.uid.slice(0, 6)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // Sign out
+    window.handleSignOutAll = async function() {
+      if (!confirm('هل أنتِ متأكدة من رغبتكِ في تسجيل الخروج؟')) return;
+      sessionStorage.removeItem('nb_user_cache');
+      await auth.signOut();
+      window.location.href = '/';
+    };
+  </script>
+</body>
+</html>
