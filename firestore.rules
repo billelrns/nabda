@@ -33,6 +33,10 @@ service cloud.firestore {
         get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == 'owner';
     }
 
+    function staffRole() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role;
+    }
+
     // ─── المستخدمون ───────────────────────────────────────────────
     // 🔒 خصوصيّة: /users/{uid} يحتوي بيانات صحّيّة حسّاسة (الدورة، الحمل، الطفل).
     //            الأدمن لا يستطيع قراءتها — فقط تعديل حقلَي isBanned/role.
@@ -201,10 +205,20 @@ service cloud.firestore {
           request.resource.data.quantity >= 1 &&
           request.resource.data.quantity <= 50
         );
-      // تحديث الحالة: الأدمن فقط
-      allow update: if isOwnerOrSupervisor();
+      // تحديث الحالة: المالك أو المشرف، أو الوكيل (agent) للحقول التشغيلية فقط
+      allow update: if isOwnerOrSupervisor()
+        || (isActiveStaff() && staffRole() == 'agent'
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status','history','notes','updatedAt','assignedTo']));
       allow delete: if false;
     }
+
+    // ─── إعدادات الموقع والمتجر ───────────────────────────────────
+    match /site_config/{doc}       { allow read: if true;            allow write: if isOwnerOrSupervisor(); }
+    match /products_private/{id}   { allow read, write: if isActiveStaff(); }
+    match /blocked_phones/{phone}  { allow read, write: if isActiveStaff(); }
+    match /admin_logs/{id}         { allow create: if isActiveStaff(); allow read: if isAppOwner(); allow update, delete: if false; }
+    match /stats/{doc}             { allow read: if isActiveStaff(); allow write: if false; }
 
     // ─── قائمة الانتظار والإشعار عند التوفر ────────────────────────
     match /waitlist/{docId} {
@@ -317,12 +331,14 @@ service cloud.firestore {
     // ─── حصّة المحادثة الذكيّة (Rate Limiting) ─────────────────────
     // كل مستخدمة لها وثيقة واحدة فيها {date: YYYY-MM-DD, count: N}
     // الكتابة محدودة بصاحبة الحساب فقط، count لا يزيد عن 200/يوم
+    // الحصّة يكتبها الخادم وحده (askAssistant بصلاحيات المدير).
+    // كانت قابلة للكتابة من الهاتف، فيستطيع أي مستخدم تصفير عدّاده.
     match /ai_quota/{userId} {
       allow read: if isAuthenticated() && isOwner(userId);
-      allow write: if isAuthenticated()
-        && isOwner(userId)
-        && request.resource.data.count is int
-        && request.resource.data.count <= 200;
+      allow create, update: if false;
+      // الحذف مسموح لصاحبه: حذف الحساب (auth_service.deleteAccount) يمسح
+      // هذه الوثيقة — ومنعه يترك بيانات بعد الحذف، خلافاً لشرط Google Play.
+      allow delete: if isAuthenticated() && isOwner(userId);
     }
 
     // ─── طلبات إعادة تعيين كلمة المرور ────────────────────────────
@@ -425,6 +441,19 @@ service cloud.firestore {
           get(/databases/$(database)/documents/couples/$(coupleId)).data.partnerUid == request.auth.uid
         );
       }
+    }
+
+    // ─── الإشعارات الجماعية (لوحة الأدمن → دالة sendBroadcast) ──────
+    // ⚠️ لم تكن لهذه المجموعة قاعدة، فكانت القاعدة العامة ترفض كل كتابة
+    //    ولم يكن أيّ إشعار جماعي يُرسَل. حالة الإرسال يكتبها الخادم وحده.
+    match /notifications/{notifId} {
+      allow read: if isActiveStaff();
+      allow create: if isActiveStaff()
+        && request.resource.data.type == 'broadcast'
+        && request.resource.data.sentBy == request.auth.uid
+        && !('status' in request.resource.data);
+      allow update: if false;
+      allow delete: if isOwnerOrSupervisor();
     }
 
     // ─── البلاغات والشكاوى ──────────────────────────────────────────
