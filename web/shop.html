@@ -1,651 +1,506 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="متجر نبضة — منتجات موثوقة للأم والطفل من أفضل العلامات التجارية">
-<title>المتجر — نبضة</title>
-<link rel="icon" type="image/png" href="favicon.png"/>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- Firebase Web SDK لجلب المنتجات والتصنيفات من Firestore -->
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{margin:0;background:#FFF8FB;font-family:'Cairo',sans-serif;color:#1F1A20;direction:rtl}
-  ::selection{background:#F8BBD0}
-  button,a{font-family:inherit}
-  a{text-decoration:none;color:inherit}
-  @keyframes nb-beat{0%,100%{transform:scale(1)}14%{transform:scale(1.18)}28%{transform:scale(1)}42%{transform:scale(1.12)}70%{transform:scale(1)}}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>متجر نبضة — مستلزمات الأم والطفل الأصلية والتوصيل لـ 58 ولاية</title>
+  <meta name="description" content="تسوقي أفضل وأرقى منتجات الحمل، رعاية المواليد، الرضاعة الطبيعية، والألعاب الآمنة من متجر نبضة. دفع عند الاستلام وتوصيل سريع في الجزائر.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
 
-  /* Layout — القائمة الجانبيّة على اليسار، المحتوى الرئيسي على اليمين */
-  .shell{max-width:1400px;margin:0 auto;padding:0 24px}
-  .layout{display:grid;grid-template-columns:1fr 260px;gap:24px;margin-top:24px;align-items:start}
-  /* في RTL: العمود الأوّل يظهر يمينًا، الثاني يسارًا. الصف 1 لكليهما لضمان بدء المحتوى في الأعلى */
-  .layout .main{grid-column:1;grid-row:1}    /* يمينًا (1fr — عريض) */
-  .layout .sidebar{grid-column:2;grid-row:1} /* يسارًا (260px — ضيّق) */
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
-  /* Top nav — بانر زجاجيّ عائم مثل الصفحة الرئيسيّة */
-  .topnav-wrap{position:sticky;top:0;z-index:40;padding:18px 24px 0}
-  .topnav{max-width:1400px;margin:0 auto;background:rgba(255,255,255,.35);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.5);border-radius:24px;box-shadow:0 10px 34px rgba(244,63,126,.1)}
-  .topnav-inner{padding:12px 18px;display:flex;align-items:center;gap:24px}
-  .logo-block{display:flex;align-items:center;gap:10px}
-  .logo-heart{width:38px;height:38px;background:linear-gradient(135deg,#F43F7E,#FF6B9A);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:nb-beat 2.4s ease-in-out infinite}
-  .logo-heart svg{width:22px;height:22px;fill:#fff}
-  .logo-text{font-size:24px;font-weight:800;color:#F43F7E;line-height:1}
-  .logo-sub{font-size:11px;color:#9b8f95;margin-top:2px}
-  .nav-links{display:flex;gap:24px;font-size:14.5px;font-weight:700;color:#4A434B}
-  .nav-links span{cursor:pointer;transition:color .2s;position:relative}
-  .nav-links span:hover{color:#F43F7E}
-  .nav-links .active{color:#F43F7E}
-  .nav-links .active::after{content:'';position:absolute;bottom:-6px;left:0;right:0;height:2px;background:#F43F7E;border-radius:2px}
-  .nav-badge{background:#F43F7E;color:#fff;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:800;margin-right:6px}
-  .nav-actions{display:flex;align-items:center;gap:14px;margin-right:auto}
-  .icon-btn{width:40px;height:40px;border-radius:12px;background:#FFF7FA;border:1px solid #F8D7E5;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:.2s}
-  .icon-btn:hover{background:#FDE8EF;border-color:#F8BBD0}
-  .icon-badge{position:absolute;top:-4px;left:-4px;background:#F43F7E;color:#fff;border-radius:999px;min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;padding:0 5px}
-  .btn-account{background:linear-gradient(135deg,#F43F7E,#FF6B9A);color:#fff;border:none;border-radius:999px;padding:10px 20px;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(244,63,126,.25)}
+  <style>
+    .nb-shop-container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 16px 24px 60px;
+    }
 
-  /* Sidebar */
-  .sidebar{display:flex;flex-direction:column;gap:16px}
-  .promo-card{background:linear-gradient(135deg,#FDE8EF,#F8BBD0);border-radius:18px;padding:20px 18px;position:relative;overflow:hidden}
-  .promo-badge{position:absolute;top:14px;right:14px;width:36px;height:36px;background:#F43F7E;color:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
-  .promo-title{font-weight:800;font-size:15px;color:#C2185B;margin-bottom:6px;padding-right:44px}
-  .promo-sub{font-size:12px;color:#5E5568;line-height:1.6;padding-right:44px}
+    /* ── Hero Banners ── */
+    .nb-shop-hero-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .nb-shop-main-banner {
+      background: linear-gradient(135deg, #FFF0F5 0%, #FCE4EC 100%);
+      border-radius: var(--nb-radius-lg);
+      padding: 40px;
+      border: 1px solid #F8D7E5;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(244, 63, 126, 0.08);
+      min-height: 260px;
+    }
+    .nb-shop-side-banner {
+      background: linear-gradient(135deg, #E0F2F1 0%, #E8F5E9 100%);
+      border-radius: var(--nb-radius-lg);
+      padding: 24px;
+      border: 1px solid #C8E6C9;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: 0 12px 30px rgba(0, 137, 123, 0.06);
+    }
 
-  .side-block{background:#fff;border-radius:18px;padding:18px 6px;box-shadow:0 4px 16px rgba(244,63,126,.05)}
-  .side-title{font-size:15px;font-weight:800;padding:0 14px;margin-bottom:12px;color:#1F1A20}
-  .cat-item{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;transition:.2s;font-size:13.5px;color:#4A434B;font-weight:600;border-radius:12px;margin:0 4px}
-  .cat-item:hover{background:#FFF7FA;color:#F43F7E}
-  .cat-item .ic{width:30px;height:30px;border-radius:8px;background:#FDE8EF;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-  .cat-item.active{background:#FDE8EF;color:#F43F7E}
+    /* ── Category Round Pills Bar ── */
+    .nb-shop-cat-bar {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 10px 4px 18px;
+      margin-bottom: 24px;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .nb-shop-cat-bar::-webkit-scrollbar { display: none; }
 
-  .info-card{background:#FFF7FA;border:1px solid #F8E1EA;border-radius:18px;padding:16px}
-  .info-card .row{display:flex;align-items:center;gap:12px}
-  .info-card .ic{width:36px;height:36px;background:#FDE8EF;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-  .info-card .t{font-weight:800;font-size:13.5px;color:#F43F7E}
-  .info-card .s{font-size:11.5px;color:#8F8795;margin-top:2px}
+    .nb-shop-cat-pill {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      background: #FFFFFF;
+      border: 1px solid #F4E3EB;
+      border-radius: 20px;
+      padding: 12px 18px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: inherit;
+      color: var(--nb-ink);
+    }
+    .nb-shop-cat-pill:hover {
+      transform: translateY(-4px);
+      border-color: var(--nb-pink);
+      box-shadow: 0 8px 20px rgba(244, 63, 126, 0.12);
+    }
+    .nb-shop-cat-pill.active {
+      background: var(--nb-pink);
+      color: #FFFFFF;
+      border-color: var(--nb-pink);
+      box-shadow: 0 8px 24px rgba(244, 63, 126, 0.25);
+    }
+    .nb-shop-cat-icon {
+      font-size: 26px;
+    }
+    .nb-shop-cat-label {
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
 
-  /* Main content */
-  .main{display:flex;flex-direction:column;gap:24px}
+    /* ── Stage Collections ── */
+    .nb-stage-collections-box {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: var(--nb-radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+    }
+    .nb-stage-tab-btn {
+      background: #FFF9FC;
+      border: 1px solid #F8E1EA;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--nb-ink-2);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .nb-stage-tab-btn:hover {
+      border-color: var(--nb-pink);
+      color: var(--nb-pink);
+    }
 
-  /* Hero */
-  .hero{background:linear-gradient(135deg,#FDE8EF 0%,#FCE4EC 60%,#F8BBD0 100%);border-radius:24px;overflow:hidden;position:relative;display:grid;grid-template-columns:1fr 1fr;min-height:340px;box-shadow:0 20px 44px rgba(244,63,126,.15)}
-  .hero-text{padding:44px 40px;display:flex;flex-direction:column;justify-content:center}
-  .hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:15px;color:#F43F7E;font-weight:700;margin-bottom:10px}
-  .hero-h1{font-size:44px;font-weight:800;color:#F43F7E;letter-spacing:-1px;margin-bottom:14px;line-height:1.1}
-  .hero-desc{font-size:17px;color:#5E5568;margin-bottom:26px}
-  .hero-cta{background:#F43F7E;color:#fff;border:none;border-radius:999px;padding:14px 32px;font-weight:800;font-size:15px;cursor:pointer;align-self:flex-start;box-shadow:0 12px 28px rgba(244,63,126,.35)}
-  .hero-img{position:relative;overflow:hidden}
-  .hero-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .hero-badges{position:absolute;bottom:22px;right:40px;display:flex;gap:22px;font-size:12.5px;color:#5E5568;font-weight:700}
-  .hero-badges .b{display:flex;align-items:center;gap:6px}
-  .hero-dots{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
-  .hero-dots .d{width:8px;height:8px;border-radius:50%;background:rgba(244,63,126,.3)}
-  .hero-dots .d.on{width:22px;border-radius:999px;background:#F43F7E}
+    /* ── Flash Deals Banner ── */
+    .nb-flash-deals-header {
+      background: linear-gradient(135deg, #E91E63, #C2185B);
+      color: #FFFFFF;
+      border-radius: var(--nb-radius-md) var(--nb-radius-md) 0 0;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .nb-deals-timer-badge {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      font-size: 14px;
+    }
 
-  /* Feature cards */
-  .feat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .feat{background:#FFF7FA;border:1px solid #F8E1EA;border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:12px}
-  .feat .ic{width:44px;height:44px;background:#FDE8EF;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-  .feat .t{font-weight:800;font-size:14px;color:#1F1A20}
-  .feat .s{font-size:11.5px;color:#8F8795;margin-top:2px}
+    /* ── Main Shop Layout (Filters + Grid) ── */
+    .nb-shop-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
 
-  /* Section */
-  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-  .section-title{font-size:24px;font-weight:800;display:flex;align-items:center;gap:8px}
-  .section-title .ic{width:32px;height:32px;background:#FDE8EF;color:#F43F7E;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
-  .tabs{display:flex;gap:8px}
-  .tab{padding:8px 20px;border-radius:999px;background:transparent;border:none;font-family:inherit;font-weight:700;font-size:14px;color:#8F8795;cursor:pointer;transition:.2s}
-  .tab.on{background:#FDE8EF;color:#F43F7E}
-  .tab:hover:not(.on){background:#FFF7FA;color:#F43F7E}
-  .arrows{display:flex;gap:8px}
-  .arrow-btn{width:38px;height:38px;border-radius:50%;background:#fff;border:1px solid #F8D7E5;color:#F43F7E;font-size:18px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
-  .arrow-btn:hover{background:#FDE8EF}
+    /* Faceted Filter Sidebar */
+    .nb-shop-filters {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: var(--nb-radius-md);
+      padding: 22px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.02);
+      position: sticky;
+      top: 110px;
+    }
+    .nb-filter-sec {
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #F4E3EB;
+    }
+    .nb-filter-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--nb-ink);
+      margin-bottom: 10px;
+    }
+    .nb-filter-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--nb-ink-2);
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .nb-filter-label input {
+      accent-color: var(--nb-pink);
+      width: 16px;
+      height: 16px;
+    }
 
-  /* Products */
-  .prod-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
-  .prod{background:#fff;border:1px solid #F8E1EA;border-radius:18px;overflow:hidden;box-shadow:0 8px 22px rgba(244,63,126,.06);cursor:pointer;transition:.2s;display:flex;flex-direction:column}
-  .prod:hover{transform:translateY(-4px);box-shadow:0 20px 40px rgba(244,63,126,.15)}
-  .prod-img{background:#FFF7FA;height:200px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
-  .prod-img img{max-width:80%;max-height:80%;object-fit:contain}
-  .prod-badge{position:absolute;top:12px;right:12px;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:800;color:#fff}
-  .prod-info{padding:14px}
-  .prod-name{font-size:13.5px;font-weight:800;line-height:1.4;margin-bottom:4px;color:#1F1A20}
-  .prod-brand{font-size:12px;color:#8F8795;margin-bottom:8px}
-  .prod-rating{display:flex;align-items:center;gap:4px;font-size:12px;color:#8F8795;margin-bottom:8px}
-  .prod-rating .val{font-weight:800;color:#F43F7E}
-  .prod-price{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
-  .price-now{font-size:18px;font-weight:800;color:#F43F7E}
-  .price-old{font-size:13px;color:#9b8f95;text-decoration:line-through}
-  .prod-actions{display:flex;gap:8px}
-  .btn-fav,.btn-cart{border:none;border-radius:12px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .btn-fav{width:40px;height:40px;background:#FFF7FA;color:#F43F7E;font-size:16px;border:1px solid #F8D7E5}
-  .btn-fav:hover{background:#FDE8EF}
-  .btn-cart{flex:1;height:40px;background:linear-gradient(135deg,#F43F7E,#FF6B9A);color:#fff;font-size:18px;box-shadow:0 6px 14px rgba(244,63,126,.25)}
-  .btn-cart:hover{transform:scale(1.02)}
+    /* ── Product Card ── */
+    .nb-products-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .nb-shop-card {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 24px rgba(244, 63, 126, 0.05);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+      position: relative;
+    }
+    .nb-shop-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(244, 63, 126, 0.35);
+      box-shadow: 0 16px 36px rgba(244, 63, 126, 0.14);
+    }
+    .nb-shop-card-img-wrap {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      background: #FFF7FA;
+      overflow: hidden;
+    }
+    .nb-shop-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease, opacity 0.3s ease;
+      display: block;
+    }
+    .nb-shop-img.secondary {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+    }
+    .nb-shop-card:hover .nb-shop-img.primary {
+      transform: scale(1.06);
+    }
+    .nb-shop-card:hover .nb-shop-img.secondary {
+      opacity: 1;
+      transform: scale(1.06);
+    }
 
-  /* Product detail modal */
-  .modal-overlay{position:fixed;inset:0;background:rgba(31,26,32,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;animation:fade-in .25s ease}
-  .modal-overlay.on{display:flex}
-  @keyframes fade-in{from{opacity:0}to{opacity:1}}
-  .modal{background:#fff;border-radius:24px;max-width:960px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 30px 80px rgba(31,26,32,.4);position:relative;animation:pop-in .3s ease}
-  @keyframes pop-in{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
-  .modal-close{position:absolute;top:16px;left:16px;width:40px;height:40px;border-radius:50%;background:#FFF7FA;border:1px solid #F8D7E5;color:#F43F7E;font-size:20px;font-weight:800;cursor:pointer;z-index:2;transition:.2s;display:flex;align-items:center;justify-content:center}
-  .modal-close:hover{background:#FDE8EF;transform:rotate(90deg)}
-  .modal-body{display:grid;grid-template-columns:1fr 1fr;gap:0}
-  .modal-img{background:linear-gradient(160deg,#FFF7FA,#FDE8EF);min-height:420px;display:flex;align-items:center;justify-content:center;padding:40px;position:relative}
-  .modal-img img{max-width:100%;max-height:380px;object-fit:contain}
-  .modal-img .em{font-size:180px}
-  .modal-info{padding:44px 36px;display:flex;flex-direction:column;gap:14px}
-  .modal-cat{display:inline-flex;align-items:center;gap:6px;background:#FDE8EF;color:#F43F7E;border-radius:999px;padding:5px 14px;font-size:12px;font-weight:800;align-self:flex-start}
-  .modal-name{font-size:26px;font-weight:800;line-height:1.3;color:#1F1A20}
-  .modal-brand{font-size:14px;color:#8F8795;margin-bottom:4px}
-  .modal-rating{display:flex;align-items:center;gap:8px;font-size:14px;color:#8F8795}
-  .modal-rating .val{color:#F43F7E;font-weight:800;font-size:16px}
-  .modal-price-row{display:flex;align-items:baseline;gap:12px;padding:14px 0;border-top:1px solid #F0E4EA;border-bottom:1px solid #F0E4EA;margin:6px 0}
-  .modal-price-now{font-size:32px;font-weight:800;color:#F43F7E}
-  .modal-price-old{font-size:16px;color:#9b8f95;text-decoration:line-through}
-  .modal-badge{background:#F43F7E;color:#fff;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:800}
-  .modal-desc{font-size:14px;color:#5E5568;line-height:1.9;background:#FFF7FA;border-radius:14px;padding:16px}
-  .modal-actions{display:flex;gap:10px;margin-top:8px}
-  .modal-btn-buy{flex:1;background:linear-gradient(135deg,#F43F7E,#FF6B9A);color:#fff;border:none;border-radius:14px;padding:16px;font-family:inherit;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 12px 28px rgba(244,63,126,.32);display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s}
-  .modal-btn-buy:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(244,63,126,.42)}
-  .modal-btn-fav{width:56px;background:#FFF7FA;color:#F43F7E;border:1.5px solid #F8D7E5;border-radius:14px;font-size:22px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center}
-  .modal-btn-fav:hover{background:#FDE8EF}
-  .modal-perks{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-  .modal-perk{display:flex;align-items:center;gap:8px;font-size:12px;color:#5E5568;background:#FFF7FA;border-radius:10px;padding:8px 12px}
-  .prod{cursor:pointer}
+    .nb-discount-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #E53935;
+      color: #FFFFFF;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 999px;
+      box-shadow: 0 2px 8px rgba(229, 57, 53, 0.3);
+    }
+    .nb-urgency-badge {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+      color: #E65100;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid #FFE0B2;
+    }
+    .nb-out-badge {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      color: #777;
+    }
 
-  @media(max-width:700px){
-    .modal-body{grid-template-columns:1fr}
-    .modal-img{min-height:300px;padding:30px}
-    .modal-img .em{font-size:130px}
-    .modal-info{padding:26px 22px}
-    .modal-name{font-size:22px}
-    .modal-price-now{font-size:26px}
-  }
+    .nb-wish-heart {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #AAA;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .nb-wish-heart:hover {
+      color: var(--nb-pink);
+      transform: scale(1.15);
+    }
 
-  /* Loading + empty states */
-  .prod-loading{grid-column:1/-1;padding:60px 20px;text-align:center;color:#8F8795}
-  .spinner{width:44px;height:44px;border:4px solid #FDE8EF;border-top-color:#F43F7E;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .prod-empty{grid-column:1/-1;padding:60px 20px;text-align:center;color:#8F8795;font-size:15px}
-  .prod-empty .em{font-size:56px;margin-bottom:12px;display:block}
-  .cat-loading{padding:14px;text-align:center;color:#8F8795;font-size:13px}
-  .cat-count{background:#FDE8EF;color:#F43F7E;font-weight:800;font-size:11px;padding:2px 8px;border-radius:999px;margin-right:auto}
+    .nb-shop-card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      justify-content: space-between;
+    }
+    .nb-shop-card-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--nb-ink);
+      line-height: 1.45;
+      margin-bottom: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 40px;
+    }
+    .nb-shop-price-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .nb-shop-price {
+      font-size: 17px;
+      font-weight: 900;
+      color: var(--nb-pink);
+    }
+    .nb-shop-old-price {
+      font-size: 13px;
+      color: #AAA;
+      text-decoration: line-through;
+    }
 
-  /* Bottom CTA */
-  .view-all{text-align:center;margin:40px 0 60px}
-  .view-all button{background:#fff;border:1.5px solid #F43F7E;color:#F43F7E;border-radius:999px;padding:14px 40px;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:.2s}
-  .view-all button:hover{background:#F43F7E;color:#fff}
-
-  /* Responsive */
-  @media(max-width:1100px){
-    .layout{grid-template-columns:1fr 220px}
-    .prod-grid{grid-template-columns:repeat(4,1fr)}
-    .hero-h1{font-size:36px}
-  }
-  @media(max-width:900px){
-    .layout{grid-template-columns:1fr}
-    .layout .main{grid-column:1;grid-row:1}
-    .layout .sidebar{grid-column:1;grid-row:2}
-    .nav-links{display:none}
-    .feat-row{grid-template-columns:1fr 1fr}
-    .prod-grid{grid-template-columns:1fr 1fr}
-    .hero{grid-template-columns:1fr;min-height:auto}
-    .hero-img{height:200px}
-    .hero-text{padding:24px}
-    .hero-h1{font-size:28px}
-    .section-head{flex-direction:column;gap:12px;align-items:flex-start}
-  }
-</style>
+    @media (max-width: 1100px) {
+      .nb-products-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .nb-shop-hero-grid { grid-template-columns: 1fr; }
+      .nb-shop-layout { grid-template-columns: 1fr; }
+      .nb-shop-filters { position: static; margin-bottom: 20px; }
+      .nb-products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .nb-shop-card-img-wrap { height: 160px; }
+    }
+  </style>
 </head>
 <body>
+  <header id="nb-header" style="min-height:96px"></header>
 
-<!-- Top Nav (زجاجي عائم) — لوغو يمين، أقسام وسط، أزرار يسار -->
-<div class="topnav-wrap">
-  <nav class="topnav">
-  <div class="topnav-inner">
-    <!-- 1) Logo على اليمين -->
-    <a href="/" class="logo-block">
-      <div class="logo-heart">
-        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+  <main class="nb-shop-container">
+    <!-- Breadcrumb -->
+    <nav style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--nb-ink-3);margin-bottom:14px">
+      <a href="/" style="color:inherit;text-decoration:none">الرئيسية</a>
+      <span>›</span>
+      <span style="color:var(--nb-pink);font-weight:700">متجر نبضة للأم والطفل</span>
+    </nav>
+
+    <!-- Hero Banners -->
+    <div class="nb-shop-hero-grid">
+      <div class="nb-shop-main-banner">
+        <span style="background:#FFFFFF;color:var(--nb-pink);font-size:12px;font-weight:800;padding:4px 14px;border-radius:999px;width:fit-content;margin-bottom:12px">
+          عروض وتخفيضات حصرية 🛍️
+        </span>
+        <h1 style="font-size:28px;font-weight:900;color:var(--nb-ink);margin:0 0 10px;line-height:1.3">
+          كل ما تحتاجينه لرحلتكِ من الحمل حتى رعاية طفلكِ
+        </h1>
+        <p style="font-size:14px;color:var(--nb-ink-2);margin:0 0 18px;max-width:520px">
+          منتجات أصلية مختارة بعناية فائقة للأمهات والمواليد مع خدمة الدفع عند الاستلام والتوصيل السريع لكافة ولايات الجزائر.
+        </p>
+        <div style="display:flex;gap:10px">
+          <button class="nb-btn-primary" onclick="document.getElementById('nb-shop-results-sec').scrollIntoView({behavior:'smooth'})">
+            تسوقي الآن ←
+          </button>
+        </div>
       </div>
+
+      <div class="nb-shop-side-banner">
+        <div style="font-size:36px;margin-bottom:10px">🚚</div>
+        <h3 style="font-size:18px;font-weight:900;color:#00897B;margin:0 0 8px">توصيل لـ 58 ولاية</h3>
+        <p style="font-size:13px;color:var(--nb-ink-2);line-height:1.6;margin:0 0 14px">
+          اطلبي عبر الموقع وادفعي عند استلام طلبيتكِ في منزلكِ أو مكتب شركة الشحن.
+        </p>
+        <span style="font-size:12px;font-weight:800;color:#00897B">ضمان الاسترجاع والاستبدال خلال 7 أيام ✓</span>
+      </div>
+    </div>
+
+    <!-- Category Round Pills -->
+    <div class="nb-shop-cat-bar" id="nb-shop-cat-pills"></div>
+
+    <!-- Stage Collections Tabs -->
+    <div class="nb-stage-collections-box">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">✨</span>
+        <strong style="font-size:14.5px;color:var(--nb-ink)">مجموعات حسب المرحلة:</strong>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="nb-stage-tab-btn" id="nb-stage-tab-preg" onclick="window.selectStageCollection('pregnant')">لكِ أثناء الحمل 🤰</button>
+        <button class="nb-stage-tab-btn" id="nb-stage-tab-baby" onclick="window.selectStageCollection('newborn')">لمولودكِ الجديد 👶</button>
+        <button class="nb-stage-tab-btn" onclick="window.selectStageCollection('baby')">لطفلكِ 1-3 سنوات 🧸</button>
+        <button class="nb-stage-tab-btn" onclick="window.selectStageCollection('mom')">العناية بالأم 🌸</button>
+      </div>
+    </div>
+
+    <!-- Flash Deals Section -->
+    <section style="margin-bottom:36px;background:#FFFFFF;border:1px solid #F8E1EA;border-radius:var(--nb-radius-md);overflow:hidden;box-shadow:0 8px 24px rgba(244,63,126,0.06)">
+      <div class="nb-flash-deals-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:24px">⚡</span>
+          <h2 style="font-size:18px;font-weight:900;margin:0">عروض وتخفيضات اليوم</h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12.5px">ينتهي العرض خلال:</span>
+          <span class="nb-deals-timer-badge" id="nb-deals-timer">18:42:10</span>
+        </div>
+      </div>
+      <div style="padding:20px" class="nb-products-grid" id="nb-flash-deals-shelf"></div>
+    </section>
+
+    <!-- Main Results Section -->
+    <div class="nb-shop-layout" id="nb-shop-results-sec">
+      <!-- Faceted Filters Sidebar -->
+      <aside class="nb-shop-filters">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="font-size:16px;font-weight:900;color:var(--nb-ink);margin:0">تصفية المنتجات ⚙️</h3>
+          <button style="border:none;background:transparent;color:var(--nb-pink);font-size:12px;font-weight:800;cursor:pointer" onclick="window.resetShopFilters()">إعادة ضبط</button>
+        </div>
+
+        <!-- Search in shop -->
+        <div class="nb-filter-sec">
+          <div class="nb-filter-title">البحث في المتجر:</div>
+          <input type="text" id="nb-shop-search-input" placeholder="اسم المنتج، الماركة..." style="width:100%;padding:10px 12px;border:1px solid #F4E3EB;border-radius:12px;font-size:13px;font-family:inherit">
+        </div>
+
+        <!-- Stock and discounts -->
+        <div class="nb-filter-sec">
+          <div class="nb-filter-title">حالة التوفر والعروض:</div>
+          <label class="nb-filter-label">
+            <input type="checkbox" id="nb-filter-stock">
+            <span>المنتجات المتوفرة فقط</span>
+          </label>
+          <label class="nb-filter-label">
+            <input type="checkbox" id="nb-filter-discount">
+            <span>تخفيضات وعروض خاصة 🔥</span>
+          </label>
+        </div>
+
+        <!-- Trust Badges -->
+        <div style="background:#FFF9FC;border-radius:14px;padding:14px;font-size:12px;color:var(--nb-ink-2);line-height:1.7">
+          <div style="font-weight:800;color:var(--nb-pink);margin-bottom:4px">🛡️ تسوق آمن مع نبضة:</div>
+          <div>• دفع عند الاستلام</div>
+          <div>• توصيل لباب منزلكِ</div>
+          <div>• استبدال سهل ومضمون</div>
+        </div>
+      </aside>
+
+      <!-- Products Grid & Sort Bar -->
       <div>
-        <div class="logo-text">نبضة</div>
-        <div class="logo-sub">كل نبضة حب</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+          <div id="nb-products-count" style="font-size:14px;font-weight:800;color:var(--nb-ink)">جاري التحميل...</div>
+          
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="font-size:13px;color:var(--nb-ink-3);font-weight:700">ترتيب حسب:</label>
+            <select id="nb-shop-sort-select" style="padding:8px 14px;border:1px solid #F4E3EB;border-radius:12px;font-size:13px;font-family:inherit">
+              <option value="newest">وصل حديثاً ✨</option>
+              <option value="best_seller">الأكثر مبيعاً 🔥</option>
+              <option value="price_asc">السعر: من الأقل للأعلى ⬆️</option>
+              <option value="price_desc">السعر: من الأعلى للأقل ⬇️</option>
+              <option value="top_rated">الأعلى تقييماً ★</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- The Products Grid -->
+        <div class="nb-products-grid" id="nb-products-grid"></div>
+
+        <!-- Load More -->
+        <div style="text-align:center;margin-top:36px">
+          <button id="nb-shop-load-more" class="nb-btn-secondary" style="display:none;padding:12px 36px;font-size:14px">
+            عرض المزيد من المنتجات ⬇️
+          </button>
+        </div>
       </div>
-    </a>
-    <!-- 2) الأقسام في المنتصف — من الرئيسية (يمين) إلى جديد (يسار) -->
-    <div class="nav-links" style="flex:1;justify-content:center">
-      <span onclick="location.href='/'" style="cursor:pointer">الرئيسية</span>
-      <span onclick="location.href='/pregnancy'">الحمل</span>
-      <span onclick="location.href='/cycle'">تتبع الدورة</span>
-      <span onclick="location.href='/baby'">الطفل</span>
-      <span onclick="location.href='/community'">المجتمع</span>
-      <span onclick="location.href='/pregnancy'">المقالات</span>
-      <span>الدعم الذكي</span>
-      <span class="nav-badge">جديد</span>
     </div>
-    <!-- 3) الأزرار على اليسار -->
-    <div class="nav-actions">
-      <button class="btn-account" onclick="location.href='/login'">👤 حسابي</button>
-      <div class="icon-btn" title="الإشعارات">🔔</div>
-      <div class="icon-btn" title="السلة">🛒<span class="icon-badge">3</span></div>
-    </div>
-  </div>
-  </nav>
-</div>
+  </main>
 
-<div class="shell">
-  <div class="layout">
+  <div id="nb-footer-placeholder"></div>
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="promo-card">
-        <div class="promo-badge">%</div>
-        <div class="promo-title">العروض والخصومات</div>
-        <div class="promo-sub">خصومات حصرية لأمهات نبضة</div>
-      </div>
-
-      <div class="side-block">
-        <div class="side-title">التصنيفات</div>
-        <div id="categories-list">
-          <div class="cat-loading">جارٍ التحميل...</div>
-        </div>
-      </div>
-
-      <div class="info-card">
-        <div class="row">
-          <div class="ic">🚚</div>
-          <div>
-            <div class="t">توصيل مجاني</div>
-            <div class="s">للطلبات فوق 5,000 دج</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="info-card">
-        <div class="row">
-          <div class="ic">🎧</div>
-          <div>
-            <div class="t">تحتاجين مساعدة؟</div>
-            <div class="s">فريقنا هنا لمساعدتك</div>
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Main -->
-    <main class="main">
-
-      <!-- Hero -->
-      <section class="hero">
-        <div class="hero-text">
-          <div class="hero-badge">💗 اختاري الأفضل لطفلكِ</div>
-          <div class="hero-h1">منتجات موثوقة</div>
-          <div class="hero-desc">لراحة بالك وسعادة طفلكِ</div>
-          <button class="hero-cta">تسوقي الآن</button>
-          <div class="hero-badges">
-            <div class="b">✅ منتجات أصلية 100%</div>
-            <div class="b">🚚 شحن سريع وآمن</div>
-            <div class="b">↩️ إرجاع سهل</div>
-          </div>
-        </div>
-        <div class="hero-img">
-          <img src="landing-assets/slide-baby.png" alt="طفل"/>
-        </div>
-        <div class="hero-dots">
-          <div class="d on"></div><div class="d"></div><div class="d"></div>
-        </div>
-      </section>
-
-      <!-- Feature cards -->
-      <div class="feat-row">
-        <div class="feat"><div class="ic">🛡️</div><div><div class="t">منتجات موثوقة</div><div class="s">مختارة بعناية لأمهات مثلك</div></div></div>
-        <div class="feat"><div class="ic">🏷️</div><div><div class="t">أفضل الأسعار</div><div class="s">عروض حصرية وتوفير دائم</div></div></div>
-        <div class="feat"><div class="ic">🚚</div><div><div class="t">توصيل سريع</div><div class="s">إلى باب منزلك في جميع الولايات</div></div></div>
-        <div class="feat"><div class="ic">🔄</div><div><div class="t">إرجاع واستبدال</div><div class="s">سهل خلال 7 أيام</div></div></div>
-      </div>
-
-      <!-- Bestsellers -->
-      <section>
-        <div class="section-head">
-          <div class="section-title"><div class="ic">💗</div>الأكثر مبيعاً</div>
-          <div style="display:flex;align-items:center;gap:24px">
-            <div class="tabs">
-              <button class="tab on">الأكثر مبيعاً</button>
-              <button class="tab">جديدنا</button>
-              <button class="tab">أفضل التقييمات</button>
-            </div>
-            <div class="arrows">
-              <button class="arrow-btn">‹</button>
-              <button class="arrow-btn">›</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="prod-grid" id="products-grid">
-          <div class="prod-loading"><div class="spinner"></div>جارٍ تحميل المنتجات...</div>
-        </div>
-
-        <div class="view-all" id="products-count-wrap" style="display:none">
-          <div style="color:#8F8795;font-size:14px" id="products-count"></div>
-        </div>
-      </section>
-
-    </main>
-  </div>
-</div>
-
-<!-- ═══════════════════════ Product Detail Modal ═══════════════════════ -->
-<div class="modal-overlay" id="product-modal" onclick="if(event.target===this) closeModal()">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-body" id="modal-body">
-      <!-- populated by JS -->
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════ Firebase + Dynamic loading ═══════════════════════ -->
-<script>
-  // 1) تهيئة Firebase
-  firebase.initializeApp({
-    apiKey: 'AIzaSyDyFmGvaOMAzb2XXOFR_RO_lSn7UYyBd6M',
-    authDomain: 'nabda-app-ca864.firebaseapp.com',
-    projectId: 'nabda-app-ca864',
-    storageBucket: 'nabda-app-ca864.firebasestorage.app',
-    messagingSenderId: '911912460091',
-    appId: '1:911912460091:web:d93a70d03a5a957a5b611e',
-  });
-  const db = firebase.firestore();
-
-  // 2) الحالة العامّة
-  let allProducts = [];
-  let currentCategory = 'all';
-  let currentSort = 'bestsellers'; // bestsellers, new, top-rated
-
-  // 3) خريطة أيقونات التصنيفات (fallback عام لو لم يتطابق)
-  const CATEGORY_ICONS = {
-    'مستلزمات الحمل': '🤰',
-    'راحة الحامل': '🤰',
-    'مستلزمات الرضاعة': '🍼',
-    'تغذية الطفل': '🍼',
-    'العناية بالطفل': '🧴',
-    'العناية بالبشرة': '🧴',
-    'الملابس والأحذية': '👕',
-    'عربيات ومقاعد السيارة': '🚼',
-    'ألعاب وتنمية الطفل': '🧩',
-    'غرفة الطفل': '🛏️',
-    'الصحة والسلامة': '🛡️',
-    'صحة الطفل': '🛡️',
-    'أطعمة ومكملات': '🥣',
-    'مكملات غذائية': '💊',
-    'مشروبات صحية': '🍵',
-    'تخفيف الألم': '💆‍♀️',
-    'نظافة شخصية': '🧻',
-  };
-  const iconFor = (cat) => CATEGORY_ICONS[cat] || '🏷️';
-
-  // 4) صياغة السعر: يقبل "3500 د.ج" أو رقم
-  const formatPrice = (p) => {
-    if (p == null) return '';
-    if (typeof p === 'number') return p.toLocaleString('ar-DZ') + ' دج';
-    return String(p);
-  };
-
-  // 5) بطاقة منتج
-  const renderProduct = (p) => {
-    const name = (p.name || '').replace(/</g,'&lt;');
-    const brand = p.brand || p.category || '';
-    const price = formatPrice(p.price);
-    const oldPrice = p.oldPrice || p.originalPrice;
-    const rating = typeof p.rating === 'number' ? p.rating.toFixed(1) : (p.rating || '4.5');
-    const reviews = p.reviewCount || p.reviews || '';
-    const img = p.imageUrl || p.image || '';
-    const emoji = p.emoji || '🛍️';
-    // شارة تلقائيّة: خصم إذا وُجد oldPrice، وإلا "الأفضل تقييمًا" إذا rating>=4.8، وإلا "جديد" إذا حديث
-    let badge = '', badgeColor = '#43A047';
-    if (oldPrice) {
-      const now = parseFloat(String(p.price).replace(/[^\d.]/g,'')) || 0;
-      const old = parseFloat(String(oldPrice).replace(/[^\d.]/g,'')) || 0;
-      const pct = old > 0 ? Math.round((1 - now/old)*100) : 0;
-      if (pct > 0) { badge = `خصم ${pct}%`; badgeColor = '#F43F7E'; }
-    } else if (parseFloat(rating) >= 4.8) {
-      badge = 'الأفضل تقييمًا'; badgeColor = '#43A047';
-    } else if (p.createdAt) {
-      const created = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
-      const days = (Date.now() - created.getTime())/(1000*60*60*24);
-      if (days < 30) { badge = 'جديد'; badgeColor = '#B39DDB'; }
-    }
-
-    const imgHtml = img
-      ? `<img src="${img}" alt="${name}" onerror="this.style.display='none';this.parentElement.innerHTML=this.parentElement.innerHTML+'<div style=\\'font-size:110px\\'>${emoji}</div>'"/>`
-      : `<div style="font-size:110px">${emoji}</div>`;
-
-    return `
-      <div class="prod" onclick="openProductModal('${p.id}')">
-        <div class="prod-img">
-          ${badge ? `<div class="prod-badge" style="background:${badgeColor}">${badge}</div>` : ''}
-          ${imgHtml}
-        </div>
-        <div class="prod-info">
-          <div class="prod-name">${name}</div>
-          ${brand ? `<div class="prod-brand">${brand}</div>` : ''}
-          <div class="prod-rating">${rating} <span>⭐</span> ${reviews ? `<span>(${reviews})</span>` : ''}</div>
-          <div class="prod-price">
-            <span class="price-now">${price}</span>
-            ${oldPrice ? `<span class="price-old">${formatPrice(oldPrice)}</span>` : ''}
-          </div>
-          <div class="prod-actions">
-            <button class="btn-fav" onclick="event.stopPropagation();location.href='/login'">🤍</button>
-            <button class="btn-cart" onclick="event.stopPropagation();location.href='/login'">🛒</button>
-          </div>
-        </div>
-      </div>`;
-  };
-
-  // ─── نافذة تفاصيل المنتج (Modal) ───
-  // helper: بحث المنتج بالـ slug أو الـ id
-  const findProduct = (key) => allProducts.find(x => x.slug === key || x.id === key);
-
-  window.openProductModal = function(productIdOrSlug, updateUrl = true) {
-    const p = findProduct(productIdOrSlug);
-    if (!p) return;
-
-    // تحديث URL إلى /shop/{slug} (أو /shop/{id} لو لا slug)
-    if (updateUrl) {
-      const urlKey = p.slug || p.id;
-      try { history.pushState({product: urlKey}, '', '/shop/' + encodeURIComponent(urlKey)); } catch(e){}
-    }
-    const name = (p.name || '').replace(/</g,'&lt;');
-    const brand = p.brand || '';
-    const category = p.category || '';
-    const price = formatPrice(p.price);
-    const oldPrice = p.oldPrice || p.originalPrice;
-    const rating = typeof p.rating === 'number' ? p.rating.toFixed(1) : (p.rating || '4.5');
-    const reviews = p.reviewCount || p.reviews || '';
-    const img = p.imageUrl || p.image || '';
-    const emoji = p.emoji || '🛍️';
-    const description = p.description || p.desc || 'منتج مميّز مختار بعناية لكِ ولطفلكِ. تفاصيل كاملة وشراء آمن بعد تسجيل الدخول.';
-
-    let discountPct = 0;
-    if (oldPrice) {
-      const now = parseFloat(String(p.price).replace(/[^\d.]/g,'')) || 0;
-      const old = parseFloat(String(oldPrice).replace(/[^\d.]/g,'')) || 0;
-      if (old > 0) discountPct = Math.round((1 - now/old)*100);
-    }
-
-    const imgHtml = img
-      ? `<img src="${img}" alt="${name}" onerror="this.style.display='none';this.parentElement.innerHTML+='<div class=&quot;em&quot;>${emoji}</div>'"/>`
-      : `<div class="em">${emoji}</div>`;
-
-    document.getElementById('modal-body').innerHTML = `
-      <div class="modal-img">${imgHtml}</div>
-      <div class="modal-info">
-        ${category ? `<div class="modal-cat">🏷️ ${category}</div>` : ''}
-        <div class="modal-name">${name}</div>
-        ${brand ? `<div class="modal-brand">ماركة ${brand}</div>` : ''}
-        <div class="modal-rating"><span class="val">${rating}</span> <span>⭐⭐⭐⭐⭐</span> ${reviews ? `<span>(${reviews} تقييم)</span>` : ''}</div>
-        <div class="modal-price-row">
-          <span class="modal-price-now">${price}</span>
-          ${oldPrice ? `<span class="modal-price-old">${formatPrice(oldPrice)}</span>` : ''}
-          ${discountPct > 0 ? `<span class="modal-badge">وفّري ${discountPct}%</span>` : ''}
-        </div>
-        <div class="modal-desc">${description}</div>
-        <div class="modal-actions">
-          <button class="modal-btn-fav" onclick="location.href='/login'" title="أضف للمفضّلة">🤍</button>
-          <button class="modal-btn-buy" onclick="location.href='/login'">🛒 اشتري الآن</button>
-        </div>
-        <div class="modal-perks">
-          <div class="modal-perk">🚚 شحن سريع</div>
-          <div class="modal-perk">↩️ إرجاع سهل خلال 7 أيام</div>
-          <div class="modal-perk">✅ منتج أصلي 100%</div>
-          <div class="modal-perk">🔒 دفع آمن</div>
-        </div>
-      </div>`;
-
-    document.getElementById('product-modal').classList.add('on');
-    document.body.style.overflow = 'hidden';
-  };
-  window.closeModal = function(updateUrl = true) {
-    document.getElementById('product-modal').classList.remove('on');
-    document.body.style.overflow = '';
-    if (updateUrl) {
-      try { history.pushState({product: null}, '', '/shop'); } catch(e){}
-    }
-  };
-  // ESC لإغلاق النافذة
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-
-  // زرّ الرجوع في المتصفّح: يُغلق النافذة إذا مفتوحة
-  window.addEventListener('popstate', () => {
-    const path = window.location.pathname;
-    const match = path.match(/^\/shop\/(.+)$/);
-    if (match) {
-      // فتح منتج من URL جديد
-      openProductModal(decodeURIComponent(match[1]), false);
-    } else {
-      // /shop → إغلاق النافذة
-      closeModal(false);
-    }
-  });
-
-  // فتح المنتج من URL مباشر عند تحميل الصفحة (لو الرابط /shop/{slug})
-  const openProductFromUrl = () => {
-    const path = window.location.pathname;
-    const match = path.match(/^\/shop\/(.+)$/);
-    if (match) {
-      const key = decodeURIComponent(match[1]);
-      // ننتظر تحميل المنتجات لأنّ Firestore غير متزامن
-      const tryOpen = () => {
-        if (allProducts.length > 0) {
-          openProductModal(key, false);
-        } else {
-          setTimeout(tryOpen, 200);
-        }
-      };
-      tryOpen();
-    }
-  };
-  openProductFromUrl();
-
-  // 6) إعادة رسم المنتجات المرئيّة (حسب التصنيف + الترتيب)
-  const renderProducts = () => {
-    let filtered = currentCategory === 'all'
-      ? allProducts
-      : allProducts.filter(p => (p.category || '') === currentCategory);
-
-    // ترتيب
-    if (currentSort === 'top-rated') {
-      filtered = [...filtered].sort((a,b) => (b.rating||0) - (a.rating||0));
-    } else if (currentSort === 'new') {
-      filtered = [...filtered].sort((a,b) => {
-        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-        return tb - ta;
-      });
-    }
-    // else: bestsellers → الترتيب الافتراضي (createdAt desc)
-
-    const grid = document.getElementById('products-grid');
-    if (filtered.length === 0) {
-      grid.innerHTML = `<div class="prod-empty"><span class="em">🛍️</span>لا توجد منتجات في هذا التصنيف</div>`;
-    } else {
-      grid.innerHTML = filtered.map(renderProduct).join('');
-    }
-    // عدّاد المنتجات
-    const wrap = document.getElementById('products-count-wrap');
-    const el = document.getElementById('products-count');
-    if (allProducts.length > 0) {
-      wrap.style.display = 'block';
-      el.textContent = `عرض ${filtered.length} من أصل ${allProducts.length} منتج`;
-    }
-  };
-
-  // 7) رسم التصنيفات في الشريط الجانبي
-  const renderCategories = () => {
-    const counts = { 'all': allProducts.length };
-    allProducts.forEach(p => {
-      const c = p.category || 'غير مصنّف';
-      counts[c] = (counts[c] || 0) + 1;
-    });
-
-    const list = document.getElementById('categories-list');
-    let html = `<div class="cat-item active" data-cat="all">
-      <div class="ic">🌐</div>الكل <span class="cat-count">${counts.all}</span>
-    </div>`;
-    Object.keys(counts).filter(k => k !== 'all').sort().forEach(cat => {
-      html += `<div class="cat-item" data-cat="${cat.replace(/"/g,'&quot;')}">
-        <div class="ic">${iconFor(cat)}</div>${cat} <span class="cat-count">${counts[cat]}</span>
-      </div>`;
-    });
-    list.innerHTML = html;
-
-    // ربط الأحداث
-    list.querySelectorAll('.cat-item').forEach(el => {
-      el.onclick = () => {
-        list.querySelectorAll('.cat-item').forEach(x => x.classList.remove('active'));
-        el.classList.add('active');
-        currentCategory = el.getAttribute('data-cat');
-        renderProducts();
-        document.getElementById('products-grid').scrollIntoView({behavior:'smooth', block:'start'});
-      };
-    });
-  };
-
-  // 8) جلب المنتجات من Firestore
-  db.collection('products').orderBy('createdAt', 'desc').get()
-    .then(snap => {
-      // أقسام أُزيلت من المتجر: الفيتامينات والمكملات والأجهزة الطبية
-      const HIDDEN_CATEGORIES = ['فيتامينات ومكملات', 'مكملات غذائية', 'أطعمة ومكملات', 'أجهزة طبية'];
-      allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-        .filter(p => !HIDDEN_CATEGORIES.includes(p.category || ''));
-      renderCategories();
-      renderProducts();
-    })
-    .catch(err => {
-      console.error('Firestore error:', err);
-      document.getElementById('products-grid').innerHTML =
-        `<div class="prod-empty"><span class="em">⚠️</span>تعذّر تحميل المنتجات — تحقّقي من الاتصال ثمّ حدّثي الصفحة</div>`;
-      document.getElementById('categories-list').innerHTML =
-        `<div class="cat-loading">تعذّر تحميل التصنيفات</div>`;
-    });
-
-  // 9) تبويبات الترتيب (الأكثر مبيعًا / جديدنا / أفضل التقييمات)
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    t.onclick = () => {
-      document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
-      t.classList.add('on');
-      currentSort = i === 0 ? 'bestsellers' : (i === 1 ? 'new' : 'top-rated');
-      renderProducts();
-    };
-  });
-</script>
-
+  <script type="module">
+    import { initShopPage } from '/js/pages/shop.js';
+    initShopPage();
+  </script>
+  <script type="module" src="/js/shell.js"></script>
 </body>
 </html>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إتمام الطلب — الدفع عند الاستلام — متجر نبضة</title>
+  <meta name="description" content="إتمام طلبكِ من متجر نبضة بسهولة وسرعة مع خدمة الدفع عند الاستلام لكافة ولايات الجزائر.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+  <style>
+    .nb-checkout-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px 24px 60px;
+    }
+    .nb-checkout-layout {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 36px;
+      align-items: start;
+    }
+    .nb-checkout-card {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 8px 24px rgba(244, 63, 126, 0.05);
+    }
+    .nb-form-group {
+      margin-bottom: 16px;
+    }
+    .nb-form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--nb-ink);
+      margin-bottom: 6px;
+    }
+    .nb-form-input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid #F4E3EB;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .nb-form-input:focus {
+      outline: none;
+      border-color: var(--nb-pink);
+      box-shadow: 0 0 0 3px rgba(244, 63, 126, 0.12);
+    }
+    @media (max-width: 850px) {
+      .nb-checkout-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header id="nb-header" style="min-height:96px"></header>
+
+  <main class="nb-checkout-container">
+    <nav style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--nb-ink-3);margin-bottom:18px">
+      <a href="/" style="color:inherit;text-decoration:none">الرئيسية</a>
+      <span>›</span>
+      <a href="/shop" style="color:inherit;text-decoration:none">المتجر</a>
+      <span>›</span>
+      <a href="/cart" style="color:inherit;text-decoration:none">السلة</a>
+      <span>›</span>
+      <span style="color:var(--nb-pink);font-weight:700">تأكيد الطلب (COD)</span>
+    </nav>
+
+    <h1 style="font-size:26px;font-weight:900;color:var(--nb-ink);margin:0 0 24px">تأكيد الطلب — الدفع عند الاستلام 🚚</h1>
+
+    <div id="nb-checkout-view" class="nb-checkout-layout">
+      <!-- Left Column: Form -->
+      <div class="nb-checkout-card">
+        <h3 style="font-size:18px;font-weight:900;color:var(--nb-ink);margin:0 0 18px;padding-bottom:12px;border-bottom:1px solid #F8E1EA">
+          📍 معلومات التوصيل والتأكيد
+        </h3>
+
+        <div class="nb-form-group">
+          <label class="nb-form-label">الاسم الكامل *:</label>
+          <input type="text" id="nb-co-name" class="nb-form-input" placeholder="اسم المستلم">
+        </div>
+
+        <div class="nb-form-group">
+          <label class="nb-form-label">رقم الهاتف للتأكيد (موبيليس، جيزي، أوريدو) *:</label>
+          <input type="tel" id="nb-co-phone" class="nb-form-input" placeholder="مثال: 0550123456" dir="ltr">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="nb-form-group">
+            <label class="nb-form-label">الولاية (58 ولاية) *:</label>
+            <select id="nb-co-wilaya" class="nb-form-input">
+              <option value="">-- اختاري الولاية --</option>
+            </select>
+          </div>
+
+          <div class="nb-form-group">
+            <label class="nb-form-label">البلدية / الدائرة:</label>
+            <select id="nb-co-commune" class="nb-form-input">
+              <option value="">-- اختاري البلدية --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="nb-form-group">
+          <label class="nb-form-label">العنوان أو الحي:</label>
+          <input type="text" id="nb-co-address" class="nb-form-input" placeholder="الحي، رقم المبنى، علامة مميزة">
+        </div>
+
+        <div style="margin-bottom:18px">
+          <label class="nb-form-label">طريقة التوصيل:</label>
+          <div style="display:flex;gap:16px;font-size:13.5px;font-weight:700">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="radio" name="coDeliveryType" value="home" checked onchange="window.updateCheckoutTotals()">
+              <span>التوصيل إلى المنزل</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="radio" name="coDeliveryType" value="office" onchange="window.updateCheckoutTotals()">
+              <span>الاستلام من مكتب التوصيل</span>
+            </label>
+          </div>
+        </div>
+
+        <button id="nb-co-submit-btn" class="nb-btn-primary" style="width:100%;font-size:15px;padding:14px;font-weight:900" onclick="window.submitCheckoutOrder()">
+          تأكيد الطلبية الآن — الدفع عند الاستلام 🚚
+        </button>
+
+        <div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--nb-ink-3)">
+          <span>🔒 معلوماتكِ محمية ومستخدمة حصراً للتوصيل.</span>
+        </div>
+      </div>
+
+      <!-- Right Column: Order Summary -->
+      <aside class="nb-checkout-card">
+        <h3 style="font-size:18px;font-weight:900;color:var(--nb-ink);margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid #F8E1EA">
+          ملخص الطلبية
+        </h3>
+
+        <div id="nb-co-items-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;max-height:300px;overflow-y:auto"></div>
+
+        <div style="border-top:1px solid #F4E3EB;padding-top:14px;font-size:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="color:var(--nb-ink-3)">المجموع الفرعي:</span>
+            <span id="nb-co-subtotal" style="font-weight:700">— دج</span>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+            <span style="color:var(--nb-ink-3)">تكلفة الشحن:</span>
+            <span id="nb-co-shipping" style="font-weight:700">— دج</span>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid #F4E3EB;font-size:17px;font-weight:900">
+            <span>المبلغ الإجمالي عند الاستلام:</span>
+            <span id="nb-co-total" style="color:var(--nb-pink)">— دج</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Thank you container -->
+    <div id="nb-checkout-success" style="display:none"></div>
+  </main>
+
+  <div id="nb-footer-placeholder"></div>
+
+  <script type="module">
+    import { auth, db } from '/js/firebase-init.js';
+    import { getCart, clearCart } from '/js/cart.js';
+
+    let currentUser = null;
+    let citiesData = null;
+    let shippingRates = {};
+
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+    });
+
+    async function initCheckout() {
+      const cart = getCart();
+      if (!cart || !cart.items || cart.items.length === 0) {
+        window.location.replace('/cart');
+        return;
+      }
+
+      await loadCities();
+      await loadShipping();
+      renderItemsSummary(cart);
+      updateCheckoutTotals();
+    }
+
+    async function loadCities() {
+      try {
+        const res = await fetch('/data/algeria_cities.json');
+        citiesData = await res.json();
+        const select = document.getElementById('nb-co-wilaya');
+        if (select && citiesData.wilayas) {
+          select.innerHTML = '<option value="">-- اختاري الولاية (58 ولاية) --</option>' +
+            citiesData.wilayas.map(w => `
+              <option value="${w.wilaya_name_arabic}" data-id="${w.wilaya_id}">
+                ${w.wilaya_id} - ${w.wilaya_name_arabic}
+              </option>
+            `).join('');
+
+          select.addEventListener('change', () => {
+            const opt = select.options[select.selectedIndex];
+            const wId = parseInt(opt?.dataset?.id, 10);
+            populateCommunes(wId);
+            window.updateCheckoutTotals();
+          });
+        }
+      } catch (e) {
+        console.error('Error loading cities:', e);
+      }
+    }
+
+    function populateCommunes(wId) {
+      const select = document.getElementById('nb-co-commune');
+      if (!select || !citiesData) return;
+      const communes = (citiesData.communes || []).filter(c => c.wilaya_id === wId);
+      select.innerHTML = '<option value="">-- اختاري البلدية --</option>' +
+        communes.map(c => `
+          <option value="${c.commune_name_arabic || c.commune_name_latin}">
+            ${c.commune_name_arabic || c.commune_name_latin}
+          </option>
+        `).join('');
+    }
+
+    async function loadShipping() {
+      try {
+        const snap = await db.collection('site_config').doc('shipping').get();
+        if (snap.exists) shippingRates = snap.data();
+      } catch (e) {}
+    }
+
+    function renderItemsSummary(cart) {
+      const listEl = document.getElementById('nb-co-items-list');
+      if (!listEl) return;
+
+      listEl.innerHTML = cart.items.map(item => `
+        <div style="display:flex;align-items:center;gap:12px;font-size:13px">
+          <img src="${item.image || '/landing-assets/slide-store.png'}" style="width:48px;height:48px;border-radius:10px;object-fit:cover">
+          <div style="flex-grow:1">
+            <div style="font-weight:800;color:var(--nb-ink);line-height:1.3">${item.name}</div>
+            <div style="font-size:11.5px;color:var(--nb-ink-3)">الكمية: ${item.qty} × ${Number(item.price || 0).toLocaleString()} دج</div>
+          </div>
+          <strong style="color:var(--nb-pink)">${(item.price * item.qty).toLocaleString()} دج</strong>
+        </div>
+      `).join('');
+    }
+
+    window.updateCheckoutTotals = function() {
+      const cart = getCart();
+      const subtotal = cart.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+      const wilaya = document.getElementById('nb-co-wilaya')?.value;
+      const isHome = document.querySelector('input[name="coDeliveryType"]:checked')?.value !== 'office';
+
+      let shipping = 600;
+      if (wilaya && shippingRates[wilaya]) {
+        shipping = isHome ? (shippingRates[wilaya].home || 600) : (shippingRates[wilaya].desk || 400);
+      } else if (wilaya) {
+        const central = ['الجزائر', 'البليدة', 'بومرداس', 'تيبازة'];
+        shipping = central.includes(wilaya) ? (isHome ? 450 : 300) : (isHome ? 650 : 400);
+      }
+
+      const total = subtotal + shipping;
+
+      document.getElementById('nb-co-subtotal').textContent = `${subtotal.toLocaleString()} دج`;
+      document.getElementById('nb-co-shipping').textContent = `${shipping.toLocaleString()} دج`;
+      document.getElementById('nb-co-total').textContent = `${total.toLocaleString()} دج`;
+    };
+
+    window.submitCheckoutOrder = async function() {
+      const cart = getCart();
+      if (!cart || cart.items.length === 0) return;
+
+      const name = document.getElementById('nb-co-name')?.value?.trim();
+      const phone = document.getElementById('nb-co-phone')?.value?.trim();
+      const wilaya = document.getElementById('nb-co-wilaya')?.value;
+      const commune = document.getElementById('nb-co-commune')?.value;
+      const address = document.getElementById('nb-co-address')?.value?.trim();
+      const deliveryType = document.querySelector('input[name="coDeliveryType"]:checked')?.value || 'home';
+
+      if (!name || name.length < 2) {
+        alert('يرجى إدخال اسمكِ الكامل.');
+        return;
+      }
+
+      const phoneRegex = /^0[567]\d{8}$/;
+      if (!phone || !phoneRegex.test(phone)) {
+        alert('يرجى إدخال رقم هاتف جزائري صحيح للتأكيد (مثال: 0550123456).');
+        return;
+      }
+
+      if (!wilaya) {
+        alert('يرجى اختيار الولاية.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('nb-co-submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'جاري تسجيل طلبيتكِ... ⏳';
+
+      const cartId = 'cart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      const isHome = deliveryType !== 'office';
+      let shippingFee = 600;
+      if (wilaya && shippingRates[wilaya]) {
+        shippingFee = isHome ? (shippingRates[wilaya].home || 600) : (shippingRates[wilaya].desk || 400);
+      }
+
+      try {
+        const batch = db.batch();
+        let totalAmount = shippingFee;
+
+        // Create one order document per line item sharing cartId (100% compliant with firestore rules)
+        for (let i = 0; i < cart.items.length; i++) {
+          const item = cart.items[i];
+          const lineShipping = i === 0 ? shippingFee : 0; // assign shipping fee once
+          totalAmount += (item.price * item.qty);
+
+          const docRef = db.collection('orders').doc();
+          batch.set(docRef, {
+            userId: currentUser ? currentUser.uid : null,
+            source: 'website',
+            status: 'pending',
+            customerName: name,
+            customerPhone: phone,
+            wilaya: wilaya,
+            commune: commune || '',
+            address: address || '',
+            deliveryType: deliveryType,
+            productId: item.productId,
+            productName: item.name,
+            quantity: parseInt(item.qty, 10),
+            unitPrice: Number(item.price),
+            shippingFee: lineShipping,
+            variant: item.variant || '',
+            cartId: cartId,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        await batch.commit();
+
+        clearCart();
+
+        // Show Confirmation View
+        document.getElementById('nb-checkout-view').style.display = 'none';
+        const successBox = document.getElementById('nb-checkout-success');
+        const shortCartId = cartId.slice(-6);
+
+        const waMsg = encodeURIComponent(`مرحباً متجر نبضة، قمت بتأكيد طلبيتي برقم السلة #${shortCartId} بمبلغ إجمالي: ${totalAmount.toLocaleString()} دج`);
+        const waLink = `https://wa.me/213550000000?text=${waMsg}`;
+
+        successBox.innerHTML = `
+          <div style="background:#FFFFFF;border:1px solid #C8E6C9;border-radius:28px;padding:48px 32px;text-align:center;max-width:680px;margin:30px auto;box-shadow:0 16px 40px rgba(0,137,123,0.1)">
+            <div style="font-size:56px;margin-bottom:14px">🎉</div>
+            <h2 style="font-size:26px;font-weight:900;color:var(--nb-ink);margin:0 0 10px">تم تسجيل طلبيتكِ بنجاح!</h2>
+            <p style="font-size:15px;color:var(--nb-ink-2);line-height:1.7;margin-bottom:24px">
+              شكراً لطلبكِ من نبضة. رقم الطلبية هو: <strong style="color:var(--nb-pink)">#${shortCartId}</strong>.<br>
+              سيتصل بكِ فريق خدمة العملاء على الرقم <strong>${phone}</strong> لتأكيد الشحن والتسليم.
+            </p>
+
+            <div style="background:#F1F8E9;border:1px solid #C8E6C9;border-radius:18px;padding:18px;margin-bottom:28px;font-size:15px;color:#2E7D32;font-weight:900">
+              المبلغ الإجمالي عند الاستلام: ${totalAmount.toLocaleString()} دج
+            </div>
+
+            <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+              <a href="${waLink}" target="_blank" class="nb-btn-primary" style="background:#25D366;font-size:14px;padding:12px 24px;text-decoration:none">
+                متابعة الطلبية عبر واتساب 💬
+              </a>
+              <a href="/shop" class="nb-btn-secondary" style="font-size:14px;padding:12px 24px;text-decoration:none">
+                العودة للمتجر 🛍️
+              </a>
+            </div>
+          </div>
+        `;
+        successBox.style.display = 'block';
+      } catch (err) {
+        console.error('Error committing orders:', err);
+        alert('حدث خطأ أثناء حفظ الطلبية: ' + err.message);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'تأكيد الطلبية الآن — الدفع عند الاستلام 🚚';
+      }
+    };
+
+    initCheckout();
+  </script>
+  <script type="module" src="/js/shell.js"></script>
+</body>
+</html>

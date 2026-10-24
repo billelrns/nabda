@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تفاصيل المنتج — متجر نبضة</title>
+  <meta name="description" content="تسوقي بأمان منتجات الأم والطفل الأصلية مع خدمة الدفع عند الاستلام والتوصيل السريع لـ 58 ولاية من متجر نبضة.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <style>
+    .nb-prod-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px 24px 60px;
+    }
+
+    .nb-product-main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 40px;
+      margin-bottom: 40px;
+      align-items: start;
+    }
+
+    /* ── Gallery ── */
+    .nb-gallery-box {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(244, 63, 126, 0.05);
+    }
+    .nb-main-img-wrap {
+      width: 100%;
+      height: 420px;
+      border-radius: 20px;
+      background: #FFF7FA;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .nb-main-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: transform 0.3s;
+    }
+    .nb-main-img:hover {
+      transform: scale(1.05);
+    }
+    .nb-gallery-thumbs {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .nb-thumb-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 14px;
+      border: 2px solid #F4E3EB;
+      background: #FFF7FA;
+      padding: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .nb-thumb-btn:hover, .nb-thumb-btn.active {
+      border-color: var(--nb-pink);
+    }
+    .nb-thumb-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    /* ── Product Info & COD ── */
+    .nb-product-details {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .nb-p-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--nb-ink);
+      line-height: 1.35;
+      margin: 0;
+    }
+    .nb-p-price-box {
+      background: #FFF9FC;
+      border: 1px solid #F8E1EA;
+      border-radius: 20px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .nb-p-price {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--nb-pink);
+    }
+    .nb-p-old-price {
+      font-size: 16px;
+      color: #AAA;
+      text-decoration: line-through;
+    }
+    .nb-savings-badge {
+      background: #E53935;
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    /* Variant buttons */
+    .nb-variant-btn {
+      background: #FFFFFF;
+      border: 1.5px solid #F4E3EB;
+      border-radius: 12px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--nb-ink);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .nb-variant-btn.active, .nb-variant-btn:hover {
+      border-color: var(--nb-pink);
+      color: var(--nb-pink);
+      background: #FFF0F5;
+    }
+
+    /* COD Direct Form Box */
+    .nb-cod-form-box {
+      background: #FFFFFF;
+      border: 2px solid #F8BBD0;
+      border-radius: 24px;
+      padding: 24px 26px;
+      box-shadow: 0 12px 34px rgba(244, 63, 126, 0.08);
+    }
+    .nb-cod-field {
+      margin-bottom: 14px;
+    }
+    .nb-cod-label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--nb-ink);
+      margin-bottom: 6px;
+    }
+    .nb-cod-input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid #F4E3EB;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-family: inherit;
+    }
+    .nb-cod-input:focus {
+      outline: none;
+      border-color: var(--nb-pink);
+      box-shadow: 0 0 0 3px rgba(244, 63, 126, 0.12);
+    }
+
+    /* Trust row */
+    .nb-trust-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+      text-align: center;
+      font-size: 11.5px;
+      color: var(--nb-ink-2);
+      font-weight: 700;
+    }
+    .nb-trust-item {
+      background: #FFF9FC;
+      border: 1px solid #F8E1EA;
+      border-radius: 12px;
+      padding: 10px 6px;
+    }
+
+    /* Sticky Mobile Buy Bar */
+    .nb-sticky-buy-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #FFFFFF;
+      box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.1);
+      padding: 12px 20px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 999;
+    }
+
+    @media (max-width: 900px) {
+      .nb-product-main-grid { grid-template-columns: 1fr; }
+      .nb-main-img-wrap { height: 300px; }
+      .nb-trust-row { grid-template-columns: 1fr 1fr; }
+      .nb-sticky-buy-bar { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <header id="nb-header" style="min-height:96px"></header>
+
+  <main class="nb-prod-container">
+    <!-- Breadcrumb -->
+    <nav style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--nb-ink-3);margin-bottom:18px">
+      <a href="/" style="color:inherit;text-decoration:none">الرئيسية</a>
+      <span>›</span>
+      <a href="/shop" style="color:inherit;text-decoration:none">المتجر</a>
+      <span>›</span>
+      <a id="nb-bc-category" href="/shop" style="color:inherit;text-decoration:none">القسم</a>
+      <span>›</span>
+      <span id="nb-bc-title" style="color:var(--nb-pink);font-weight:700">المنتج</span>
+    </nav>
+
+    <!-- Product View -->
+    <div id="nb-product-view-container">
+      <div class="nb-product-main-grid">
+        <!-- Gallery -->
+        <div class="nb-gallery-box">
+          <div class="nb-main-img-wrap">
+            <img id="nb-main-img" src="" alt="صورة المنتج" class="nb-main-img">
+          </div>
+          <div class="nb-gallery-thumbs" id="nb-gallery-thumbs"></div>
+        </div>
+
+        <!-- Details & Direct COD -->
+        <div class="nb-product-details">
+          <div>
+            <div style="font-size:12.5px;color:var(--nb-pink);font-weight:800;margin-bottom:4px" id="nb-p-brand">علامة أصلية ومضمونة</div>
+            <h1 class="nb-p-title" id="nb-p-title">اسم المنتج</h1>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+              <span id="nb-p-rating" style="font-size:13px;font-weight:800;color:var(--nb-ink)">4.9 ★ (24 تقييم)</span>
+              <span id="nb-p-stock-badge" style="font-size:12px;font-weight:800">متوفر في المخزن ✓</span>
+            </div>
+          </div>
+
+          <!-- Price -->
+          <div class="nb-p-price-box">
+            <span class="nb-p-price" id="nb-p-price">— دج</span>
+            <span class="nb-p-old-price" id="nb-p-old-price">— دج</span>
+            <span class="nb-savings-badge" id="nb-p-savings-badge" style="display:none">تخفيض خاص 🔥</span>
+          </div>
+
+          <!-- Variants -->
+          <div id="nb-p-variants-box"></div>
+
+          <!-- Quantity -->
+          <div style="display:flex;align-items:center;gap:14px">
+            <span style="font-size:13px;font-weight:800;color:var(--nb-ink)">الكمية:</span>
+            <div style="display:flex;align-items:center;border:1px solid #F4E3EB;border-radius:12px;overflow:hidden;background:#FFF9FC">
+              <button style="border:none;background:transparent;width:34px;height:34px;font-size:16px;font-weight:bold;cursor:pointer" onclick="window.changeQuantity(-1)">-</button>
+              <span style="width:40px;text-align:center;font-weight:900;font-size:14px" id="nb-qty-val">1</span>
+              <button style="border:none;background:transparent;width:34px;height:34px;font-size:16px;font-weight:bold;cursor:pointer" onclick="window.changeQuantity(1)">+</button>
+            </div>
+          </div>
+
+          <!-- ── Direct COD Order Form (أعلى معدل تحويل) ── -->
+          <div class="nb-cod-form-box">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+              <span style="font-size:22px">🚚</span>
+              <h3 style="font-size:16.5px;font-weight:900;color:var(--nb-ink);margin:0">طلب فوري — الدفع عند الاستلام</h3>
+            </div>
+
+            <div class="nb-cod-field">
+              <label class="nb-cod-label">الاسم الكامل *:</label>
+              <input type="text" id="nb-cod-name" class="nb-cod-input" placeholder="مثال: مريم بن سالم">
+            </div>
+
+            <div class="nb-cod-field">
+              <label class="nb-cod-label">رقم الهاتف للتأكيد (موبيليس، جيزي، أوريدو) *:</label>
+              <input type="tel" id="nb-cod-phone" class="nb-cod-input" placeholder="مثال: 0550123456" dir="ltr">
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="nb-cod-field">
+                <label class="nb-cod-label">الولاية (58 ولاية) *:</label>
+                <select id="nb-cod-wilaya" class="nb-cod-input">
+                  <option value="">-- اختاري الولاية --</option>
+                </select>
+              </div>
+
+              <div class="nb-cod-field">
+                <label class="nb-cod-label">البلدية / الدائرة:</label>
+                <select id="nb-cod-commune" class="nb-cod-input">
+                  <option value="">-- اختاري البلدية --</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="nb-cod-field">
+              <label class="nb-cod-label">العنوان أو الحي:</label>
+              <input type="text" id="nb-cod-address" class="nb-cod-input" placeholder="اسم الحي أو الشارع">
+            </div>
+
+            <!-- Delivery Option -->
+            <div style="display:flex;gap:16px;margin-bottom:14px;font-size:13px;font-weight:700">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="radio" name="deliveryType" value="home" checked onchange="updateCodTotals()">
+                <span>التوصيل لباب المنزل</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="radio" name="deliveryType" value="office" onchange="updateCodTotals()">
+                <span>الاستلام من مكتب التوصيل</span>
+              </label>
+            </div>
+
+            <!-- Totals Breakdown -->
+            <div style="background:#FFF9FC;border:1px solid #F8E1EA;border-radius:14px;padding:12px 16px;margin-bottom:16px;font-size:13px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <span style="color:var(--nb-ink-3)">سعر المنتجات:</span>
+                <span id="nb-cod-subtotal" style="font-weight:700">— دج</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                <span style="color:var(--nb-ink-3)">رسوم التوصيل:</span>
+                <span id="nb-cod-shipping" style="font-weight:700">— دج</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid #F4E3EB;font-size:15px;font-weight:900">
+                <span>المبلغ الإجمالي عند الاستلام:</span>
+                <span id="nb-cod-total" style="color:var(--nb-pink)">— دج</span>
+              </div>
+            </div>
+
+            <button id="nb-cod-submit-btn" class="nb-btn-primary" style="width:100%;font-size:15px;padding:12px;font-weight:900" onclick="window.submitDirectCodOrder()">
+              تأكيد الطلب — الدفع عند الاستلام 🚚
+            </button>
+
+            <!-- Secondary Actions -->
+            <div style="display:flex;gap:10px;margin-top:10px">
+              <button class="nb-btn-secondary" style="flex:1;font-size:13px;padding:8px" onclick="window.addToCartFromPage()">
+                أضيفي للسلة 🛒
+              </button>
+              <button class="nb-btn-secondary" style="flex:1;font-size:13px;padding:8px;color:#25D366;border-color:#25D366" onclick="window.orderViaWhatsApp()">
+                طلب عبر واتساب 💬
+              </button>
+            </div>
+          </div>
+
+          <!-- Trust Badges -->
+          <div class="nb-trust-row">
+            <div class="nb-trust-item">
+              <div>🚚</div>
+              <div>توصيل لـ 58 ولاية</div>
+            </div>
+            <div class="nb-trust-item">
+              <div>💵</div>
+              <div>دفع عند الاستلام</div>
+            </div>
+            <div class="nb-trust-item">
+              <div>↩️</div>
+              <div>إرجاع خلال 7 أيام</div>
+            </div>
+            <div class="nb-trust-item">
+              <div>✅</div>
+              <div>منتج أصلي 100%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description Content -->
+      <section style="background:#FFFFFF;border:1px solid #F8E1EA;border-radius:24px;padding:30px;margin-bottom:40px;box-shadow:0 6px 20px rgba(0,0,0,0.02)">
+        <h3 style="font-size:18px;font-weight:900;color:var(--nb-ink);margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid #F8E1EA">
+          الوصف والمميزات
+        </h3>
+        <div id="nb-p-desc-content" style="line-height:1.8;color:var(--nb-ink-2);font-size:14.5px"></div>
+      </section>
+
+      <!-- Similar Products -->
+      <section style="margin-bottom:20px">
+        <h3 style="font-size:20px;font-weight:900;color:var(--nb-ink);margin:0 0 18px">منتجات مشابهة قد تعجبكِ 🛍️</h3>
+        <div class="nb-products-grid" id="nb-similar-products-grid"></div>
+      </section>
+    </div>
+
+    <!-- Product Not Found View -->
+    <div id="nb-product-not-found" style="display:none;text-align:center;padding:60px 20px;background:#FFFFFF;border-radius:28px;border:1px dashed #F8BBD0;margin-bottom:40px">
+      <div style="font-size:48px;margin-bottom:12px">🌸</div>
+      <h2 style="font-size:22px;font-weight:900;color:var(--nb-ink);margin-bottom:8px">عذراً، هذا المنتج غير متوفر حالياً</h2>
+      <p style="font-size:14px;color:var(--nb-ink-3);margin-bottom:24px">قد يكون المنتج قد نفد من المخزن أو تم تحديث رابطه. تفضلي بالاطلاع على التشكيلة المميزة البديلة:</p>
+      <a href="/shop" class="nb-btn-primary" style="text-decoration:none;font-size:14px;padding:10px 24px">زيارة المتجر الرئيسي ←</a>
+    </div>
+
+    <!-- Mobile Sticky Buy Bar -->
+    <div class="nb-sticky-buy-bar" id="nb-sticky-buy-bar" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px">
+        <img id="nb-sticky-thumb" src="" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover">
+        <div>
+          <div style="font-size:11px;color:var(--nb-ink-3)">الإجمالي:</div>
+          <div id="nb-sticky-price" style="font-weight:900;color:var(--nb-pink);font-size:16px">— دج</div>
+        </div>
+      </div>
+      <button class="nb-btn-primary" style="font-size:13px;padding:8px 18px" onclick="document.querySelector('.nb-cod-form-box').scrollIntoView({behavior:'smooth'})">
+        اطلبي الآن 🚚
+      </button>
+    </div>
+  </main>
+
+  <div id="nb-footer-placeholder"></div>
+
+  <script type="module">
+    import { initProductPage } from '/js/pages/product.js';
+    initProductPage();
+  </script>
+  <script type="module" src="/js/shell.js"></script>
+</body>
+</html>

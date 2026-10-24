@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سلة المشتريات — متجر نبضة</title>
+  <meta name="description" content="سلة مشترياتكِ من متجر نبضة. تسوقي براحة وأمان مع خدمة الدفع عند الاستلام.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+  <style>
+    .nb-cart-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px 24px 60px;
+    }
+    .nb-cart-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    .nb-cart-item {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: 20px;
+      padding: 18px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+    }
+    .nb-cart-item-img {
+      width: 76px;
+      height: 76px;
+      border-radius: 14px;
+      object-fit: cover;
+      background: #FFF7FA;
+    }
+    .nb-cart-summary-box {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(244, 63, 126, 0.06);
+    }
+    @media (max-width: 800px) {
+      .nb-cart-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header id="nb-header" style="min-height:96px"></header>
+
+  <main class="nb-cart-container">
+    <nav style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--nb-ink-3);margin-bottom:18px">
+      <a href="/" style="color:inherit;text-decoration:none">الرئيسية</a>
+      <span>›</span>
+      <a href="/shop" style="color:inherit;text-decoration:none">المتجر</a>
+      <span>›</span>
+      <span style="color:var(--nb-pink);font-weight:700">سلة التسوق</span>
+    </nav>
+
+    <h1 style="font-size:26px;font-weight:900;color:var(--nb-ink);margin:0 0 24px">🛒 سلة المشتريات</h1>
+
+    <div id="nb-cart-content" class="nb-cart-layout">
+      <!-- Items List -->
+      <div id="nb-cart-items-list"></div>
+
+      <!-- Summary -->
+      <aside class="nb-cart-summary-box">
+        <h3 style="font-size:17px;font-weight:900;color:var(--nb-ink);margin:0 0 16px;padding-bottom:10px;border-bottom:1px solid #F8E1EA">ملخص السلة</h3>
+        
+        <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:10px">
+          <span style="color:var(--nb-ink-3)">المجموع الفرعي:</span>
+          <strong id="nb-cart-subtotal" style="color:var(--nb-ink)">— دج</strong>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:14px">
+          <span style="color:var(--nb-ink-3)">رسوم التوصيل:</span>
+          <span style="color:#00897B;font-weight:700">تُحسب في الخطوة التالية</span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid #F4E3EB;font-size:17px;font-weight:900;margin-bottom:20px">
+          <span>الإجمالي التقريبي:</span>
+          <span id="nb-cart-total" style="color:var(--nb-pink)">— دج</span>
+        </div>
+
+        <a href="/checkout" class="nb-btn-primary" style="width:100%;text-align:center;font-size:14px;padding:12px;display:block;text-decoration:none">
+          متابعة الطلب والدفع عند الاستلام 🚚
+        </a>
+
+        <div style="margin-top:14px;text-align:center">
+          <a href="/shop" style="font-size:12.5px;color:var(--nb-ink-3);text-decoration:none">مواصلة التسوق 🛍️</a>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Empty Cart View -->
+    <div id="nb-cart-empty" style="display:none;text-align:center;padding:70px 20px;background:#FFFFFF;border-radius:28px;border:1px dashed #F8BBD0">
+      <div style="font-size:56px;margin-bottom:14px">🛒</div>
+      <h3 style="font-size:20px;font-weight:900;color:var(--nb-ink);margin-bottom:8px">سلة مشترياتكِ فارغة</h3>
+      <p style="font-size:14px;color:var(--nb-ink-3);margin-bottom:24px">لم تقومي بإضافة أي منتجات للسلة بعد. استكشفي متجر نبضة الآن!</p>
+      <a href="/shop" class="nb-btn-primary" style="font-size:14px;padding:12px 28px;text-decoration:none">تصفح المتجر 🛍️</a>
+    </div>
+  </main>
+
+  <div id="nb-footer-placeholder"></div>
+
+  <script type="module">
+    import { getCart, updateQuantity, removeFromCart } from '/js/cart.js';
+
+    function renderCart() {
+      const cart = getCart();
+      const contentEl = document.getElementById('nb-cart-content');
+      const emptyEl = document.getElementById('nb-cart-empty');
+      const listEl = document.getElementById('nb-cart-items-list');
+
+      if (!cart || !cart.items || cart.items.length === 0) {
+        contentEl.style.display = 'none';
+        emptyEl.style.display = 'block';
+        return;
+      }
+
+      contentEl.style.display = 'grid';
+      emptyEl.style.display = 'none';
+
+      let subtotal = 0;
+
+      listEl.innerHTML = cart.items.map((item, idx) => {
+        const itemTotal = (item.price || 0) * (item.qty || 1);
+        subtotal += itemTotal;
+
+        return `
+          <div class="nb-cart-item">
+            <img src="${item.image || '/landing-assets/slide-store.png'}" alt="${item.name}" class="nb-cart-item-img">
+            <div style="flex-grow:1">
+              <h4 style="font-size:14.5px;font-weight:800;color:var(--nb-ink);margin:0 0 4px">${item.name}</h4>
+              ${item.variant ? `<div style="font-size:12px;color:var(--nb-pink);font-weight:700;margin-bottom:6px">الخيار: ${item.variant}</div>` : ''}
+              <div style="font-size:15px;font-weight:900;color:var(--nb-pink)">${Number(item.price || 0).toLocaleString()} دج</div>
+            </div>
+
+            <!-- Qty controls -->
+            <div style="display:flex;align-items:center;border:1px solid #F4E3EB;border-radius:10px;background:#FFF9FC">
+              <button style="border:none;background:transparent;width:30px;height:30px;cursor:pointer;font-weight:bold" onclick="window.changeCartQty(${idx}, -1)">-</button>
+              <span style="width:32px;text-align:center;font-weight:800;font-size:13px">${item.qty}</span>
+              <button style="border:none;background:transparent;width:30px;height:30px;cursor:pointer;font-weight:bold" onclick="window.changeCartQty(${idx}, 1)">+</button>
+            </div>
+
+            <button style="border:none;background:transparent;color:#999;font-size:18px;cursor:pointer;padding:6px" onclick="window.deleteCartItem(${idx})" title="حذف">🗑️</button>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('nb-cart-subtotal').textContent = `${subtotal.toLocaleString()} دج`;
+      document.getElementById('nb-cart-total').textContent = `${subtotal.toLocaleString()} دج`;
+    }
+
+    window.changeCartQty = function(idx, delta) {
+      const cart = getCart();
+      if (!cart.items[idx]) return;
+      const newQty = cart.items[idx].qty + delta;
+      if (newQty <= 0) {
+        removeFromCart(idx);
+      } else {
+        updateQuantity(idx, newQty);
+      }
+      renderCart();
+    };
+
+    window.deleteCartItem = function(idx) {
+      removeFromCart(idx);
+      renderCart();
+    };
+
+    window.addEventListener('cart-updated', renderCart);
+    renderCart();
+  </script>
+  <script type="module" src="/js/shell.js"></script>
+</body>
+</html>
