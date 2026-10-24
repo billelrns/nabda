@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>دليل الحمل أسبوعاً بأسبوع — نبضة</title>
+  <meta name="description" content="تابعي تطور جنينكِ أسبوعاً بأسبوع مع نبضة: الحجم، الوزن، التغيرات الجسدية، نصائح التغذية، وخطة الولادة بإشراف فريق تحرير نبضة.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+
+  <!-- Firebase Web SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <style>
+    /* ── Pregnancy Specific Styles ── */
+    .nb-preg-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px 24px 60px;
+    }
+
+    /* ── Week Scroller Strip ── */
+    .nb-week-strip-wrap {
+      position: relative;
+      margin-bottom: 24px;
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: 20px;
+      padding: 12px 16px;
+      box-shadow: 0 4px 18px rgba(244, 63, 126, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nb-week-strip {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding: 4px 2px;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      flex-grow: 1;
+    }
+    .nb-week-strip::-webkit-scrollbar { display: none; }
+
+    .nb-week-pill {
+      flex: 0 0 auto;
+      min-width: 62px;
+      height: 64px;
+      border-radius: 16px;
+      border: 1px solid #F4E3EB;
+      background: #FFF9FC;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      color: var(--nb-ink);
+      font-family: inherit;
+      padding: 6px;
+    }
+    .nb-week-pill:hover {
+      border-color: var(--nb-pink);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(244, 63, 126, 0.12);
+    }
+    .nb-week-pill.active {
+      background: linear-gradient(135deg, var(--nb-pink), #FF6B9A);
+      color: #FFFFFF;
+      border-color: transparent;
+      box-shadow: 0 8px 20px rgba(244, 63, 126, 0.28);
+      transform: translateY(-2px);
+    }
+    .nb-week-pill-num {
+      font-size: 19px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+    .nb-week-pill-label {
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+
+    .nb-strip-nav-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid #F4E3EB;
+      background: #FFFFFF;
+      color: var(--nb-ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .nb-strip-nav-btn:hover {
+      background: var(--nb-pink-bg);
+      border-color: var(--nb-pink);
+      color: var(--nb-pink);
+    }
+
+    /* ── Hero Card ── */
+    .nb-preg-hero {
+      background: linear-gradient(135deg, #FFF0F5 0%, #FFF7FA 50%, #FDEBF2 100%);
+      border: 1px solid #F8D7E5;
+      border-radius: var(--nb-radius-lg);
+      padding: 32px 36px;
+      box-shadow: 0 16px 40px rgba(244, 63, 126, 0.08);
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 36px;
+      align-items: center;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .nb-preg-hero::after {
+      content: '';
+      position: absolute;
+      top: -60px;
+      left: -60px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(244,63,126,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .nb-fetus-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .nb-fetus-circle {
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #FFFFFF 60%, #FFE4EE 100%);
+      border: 3px solid rgba(244, 63, 126, 0.25);
+      box-shadow: 0 12px 30px rgba(244, 63, 126, 0.16);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      animation: nb-fetus-pulse 4s ease-in-out infinite;
+    }
+    @keyframes nb-fetus-pulse {
+      0%, 100% { box-shadow: 0 12px 30px rgba(244, 63, 126, 0.16); transform: scale(1); }
+      50% { box-shadow: 0 18px 40px rgba(244, 63, 126, 0.28); transform: scale(1.02); }
+    }
+    .nb-fetus-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+    .nb-fetus-circle:hover .nb-fetus-img {
+      transform: scale(1.08);
+    }
+    .nb-fruit-badge {
+      margin-top: 14px;
+      background: #FFFFFF;
+      border: 1px solid #F8D7E5;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--nb-ink);
+      box-shadow: 0 4px 12px rgba(244, 63, 126, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nb-preg-hero-body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .nb-hero-stage-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #FFFFFF;
+      color: var(--nb-pink);
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 800;
+      border: 1px solid #F8D7E5;
+      width: fit-content;
+    }
+    .nb-hero-week-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--nb-ink);
+      line-height: 1.25;
+      margin: 0;
+    }
+    .nb-hero-days-left {
+      font-size: 15px;
+      color: var(--nb-ink-2);
+      font-weight: 700;
+    }
+
+    /* Progress bar */
+    .nb-progress-wrap {
+      margin-top: 6px;
+    }
+    .nb-progress-bar {
+      width: 100%;
+      height: 10px;
+      background: rgba(244, 63, 126, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .nb-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--nb-pink), #FF85AD);
+      border-radius: 999px;
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nb-progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--nb-ink-3);
+      margin-top: 6px;
+    }
+
+    /* Quick Info Row */
+    .nb-quick-info-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+    .nb-quick-card {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 8px 24px rgba(244, 63, 126, 0.05);
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .nb-quick-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(244, 63, 126, 0.1);
+      border-color: rgba(244, 63, 126, 0.3);
+    }
+    .nb-quick-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: var(--nb-pink-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .nb-quick-label {
+      font-size: 12px;
+      color: var(--nb-ink-3);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .nb-quick-value {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--nb-ink);
+    }
+
+    /* ── Main 2-Column Grid ── */
+    .nb-preg-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* ── Content Cards ── */
+    .nb-week-section-card {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: var(--nb-radius-md);
+      padding: 28px 30px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(244, 63, 126, 0.04);
+    }
+    .nb-sec-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #FCE4EC;
+    }
+    .nb-sec-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nb-sec-title {
+      font-size: 19px;
+      font-weight: 900;
+      color: var(--nb-ink);
+      margin: 0;
+    }
+
+    .nb-article-checklist {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .nb-article-checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14.5px;
+      line-height: 1.7;
+      color: var(--nb-ink-2);
+    }
+    .nb-check-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #E8F5E9;
+      color: #2E7D32;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    /* ── Mobile Tabs Switcher ── */
+    .nb-content-tabs {
+      display: none;
+      gap: 8px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      padding-bottom: 4px;
+    }
+    .nb-content-tab {
+      background: #FFFFFF;
+      border: 1px solid #F8D7E5;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--nb-ink-2);
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .nb-content-tab.active {
+      background: var(--nb-pink);
+      color: #FFFFFF;
+      border-color: var(--nb-pink);
+    }
+
+    /* ── Birth Plan ── */
+    .nb-birth-plan-box {
+      background: linear-gradient(135deg, #FFF9FC 0%, #FFFFFF 100%);
+      border: 2px dashed #F8BBD0;
+      border-radius: var(--nb-radius-md);
+      padding: 26px 28px;
+      margin-bottom: 24px;
+    }
+    .nb-plan-pref-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 18px 0;
+    }
+    .nb-plan-check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #FFFFFF;
+      border: 1px solid #F4E3EB;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--nb-ink);
+      cursor: pointer;
+    }
+    .nb-plan-check-item input {
+      accent-color: var(--nb-pink);
+      width: 17px;
+      height: 17px;
+    }
+
+    /* ── Discover Sections ── */
+    .nb-discover-cat-box {
+      margin-bottom: 24px;
+    }
+    .nb-discover-cat-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .nb-discover-subgrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .nb-discover-card {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .nb-discover-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 24px rgba(244, 63, 126, 0.1);
+      border-color: rgba(244, 63, 126, 0.3);
+    }
+    .nb-discover-card-img {
+      height: 110px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+    .nb-discover-emoji {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .nb-discover-card-body {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      justify-content: space-between;
+    }
+    .nb-discover-card-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--nb-ink);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .nb-discover-card-summary {
+      font-size: 12px;
+      color: var(--nb-ink-3);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .nb-discover-read-btn {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--nb-pink);
+    }
+
+    /* ── Sticky Sidebar ── */
+    .nb-preg-sidebar {
+      position: sticky;
+      top: 110px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .nb-sidebar-box {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: var(--nb-radius-md);
+      padding: 22px 24px;
+      box-shadow: 0 8px 24px rgba(244, 63, 126, 0.04);
+    }
+
+    .nb-tools-3d-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .nb-tool-3d-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      text-decoration: none;
+      color: var(--nb-ink);
+      padding: 10px 6px;
+      border-radius: 14px;
+      border: 1px solid #F8EAF0;
+      background: #FFF9FC;
+      transition: all 0.2s;
+    }
+    .nb-tool-3d-item:hover {
+      background: #FFFFFF;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 18px rgba(244, 63, 126, 0.1);
+      border-color: var(--nb-pink);
+    }
+    .nb-tool-3d-img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      margin-bottom: 6px;
+    }
+    .nb-tool-3d-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    /* ── Modal ── */
+    .nb-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(31, 26, 32, 0.6);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+      padding: 20px;
+    }
+    .nb-modal-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .nb-modal-card {
+      background: #FFFFFF;
+      border-radius: 24px;
+      max-width: 520px;
+      width: 100%;
+      padding: 30px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+      transform: translateY(20px);
+      transition: transform 0.3s;
+    }
+    .nb-modal-backdrop.open .nb-modal-card {
+      transform: translateY(0);
+    }
+    .nb-modal-close {
+      border: none;
+      background: #F4E3EB;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--nb-ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 960px) {
+      .nb-preg-hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding: 24px;
+      }
+      .nb-fetus-wrap { margin-bottom: 10px; }
+      .nb-preg-hero-body { align-items: center; }
+      .nb-preg-layout { grid-template-columns: 1fr; }
+      .nb-quick-info-row { grid-template-columns: 1fr; gap: 12px; }
+      .nb-content-tabs { display: flex; }
+      .nb-discover-subgrid { grid-template-columns: 1fr; }
+      .nb-plan-pref-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Injected by shell.js -->
+  <header id="nb-header" style="min-height:96px"></header>
+
+  <main class="nb-preg-container">
+    <!-- Breadcrumb -->
+    <nav style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--nb-ink-3);margin-bottom:14px">
+      <a href="/" style="color:inherit;text-decoration:none">الرئيسية</a>
+      <span>›</span>
+      <span style="color:var(--nb-pink);font-weight:700">رحلة الحمل أسبوعاً بأسبوع</span>
+    </nav>
+
+    <!-- User / Visitor Alert Banner -->
+    <div id="nb-user-status-banner" style="display:none;background:#FFFFFF;border:1px solid #F8D7E5;border-radius:18px;padding:14px 20px;margin-bottom:20px;align-items:center;justify-content:space-between;box-shadow:0 6px 18px rgba(244,63,126,0.06);flex-wrap:wrap;gap:12px"></div>
+
+    <!-- Trying to conceive notice -->
+    <div id="nb-trying-card" style="display:none;background:linear-gradient(135deg,#E8F5E9,#F1F8E9);border:1px solid #C8E6C9;border-radius:18px;padding:16px 22px;margin-bottom:20px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:26px">🌱</span>
+        <div>
+          <div style="font-weight:800;color:#2E7D32;font-size:15px">تخططين للحمل وتبحثين عن أفضل أيام الخصوبة؟</div>
+          <div style="font-size:13px;color:#388E3C">استعيني بحاسبة التبويض وأدعية الذرية ومقالات الاستعداد للحمل في قسم الخصوبة.</div>
+        </div>
+      </div>
+      <a href="/fertility" class="nb-btn-primary" style="background:#2E7D32;font-size:13px;padding:8px 18px">انتقلي لقسم الخصوبة ←</a>
+    </div>
+
+    <!-- Baby born notice -->
+    <div id="nb-baby-born-card" style="display:none;background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:1px solid #FFE0B2;border-radius:18px;padding:16px 22px;margin-bottom:20px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:26px">👶</span>
+        <div>
+          <div style="font-weight:800;color:#E65100;font-size:15px">ألف مبروك! هل وُلد طفلكِ الجميل بالسلامة؟</div>
+          <div style="font-size:13px;color:#F57C00">حان وقت الانتقال إلى قسم رعاية الطفل لمتابعة تطوره شهراً بشهر من الرضاعة حتى عامه الثاني.</div>
+        </div>
+      </div>
+      <a href="/baby" class="nb-btn-primary" style="background:#E65100;font-size:13px;padding:8px 18px">انتقلي لقسم الطفل ←</a>
+    </div>
+
+    <!-- Week Scroller Strip -->
+    <div class="nb-week-strip-wrap">
+      <button class="nb-strip-nav-btn" onclick="document.getElementById('nb-week-strip').scrollBy({left:200,behavior:'smooth'})" aria-label="السابق">›</button>
+      <div class="nb-week-strip" id="nb-week-strip">
+        <!-- Rendered by JS: 1 to 42 -->
+      </div>
+      <button class="nb-strip-nav-btn" onclick="document.getElementById('nb-week-strip').scrollBy({left:-200,behavior:'smooth'})" aria-label="التالي">‹</button>
+    </div>
+
+    <!-- Hero Card -->
+    <section class="nb-preg-hero">
+      <div class="nb-fetus-wrap">
+        <div class="nb-fetus-circle">
+          <img id="nb-fetus-img" src="/img/fetus/week_12.webp" alt="جنين نبضة" class="nb-fetus-img">
+        </div>
+        <div class="nb-fruit-badge" id="nb-fruit-badge">
+          <span style="font-size:18px">🥝</span> بحجم <strong>حبة كيوي</strong>
+        </div>
+      </div>
+
+      <div class="nb-preg-hero-body">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="nb-hero-stage-badge" id="nb-hero-stage-badge">الثلث الثاني • الشهر الرابع</span>
+          <span style="font-size:12.5px;color:var(--nb-ink-3);font-weight:600" id="nb-hero-dates-row">حساب دقيق لرحلة الأمومة</span>
+        </div>
+
+        <h1 class="nb-hero-week-title" id="nb-hero-week-title">الأسبوع 12 من الحمل</h1>
+
+        <div class="nb-hero-days-left" id="nb-hero-days-left">بقي حوالي 196 يوماً للقاء صغيركِ</div>
+
+        <!-- Progress bar -->
+        <div class="nb-progress-wrap">
+          <div class="nb-progress-bar">
+            <div class="nb-progress-fill" id="nb-hero-progress-fill" style="width:30%"></div>
+          </div>
+          <div class="nb-progress-labels">
+            <span>البداية (الأسبوع 1)</span>
+            <span id="nb-hero-progress-pct" style="color:var(--nb-pink);font-weight:800">30% من الحمل</span>
+            <span>الولادة (الأسبوع 40)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Info 3-Card Row -->
+    <div class="nb-quick-info-row">
+      <div class="nb-quick-card">
+        <div class="nb-quick-icon">🍈</div>
+        <div>
+          <div class="nb-quick-label">الحجم التقديري</div>
+          <div class="nb-quick-value" id="nb-info-size">حبة كيوي</div>
+        </div>
+      </div>
+
+      <div class="nb-quick-card">
+        <div class="nb-quick-icon">⚖️</div>
+        <div>
+          <div class="nb-quick-label">الوزن التقريبي</div>
+          <div class="nb-quick-value" id="nb-info-weight">14 غرام</div>
+        </div>
+      </div>
+
+      <div class="nb-quick-card">
+        <div class="nb-quick-icon">📏</div>
+        <div>
+          <div class="nb-quick-label">الطول من الرأس للعقب</div>
+          <div class="nb-quick-value" id="nb-info-length">5.4 سم</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Category Tabs Switcher -->
+    <div class="nb-content-tabs">
+      <button class="nb-content-tab active" data-target="all">عرض الكل</button>
+      <button class="nb-content-tab" data-target="nb-card-dev">طفلكِ والجنين 💗</button>
+      <button class="nb-content-tab" data-target="nb-card-symptoms">تغيرات جسمكِ 🩺</button>
+      <button class="nb-content-tab" data-target="nb-card-nutrition">التغذية 🥗</button>
+      <button class="nb-content-tab" data-target="nb-card-tips">نصائح نبضة ✨</button>
+    </div>
+
+    <!-- 2-Column Layout -->
+    <div class="nb-preg-layout">
+      <!-- Main Content (2/3) -->
+      <div class="nb-preg-main-col">
+        <!-- Section 1: Fetal Development -->
+        <article class="nb-week-section-card" id="nb-card-dev">
+          <div class="nb-sec-header">
+            <div class="nb-sec-title-wrap">
+              <span style="font-size:24px">💗</span>
+              <h2 class="nb-sec-title">تطور الجنين هذا الأسبوع</h2>
+            </div>
+            <span style="font-size:12px;color:var(--nb-ink-3);font-weight:700">بإشراف فريق تحرير نبضة</span>
+          </div>
+          <div id="nb-sec-dev">
+            <!-- Injected by JS -->
+          </div>
+        </article>
+
+        <!-- Section 2: Body Changes & Symptoms -->
+        <article class="nb-week-section-card" id="nb-card-symptoms">
+          <div class="nb-sec-header">
+            <div class="nb-sec-title-wrap">
+              <span style="font-size:24px">🩺</span>
+              <h2 class="nb-sec-title">تغيرات جسمكِ والأعراض</h2>
+            </div>
+            <span style="font-size:12px;color:var(--nb-ink-3);font-weight:700">تغيرات هرمونية طبيعية</span>
+          </div>
+          <div id="nb-sec-symptoms">
+            <!-- Injected by JS -->
+          </div>
+        </article>
+
+        <!-- Section 3: Recommended Nutrition -->
+        <article class="nb-week-section-card" id="nb-card-nutrition">
+          <div class="nb-sec-header">
+            <div class="nb-sec-title-wrap">
+              <span style="font-size:24px">🥗</span>
+              <h2 class="nb-sec-title">التغذية الصحية الموصى بها</h2>
+            </div>
+            <span style="font-size:12px;color:#2E7D32;font-weight:700;background:#E8F5E9;padding:3px 10px;border-radius:12px">خيارات آمنة وطبيعية</span>
+          </div>
+          <div id="nb-sec-nutrition">
+            <!-- Injected by JS -->
+          </div>
+        </article>
+
+        <!-- Section 4: Tips and Spiritual Comfort -->
+        <article class="nb-week-section-card" id="nb-card-tips">
+          <div class="nb-sec-header">
+            <div class="nb-sec-title-wrap">
+              <span style="font-size:24px">✨</span>
+              <h2 class="nb-sec-title">نصائح وإرشادات نبضة</h2>
+            </div>
+            <span style="font-size:12px;color:var(--nb-pink);font-weight:700">راحة بال ودعاء</span>
+          </div>
+          <div id="nb-sec-tips">
+            <!-- Injected by JS -->
+          </div>
+          <div style="margin-top:20px;padding-top:14px;border-top:1px solid #F8E1EA;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:12.5px;color:var(--nb-ink-3)">المحتوى خاضع للمراجعة التحريرية الشاملة بواسطة <strong>فريق تحرير نبضة</strong></div>
+            <button class="nb-btn-secondary" style="font-size:12px;padding:4px 12px" onclick="navigator.clipboard.writeText(window.location.href);alert('تم نسخ رابط هذا الأسبوع للمشاركة!')">مشاركة هذا الأسبوع 🔗</button>
+          </div>
+        </article>
+
+        <!-- Section 5: Birth Plan (Featured for week >= 32, available anytime) -->
+        <section class="nb-birth-plan-box" id="nb-birth-plan-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:26px">📋</span>
+              <div>
+                <h3 style="font-size:18px;font-weight:900;color:var(--nb-ink);margin:0">خطة ولادتكِ المخصصة</h3>
+                <div style="font-size:12.5px;color:var(--nb-ink-3)">حضّري تفضيلاتكِ الشخصية ليوم استقبال طفلكِ</div>
+              </div>
+            </div>
+            <span id="nb-birth-plan-badge" style="font-size:11.5px;font-weight:800;background:var(--nb-pink-bg);color:var(--nb-pink);padding:4px 12px;border-radius:999px">جاهزة للتحضير المسبق</span>
+          </div>
+
+          <p style="font-size:13.5px;color:var(--nb-ink-2);line-height:1.6">
+            حددي رغباتكِ لتشاركيها مع مرافقكِ أو الفريق المشرف بالمستشفى لضمان بيئة هادئة ومريحة:
+          </p>
+
+          <div class="nb-plan-pref-grid">
+            <label class="nb-plan-check-item">
+              <input type="checkbox" checked>
+              <span>ولادة طبيعية مع مرونة الحركة والتنفس</span>
+            </label>
+            <label class="nb-plan-check-item">
+              <input type="checkbox" checked>
+              <span>حضور الزوج أو مرافقة مقربة في غرفة المخاض</span>
+            </label>
+            <label class="nb-plan-check-item">
+              <input type="checkbox" checked>
+              <span>إضاءة هادئة وأجواء دافئة بدون ضوضاء</span>
+            </label>
+            <label class="nb-plan-check-item">
+              <input type="checkbox" checked>
+              <span>استعمال كرة الولادة وتمارين الاسترخاء</span>
+            </label>
+            <label class="nb-plan-check-item">
+              <input type="checkbox" checked>
+              <span>تأخير قطع الحبل السري لدقائق معدودة</span>
+            </label>
+            <label class="nb-plan-check-item">
+              <input type="checkbox" checked>
+              <span>ملامسة الجلد للجلد (Skin-to-skin) فوراً بعد الولادة</span>
+            </label>
+            <label class="nb-plan-check-item">
+              <input type="checkbox" checked>
+              <span>بدء الرضاعة الطبيعية في الساعة الذهبية الأولى</span>
+            </label>
+            <label class="nb-plan-check-item">
+              <input type="checkbox">
+              <span>تفضيل إبرة الظهر (Epidural) عند الحاجة</span>
+            </label>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px dashed #F8BBD0">
+            <span style="font-size:12px;color:var(--nb-ink-3)">يمكنكِ تعديل الخطة وطباعتها لحقيبة الولادة.</span>
+            <button class="nb-btn-primary" style="font-size:13px;padding:8px 20px" onclick="window.printBirthPlan()">طباعة خطة الولادة 🖨️</button>
+          </div>
+        </section>
+
+        <!-- Section 6: Discover Sections ("اكتشفي المزيد") -->
+        <section style="margin-bottom:32px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+            <span style="font-size:24px">💡</span>
+            <h3 style="font-size:20px;font-weight:900;color:var(--nb-ink);margin:0">اكتشفي المزيد عن رحلة الأمومة</h3>
+          </div>
+          <div id="nb-discover-grid">
+            <!-- Injected by JS from pregnancy_discover.json -->
+          </div>
+        </section>
+
+        <!-- Section 7: Pregnancy Articles Carousel -->
+        <section style="margin-bottom:36px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:24px">📚</span>
+              <h3 style="font-size:20px;font-weight:900;color:var(--nb-ink);margin:0">مقالات مختارة لرحلتكِ</h3>
+            </div>
+            <a href="/articles" style="color:var(--nb-pink);font-size:13.5px;font-weight:800;text-decoration:none">كل مقالات الحمل ←</a>
+          </div>
+          <div class="nb-art-grid" id="nb-pregnancy-articles-carousel">
+            <!-- Injected by JS -->
+          </div>
+        </section>
+
+        <!-- Section 8: Recommended Products Carousel -->
+        <section style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:24px">🛍️</span>
+              <h3 style="font-size:20px;font-weight:900;color:var(--nb-ink);margin:0">مستلزمات موصى بها للحامل</h3>
+            </div>
+            <a href="/shop" style="color:var(--nb-pink);font-size:13.5px;font-weight:800;text-decoration:none">زيارة المتجر ←</a>
+          </div>
+          <div class="nb-prod" id="nb-pregnancy-products-carousel">
+            <!-- Injected by JS -->
+          </div>
+        </section>
+      </div>
+
+      <!-- Sticky Sidebar (1/3) -->
+      <aside class="nb-preg-sidebar">
+        <!-- Sidebar Card 1: Due Date & Countdown -->
+        <div class="nb-sidebar-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <h4 style="font-size:16px;font-weight:800;color:var(--nb-ink);margin:0">📅 موعد الولادة المتوقع</h4>
+            <button class="nb-btn-secondary" style="font-size:11.5px;padding:4px 10px" onclick="window.openDueDateModal()">تعديل</button>
+          </div>
+
+          <div style="background:var(--nb-pink-bg);border:1px solid #F8D7E5;border-radius:16px;padding:16px;text-align:center;margin-bottom:14px">
+            <div style="font-size:12px;color:var(--nb-pink);font-weight:800;margin-bottom:4px">تاريخ اللقاء السعيد</div>
+            <div style="font-size:18px;font-weight:900;color:var(--nb-ink)" id="nb-sidebar-due-date">14 مارس 2027</div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F4E3EB;font-size:13px">
+            <span style="color:var(--nb-ink-3)">الأيام المتبقية:</span>
+            <strong style="color:var(--nb-pink)" id="nb-sidebar-days-left">142 يوماً</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px">
+            <span style="color:var(--nb-ink-3)">المرحلة الحالية:</span>
+            <strong style="color:var(--nb-ink)" id="nb-sidebar-trimester">الثلث الثاني</strong>
+          </div>
+        </div>
+
+        <!-- Sidebar Card 2: Baby Names Banner -->
+        <div class="nb-sidebar-box" style="background:linear-gradient(135deg,#FFF3E0,#FFFFFF);border-color:#FFE0B2">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <img src="/img/icons_3d/icon_baby_names.png" alt="أسماء المواليد" style="width:48px;height:48px;object-fit:contain">
+            <div>
+              <h4 style="font-size:15px;font-weight:900;color:#E65100;margin:0">دليل أسماء المواليد</h4>
+              <div style="font-size:12px;color:#F57C00">آلاف الأسماء العربية والإسلامية بمعانيها</div>
+            </div>
+          </div>
+          <p style="font-size:12.5px;color:var(--nb-ink-2);line-height:1.5;margin-bottom:14px">
+            اختاري اسماً مميزاً لمولودكِ القادم وتعرفي على أصوله ومعانيه الجميلة.
+          </p>
+          <a href="/tools/baby-names.html" class="nb-btn-primary" style="background:#E65100;width:100%;text-align:center;font-size:13px;padding:8px 12px;text-decoration:none;display:block">
+            استكشاف دليل الأسماء ←
+          </a>
+        </div>
+
+        <!-- Sidebar Card 3: Non-medical Daily Trackers -->
+        <div class="nb-sidebar-box">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <span style="font-size:20px">💧</span>
+            <h4 style="font-size:15px;font-weight:800;color:var(--nb-ink);margin:0">متتبعاتي اليومية</h4>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#F8F9FA;border-radius:12px">
+              <span>💧 شرب الماء (الهدف 8 أكواب)</span>
+              <span style="font-weight:800;color:var(--nb-pink)">متوفر بالتطبيق</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#F8F9FA;border-radius:12px">
+              <span>⚖️ مراقبة زيادة الوزن الطبيعية</span>
+              <span style="font-weight:800;color:var(--nb-pink)">متوفر بالتطبيق</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#F8F9FA;border-radius:12px">
+              <span>😴 تسجيل ساعات النوم والراحة</span>
+              <span style="font-weight:800;color:var(--nb-pink)">متوفر بالتطبيق</span>
+            </div>
+          </div>
+          <a href="https://play.google.com/store/apps/details?id=com.nabda.womenhealth" target="_blank" class="nb-btn-secondary" style="width:100%;text-align:center;font-size:12.5px;margin-top:14px;text-decoration:none;display:block">
+            تفعيل المتتبعات في تطبيق نبضة
+          </a>
+        </div>
+
+        <!-- Sidebar Card 4: 3D Pregnancy Tools Grid -->
+        <div class="nb-sidebar-box">
+          <h4 style="font-size:15px;font-weight:800;color:var(--nb-ink);margin-bottom:4px">🧰 أدوات نبضة للحمل</h4>
+          <div style="font-size:12px;color:var(--nb-ink-3);margin-bottom:12px">أدوات ذكية مساندة لرحلتكِ</div>
+
+          <div class="nb-tools-3d-grid">
+            <a href="/tools/due-date.html" class="nb-tool-3d-item">
+              <img src="/img/icons_3d/icon_countdown.png" alt="حاسبة موعد الولادة" class="nb-tool-3d-img">
+              <span class="nb-tool-3d-title">حاسبة الولادة</span>
+            </a>
+            <a href="/tools/fetus-size.html" class="nb-tool-3d-item">
+              <img src="/img/icons_3d/icon_pregnancy.png" alt="حجم الجنين" class="nb-tool-3d-img">
+              <span class="nb-tool-3d-title">حجم الجنين</span>
+            </a>
+            <a href="/tools/baby-names.html" class="nb-tool-3d-item">
+              <img src="/img/icons_3d/icon_baby_names.png" alt="أسماء المواليد" class="nb-tool-3d-img">
+              <span class="nb-tool-3d-title">أسماء المواليد</span>
+            </a>
+            <a href="javascript:void(0)" onclick="alert('حقيبة الولادة متوفرة كقائمة تفاعلية كاملة داخل تطبيق نبضة!')" class="nb-tool-3d-item">
+              <img src="/img/icons_3d/icon_hospital_bag.png" alt="حقيبة الولادة" class="nb-tool-3d-img">
+              <span class="nb-tool-3d-title">حقيبة الولادة</span>
+            </a>
+            <a href="javascript:void(0)" onclick="alert('دليل التغذية التفاعلي متوفر بتحديثات يومية في تطبيق نبضة!')" class="nb-tool-3d-item">
+              <img src="/img/icons_3d/icon_nutrition.png" alt="التغذية" class="nb-tool-3d-img">
+              <span class="nb-tool-3d-title">دليل التغذية</span>
+            </a>
+            <a href="javascript:void(0)" onclick="alert('يوميات الحمل الخاصة بكِ مشفرة وآمنة تماماً في تطبيق نبضة!')" class="nb-tool-3d-item">
+              <img src="/img/icons_3d/icon_journal.png" alt="يوميات الحمل" class="nb-tool-3d-img">
+              <span class="nb-tool-3d-title">يوميات الحمل</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Sidebar Card 5: App Download Banner -->
+        <div class="nb-sidebar-box" style="background:linear-gradient(135deg,#FFF7FA,#FFFFFF);text-align:center">
+          <div style="font-size:36px;margin-bottom:8px">📱</div>
+          <h4 style="font-size:16px;font-weight:900;color:var(--nb-ink);margin-bottom:6px">تطبيق نبضة في هاتفكِ</h4>
+          <p style="font-size:12.5px;color:var(--nb-ink-3);line-height:1.6;margin-bottom:16px">
+            انضمي لأكثر من 50,000 امرأة عربية يتابعن رحلة الحمل والطفولة يومياً.
+          </p>
+          <a href="https://play.google.com/store/apps/details?id=com.nabda.womenhealth" target="_blank" class="nb-btn-primary" style="width:100%;text-align:center;font-size:13px;padding:10px 14px;text-decoration:none;display:block">
+            تحميل من Google Play 📥
+          </a>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Due Date Modal -->
+  <div class="nb-modal-backdrop" id="nb-due-date-modal">
+    <div class="nb-modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="font-size:18px;font-weight:800;color:var(--nb-ink);margin:0">حساب موعد ولادتكِ وأسبوع الحمل</h3>
+        <button class="nb-modal-close" onclick="window.closeDueDateModal()">✕</button>
+      </div>
+
+      <p style="font-size:13.5px;color:var(--nb-ink-2);line-height:1.6;margin-bottom:20px">
+        أدخلي تاريخ أول يوم من آخر دورة شهرية، وسيقوم نظام نبضة بحساب أسبوع حملكِ الحالي وموعد الولادة المتوقع تلقائياً:
+      </p>
+
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-size:13px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">أول يوم من آخر دورة شهرية:</label>
+        <input type="date" id="nb-calc-lmp-date" style="width:100%;padding:12px 14px;border:1px solid #F4E3EB;border-radius:12px;font-size:14px;font-family:inherit">
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="nb-btn-secondary" style="font-size:13px;padding:8px 18px" onclick="window.closeDueDateModal()">إلغاء</button>
+        <button class="nb-btn-primary" style="font-size:13px;padding:8px 20px" onclick="window.saveCalculatedDueDate()">تأكيد وحساب الأسبوع</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer will be injected by shell.js -->
+  <div id="nb-footer-placeholder"></div>
+
+  <!-- Scripts -->
+  <script type="module">
+    import { initPregnancyPage } from '/js/pages/pregnancy.js';
+    initPregnancyPage();
+  </script>
+  <script type="module" src="/js/shell.js"></script>
+</body>
+</html>
