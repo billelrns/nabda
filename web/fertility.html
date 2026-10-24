@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الخصوبة والتخطيط للحمل — نبضة</title>
+  <meta name="description" content="حاسبة التبويض وأيام الخصوبة، أدعية طلب الذرية الصالحة، مقالات التثبيت الإيماني، وخطوات الاستعداد للحمل بإشراف فريق تحرير نبضة.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <style>
+    .nb-fert-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px 24px 60px;
+    }
+
+    .nb-fert-hero {
+      background: linear-gradient(135deg, #F1F8E9 0%, #FFFFFF 50%, #E8F5E9 100%);
+      border: 1px solid #C8E6C9;
+      border-radius: var(--nb-radius-lg);
+      padding: 34px 38px;
+      margin-bottom: 28px;
+      box-shadow: 0 16px 40px rgba(46, 125, 50, 0.08);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+      align-items: center;
+    }
+
+    .nb-calc-card {
+      background: #FFFFFF;
+      border: 1px solid #C8E6C9;
+      border-radius: 24px;
+      padding: 26px;
+      box-shadow: 0 10px 30px rgba(46, 125, 50, 0.08);
+    }
+
+    .nb-dua-card {
+      background: #FFFFFF;
+      border: 1px solid #E8F5E9;
+      border-right: 4px solid #2E7D32;
+      border-radius: 18px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.03);
+      transition: all 0.25s;
+    }
+    .nb-dua-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(46, 125, 50, 0.1);
+    }
+    .nb-dua-text {
+      font-size: 16.5px;
+      font-weight: 800;
+      color: #1F1A20;
+      line-height: 1.8;
+      margin-bottom: 10px;
+    }
+
+    .nb-faith-article {
+      background: #FFFFFF;
+      border: 1px solid #F4E3EB;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 900px) {
+      .nb-fert-hero { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header id="nb-header" style="min-height:96px"></header>
+
+  <main class="nb-fert-container">
+    <nav style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--nb-ink-3);margin-bottom:14px">
+      <a href="/" style="color:inherit;text-decoration:none">الرئيسية</a>
+      <span>›</span>
+      <span style="color:#2E7D32;font-weight:700">الخصوبة والتخطيط للحمل</span>
+    </nav>
+
+    <!-- Hero Card + Ovulation Calculator -->
+    <section class="nb-fert-hero">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="background:#E8F5E9;color:#2E7D32;padding:4px 14px;border-radius:999px;font-size:12.5px;font-weight:800">رحلة التخطيط والرجاء</span>
+        </div>
+        <h1 style="font-size:30px;font-weight:900;color:var(--nb-ink);margin:0 0 14px">دليل الخصوبة والتخطيط للحمل</h1>
+        <p style="font-size:14.5px;color:var(--nb-ink-2);line-height:1.75;margin-bottom:20px">
+          نرافقكِ في خطوتكِ المباركة نحو الأمومة بأدوات حساب التبويض الدقيقة، خطوات الاستعداد الصحي، والتثبيت الإيماني بأدعية الذرية الصالحة من القرآن والسنة النبوية.
+        </p>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <a href="#nb-duas-sec" class="nb-btn-secondary" style="font-size:13px;padding:8px 18px;text-decoration:none">أدعية الذرية الصالحة 🤲</a>
+          <a href="#nb-planning-sec" class="nb-btn-secondary" style="font-size:13px;padding:8px 18px;text-decoration:none">خطوات الاستعداد للحمل 🌱</a>
+        </div>
+      </div>
+
+      <!-- Calculator Box -->
+      <div class="nb-calc-card">
+        <h3 style="font-size:17px;font-weight:900;color:var(--nb-ink);margin:0 0 16px;display:flex;align-items:center;gap:8px">
+          <span>🥚</span> حاسبة التبويض وأيام الخصوبة
+        </h3>
+
+        <div style="margin-bottom:14px">
+          <label style="display:block;font-size:12.5px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">أول يوم من آخر دورة شهرية:</label>
+          <input type="date" id="nb-ovul-date" style="width:100%;padding:10px 12px;border:1px solid #C8E6C9;border-radius:12px;font-size:14px;font-family:inherit">
+        </div>
+
+        <div style="margin-bottom:18px">
+          <label style="display:block;font-size:12.5px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">طول الدورة المعتاد (أيام):</label>
+          <input type="number" id="nb-ovul-len" value="28" min="21" max="40" style="width:100%;padding:10px 12px;border:1px solid #C8E6C9;border-radius:12px;font-size:14px;font-family:inherit">
+        </div>
+
+        <button class="nb-btn-primary" style="background:#2E7D32;width:100%;font-size:13.5px;padding:10px" onclick="calculateOvulation()">
+          حساب أفضل أيام الخصوبة ✨
+        </button>
+
+        <div id="nb-ovul-result" style="display:none;margin-top:16px;padding:14px;background:#F1F8E9;border:1px solid #C8E6C9;border-radius:14px">
+          <div style="font-size:13px;color:#2E7D32;font-weight:800;margin-bottom:6px">النتائج التقديرية لدورتكِ:</div>
+          <div style="font-size:14px;color:var(--nb-ink);line-height:1.7" id="nb-ovul-res-text"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Planning Steps Section -->
+    <section id="nb-planning-sec" style="margin-bottom:36px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+        <span style="font-size:24px">🌱</span>
+        <h2 style="font-size:21px;font-weight:900;color:var(--nb-ink);margin:0">خطوات الاستعداد الصحي للحمل</h2>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px">
+        <div style="background:#FFFFFF;border:1px solid #E8F5E9;border-radius:18px;padding:22px;box-shadow:0 6px 18px rgba(0,0,0,0.03)">
+          <div style="font-size:30px;margin-bottom:10px">🥗</div>
+          <h4 style="font-size:16px;font-weight:800;color:var(--nb-ink);margin-bottom:6px">التغذية الغنية بحمض الفوليك</h4>
+          <p style="font-size:13px;color:var(--nb-ink-2);line-height:1.6;margin:0">تناولي الخضراوات الورقية كالسبانخ والبروكلي والحبوب الكاملة لدعم بناء الخلايا السليمة.</p>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E8F5E9;border-radius:18px;padding:22px;box-shadow:0 6px 18px rgba(0,0,0,0.03)">
+          <div style="font-size:30px;margin-bottom:10px">💧</div>
+          <h4 style="font-size:16px;font-weight:800;color:var(--nb-ink);margin-bottom:6px">الترطيب والنشاط البدني</h4>
+          <p style="font-size:13px;color:var(--nb-ink-2);line-height:1.6;margin:0">شرب 8 أكواب ماء يومياً وممارسة رياضة المشي المنتظمة لتحسين تدفق الدورة الدموية للحوض.</p>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E8F5E9;border-radius:18px;padding:22px;box-shadow:0 6px 18px rgba(0,0,0,0.03)">
+          <div style="font-size:30px;margin-bottom:10px">🧘‍♀️</div>
+          <h4 style="font-size:16px;font-weight:800;color:var(--nb-ink);margin-bottom:6px">تخفيف التوتر العصبي</h4>
+          <p style="font-size:13px;color:var(--nb-ink-2);line-height:1.6;margin:0">الهدوء والسكينة لهما أثر مثبت في توازن الهرمونات. خصصي وقتاً للذكر والاسترخاء يومياً.</p>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E8F5E9;border-radius:18px;padding:22px;box-shadow:0 6px 18px rgba(0,0,0,0.03)">
+          <div style="font-size:30px;margin-bottom:10px">⚖️</div>
+          <h4 style="font-size:16px;font-weight:800;color:var(--nb-ink);margin-bottom:6px">متابعة إيقاع التبويض</h4>
+          <p style="font-size:13px;color:var(--nb-ink-2);line-height:1.6;margin:0">ملاحظة تغير إفرازات عنق الرحم الشفافة ودرجة حرارة الجسم لتحديد نافذة الخصوبة بدقة.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Faith Articles Section -->
+    <section style="margin-bottom:36px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+        <span style="font-size:24px">🌸</span>
+        <h2 style="font-size:21px;font-weight:900;color:var(--nb-ink);margin:0">وقفات إيمانية وسكينة للقلب</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px" id="nb-faith-articles-grid">
+        <!-- Injected by JS from fertility.json -->
+      </div>
+    </section>
+
+    <!-- Prophetic & Quranic Duas Section -->
+    <section id="nb-duas-sec" style="margin-bottom:36px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+        <span style="font-size:24px">🤲</span>
+        <h2 style="font-size:21px;font-weight:900;color:var(--nb-ink);margin:0">أدعية طلب الذرية الصالحة المباركة</h2>
+      </div>
+      <div id="nb-duas-list">
+        <!-- Injected by JS from fertility.json -->
+      </div>
+    </section>
+  </main>
+
+  <div id="nb-footer-placeholder"></div>
+
+  <script type="module">
+    // Load fertility data
+    async function loadFertilityData() {
+      try {
+        const res = await fetch('/data/fertility.json');
+        const data = await res.json();
+
+        // Render faith articles
+        const artGrid = document.getElementById('nb-faith-articles-grid');
+        if (artGrid && data.faithArticles) {
+          artGrid.innerHTML = data.faithArticles.map(art => `
+            <div class="nb-faith-article">
+              <div>
+                <span style="font-size:32px;display:inline-block;margin-bottom:8px">${art.emoji}</span>
+                <h4 style="font-size:17px;font-weight:800;color:var(--nb-ink);margin:0 0 6px">${art.title}</h4>
+                <div style="font-size:12.5px;color:#2E7D32;font-weight:700;margin-bottom:14px">${art.subtitle}</div>
+                <p style="font-size:13.5px;color:var(--nb-ink-2);line-height:1.75;margin:0;white-space:pre-line">${art.body}</p>
+              </div>
+              <div style="margin-top:16px;padding-top:12px;border-top:1px solid #F4E3EB;font-size:12px;color:var(--nb-ink-3)">
+                فريق تحرير نبضة
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Render duas
+        const duasList = document.getElementById('nb-duas-list');
+        if (duasList && data.duas) {
+          duasList.innerHTML = data.duas.map(dua => `
+            <div class="nb-dua-card">
+              <div class="nb-dua-text">«${dua.text}»</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                <span style="font-size:12.5px;color:#2E7D32;font-weight:700">📖 ${dua.source} • ${dua.note || ''}</span>
+                <button class="nb-btn-secondary" style="font-size:12px;padding:4px 12px" onclick="navigator.clipboard.writeText('${dua.text.replace(/'/g, "\\'")}');alert('تم نسخ الدعاء المبارك!')">
+                  نسخ الدعاء 📋
+                </button>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        console.error('Error loading fertility data:', e);
+      }
+    }
+
+    window.calculateOvulation = function() {
+      const dateVal = document.getElementById('nb-ovul-date')?.value;
+      const lenVal = parseInt(document.getElementById('nb-ovul-len')?.value, 10) || 28;
+
+      if (!dateVal) {
+        alert('يرجى اختيار تاريخ أول يوم من آخر دورة.');
+        return;
+      }
+
+      const lmp = new Date(dateVal);
+      const ovulDayOffset = lenVal - 14;
+
+      const ovulDate = new Date(lmp.getTime());
+      ovulDate.setDate(lmp.getDate() + ovulDayOffset);
+
+      const fertileStart = new Date(ovulDate.getTime());
+      fertileStart.setDate(ovulDate.getDate() - 3);
+
+      const fertileEnd = new Date(ovulDate.getTime());
+      fertileEnd.setDate(ovulDate.getDate() + 1);
+
+      const nextPeriod = new Date(lmp.getTime());
+      nextPeriod.setDate(lmp.getDate() + lenVal);
+
+      const resBox = document.getElementById('nb-ovul-result');
+      const resText = document.getElementById('nb-ovul-res-text');
+
+      resText.innerHTML = `
+        <div>• <strong>يوم التبويض المقدر:</strong> ${ovulDate.toLocaleDateString('ar-DZ', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+        <div>• <strong>نافذة الخصوبة العالية:</strong> من ${fertileStart.toLocaleDateString('ar-DZ', { day: 'numeric', month: 'long' })} إلى ${fertileEnd.toLocaleDateString('ar-DZ', { day: 'numeric', month: 'long' })}</div>
+        <div>• <strong>موعد الدورة القادمة:</strong> ${nextPeriod.toLocaleDateString('ar-DZ', { day: 'numeric', month: 'long' })}</div>
+      `;
+      resBox.style.display = 'block';
+    };
+
+    loadFertilityData();
+  </script>
+  <script type="module" src="/js/shell.js"></script>
+</body>
+</html>

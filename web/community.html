@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مجتمع أمهات نبضة — بيئة نسائية آمنة للتجارب والنصائح</title>
+  <meta name="description" content="انضمي لمجتمع نبضة للأمهات والحوامل: بيئة نسائية موثوقة لتبادل التجارب والاستشارات اليومية حول الحمل والولادة ورعاية الأطفال.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <style>
+    .nb-comm-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px 60px;
+    }
+
+    /* ── Visitor Teaser View ── */
+    .nb-visitor-wrapper {
+      position: relative;
+      margin-top: 20px;
+    }
+    .nb-blurred-feed {
+      filter: blur(8px);
+      pointer-events: none;
+      user-select: none;
+      opacity: 0.6;
+    }
+    .nb-visitor-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      padding: 20px;
+    }
+    .nb-visitor-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      border: 1px solid #F8D7E5;
+      border-radius: 32px;
+      padding: 44px 38px;
+      text-align: center;
+      max-width: 540px;
+      box-shadow: 0 24px 60px rgba(244, 63, 126, 0.16);
+    }
+
+    /* ── Member View Layout ── */
+    .nb-comm-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* ── Group Pills ── */
+    .nb-group-pills {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+    }
+    .nb-group-pill {
+      background: #FFFFFF;
+      border: 1px solid #F4E3EB;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--nb-ink-2);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .nb-group-pill:hover {
+      border-color: var(--nb-pink);
+    }
+    .nb-group-pill.active {
+      background: var(--nb-pink);
+      color: #FFFFFF;
+      border-color: var(--nb-pink);
+      box-shadow: 0 4px 14px rgba(244, 63, 126, 0.25);
+    }
+
+    /* ── Post Card ── */
+    .nb-post-card {
+      background: #FFFFFF;
+      border: 1px solid #F8E1EA;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s;
+    }
+    .nb-post-card:hover {
+      border-color: rgba(244, 63, 126, 0.3);
+    }
+    .nb-post-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .nb-post-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #FFF0F5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      border: 1px solid #F8D7E5;
+    }
+    .nb-post-badge {
+      background: #FCE4EC;
+      color: var(--nb-pink);
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+    .nb-post-content {
+      font-size: 14.5px;
+      line-height: 1.75;
+      color: var(--nb-ink);
+      margin-bottom: 16px;
+      white-space: pre-line;
+    }
+    .nb-post-actions {
+      display: flex;
+      gap: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #F8E1EA;
+    }
+    .nb-action-btn {
+      background: transparent;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--nb-ink-3);
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.2s;
+    }
+    .nb-action-btn:hover { color: var(--nb-pink); }
+    .nb-action-btn.liked { color: var(--nb-pink); font-weight: 800; }
+
+    /* Comments */
+    .nb-comments-box {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px dashed #F4E3EB;
+    }
+    .nb-comments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .nb-comment-item {
+      background: #FFF9FC;
+      border: 1px solid #F8E1EA;
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+    .nb-comment-form {
+      display: flex;
+      gap: 8px;
+    }
+    .nb-comment-input {
+      flex-grow: 1;
+      padding: 8px 12px;
+      border: 1px solid #F4E3EB;
+      border-radius: 12px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    @media (max-width: 900px) {
+      .nb-comm-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header id="nb-header" style="min-height:96px"></header>
+
+  <main class="nb-comm-container">
+    <nav style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--nb-ink-3);margin-bottom:14px">
+      <a href="/" style="color:inherit;text-decoration:none">الرئيسية</a>
+      <span>›</span>
+      <span style="color:var(--nb-pink);font-weight:700">مجتمع أمهات نبضة</span>
+    </nav>
+
+    <!-- ── Visitor Teaser View ── -->
+    <div id="nb-community-visitor-view" class="nb-visitor-wrapper">
+      <div class="nb-blurred-feed">
+        <!-- Mock blurred post 1 -->
+        <div class="nb-post-card">
+          <div class="nb-post-header">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="nb-post-avatar">🌸</div>
+              <div>
+                <div style="font-weight:800;font-size:14px">أم مريم</div>
+                <div style="font-size:11px;color:#888">الأسبوع 24 • منذ ساعتين</div>
+              </div>
+            </div>
+            <span class="nb-post-badge">رحلة الحمل</span>
+          </div>
+          <div class="nb-post-content">
+            السلام عليكم أخواتي، بدأت أشعر بحركات الجنين لأول مرة بوضوح في أسفل البطن، إحساس رائع لا يوصف! متى بدأتن الشعور بحركة أطفالكن؟
+          </div>
+        </div>
+
+        <!-- Mock blurred post 2 -->
+        <div class="nb-post-card">
+          <div class="nb-post-header">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="nb-post-avatar">🌸</div>
+              <div>
+                <div style="font-weight:800;font-size:14px">سارة أم آدم</div>
+                <div style="font-size:11px;color:#888">طفل 4 أشهر • منذ 5 ساعات</div>
+              </div>
+            </div>
+            <span class="nb-post-badge">رعاية الرضيع</span>
+          </div>
+          <div class="nb-post-content">
+            تجربتي مع تنظيم نوم الرضيع بعد الشهر الثالث: حمام دافئ، إضاءة خافتة، وقراءة سورة الملك والحمد لله تحسن نومه كثيراً.
+          </div>
+        </div>
+
+        <!-- Mock blurred post 3 -->
+        <div class="nb-post-card">
+          <div class="nb-post-header">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="nb-post-avatar">🌸</div>
+              <div>
+                <div style="font-weight:800;font-size:14px">نور الهدى</div>
+                <div style="font-size:11px;color:#888">تخطيط للحمل • أمس</div>
+              </div>
+            </div>
+            <span class="nb-post-badge">تجارب وتساؤلات</span>
+          </div>
+          <div class="nb-post-content">
+            دعاء زكريا عليه السلام كان رفيقي طوال شهور الانتظار، واليوم بفضل الله تأكد حملي. لا تيأسن أبداً، الله كريم.
+          </div>
+        </div>
+      </div>
+
+      <!-- Visitor Overlay Card -->
+      <div class="nb-visitor-overlay">
+        <div class="nb-visitor-card">
+          <div style="font-size:48px;margin-bottom:12px">🌸</div>
+          <h2 style="font-size:24px;font-weight:900;color:var(--nb-ink);margin:0 0 10px">مجتمع نبضة — بيئة نسائية آمنة</h2>
+          <p style="font-size:14px;color:var(--nb-ink-2);line-height:1.75;margin-bottom:24px">
+            مساحة خاصة تجمع آلاف الأمهات والحوامل العربيات لتبادل الخبرات والنصائح الصادقة بروح الألفة والدعم المتبادل.
+          </p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <a href="/signup" class="nb-btn-primary" style="font-size:14px;padding:12px 28px;text-decoration:none">
+              إنشاء حساب مجاني والانضمام ✨
+            </a>
+            <a href="/login" class="nb-btn-secondary" style="font-size:14px;padding:12px 22px;text-decoration:none">
+              تسجيل الدخول
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Member View ── -->
+    <div id="nb-community-member-view" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h1 style="font-size:24px;font-weight:900;color:var(--nb-ink);margin:0 0 4px">مجتمع نبضة</h1>
+          <div style="font-size:13px;color:var(--nb-ink-3)">شاركي يومياتكِ واستفساراتكِ مع مجتمع الأمهات</div>
+        </div>
+        <button class="nb-btn-primary" onclick="window.openCreatePostModal()">
+          + كتابة منشور جديد
+        </button>
+      </div>
+
+      <!-- Group Filter Pills -->
+      <div class="nb-group-pills">
+        <button class="nb-group-pill active" data-group="all">الكل 🌸</button>
+        <button class="nb-group-pill" data-group="رحلة الحمل">رحلة الحمل 🤰</button>
+        <button class="nb-group-pill" data-group="رعاية الرضيع">رعاية الرضيع 👶</button>
+        <button class="nb-group-pill" data-group="تجارب وتساؤلات">تجارب وتساؤلات 💭</button>
+        <button class="nb-group-pill" data-group="التغذية والصحة">التغذية والصحة 🥗</button>
+      </div>
+
+      <!-- Layout: Posts Feed (2/3) + Sidebar (1/3) -->
+      <div class="nb-comm-layout">
+        <!-- Feed -->
+        <div id="nb-posts-feed">
+          <!-- Injected dynamically by community.js -->
+        </div>
+
+        <!-- Sidebar -->
+        <aside style="display:flex;flex-direction:column;gap:20px">
+          <div class="nb-sidebar-box">
+            <h4 style="font-size:15px;font-weight:800;color:var(--nb-ink);margin-bottom:10px">📜 ميثاق المجتمع الآمن</h4>
+            <ul style="padding-right:18px;margin:0;font-size:12.5px;color:var(--nb-ink-2);line-height:1.7">
+              <li>الاحترام المتبادل والكلمة الطيبة هي أساس مجتمعنا.</li>
+              <li>يُمنع تقديم التشخيصات أو الوصفات الطبية الدوائية.</li>
+              <li>يُمنع الإعلان التجاري أو نشر الروابط الخارجية.</li>
+              <li>خصوصية وأمان كل عضوة أولوية قصوى لدينا.</li>
+            </ul>
+          </div>
+
+          <div class="nb-sidebar-box" style="background:linear-gradient(135deg,#FFF7FA,#FFFFFF)">
+            <h4 style="font-size:15px;font-weight:800;color:var(--nb-ink);margin-bottom:6px">💬 بحاجة لمساعدة؟</h4>
+            <p style="font-size:12.5px;color:var(--nb-ink-3);line-height:1.6;margin-bottom:12px">
+              فريق إشراف نبضة متواجد على مدار الساعة لمتابعة سلامة المحتوى والرد على الاستفسارات.
+            </p>
+            <a href="https://play.google.com/store/apps/details?id=com.nabda.womenhealth" target="_blank" class="nb-btn-secondary" style="width:100%;text-align:center;font-size:12px;display:block;text-decoration:none">
+              تصفح المجتمع عبر تطبيق نبضة 📱
+            </a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create Post Modal -->
+  <div class="nb-modal-backdrop" id="nb-create-post-modal">
+    <div class="nb-modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="font-size:18px;font-weight:800;color:var(--nb-ink);margin:0">كتابة منشور جديد في المجتمع</h3>
+        <button class="nb-modal-close" onclick="window.closeCreatePostModal()">✕</button>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12.5px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">اختاري المجموعة المناسبة:</label>
+        <select id="nb-post-group-select" style="width:100%;padding:10px 12px;border:1px solid #F4E3EB;border-radius:12px;font-size:14px;font-family:inherit">
+          <option value="رحلة الحمل">رحلة الحمل 🤰</option>
+          <option value="رعاية الرضيع">رعاية الرضيع 👶</option>
+          <option value="تجارب وتساؤلات">تجارب وتساؤلات 💭</option>
+          <option value="التغذية والصحة">التغذية والصحة 🥗</option>
+          <option value="عام">محادثة عامة 🌸</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-size:12.5px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">نص المنشور:</label>
+        <textarea id="nb-post-content-input" rows="5" placeholder="شاركي تجربتكِ، اطرحي سؤالاً، أو اكتبي نصيحة تفيد أخواتكِ الأمهات..." style="width:100%;padding:12px;border:1px solid #F4E3EB;border-radius:12px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="nb-btn-secondary" style="font-size:13px;padding:8px 16px" onclick="window.closeCreatePostModal()">إلغاء</button>
+        <button class="nb-btn-primary" style="font-size:13px;padding:8px 20px" onclick="window.submitNewPost()">نشر في المجتمع</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Modal -->
+  <div class="nb-modal-backdrop" id="nb-report-modal">
+    <div class="nb-modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="font-size:18px;font-weight:800;color:var(--nb-ink);margin:0">إبلاغ عن محتوى غير لائق</h3>
+        <button class="nb-modal-close" onclick="window.closeReportModal()">✕</button>
+      </div>
+
+      <p style="font-size:13px;color:var(--nb-ink-2);margin-bottom:16px">
+        نحرص على أن يكون مجتمع نبضة آمناً وداعماً. يرجى تحديد سبب الإبلاغ:
+      </p>
+
+      <div style="margin-bottom:20px">
+        <select id="nb-report-reason-select" style="width:100%;padding:10px 12px;border:1px solid #F4E3EB;border-radius:12px;font-size:14px;font-family:inherit">
+          <option value="محتوى مسيء أو غير لائق">محتوى مسيء أو غير لائق</option>
+          <option value="إعلانات أو روابط خارجية سبام">إعلانات أو روابط خارجية سبام</option>
+          <option value="نصائح طبية أو دوائية مضللة">نصائح طبية أو دوائية مضللة</option>
+          <option value="مضايقة أو إساءة شخصية">مضايقة أو إساءة شخصية</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="nb-btn-secondary" style="font-size:13px;padding:8px 16px" onclick="window.closeReportModal()">إلغاء</button>
+        <button class="nb-btn-primary" style="background:#C2185B;font-size:13px;padding:8px 20px" onclick="window.submitReport()">تأكيد الإبلاغ</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="nb-footer-placeholder"></div>
+
+  <script type="module">
+    import { initCommunityPage } from '/js/pages/community.js';
+    initCommunityPage();
+  </script>
+  <script type="module" src="/js/shell.js"></script>
+</body>
+</html>
