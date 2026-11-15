@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'partner_service.dart';
+import 'country_currency_service.dart';
 
 // ─── Cart Item Model ───
 class CartItem {
@@ -155,7 +156,10 @@ class CartService extends ChangeNotifier {
 
   static final CartService _instance = CartService._internal();
   factory CartService() => _instance;
-  CartService._internal();
+  CartService._internal() {
+    // سلّة بعملة واحدة: تغيير سوق الدولة (الجزائر ⇄ السعودية) يفرغها
+    CountryCurrencyService.onMarketChanged = clear;
+  }
 
   final List<CartItem> _items = [];
 
@@ -311,6 +315,8 @@ class CartService extends ChangeNotifier {
         type: 'cart_add',
         title: 'أُضيف إلى سلّتكما',
         body: '$name — $priceDisplay',
+        // الخادم يجلب صورة المنتج من products/{productId}
+        productId: productId,
       );
     }
   }
@@ -354,6 +360,7 @@ class CartService extends ChangeNotifier {
     double shipping = 0,
     String? couponCode,
     double discount = 0,
+    String? currency,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || _items.isEmpty) return null;
@@ -377,9 +384,12 @@ class CartService extends ChangeNotifier {
         discount: discount,
       );
 
+      // العملة صريحة (DZD / SAR) — لوحة التحكم تفصل الطلبات حسب السوق ولا تجمع عملتين
+      final orderMap = order.toMap();
+      if (currency != null) orderMap['currency'] = currency;
       final docRef = await FirebaseFirestore.instance
           .collection('orders')
-          .add(order.toMap());
+          .add(orderMap);
 
       // Save to user's orders subcollection too
       await FirebaseFirestore.instance
@@ -387,7 +397,7 @@ class CartService extends ChangeNotifier {
           .doc(user.uid)
           .collection('orders')
           .doc(docRef.id)
-          .set(order.toMap());
+          .set(orderMap);
 
       // ── الطلب المشترك: يظهر للطرف الآخر مع اسم من أتمّه ──
       if (isShared) {

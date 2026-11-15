@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>موسوعة نبضة</title>
+  <meta name="description" content="موسوعة نبضة لصحة المرأة والأمومة — مقالات مبسّطة من فريق تحرير نبضة.">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="نبضة — صحة المرأة العربية">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <style>
+    .ar-wrap { max-width: 1240px; margin: 0 auto; padding: 14px 24px 60px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 32px; align-items: start; }
+    .ar-progress { position: fixed; top: 0; right: 0; height: 3px; background: var(--nb-pink-gradient); width: 0; z-index: 3000; transition: width .1s linear; }
+    .ar-bc { font-size: 13px; color: var(--nb-ink-3); margin-bottom: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .ar-bc a { color: inherit; text-decoration: none; }
+    .ar-hero { background: #fff; border: 1px solid var(--nb-line); border-radius: var(--nb-radius-lg); overflow: hidden; box-shadow: var(--nb-shadow-sm); }
+    .ar-hero-img { width: 100%; aspect-ratio: 16 / 7; object-fit: cover; display: block; background: var(--nb-bg-soft); }
+    .ar-hero-body { padding: 26px 30px 24px; }
+    .ar-cat { display: inline-flex; align-items: center; gap: 6px; background: var(--nb-bg-soft); color: var(--nb-pink-deep); font-weight: 800; font-size: 12.5px; padding: 5px 14px; border-radius: 999px; text-decoration: none; }
+    .ar-badge { background: #FFF3E0; color: #E65100; font-weight: 800; font-size: 12px; padding: 5px 12px; border-radius: 999px; }
+    .ar-title { font-size: clamp(24px, 3.2vw, 34px); font-weight: 900; line-height: 1.45; color: var(--nb-ink); margin: 14px 0 12px; }
+    .ar-meta { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--nb-ink-3); font-weight: 700; }
+    .ar-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+    .ar-btn { border: 1.5px solid var(--nb-line-pink); background: #fff; color: var(--nb-ink-2); font-family: inherit; font-weight: 800; font-size: 13px; padding: 8px 14px; border-radius: 999px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .ar-btn:hover, .ar-btn.on { border-color: var(--nb-pink); color: var(--nb-pink); background: #FFF0F5; }
+    .ar-summary { background: linear-gradient(135deg, #FFF7FA, #FFF0F5); border-right: 4px solid var(--nb-pink); border-radius: 16px; padding: 18px 20px; margin: 24px 0; font-size: 16px; line-height: 1.95; color: var(--nb-ink-2); }
+    .ar-body { background: #fff; border: 1px solid var(--nb-line); border-radius: var(--nb-radius-lg); padding: 10px 32px 30px; margin-top: 22px; box-shadow: var(--nb-shadow-sm); }
+    .ar-toc { background: var(--nb-bg-soft); border-radius: 16px; padding: 16px 20px; margin: 22px 0 6px; }
+    .ar-toc ol { padding-right: 20px; margin-top: 8px; }
+    .ar-toc a { color: var(--nb-ink-2); text-decoration: none; font-size: 14px; line-height: 2; }
+    .ar-toc a:hover { color: var(--nb-pink); }
+    .ar-body h2 { font-size: 22px; font-weight: 900; color: var(--nb-ink); margin: 30px 0 12px; padding-right: 14px; border-right: 4px solid var(--nb-pink); line-height: 1.5; scroll-margin-top: 110px; }
+    .ar-body h3 { font-size: 18px; font-weight: 800; margin: 20px 0 8px; color: var(--nb-pink-deep); }
+    .ar-body p { font-size: 16.5px; line-height: 2.05; color: #3A333B; margin-bottom: 18px; text-align: justify; text-justify: inter-word; }
+    .ar-body h3 { scroll-margin-top: 110px; }
+    .ar-body > p:first-of-type { margin-top: 18px; }
+    .ar-body ul.ar-points { list-style: none; padding: 0; margin: 10px 0 18px; }
+    .ar-body ul.ar-points li { display: flex; gap: 10px; padding: 7px 0; font-size: 15.5px; line-height: 1.85; color: #3A333B; }
+    .ar-body ul.ar-points li::before { content: '✓'; flex: 0 0 22px; height: 22px; border-radius: 50%; background: #E8F5E9; color: #2E7D32; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-top: 4px; }
+    .ar-num { display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: start; background: #FFF9FC; border: 1px solid #F8E1EA; border-radius: 16px; padding: 16px 18px; margin: 14px 0; }
+    .ar-num-n { width: 40px; height: 40px; border-radius: 12px; background: var(--nb-pink-gradient); color: #fff; font-weight: 900; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+    .ar-num-h { display: block; font-size: 17px; color: var(--nb-ink); margin-bottom: 6px; line-height: 1.6; }
+    .ar-num p { margin: 0 !important; }
+    .ar-tip { background: #FFFDE7; border: 1px solid #FFF59D; border-radius: 14px; padding: 14px 16px; margin: 14px 0; font-size: 15px; line-height: 1.9; }
+    .ar-warn { background: #FFF3E0; border: 1px solid #FFE0B2; border-radius: 14px; padding: 14px 16px; margin: 14px 0; font-size: 15px; line-height: 1.9; }
+    .ar-faq { border: 1px solid var(--nb-line); border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+    .ar-faq summary { cursor: pointer; padding: 14px 18px; font-weight: 800; font-size: 15px; color: var(--nb-ink); list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+    .ar-faq summary::after { content: '+'; color: var(--nb-pink); font-size: 20px; line-height: 1; }
+    .ar-faq[open] summary::after { content: '−'; }
+    .ar-faq p { padding: 0 18px 14px; margin: 0; font-size: 15px; }
+    .ar-tool { display: flex; align-items: center; gap: 16px; background: linear-gradient(135deg, #E91E63, #FF6090); color: #fff; border-radius: 20px; padding: 20px 22px; margin: 26px 0; text-decoration: none; box-shadow: 0 12px 30px rgba(233,30,99,.25); }
+    .ar-tool-ic { font-size: 30px; background: rgba(255,255,255,.22); width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex: 0 0 56px; }
+    .ar-disclaimer { font-size: 12.5px; color: var(--nb-ink-3); background: #FAFAFA; border-radius: 12px; padding: 12px 14px; margin-top: 24px; line-height: 1.8; }
+    .ar-side { align-self: stretch; display: flex; flex-direction: column; gap: 18px; }
+    .ar-side .nb-ad-sidebarSticky { position: sticky; top: 104px; }
+    .ar-side-card { background: #fff; border: 1px solid var(--nb-line); border-radius: 20px; padding: 18px; box-shadow: var(--nb-shadow-sm); }
+    .ar-side-card h4 { font-size: 15.5px; font-weight: 900; margin-bottom: 12px; color: var(--nb-ink); }
+    .ar-mini { display: flex; gap: 10px; text-decoration: none; color: inherit; padding: 8px 0; border-bottom: 1px solid #F7EEF2; }
+    .ar-mini:last-child { border-bottom: none; }
+    .ar-mini img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex: 0 0 64px; background: var(--nb-bg-soft); }
+    .ar-mini span { font-size: 13px; font-weight: 800; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .ar-mini:hover span { color: var(--nb-pink); }
+    .ar-section-title { font-size: 20px; font-weight: 900; color: var(--nb-ink); margin: 34px 0 14px; }
+    .ar-loading { padding: 80px 20px; text-align: center; color: var(--nb-ink-3); }
+    @media (max-width: 980px) { .ar-wrap { grid-template-columns: 1fr; } .ar-side { position: static; } .ar-body { padding: 6px 18px 22px; } .ar-hero-body { padding: 20px; } }
+    @media print { #nb-header, #nb-footer, .ar-side, .ar-actions, .nb-bottom-bar, .ar-progress { display: none !important; } .ar-wrap { display: block; } }
+  </style>
+</head>
+<body>
+  <div class="ar-progress" id="ar-progress"></div>
+  <header id="nb-header" style="min-height:96px"></header>
+
+  <main class="ar-wrap">
+    <div id="ar-main"><div class="ar-loading"><div class="nb-skeleton" style="height:320px;border-radius:28px;margin-bottom:20px"></div><div class="nb-skeleton" style="height:26px;width:70%;margin:0 auto 12px"></div><div class="nb-skeleton" style="height:16px;width:40%;margin:0 auto"></div></div></div>
+    <aside class="ar-side" id="ar-side"></aside>
+  </main>
+
+  <div id="nb-footer"></div>
+
+  <script type="module">
+    import { auth, db } from '/js/firebase-init.js';
+    import { escapeHtml as esc, articleImg, getTopArticles, articleCardHtml, getVisibleProducts, productCardHtml, productMatchesStage, MEDICAL_SUBCATS } from '/js/utils.js';
+    import { PLAY_URL } from '/js/site-config.js';
+    import { adSlot, mountAds } from '/js/ads.js';
+
+    const CAT = { pregnancy: ['🤰', 'الحمل والولادة'], baby: ['👶', 'رعاية الرضيع'], beauty: ['💄', 'الجمال والعناية'], fertility: ['🌸', 'التبويض والخصوبة'], health: ['💗', 'صحة المرأة'], marriage: ['💕', 'الحياة الزوجية'] };
+    // أدوات الموقع المجانية حسب toolType، والباقي يدعو للتطبيق
+    const TOOLS = {
+      ovulation_calc: ['/tools/ovulation.html', '🗓️'], period_tracker: ['/cycle', '🌸'], pregnancy_wheel: ['/tools/due-date.html', '🎡'],
+      pregnancy_tracker: ['/pregnancy', '🤰'], baby_growth: ['/baby', '👶'], baby_tracker: ['/baby', '🍼'],
+    };
+    const STAGE_FOR_CAT = { pregnancy: 'pregnant', baby: 'newborn', fertility: 'pregnant', beauty: 'mom', health: 'mom', marriage: 'mom' };
+
+    let art = null;
+    let user = null;
+    auth.onAuthStateChanged((u) => { user = u; updateSaveBtn(); });
+
+    function idFromUrl() {
+      const m = location.pathname.match(/\/article\/([^/?#]+)/);
+      if (m) return decodeURIComponent(m[1]);
+      const q = new URLSearchParams(location.search);
+      return q.get('id') || (location.hash ? location.hash.slice(1) : null);
+    }
+
+    async function load() {
+      let id = idFromUrl();
+      if (!id) return notFound();
+      // روابط فيسبوك القديمة: /article/<originalId>/<slug> → نترجم الرقم إلى المعرّف
+      if (/^\d+$/.test(id)) {
+        try { const map = await (await fetch('/data/articles/id_map.json')).json(); if (map[id]) id = map[id]; } catch (_) {}
+      }
+      if (!/^[\w-]+$/.test(id)) return notFound();
+      try {
+        const r = await fetch(`/data/articles/${id}.json`);
+        if (!r.ok) return notFound();
+        art = await r.json();
+      } catch (_) { return notFound(); }
+      if (location.pathname !== `/article/${art.id}`) history.replaceState(null, '', `/article/${art.id}`);
+      render();
+      side();
+      seo();
+    }
+
+    function notFound() {
+      document.title = 'المقال غير موجود — نبضة';
+      document.getElementById('ar-main').innerHTML = `
+        <div class="ar-hero" style="padding:50px 24px;text-align:center">
+          <div style="font-size:48px">🌸</div>
+          <h1 style="font-size:22px;font-weight:900;margin:12px 0 8px">لم نجد هذا المقال</h1>
+          <p style="color:var(--nb-ink-3);margin-bottom:20px">ربما تغيّر رابطه. تصفّحي موسوعة نبضة لتجدي ما تبحثين عنه.</p>
+          <a class="nb-btn-primary" href="/articles" style="text-decoration:none">موسوعة نبضة ←</a>
+        </div>`;
+      const meta = document.createElement('meta'); meta.name = 'robots'; meta.content = 'noindex'; document.head.appendChild(meta);
+    }
+
+    const para = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // عناوين قالبية فارغة المعنى تتكرّر في كل المقالات — لا تُعرض
+    const GENERIC_TITLES = new Set(['نظرة شاملة ودليل متكامل', 'نظرة شاملة وتفاصيل مهمة', 'مدخل وتفسير شامل', 'التفاصيل العملية والخطوات الموصى بها', 'أهم التفاصيل والإرشادات']);
+    const DISCLAIMER_TITLE = '⚠️ تنويه';
+    const H_END = '\u0001';
+
+    /**
+     * يحوّل النص الملتصق إلى فقرات مقروءة:
+     * - «سؤال؟كلمة» (عنوان فرعي ملتصق بالنص) ← عنوان فرعي h3
+     * - «نصيحة اليوم» في بداية جملة ← فقرة نصيحة 💡 (وتُحذف إن جاءت وسط جملة)
+     * - الجمل تُجمع في فقرات من 2-3 جمل (~380 حرفاً)
+     * يعيد مصفوفة كتل: { type: 'h'|'p'|'tip', text }
+     */
+    function toBlocks(raw) {
+      const LI = '\u0002';
+      const NUM = '\u0003';  // بداية عنصر مرقّم: NUM + رقم + NUM_END
+      const NUM_END = '\u0004';
+      const blocks = [];
+      const pushP = (txt) => {
+        // فقرة بلا علامات وقف طويلة جداً ← تقسيم ليّن عند «؛» أو «،» بعد 260 حرفاً
+        let t = txt.trim();
+        while (t.length > 520) {
+          const cut = Math.max(t.indexOf('؛ ', 260), -1) > -1 ? t.indexOf('؛ ', 260) : t.indexOf('، ', 300);
+          if (cut < 0 || cut > t.length - 80) break;
+          blocks.push({ type: 'p', text: t.slice(0, cut + 1).trim() });
+          t = t.slice(cut + 1).trim();
+        }
+        if (t) blocks.push({ type: 'p', text: t });
+      };
+      String(raw || '').replace(/\r/g, '').split(/\n{2,}/).forEach((chunk) => {
+        let t = chunk.trim();
+        if (!t) return;
+        if (t.startsWith('## ')) { blocks.push({ type: 'h', text: t.slice(3).trim() }); return; }
+        t = t.replace(/\s*\n\s*/g, ' ')
+             .replace(/&?curren;|¤/g, LI)                                     // بقايا ترميز HTML استُعملت كنقاط
+             .replace(/\s*•\s*/g, LI)
+             .replace(/([ء-يً-ْ])\s*[«»]\s*(?=[ء-ي])/g, '$1 ') // «» ملتصقة بين كلمتين = سطر مفقود
+             .replace(/»\s*«/g, ' ')
+             // قوائم مرقّمة من المصدر: «و 8. عنوان…» (الـ«و» بقايا فاصل أسطر) أو «… . 3. عنوان»
+             .replace(/(^|\s)و\s*(\d{1,2})\s*[.\-)]\s+/g, `$1${NUM}$2${NUM_END}`)
+             .replace(/(^|[.!؟?…:]\s+)(\d{1,2})\s*[.\-)]\s+(?=[\u0621-\u064A])/g, `$1${NUM}$2${NUM_END}`)
+             .replace(/^و\s+/, '')                                              // «و» يتيمة في أوّل النص
+             .replace(/(^|\s)و\s+(?=و)/g, '$1')                               // «و ومن…» حرف عطف يتيم من النسخ
+             .replace(/([؟?])(?=[ء-ي])/g, '$1' + H_END)               // سؤال ملتصق بما بعده = عنوان
+             .replace(/\s{2,}/g, ' ');
+        const sentences = t.split(new RegExp(`(?<=[.!؟?…])(?![.!؟?…${H_END}"»])\\s*|(?<=${H_END})\\s*|(?=${LI})|(?=${NUM})`)).map((x) => x.trim()).filter(Boolean);
+        let buf = []; let list = null; let num = null;
+        const flush = () => { if (buf.length) { pushP(buf.join(' ')); buf = []; } };
+        const endList = () => { if (list) { blocks.push({ type: 'ul', items: list }); list = null; } };
+        const endNum = () => { if (num) { blocks.push(num); num = null; } };
+        for (let sen of sentences) {
+          if (sen.startsWith(NUM)) {
+            flush(); endList(); endNum();
+            const end = sen.indexOf(NUM_END);
+            num = { type: 'num', n: sen.slice(1, end), text: sen.slice(end + 1).trim() };
+            continue;
+          }
+          // الجمل التالية تنتمي للعنصر المرقّم حتى العنصر التالي أو عنوان أو نصيحة
+          if (num && !sen.endsWith(H_END) && !/^نصيحة اليوم/.test(sen) && !sen.startsWith(LI)) {
+            if (num.text.length < 700) { num.text += ' ' + sen; continue; }
+            endNum();
+          } else endNum();
+          if (sen.startsWith(LI)) {
+            flush();
+            const item = sen.slice(1).replace(/^[\s:]+/, '').trim();
+            if (item) (list = list || []).push(item);
+            continue;
+          }
+          // جملة تابعة لعنصر قائمة (بلا نقطة جديدة) تُلحق به
+          if (list && !sen.endsWith(H_END) && !/^نصيحة اليوم/.test(sen) && list[list.length - 1].length < 220) { list[list.length - 1] += ' ' + sen; continue; }
+          endList();
+          if (sen.endsWith(H_END)) {
+            const h = sen.slice(0, -1).replace(/^و\s+/, '').trim();
+            if (h.length <= 110 && h.split(/\s+/).length <= 16) { flush(); blocks.push({ type: 'h', text: h }); continue; }
+            sen = h;
+          }
+          if (/^نصيحة اليوم\s*/.test(sen)) {
+            flush();
+            const tip = sen.replace(/^نصيحة اليوم[:\s]*/, '').trim();
+            if (tip) blocks.push({ type: 'tip', text: tip });
+            continue;
+          }
+          sen = sen.replace(/\s*نصيحة اليوم\s*/g, ' ').trim();
+          if (!sen) continue;
+          buf.push(sen);
+          if (buf.length >= 3 || buf.join(' ').length >= 380) flush();
+        }
+        flush(); endList(); endNum();
+      });
+      return blocks;
+    }
+
+    function blocksHtml(blocks, headings) {
+      return blocks.map((b) => {
+        if (b.type === 'h') { const id = 'h' + headings.length; headings.push({ id, text: b.text }); return `<h3 id="${id}">${para(b.text)}</h3>`; }
+        if (b.type === 'tip') return `<div class="ar-tip">💡 ${para(b.text)}</div>`;
+        // «العنوان: الشرح» ← العنوان بالخط العريض
+        const li = (x) => { const i = x.indexOf(':'); return i > 0 && i < 70 ? `<strong>${para(x.slice(0, i + 1))}</strong>${para(x.slice(i + 1))}` : para(x); };
+        if (b.type === 'num') {
+          // عنوان العنصر: أوّل جملة قصيرة، أو الكلمات قبل تكرار الكلمة الأولى («الإجهاد المطول يدمر الدماغ الإجهاد المطول يسبب…»)
+          const words = b.text.split(/\s+/);
+          let head = ''; let rest = b.text;
+          const m = b.text.match(/^(.{4,80}?[!؟?])\s+/);
+          if (m) { head = m[1]; rest = b.text.slice(m[0].length); }
+          else { for (let k = 2; k <= 10 && k < words.length; k++) if (words[k] === words[0]) { head = words.slice(0, k).join(' '); rest = words.slice(k).join(' '); break; } }
+          return `<div class="ar-num"><span class="ar-num-n">${esc(b.n)}</span><div>${head ? `<strong class="ar-num-h">${para(head)}</strong>` : ''}<p>${para(rest)}</p></div></div>`;
+        }
+        if (b.type === 'ul') return `<ul class="ar-points">${b.items.map((x) => `<li><span>${li(x)}</span></li>`).join('')}</ul>`;
+        return `<p>${para(b.text)}</p>`;
+      });
+    }
+
+    function render() {
+      const [emoji, catName] = CAT[art.categoryId] || ['📖', art.categoryName || 'موسوعة نبضة'];
+      const sections = Array.isArray(art.sections) ? art.sections : [];
+      const headings = [];
+      let disclaimer = '';
+      const parts = [];
+      sections.forEach((s, i) => {
+        const title = String(s.title || '').trim();
+        if (title === DISCLAIMER_TITLE) { disclaimer = String(s.content || '').trim(); return; }
+        if (title && !GENERIC_TITLES.has(title)) { const id = 's' + i; headings.push({ id, text: title, h2: true }); parts.push(`<h2 id="${id}">${esc(title)}</h2>`); }
+        parts.push(...blocksHtml(toBlocks(s.content), headings));
+        if ((s.bulletPoints || []).length) parts.push(`<ul class="ar-points">${s.bulletPoints.map((x) => `<li><span>${para(x)}</span></li>`).join('')}</ul>`);
+        if (s.calloutTip) parts.push(`<div class="ar-tip">💡 <strong>نصيحة:</strong> ${para(s.calloutTip)}</div>`);
+        if (s.calloutWarning) parts.push(`<div class="ar-warn">⚠️ <strong>انتبهي:</strong> ${para(s.calloutWarning)}</div>`);
+      });
+      // كاروسال منتجات صغير في منتصف المقال (بعد فقرة، لا بعد عنوان)
+      if (parts.length >= 6) {
+        let mid = Math.floor(parts.length / 2);
+        while (mid < parts.length - 1 && /^<h[23]/.test(parts[mid])) mid++;
+        parts.splice(mid + 1, 0, '<div id="ar-mid-products"></div>');
+      }
+      // مساحات إعلانية داخل المقال: بعد الفقرة الثانية، وفي ثلثي المقال إن كان طويلاً
+      const isText = (x) => /^<p|^<div class="ar-num|^<div class="ar-tip|^<ul/.test(x);
+      const nth = (k) => { let c = 0; for (let i = 0; i < parts.length; i++) if (isText(parts[i]) && ++c === k) return i; return -1; };
+      const p2 = nth(2);
+      if (p2 > -1) parts.splice(p2 + 1, 0, adSlot('articleTop'));
+      const textCount = parts.filter(isText).length;
+      if (textCount >= 9) { const at = nth(Math.round(textCount * 0.66)); if (at > -1) parts.splice(at + 1, 0, adSlot('articleMid')); }
+      const body = parts.join('');
+      const toc = headings.length >= 3
+        ? `<nav class="ar-toc" aria-label="محتويات المقال"><strong>📑 محتويات المقال</strong><ol>${headings.slice(0, 12).map((h) => `<li><a href="#${h.id}">${esc(h.text)}</a></li>`).join('')}</ol></nav>` : '';
+
+      const tool = art.toolTitle ? (() => {
+        const t = TOOLS[art.toolType];
+        const href = t ? t[0] : PLAY_URL;
+        return `<a class="ar-tool" href="${href}" ${t ? '' : 'target="_blank" rel="noopener"'}>
+          <span class="ar-tool-ic">${t ? t[1] : '📱'}</span>
+          <span style="flex:1"><strong style="display:block;font-size:16.5px">${esc(art.toolTitle)}</strong><span style="opacity:.92;font-size:13.5px">${esc(art.toolSubtitle || '')}${t ? '' : ' — متاحة في تطبيق نبضة'}</span></span>
+          <span style="font-size:20px">←</span></a>`;
+      })() : '';
+
+      const faqs = (art.faqs || []).length ? `<h2 id="faq">❓ أسئلة شائعة</h2>${art.faqs.map((f) => `<details class="ar-faq"><summary>${esc(f.question)}</summary><p>${para(f.answer)}</p></details>`).join('')}` : '';
+
+      document.getElementById('ar-main').innerHTML = `
+        <nav class="ar-bc" aria-label="مسار التنقّل"><a href="/">الرئيسية</a><span>›</span><a href="/articles">موسوعة نبضة</a><span>›</span><a href="/articles?cat=${esc(art.categoryId)}">${esc(catName)}</a></nav>
+        <article>
+          <div class="ar-hero">
+            <img class="ar-hero-img" src="${esc(articleImg(art.imagePath))}" alt="${esc(art.title)}">
+            <div class="ar-hero-body">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <a class="ar-cat" href="/articles?cat=${esc(art.categoryId)}">${emoji} ${esc(art.subcategoryName || catName)}</a>
+                ${art.badge ? `<span class="ar-badge">${esc(art.badge)}</span>` : ''}
+              </div>
+              <h1 class="ar-title">${esc(art.title)}</h1>
+              <div class="ar-meta">
+                <span>✍️ فريق تحرير نبضة</span>
+                <span>⏱️ ${esc(art.readTime || '5 دقائق')} قراءة</span>
+                ${art.originalViews ? `<span>👁️ ${Number(art.originalViews).toLocaleString('en-US')} قراءة</span>` : ''}
+              </div>
+              <div class="ar-actions">
+                <button class="ar-btn" id="ar-save">🔖 حفظ</button>
+                <a class="ar-btn" id="ar-wa" target="_blank" rel="noopener">💬 واتساب</a>
+                <a class="ar-btn" id="ar-fb" target="_blank" rel="noopener">📘 فيسبوك</a>
+                <button class="ar-btn" id="ar-copy">🔗 نسخ الرابط</button>
+                <button class="ar-btn" onclick="window.print()">🖨️ طباعة</button>
+              </div>
+            </div>
+          </div>
+          <div class="ar-body">
+            ${toc}
+            ${body}
+            ${tool}
+            ${adSlot('articleEnd')}
+            ${faqs}
+            <div class="ar-disclaimer">⚠️ ${esc(disclaimer || 'هذا المقال للتثقيف العام من إعداد فريق تحرير نبضة، ولا يُغني عن استشارة الطبيبة أو المختصّة في حالتكِ الخاصة.')}</div>
+          </div>
+        </article>
+        <h2 class="ar-section-title">🛍️ منتجات قد تهمّكِ</h2>
+        <div class="nb-prod" id="ar-products"></div>
+        <h2 class="ar-section-title">📚 اقرئي أيضاً</h2>
+        <div class="nb-art-grid" id="ar-related"></div>`;
+
+      const url = location.origin + '/article/' + art.id;
+      document.getElementById('ar-wa').href = 'https://wa.me/?text=' + encodeURIComponent(art.title + '\n' + url);
+      document.getElementById('ar-fb').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+      document.getElementById('ar-copy').onclick = () => navigator.clipboard.writeText(url).then(() => window.nbToast?.('تم نسخ الرابط 🔗'));
+      document.getElementById('ar-save').onclick = toggleSave;
+      updateSaveBtn();
+      products();
+      related();
+      mountAds(document.getElementById('ar-main'));
+    }
+
+    async function products() {
+      try {
+        const all = await getVisibleProducts();
+        const stage = STAGE_FOR_CAT[art.categoryId] || 'mom';
+        const fit = all.filter((p) => productMatchesStage(p, stage));
+        const big = [...fit, ...all.filter((p) => !fit.includes(p))].slice(0, 10);
+        const box = document.getElementById('ar-products');
+        if (!big.length) { box.previousElementSibling.remove(); box.remove(); return; }
+        box.innerHTML = big.map(productCardHtml).join('');
+        const mid = document.getElementById('ar-mid-products');
+        if (mid && fit.length) mid.innerHTML = `<div style="margin:24px 0;padding:16px;background:#FFF9FC;border:1px solid #F8E1EA;border-radius:18px"><div style="font-weight:900;margin-bottom:12px;font-size:15px">🛍️ منتجات ذات صلة</div><div class="nb-prod">${fit.slice(0, 4).map(productCardHtml).join('')}</div></div>`;
+      } catch (_) {}
+    }
+
+    async function related() {
+      const list = (await getTopArticles(art.categoryId)).filter((a) => a.id !== art.id);
+      const same = list.filter((a) => a.subcategoryId === art.subcategoryId);
+      const pick = [...same, ...list.filter((a) => !same.includes(a))].slice(0, 8);
+      document.getElementById('ar-related').innerHTML = pick.map((a) => articleCardHtml(a, (CAT[art.categoryId] || ['📖'])[0])).join('');
+      return pick;
+    }
+
+    async function side() {
+      const list = (await getTopArticles(art.categoryId)).filter((a) => a.id !== art.id).slice(0, 6);
+      const tools = [
+        ['/tools/due-date.html', '🎡', 'حاسبة موعد الولادة'], ['/tools/ovulation.html', '🗓️', 'حاسبة التبويض'],
+        ['/tools/fetus-size.html', '🍋', 'حجم الجنين أسبوعياً'], ['/tools/baby-names.html', '👶', 'أسماء المواليد'],
+      ];
+      document.getElementById('ar-side').innerHTML = `
+        <div class="ar-side-card"><h4>🔥 الأكثر قراءة</h4>${list.map((a) => `<a class="ar-mini" href="/article/${encodeURIComponent(a.id)}"><img src="${esc(articleImg(a.imagePath))}" alt="" loading="lazy"><span>${esc(a.title)}</span></a>`).join('')}</div>
+        ${adSlot('sidebar')}
+        <div class="ar-side-card"><h4>💡 أدوات مجانية</h4>${tools.map(([h, i, t]) => `<a class="ar-mini" href="${h}" style="align-items:center"><span style="font-size:22px;-webkit-line-clamp:1">${i}</span><span>${t}</span></a>`).join('')}</div>
+        <div class="ar-side-card" style="background:linear-gradient(135deg,#FFF0F5,#FCE4EC);text-align:center">
+          <div style="font-size:34px">📱</div><h4 style="margin:6px 0">تطبيق نبضة</h4>
+          <p style="font-size:13px;color:var(--nb-ink-3);margin-bottom:12px">تابعي رحلتكِ يوماً بيوم مع تنبيهات وأدوات مخصّصة.</p>
+          <a href="${PLAY_URL}" target="_blank" rel="noopener" class="nb-btn-primary" style="text-decoration:none;display:block">حمّليه من Google Play</a>
+        </div>
+        ${adSlot('sidebarSticky')}`;
+      mountAds(document.getElementById('ar-side'));
+    }
+
+    /* الحفظ: محلياً دائماً + في حساب المستخدمة (favorites) إن كانت مسجّلة */
+    const SKEY = 'nb_saved_articles';
+    const saved = () => { try { return JSON.parse(localStorage.getItem(SKEY) || '[]'); } catch (_) { return []; } };
+    function isSaved() { return art && saved().some((x) => x.id === art.id); }
+    function updateSaveBtn() { const b = document.getElementById('ar-save'); if (b) { b.classList.toggle('on', isSaved()); b.textContent = isSaved() ? '🔖 محفوظ' : '🔖 حفظ'; } }
+    async function toggleSave() {
+      let list = saved();
+      const on = !isSaved();
+      list = on ? [{ id: art.id, title: art.title, summary: (art.summary || '').slice(0, 140), imagePath: art.imagePath }, ...list].slice(0, 200) : list.filter((x) => x.id !== art.id);
+      localStorage.setItem(SKEY, JSON.stringify(list));
+      updateSaveBtn();
+      window.nbToast?.(on ? 'حُفظ المقال في حسابكِ 🔖' : 'أُزيل من المحفوظات');
+      if (user) {
+        const ref = db.collection('users').doc(user.uid).collection('favorites').doc('article_' + art.id);
+        try { on ? await ref.set({ type: 'article', articleId: art.id, title: art.title, savedAt: window.firebase.firestore.FieldValue.serverTimestamp() }) : await ref.delete(); } catch (_) {}
+      }
+    }
+
+    function seo() {
+      const url = 'https://nabda.online/article/' + art.id;
+      const desc = String(art.summary || art.title).replace(/\s+/g, ' ').slice(0, 160);
+      const img = 'https://nabda.online' + articleImg(art.imagePath);
+      document.title = `${art.title} — نبضة`;
+      const set = (attr, k, v) => { let m = document.querySelector(`meta[${attr}="${k}"]`); if (!m) { m = document.createElement('meta'); m.setAttribute(attr, k); document.head.appendChild(m); } m.content = v; };
+      set('name', 'description', desc); set('property', 'og:title', art.title); set('property', 'og:description', desc);
+      set('property', 'og:image', img); set('property', 'og:url', url);
+      if (MEDICAL_SUBCATS.has(art.subcategoryId)) set('name', 'robots', 'noindex');
+      const c = document.createElement('link'); c.rel = 'canonical'; c.href = url; document.head.appendChild(c);
+      const ld = [{ '@context': 'https://schema.org', '@type': 'Article', headline: art.title, description: desc, image: [img], inLanguage: 'ar',
+        author: { '@type': 'Organization', name: 'فريق تحرير نبضة', url: 'https://nabda.online' },
+        publisher: { '@type': 'Organization', name: 'نبضة', logo: { '@type': 'ImageObject', url: 'https://nabda.online/favicon.png' } },
+        mainEntityOfPage: url }];
+      if ((art.faqs || []).length) ld.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: art.faqs.slice(0, 10).map((f) => ({ '@type': 'Question', name: f.question, acceptedAnswer: { '@type': 'Answer', text: f.answer } })) });
+      const s = document.createElement('script'); s.type = 'application/ld+json'; s.textContent = JSON.stringify(ld); document.head.appendChild(s);
+    }
+
+    // شريط تقدّم القراءة
+    window.addEventListener('scroll', () => {
+      const h = document.documentElement;
+      const p = h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight);
+      document.getElementById('ar-progress').style.width = (p * 100).toFixed(1) + '%';
+    }, { passive: true });
+
+    load();
+  </script>
+  <script type="module" src="/js/shell.js"></script>
+</body>
+</html>

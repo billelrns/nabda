@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <script src="/js/app-redirect.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>دليل رعاية ونمو الطفل شهراً بشهر — نبضة</title>
   <meta name="description" content="تابعي مراحل تطور ونمو طفلكِ شهراً بشهر من الولادة حتى عامين: المهارات الحركية، الرضاعة، النوم، الأنشطة، ورعاية الصغير بإشراف فريق تحرير نبضة.">
@@ -12,10 +13,10 @@
   <link rel="stylesheet" href="/css/site.css">
 
   <!-- Firebase Web SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <style>
     .nb-baby-container {
@@ -122,9 +123,9 @@
 
     <!-- Month Scroller Strip (0 to 24) -->
     <div class="nb-month-strip-wrap">
-      <button class="nb-strip-nav-btn" onclick="document.getElementById('nb-month-strip').scrollBy({left:200,behavior:'smooth'})">›</button>
+      <button class="nb-strip-nav-btn" onclick="document.getElementById('nb-month-strip').scrollBy({left:200,behavior:'smooth'})" aria-label="السابق"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;margin:auto"><path d="M9 5l7 7-7 7"/></svg></button>
       <div class="nb-month-strip" id="nb-month-strip"></div>
-      <button class="nb-strip-nav-btn" onclick="document.getElementById('nb-month-strip').scrollBy({left:-200,behavior:'smooth'})">‹</button>
+      <button class="nb-strip-nav-btn" onclick="document.getElementById('nb-month-strip').scrollBy({left:-200,behavior:'smooth'})" aria-label="التالي"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;margin:auto"><path d="M15 5l-7 7 7 7"/></svg></button>
     </div>
 
     <!-- Hero Card -->
@@ -299,7 +300,7 @@
   <div class="nb-modal-backdrop" id="nb-baby-date-modal">
     <div class="nb-modal-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <h3 style="font-size:18px;font-weight:800;color:var(--nb-ink);margin:0">تحديد عمر وبيانات طفلكِ</h3>
+        <h3 id="nb-baby-modal-title" style="font-size:18px;font-weight:800;color:var(--nb-ink);margin:0">تحديد عمر وبيانات طفلكِ</h3>
         <button class="nb-modal-close" onclick="window.closeBabyProfileModal()">✕</button>
       </div>
 
@@ -308,19 +309,27 @@
         <input type="text" id="nb-baby-name-input" placeholder="مثال: ياسمين، آدم..." style="width:100%;padding:10px 14px;border:1px solid #E0F2F1;border-radius:12px;font-size:14px;font-family:inherit">
       </div>
 
-      <div style="margin-bottom:20px">
+      <div style="margin-bottom:16px">
         <label style="display:block;font-size:13px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">تاريخ ميلاد الطفل:</label>
         <input type="date" id="nb-baby-birth-input" style="width:100%;padding:10px 14px;border:1px solid #E0F2F1;border-radius:12px;font-size:14px;font-family:inherit">
       </div>
 
-      <div style="display:flex;gap:10px;justify-content:flex-end">
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-size:13px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">الجنس (اختياري):</label>
+        <select id="nb-baby-gender-input" style="width:100%;padding:10px 14px;border:1px solid #E0F2F1;border-radius:12px;font-size:14px;font-family:inherit;background:#fff">
+          <option value="">— غير محدّد —</option><option value="female">👧 بنت</option><option value="male">👦 ولد</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
+        <button id="nb-baby-delete-btn" class="nb-btn-secondary" style="display:none;font-size:13px;padding:8px 14px;color:#C62828;border-color:#FFCDD2;margin-left:auto" onclick="window.deleteActiveBaby()">🗑️ حذف الطفل</button>
         <button class="nb-btn-secondary" style="font-size:13px;padding:8px 16px" onclick="window.closeBabyProfileModal()">إلغاء</button>
         <button class="nb-btn-primary" style="background:#00897B;font-size:13px;padding:8px 20px" onclick="window.saveBabyBirthDate()">حفظ</button>
       </div>
     </div>
   </div>
 
-  <div id="nb-footer-placeholder"></div>
+  <div id="nb-footer"></div>
 
   <script type="module">
     import { initBabyPage } from '/js/pages/baby.js';

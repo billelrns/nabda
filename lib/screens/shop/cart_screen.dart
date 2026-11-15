@@ -50,16 +50,8 @@ class _CartScreenState extends State<CartScreen> {
     if (mounted) setState(() {});
   }
 
-  String _fmtPrice(double price) {
-    final country = _currency.currentCountry;
-    final converted = price * (_currency.exchangeRate ?? 1.0);
-    final formatted = converted.toStringAsFixed(converted.truncateToDouble() == converted ? 0 : 2);
-    // Add thousand separators
-    final parts = formatted.split('.');
-    final intPart = parts[0].replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
-    final result = parts.length > 1 ? '$intPart.${parts[1]}' : intPart;
-    return '$result ${country.currencySymbol}';
-  }
+  // السعر أصلاً بعملة السوق (المنتجات مُوطَّنة) — لا تحويل
+  String _fmtPrice(double price) => _currency.formatPrice(price);
 
   @override
   Widget build(BuildContext context) {
@@ -340,8 +332,13 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
   bool _isLoading = false;
   String _shippingMethod = 'home'; // 'home' | 'office'
 
-  double get _shippingCost => _shippingMethod == 'home'
+  /// خارج الجزائر: سعر توصيل المنطقة من site_config/shipping_SA (للمنزل فقط)
+  double get _homeShipping => _currency.isDZ
       ? CartService.kHomeDeliveryDzd
+      : _currency.marketShipping(_addressControllers['state']?.text.trim());
+
+  double get _shippingCost => (_shippingMethod == 'home' || !_currency.isDZ)
+      ? _homeShipping
       : CartService.kOfficePickupDzd;
 
   double get _grandTotal => _cart.subtotal + _shippingCost;
@@ -384,15 +381,8 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
     if (mounted) setState(() {});
   }
 
-  String _fmtPrice(double price) {
-    final country = _currency.currentCountry;
-    final converted = price * (_currency.exchangeRate ?? 1.0);
-    final formatted = converted.toStringAsFixed(converted.truncateToDouble() == converted ? 0 : 2);
-    final parts = formatted.split('.');
-    final intPart = parts[0].replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
-    final result = parts.length > 1 ? '$intPart.${parts[1]}' : intPart;
-    return '$result ${country.currencySymbol}';
-  }
+  // السعر أصلاً بعملة السوق (المنتجات مُوطَّنة) — لا تحويل
+  String _fmtPrice(double price) => _currency.formatPrice(price);
 
   /// أسماء منتجات السلّة التي لم تعد `availability == 'active'`.
   /// المنتجات بلا `productId` (المضافة قبل إضافة الحقل، أو منتجات
@@ -504,6 +494,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
       paymentMethod: paymentResult.paymentMethod ?? _selectedPayment ?? 'cod',
       totalDisplay: _fmtPrice(_grandTotal),
       shipping: _shippingCost,
+      currency: _currency.currentCountry.currencyCode,
     );
 
     // 4. Create notification for user
@@ -792,10 +783,10 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                   icon: Icons.home_rounded,
                   title: 'التوصيل إلى المنزل',
                   subtitle: 'يصلكِ الطلب إلى باب البيت',
-                  price: CartService.kHomeDeliveryDzd,
+                  price: _homeShipping,
                 ),
-                const SizedBox(height: 8),
-                _deliveryOption(
+                if (_currency.isDZ) const SizedBox(height: 8),
+                if (_currency.isDZ) _deliveryOption(
                   id: 'office',
                   icon: Icons.storefront_rounded,
                   title: 'الاستلام من مكتب التوصيل',
@@ -1010,8 +1001,8 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = supportedCountries.where((c) =>
-      c.nameAr.contains(_search) || c.nameEn.toLowerCase().contains(_search.toLowerCase())
+    final filtered = supportedCountries.where((c) => CountryCurrencyService.marketCodes.contains(c.code) && (
+      c.nameAr.contains(_search) || c.nameEn.toLowerCase().contains(_search.toLowerCase()))
     ).toList();
 
     return Container(

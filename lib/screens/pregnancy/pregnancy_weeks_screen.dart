@@ -3189,7 +3189,7 @@ class _DiscoverDetailScreen extends StatelessWidget {
                         // لا مكملات ولا أجهزة طبية في المنتجات المقترحة (shop_config.dart)
                         final allProducts = NabdaAds.rankProducts<Map<String, String>>(
                           <Map<String, String>>[...dynamicProducts, ..._pregnancyProducts]
-                              .where((p) => !isHiddenProduct(p))
+                              .where((p) => !isShopHidden(p))
                               .toList(),
                           '${article.title} ${article.content}',
                         );

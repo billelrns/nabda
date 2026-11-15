@@ -12,10 +12,10 @@
   <link rel="stylesheet" href="/css/site.css">
 
   <!-- Firebase Web SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <style>
     .nb-account-hero {
@@ -458,7 +458,7 @@
               <select id="edit-stage" class="nb-input" onchange="handleStageChange(this.value)">
                 <option value="pregnant">حامل</option>
                 <option value="baby">لدي طفل جديد</option>
-                <option value="trying">أخطط للحمل</option>
+                <option value="planning">أخطط للحمل</option>
                 <option value="cycle">أتابع دورتي الشهرية</option>
               </select>
             </div>
@@ -522,6 +522,9 @@
   <script type="module">
     import { auth, db, storage } from '/js/firebase-init.js';
     import { nbToast } from '/js/shell.js';
+    import { toDate, pregnancyFromStart, pregnancyFromUser, escapeHtml as esc } from '/js/utils.js';
+    const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const localDate = (v) => v ? new Date(v + 'T00:00:00') : null;
 
     let currentUser = null;
     let currentUserData = null;
@@ -556,14 +559,14 @@
 
     function renderUserProfile() {
       const name = currentUserData?.displayName || currentUser.displayName || 'عضوة نبضة';
-      const photo = currentUserData?.photoURL || currentUser.photoURL || '';
+      const photo = currentUserData?.photoURL || currentUserData?.photoUrl || currentUser.photoURL || '';
 
       document.getElementById('hero-name').textContent = name;
       document.getElementById('edit-name').value = name;
 
       const avatarEl = document.getElementById('hero-avatar');
       if (photo) {
-        avatarEl.innerHTML = `<img src="${photo}" alt="${name}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+        avatarEl.innerHTML = `<img src="${esc(photo)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
       } else {
         avatarEl.textContent = name.charAt(0).toUpperCase();
       }
@@ -575,7 +578,7 @@
       }
 
       // Stage Calculation
-      const stage = currentUserData?.lifeStage || 'pregnant';
+      const stage = currentUserData?.lifeStage === 'trying' ? 'planning' : (currentUserData?.lifeStage || 'cycle');
       document.getElementById('edit-stage').value = stage;
       handleStageChange(stage);
 
@@ -584,13 +587,9 @@
       let journeyDesc = '';
 
       if (stage === 'pregnant') {
-        let week = 12;
-        if (currentUserData?.pregnancyStartDate) {
-          const start = currentUserData.pregnancyStartDate.toDate ? currentUserData.pregnancyStartDate.toDate() : new Date(currentUserData.pregnancyStartDate);
-          const days = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24));
-          week = Math.min(42, Math.max(1, Math.floor(days / 7)));
-          document.getElementById('edit-preg-date').value = start.toISOString().split('T')[0];
-        }
+        const pg = pregnancyFromUser(currentUserData);
+        const week = pg ? pg.week : '—';
+        if (pg) document.getElementById('edit-preg-date').value = ymd(pg.start);
         stageText = `🤰 الأسبوع ${week} من الحمل`;
         journeyVal = `الأسبوع ${week}`;
         journeyDesc = `أنتِ الآن في الأسبوع ${week} من رحلة حملكِ المباركة. جنينكِ ينمو ويكبر يوماً بعد يوم، احرصي على التغذية المتوازنة وشرب الماء الكافي.`;
@@ -600,11 +599,9 @@
         journeyVal = 'طفل جديد';
         journeyDesc = 'مرحلة الأمومة الجديدة مليئة بالمحبة والاكتشافات. تابعي تطورات رضاعة طفلك ونومه ونموه شهراً بشهر.';
         document.getElementById('overview-journey-link').href = '/baby';
-        if (currentUserData?.babyBirthDate) {
-          const bd = currentUserData.babyBirthDate.toDate ? currentUserData.babyBirthDate.toDate() : new Date(currentUserData.babyBirthDate);
-          document.getElementById('edit-baby-date').value = bd.toISOString().split('T')[0];
-        }
-      } else if (stage === 'trying') {
+        const bd = toDate(currentUserData?.babyBirthDate);
+        if (bd) document.getElementById('edit-baby-date').value = ymd(bd);
+      } else if (stage === 'planning') {
         stageText = '🌱 التخطيط للحمل';
         journeyVal = 'التخطيط';
         journeyDesc = 'مرحلة الإعداد والاستعداد النفسي والجسدي المبارك. تابعي نافذة الخصوبة وأيام التبويض.';
@@ -630,6 +627,7 @@
 
         const orders = [];
         snap.forEach(doc => orders.push({ id: doc.id, ...doc.data() }));
+        orders.sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0));
 
         document.getElementById('stat-orders-val').textContent = orders.length;
 
@@ -653,12 +651,15 @@
           const statusMap = {
             pending: { text: 'قيد المراجعة', class: 'status-pending', step: 1 },
             confirmed: { text: 'تم التأكيد', class: 'status-confirmed', step: 2 },
+            processing: { text: 'قيد التجهيز', class: 'status-confirmed', step: 2 },
             shipped: { text: 'قيد التوصيل', class: 'status-shipped', step: 3 },
             delivered: { text: 'تم التسليم', class: 'status-delivered', step: 4 },
+            no_answer: { text: 'بانتظار ردّكِ على اتصالنا', class: 'status-pending', step: 1 },
+            returned: { text: 'مُرتجع', class: 'status-cancelled', step: 0 },
             cancelled: { text: 'ملغى', class: 'status-cancelled', step: 0 }
           };
           const st = statusMap[o.status] || { text: o.status || 'قيد المراجعة', class: 'status-pending', step: 1 };
-          const dateStr = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('ar-DZ') : 'مؤخراً';
+          const dateStr = toDate(o.createdAt) ? toDate(o.createdAt).toLocaleDateString('ar-DZ') : 'مؤخراً';
 
           return `
             <div class="nb-order-card">
@@ -693,10 +694,10 @@
 
               <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;padding-top:12px;border-top:1px solid var(--nb-line)">
                 <div style="font-weight:600;color:var(--nb-ink-2)">
-                  ${o.productName || 'منتج من المتجر'} ${o.quantity ? `(الكمية: ${o.quantity})` : ''}
+                  ${esc(o.productName || (o.items && o.items[0] && o.items[0].name) || 'منتج من المتجر')} ${o.quantity ? `(الكمية: ${o.quantity})` : ''}
                 </div>
                 <div style="font-weight:800;color:var(--nb-pink)">
-                  ${Number(o.totalPrice || o.unitPrice || 0).toLocaleString()} دج
+                  ${Number(o.lineTotal || o.totalAmount || o.totalPrice || ((o.unitPrice || 0) * (o.quantity || 1) + (o.shippingFee || 0))).toLocaleString('en-US')} ${o.currency === 'SAR' ? 'ر.س' : 'دج'}
                 </div>
               </div>
             </div>
@@ -736,9 +737,9 @@
       container.innerHTML = saved.map(item => `
         <div class="nb-card" style="padding:16px">
           <h4 style="font-size:15px;font-weight:800;margin-bottom:8px;line-height:1.4">
-            <a href="/article/${item.id}">${item.title}</a>
+            <a href="/article/${encodeURIComponent(item.id)}">${esc(item.title)}</a>
           </h4>
-          <p style="font-size:12.5px;color:var(--nb-ink-3);margin-bottom:12px">${item.summary || ''}</p>
+          <p style="font-size:12.5px;color:var(--nb-ink-3);margin-bottom:12px">${esc(item.summary || '')}</p>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <a href="/article/${item.id}" style="color:var(--nb-pink);font-size:13px;font-weight:700">قراءة المقال ←</a>
             <button onclick="removeSavedArticle('${item.id}')" style="color:#D32F2F;font-size:12px;font-weight:600">إزالة</button>
@@ -791,18 +792,21 @@
         lifeStage: stage,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
+      if (stage === 'planning') updateData.goal = 'trying';
 
       if (stage === 'pregnant') {
         const pd = document.getElementById('edit-preg-date').value;
-        if (pd) updateData.pregnancyStartDate = firebase.firestore.Timestamp.fromDate(new Date(pd));
+        if (pd) { updateData.pregnancyStartDate = firebase.firestore.Timestamp.fromDate(localDate(pd)); updateData.dueDate = firebase.firestore.Timestamp.fromDate(new Date(localDate(pd).getTime() + 280 * 86400000)); updateData.dueDateSource = 'lmp'; }
       } else if (stage === 'baby') {
         const bd = document.getElementById('edit-baby-date').value;
-        if (bd) updateData.babyBirthDate = firebase.firestore.Timestamp.fromDate(new Date(bd));
+        if (bd) updateData.babyBirthDate = firebase.firestore.Timestamp.fromDate(localDate(bd));
       }
 
       try {
         await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
         await currentUser.updateProfile({ displayName: name });
+        await db.collection('users_directory').doc(currentUser.uid).set({ name }, { merge: true }).catch(() => {});
+        sessionStorage.removeItem('nb_user_cache');
         btn.disabled = false;
         btn.textContent = 'حفظ التعديلات ✓';
         nbToast('تم تحديث بياناتكِ بنجاح 💗', 'success');
@@ -822,11 +826,15 @@
 
       try {
         nbToast('جاري رفع صورتكِ...', 'info');
-        const ref = storage.ref(`profile_photos/${currentUser.uid}/${Date.now()}_${file.name}`);
-        await ref.put(file);
+        if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) { nbToast('اختاري صورة أقل من 5MB', 'error'); return; }
+        // المسار مطابق لقاعدة التخزين: profile_photos/{uid}
+        const ref = storage.ref(`profile_photos/${currentUser.uid}`);
+        await ref.put(file, { contentType: file.type });
         const url = await ref.getDownloadURL();
 
-        await db.collection('users').doc(currentUser.uid).set({ photoURL: url }, { merge: true });
+        await db.collection('users').doc(currentUser.uid).set({ photoURL: url, photoUrl: url }, { merge: true });
+        await db.collection('users_directory').doc(currentUser.uid).set({ photoUrl: url }, { merge: true }).catch(() => {});
+        sessionStorage.removeItem('nb_user_cache');
         await currentUser.updateProfile({ photoURL: url });
 
         nbToast('تم تغيير الصورة الشخصية بنجاح ✓', 'success');

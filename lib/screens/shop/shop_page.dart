@@ -573,6 +573,44 @@ class _ShopPageState extends State<ShopPage> {
     )));
   }
 
+  Widget _marketClosedCard() {
+    final c = _currencyService.currentCountry;
+    final served = _currencyService.marketCode != null;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF9FC),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF8BBD0)),
+      ),
+      child: Column(children: [
+        Text(c.flag, style: const TextStyle(fontSize: 40)),
+        const SizedBox(height: 8),
+        Text(
+          served ? 'متجر نبضة قادم إلى ${c.nameAr} قريباً 💗' : 'المتجر لا يوصل إلى ${c.nameAr} بعد',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: _textPrimary),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'المقالات والمجتمع متاحة لكِ بالكامل. يمكنكِ التسوّق من دولة نوصل إليها:',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: _textSecondary, height: 1.6),
+        ),
+        const SizedBox(height: 12),
+        Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: [
+          for (final code in CountryCurrencyService.marketCodes)
+            if (code != c.code)
+              OutlinedButton(
+                onPressed: () => _currencyService.setCountry(code),
+                child: Text('${_currencyService.getCountry(code)?.flag ?? ''} ${_currencyService.getCountry(code)?.nameAr ?? code}'),
+              ),
+        ]),
+      ]),
+    );
+  }
+
   void _showCountryPicker() {
     showModalBottomSheet(
       context: context,
@@ -605,10 +643,10 @@ class _ShopPageState extends State<ShopPage> {
             final List<Map<String, dynamic>> videoAds = [];
             if (videoAdsSnap.hasData) {
               for (final doc in videoAdsSnap.data!.docs) {
-                final d = Map<String, dynamic>.from(doc.data() as Map);
+                final d = _currencyService.localize(doc.data() as Map);
                 d['id'] = doc.id;
                 final videoUrl = (d['videoUrl'] ?? '').toString();
-                if (videoUrl.isNotEmpty && !_dismissedAdIds.contains(doc.id) && !isHiddenProduct(d)) {
+                if (videoUrl.isNotEmpty && !_dismissedAdIds.contains(doc.id) && !isShopHidden(d)) {
                   videoAds.add(d);
                 }
               }
@@ -729,6 +767,10 @@ class _ShopPageState extends State<ShopPage> {
                 ),
               ),
 
+              // دولة غير مخدومة أو سوق مغلق (السعودية قبل الافتتاح): لا أسعار بعملة أخرى أبداً
+              if (!_currencyService.marketOpen)
+                SliverToBoxAdapter(child: _marketClosedCard()),
+
               // Category icons row
               SliverToBoxAdapter(
                 child: SizedBox(
@@ -781,7 +823,7 @@ class _ShopPageState extends State<ShopPage> {
                   stream: FirebaseFirestore.instance.collection('products').orderBy('createdAt', descending: true).limit(20).snapshots(),
                   builder: (context, snap) {
                     if (!snap.hasData) return const SizedBox.shrink();
-                    final docs = snap.data!.docs.where((doc) => !isHiddenProduct(doc.data() as Map)).toList();
+                    final docs = snap.data!.docs.where((doc) => !isShopHidden(doc.data() as Map)).toList();
                     if (docs.isEmpty) return const SizedBox.shrink();
                     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Padding(
@@ -801,7 +843,7 @@ class _ShopPageState extends State<ShopPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           itemCount: docs.length,
                           itemBuilder: (_, i) {
-                            final d = Map<String, dynamic>.from(docs[i].data() as Map<String, dynamic>);
+                            final d = _currencyService.localize(docs[i].data() as Map);
                             d['id'] = docs[i].id;
                             final hasImage = d['imageUrl'] != null && (d['imageUrl'] as String).isNotEmpty;
                             final price = d['price'] ?? '0';
@@ -906,7 +948,8 @@ class _ShopPageState extends State<ShopPage> {
                               .limit(12)
                               .snapshots(),
                           builder: (context, catSnap) {
-                            final catDocs = catSnap.data?.docs ?? const [];
+                            // ممنوع، أو غير متاح/غير مسعّر في سوق الدولة الحالية ⇒ لا يظهر
+                            final catDocs = (catSnap.data?.docs ?? const []).where((x) => !isShopHidden(x.data() as Map)).toList();
                             if (catDocs.isEmpty) {
                               return _comingSoonRow(cat);
                             }
@@ -916,7 +959,7 @@ class _ShopPageState extends State<ShopPage> {
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               itemCount: catDocs.length,
                               itemBuilder: (context, i) {
-                                final d = Map<String, dynamic>.from(catDocs[i].data() as Map<String, dynamic>);
+                                final d = _currencyService.localize(catDocs[i].data() as Map);
                                 d['id'] = catDocs[i].id;
                                 return _luxeProductCard(context, d, cat);
                               },
@@ -1158,7 +1201,7 @@ class _CategoryProductsScreen extends StatelessWidget {
               .where('category', isEqualTo: category.name)
               .snapshots(),
           builder: (context, snap) {
-            final docs = snap.data?.docs ?? const [];
+            final docs = (snap.data?.docs ?? const []).where((x) => !isShopHidden(x.data() as Map)).toList();
             if (snap.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator(color: _rose));
             }
@@ -1186,7 +1229,7 @@ class _CategoryProductsScreen extends StatelessWidget {
               ),
               itemCount: docs.length,
               itemBuilder: (context, i) {
-                final d = Map<String, dynamic>.from(docs[i].data() as Map<String, dynamic>);
+                final d = CountryCurrencyService().localize(docs[i].data() as Map);
                 d['id'] = docs[i].id;
                 final name = (d['name'] ?? '').toString();
                 final price = (d['price'] ?? '').toString();
@@ -1507,8 +1550,9 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = supportedCountries.where((c) =>
-      c.nameAr.contains(_search) || c.nameEn.toLowerCase().contains(_search.toLowerCase()) || c.code.toLowerCase().contains(_search.toLowerCase())
+    // الدول التي يوصل إليها المتجر فعلاً (لا تحويل عملة لدول غير مخدومة)
+    final filtered = supportedCountries.where((c) => CountryCurrencyService.marketCodes.contains(c.code) && (
+      c.nameAr.contains(_search) || c.nameEn.toLowerCase().contains(_search.toLowerCase()) || c.code.toLowerCase().contains(_search.toLowerCase()))
     ).toList();
 
     return Container(

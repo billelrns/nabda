@@ -12,10 +12,10 @@
   <link rel="stylesheet" href="/css/site.css">
 
   <!-- Firebase Web SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <style>
     .nb-auth-section {
@@ -237,7 +237,7 @@
             «كل أم تستحق رعاية متكاملة، ومعرفة دقيقة، ومجتمعاً دافئاً يسندها في أجمل رحلات الحياة.»
           </h2>
         </div>
-        <img src="/landing-assets/slide-pregnancy.png" alt="رحلة الأمومة في نبضة" class="nb-auth-banner-img">
+        <img src="/landing-assets/slide-pregnancy.webp" alt="رحلة الأمومة في نبضة" class="nb-auth-banner-img">
         <div style="font-size:13px;color:var(--nb-ink-2);font-weight:700">
           ✓ محتوى إرشادي موثوق أسبوعاً بأسبوع<br>
           ✓ متابعة دقيقة لمراحل الحمل والطفولة<br>
@@ -368,7 +368,14 @@
     // Parse URL params
     const params = new URLSearchParams(window.location.search);
     const initialMode = params.get('mode') || (window.location.pathname.includes('signup') ? 'signup' : 'login');
-    const nextUrl = params.get('next') || '/';
+    // منع إعادة التوجيه لمواقع خارجية: مسار داخلي فقط
+        // الهاتف: بعد الدخول/التسجيل → تطبيق نبضة (/app/). الحاسوب: كما كان (الموقع).
+    const defaultNext = (window.matchMedia('(max-width: 820px)').matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) ? '/app/' : '/';
+    const rawNext = params.get('next') || defaultNext;
+    const nextUrl = (rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.startsWith('/\\')) ? rawNext : defaultNext;
+    // مسجّلة أصلاً؟ لا داعي لصفحة الدخول
+    let __firstAuth = true; let __busy = false;
+    auth.onAuthStateChanged((u) => { const first = __firstAuth; __firstAuth = false; if (first && u && !__busy) location.replace(nextUrl); });
 
     window.switchTab = function(mode) {
       const isLogin = mode === 'login';
@@ -390,6 +397,7 @@
       const btn = document.getElementById('btn-submit-login');
 
       try {
+        __busy = true;
         btn.disabled = true;
         btn.textContent = 'جاري التحقق...';
         await auth.signInWithEmailAndPassword(email, pass);
@@ -401,7 +409,9 @@
         console.error(err);
         let msg = 'تعذر تسجيل الدخول. تأكدي من صحة البريد وكلمة المرور.';
         if (err.code === 'auth/user-not-found') msg = 'لا يوجد حساب بهذا البريد الإلكتروني.';
-        if (err.code === 'auth/wrong-password') msg = 'كلمة المرور غير صحيحة.';
+        if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') msg = 'البريد أو كلمة المرور غير صحيحة.';
+        if (err.code === 'auth/too-many-requests') msg = 'محاولات كثيرة. انتظري قليلاً ثم أعيدي المحاولة.';
+        if (err.code === 'auth/network-request-failed') msg = 'تحقّقي من اتصالكِ بالإنترنت.';
         nbToast(msg, 'error');
       }
     };
@@ -416,6 +426,7 @@
       const btn = document.getElementById('btn-submit-signup');
 
       try {
+        __busy = true;
         btn.disabled = true;
         btn.textContent = 'جاري إنشاء الحساب...';
         const cred = await auth.createUserWithEmailAndPassword(email, pass);
@@ -435,6 +446,8 @@
         console.error(err);
         let msg = 'تعذر إنشاء الحساب. حاولي مرة أخرى.';
         if (err.code === 'auth/email-already-in-use') msg = 'هذا البريد مسجل مسبقاً. تفضلي بتسجيل الدخول.';
+        if (err.code === 'auth/weak-password') msg = 'كلمة المرور ضعيفة: 6 أحرف على الأقل.';
+        if (err.code === 'auth/invalid-email') msg = 'صيغة البريد الإلكتروني غير صحيحة.';
         nbToast(msg, 'error');
       }
     };
@@ -442,7 +455,14 @@
     // Google Sign in
     document.getElementById('btn-google-auth').addEventListener('click', async () => {
       try {
-        const result = await auth.signInWithPopup(googleProvider);
+        __busy = true;
+        let result;
+        try { result = await auth.signInWithPopup(googleProvider); }
+        catch (e) {
+          if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') { await auth.signInWithRedirect(googleProvider); return; }
+          if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
+          throw e;
+        }
         const user = result.user;
         
         // Check if user doc exists
@@ -468,8 +488,7 @@
     let selectedStage = 'pregnant';
     window.selectStage = function(stage) {
       selectedStage = stage;
-      document.querySelectorAll('.nb-stage-option').forEach(el => el.classList.remove('selected'));
-      event.currentTarget.classList.add('selected');
+      document.querySelectorAll('.nb-stage-option').forEach(el => el.classList.toggle('selected', (el.getAttribute('onclick') || '').includes(`'${stage}'`)));
 
       document.getElementById('pregnant-date-field').style.display = stage === 'pregnant' ? 'block' : 'none';
       document.getElementById('baby-date-field').style.display = stage === 'baby' ? 'block' : 'none';
@@ -478,41 +497,50 @@
     window.saveOnboardingAndContinue = async function() {
       const user = auth.currentUser;
       if (!user) return;
+      const FS = firebase.firestore;
+      const localDate = (v) => v ? new Date(v + 'T00:00:00') : null;
+      // قيم المرحلة مطابقة للتطبيق: pregnant | baby | planning | cycle
+      const stage = selectedStage === 'trying' ? 'planning' : selectedStage;
+      const name = pendingUser?.displayName || user.displayName || 'عضوة نبضة';
 
       const profileData = {
-        uid: user.uid,
-        displayName: pendingUser?.displayName || user.displayName || 'عضوة نبضة',
+        displayName: name,
         email: user.email || '',
-        lifeStage: selectedStage,
-        goal: selectedStage === 'trying' ? 'trying' : (selectedStage === 'pregnant' ? 'pregnancy' : 'tracking'),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        provider: user.providerData?.[0]?.providerId === 'google.com' ? 'google' : 'email',
+        lifeStage: stage,
+        onboardingDone: true,
+        createdAt: FS.FieldValue.serverTimestamp(),
+        updatedAt: FS.FieldValue.serverTimestamp(),
       };
+      if (stage === 'planning') profileData.goal = 'trying';
 
-      if (selectedStage === 'pregnant') {
-        const d = document.getElementById('onboarding-preg-date').value;
-        if (d) {
-          profileData.pregnancyStartDate = firebase.firestore.Timestamp.fromDate(new Date(d));
-        } else {
-          // Default to 12 weeks ago if not specified
-          const defDate = new Date();
-          defDate.setDate(defDate.getDate() - (12 * 7));
-          profileData.pregnancyStartDate = firebase.firestore.Timestamp.fromDate(defDate);
-        }
-      } else if (selectedStage === 'baby') {
-        const bd = document.getElementById('onboarding-baby-date').value;
-        if (bd) {
-          profileData.babyBirthDate = firebase.firestore.Timestamp.fromDate(new Date(bd));
-        }
+      if (stage === 'pregnant') {
+        const d = localDate(document.getElementById('onboarding-preg-date').value);
+        if (!d || d > new Date() || (Date.now() - d) / 86400000 > 300) { nbToast('أدخلي تاريخ أول يوم من آخر دورة (خلال الأشهر العشرة الأخيرة)', 'error'); return; }
+        profileData.pregnancyStartDate = FS.Timestamp.fromDate(d);
+        profileData.dueDate = FS.Timestamp.fromDate(new Date(d.getTime() + 280 * 86400000));
+        profileData.dueDateSource = 'lmp';
+      } else if (stage === 'baby') {
+        const bd = localDate(document.getElementById('onboarding-baby-date').value);
+        if (bd && bd <= new Date()) profileData.babyBirthDate = FS.Timestamp.fromDate(bd);
       }
 
+      const btn = document.querySelector('[onclick*="saveOnboardingAndContinue"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'جاري الحفظ…'; }
       try {
-        await db.collection('users').doc(user.uid).set(profileData, { merge: true });
-        nbToast('تم إعداد حسابكِ بنجاح! مرحباً بكِ في نبضة 💗', 'success');
-        setTimeout(() => { window.location.href = nextUrl; }, 700);
+        const ref = db.collection('users').doc(user.uid);
+        await ref.set(profileData, { merge: true });
+        if (profileData.babyBirthDate) await ref.collection('babies').add({ name: 'طفلي', birthDate: profileData.babyBirthDate, createdAt: FS.FieldValue.serverTimestamp() });
+        // الدليل الآمن للأدمن والمجتمع (بلا أي بيانات صحية — تفرضه القاعدة)
+        await db.collection('users_directory').doc(user.uid).set({ name, email: user.email || '', photoUrl: user.photoURL || null, createdAt: FS.FieldValue.serverTimestamp() }, { merge: true }).catch(() => {});
+        sessionStorage.removeItem('nb_user_cache');
+        nbToast('تم إعداد حسابكِ! مرحباً بكِ في نبضة 💗', 'success');
+        const dest = nextUrl !== '/' ? nextUrl : ({ pregnant: '/pregnancy', baby: '/baby', planning: '/fertility', cycle: '/cycle' }[stage] || '/');
+        setTimeout(() => { window.location.href = dest; }, 700);
       } catch (err) {
         console.error('Error saving profile:', err);
-        window.location.href = nextUrl;
+        nbToast('تعذّر حفظ البيانات، حاولي مجدداً', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'متابعة'; }
       }
     };
 

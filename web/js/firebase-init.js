@@ -12,7 +12,8 @@ if (!window.firebase.apps.length) {
 export const firebase = window.firebase;
 export const auth = window.firebase.auth();
 export const db = window.firebase.firestore();
-export const storage = window.firebase.storage();
+// Storage يُحمَّل فقط في الصفحات التي ترفع صوراً (حسابي، الأدمن) — لا نكسر الصفحات الأخرى إن غاب
+export const storage = typeof window.firebase.storage === 'function' ? window.firebase.storage() : null;
 export const googleProvider = new window.firebase.auth.GoogleAuthProvider();
 
 // إعدادات إضافية لمزود Google

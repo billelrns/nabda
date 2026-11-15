@@ -33,5 +33,7 @@
             "type": "image/png",
             "purpose": "maskable"
         }
-    ]
+    ],
+    "id": "/app/",
+    "scope": "."
 }

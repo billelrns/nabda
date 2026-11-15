@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <script src="/js/app-redirect.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>مجتمع أمهات نبضة — بيئة نسائية آمنة للتجارب والنصائح</title>
   <meta name="description" content="انضمي لمجتمع نبضة للأمهات والحوامل: بيئة نسائية موثوقة لتبادل التجارب والاستشارات اليومية حول الحمل والولادة ورعاية الأطفال.">
@@ -11,10 +12,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/site.css">
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <style>
     .nb-comm-container {
@@ -63,6 +64,58 @@
     }
 
     /* ── Group Pills ── */
+    .nb-comm-tabs { display: flex; gap: 6px; background: rgba(255,255,255,.45); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.6); border-radius: 20px; padding: 6px; margin-bottom: 18px; box-shadow: 0 8px 26px rgba(244,63,126,.08); width: fit-content; max-width: 100%; }
+    .nb-comm-tab { border: none; background: transparent; border-radius: 14px; padding: 10px 18px; font-family: inherit; font-weight: 800; font-size: 14px; color: var(--nb-ink-2); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .nb-comm-tab.active { background: var(--nb-pink-gradient); color: #fff; box-shadow: 0 6px 16px rgba(244,63,126,.28); }
+    #nb-club-tab-badge:not(:empty) { background: rgba(255,255,255,.3); border-radius: 999px; padding: 0 8px; font-size: 11px; }
+    .nb-club-card { border-radius: 24px; padding: 22px 24px; margin-bottom: 18px; color: #fff; background: linear-gradient(135deg, #E91E63 0%, #F06292 55%, #BA68C8 100%); box-shadow: 0 14px 34px rgba(233,30,99,.25); position: relative; overflow: hidden; }
+    .nb-club-card.visiting { background: linear-gradient(135deg, #00897B 0%, #26A69A 60%, #7E57C2 100%); box-shadow: 0 14px 34px rgba(0,137,123,.22); }
+    .nb-club-card::after { content: '🤱'; position: absolute; left: 18px; bottom: -14px; font-size: 92px; opacity: .14; }
+    .nb-club-card h2 { font-size: 22px; font-weight: 900; margin: 4px 0; }
+    .nb-club-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; position: relative; z-index: 1; }
+    .nb-club-btn { border: none; background: rgba(255,255,255,.2); color: #fff; border-radius: 12px; padding: 9px 14px; font-family: inherit; font-weight: 800; font-size: 13px; cursor: pointer; }
+    .nb-club-btn:hover { background: rgba(255,255,255,.3); }
+    .nb-club-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .nb-club-opt { --cb: #FFF0F5; --ca: var(--nb-pink); border: 1.5px solid transparent; background: var(--cb); border-radius: 18px; padding: 12px 8px 10px; text-align: center; cursor: pointer; font-family: inherit; transition: transform .2s, box-shadow .2s; }
+    .nb-club-opt:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.06); }
+    .nb-club-opt .ico { width: 64px; height: 64px; display: block; margin: 0 auto 6px; filter: drop-shadow(0 4px 8px rgba(0,0,0,.08)); }
+    .nb-club-opt b { display: block; font-size: 14px; color: var(--ca); }
+    .nb-club-opt small { color: var(--nb-ink-3); font-size: 11.5px; }
+    .nb-club-opt.mine { border-color: var(--ca); }
+    .nb-club-opt.current { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ca) 30%, transparent); }
+    /* ── كاروسال أندية الولادة ── */
+    .nb-club-car { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; touch-action: pan-y; }
+    .nb-club-track { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; }
+    .nb-club-nav { flex: 0 0 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(244,63,126,.2); background: rgba(255,255,255,.7); backdrop-filter: blur(12px); color: var(--nb-pink); font-size: 22px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 18px rgba(244,63,126,.12); transition: .2s; }
+    .nb-club-nav:hover { background: #fff; transform: scale(1.06); }
+    .nb-club-center { --cb: #FFE4EC; --ca: #E2437A; flex: 0 1 360px; min-width: 240px; border-radius: 28px; padding: 18px 20px 20px; text-align: center; color: var(--ca); background: radial-gradient(circle at 50% 38%, #fff 0, rgba(255,255,255,.55) 32%, transparent 62%), linear-gradient(160deg, var(--cb) 0%, color-mix(in srgb, var(--cb) 70%, #fff) 100%); border: 1.5px solid color-mix(in srgb, var(--ca) 22%, transparent); box-shadow: 0 18px 40px color-mix(in srgb, var(--ca) 22%, transparent); position: relative; overflow: hidden; animation: nbClubIn .35s ease; }
+    .nb-club-center.visiting { border-style: dashed; }
+    .nb-club-tag { display: inline-block; font-size: 11.5px; font-weight: 800; background: #fff; color: var(--ca); border-radius: 999px; padding: 3px 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    .nb-club-ico { display: block; width: 116px; height: 116px; margin: 10px auto 2px; filter: drop-shadow(0 10px 16px color-mix(in srgb, var(--ca) 28%, transparent)); animation: nbClubFloat 4s ease-in-out infinite; }
+    .nb-club-month { font-size: 36px; font-weight: 900; line-height: 1.2; color: var(--ca); }
+    .nb-club-year { font-size: 13.5px; font-weight: 800; color: var(--nb-ink-2); }
+    .nb-club-count { display: inline-block; margin-top: 10px; background: color-mix(in srgb, var(--ca) 14%, #fff); color: var(--ca); border-radius: 999px; padding: 4px 14px; font-size: 13px; font-weight: 800; min-height: 26px; }
+    .nb-club-back { display: block; margin: 12px auto 0; border: none; background: var(--ca); color: #fff; border-radius: 12px; padding: 8px 14px; font-family: inherit; font-weight: 800; font-size: 12.5px; cursor: pointer; position: relative; z-index: 1; }
+    .nb-club-side { --cb: #FFF0F5; --ca: var(--nb-pink); flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1px; border: 1.5px solid rgba(255,255,255,.8); background: linear-gradient(170deg, var(--cb), color-mix(in srgb, var(--cb) 55%, #fff)); border-radius: 22px; cursor: pointer; font-family: inherit; color: var(--nb-ink-2); transition: transform .2s, box-shadow .2s; box-shadow: 0 6px 18px rgba(0,0,0,.05); }
+    .nb-club-side:hover { transform: translateY(-3px); box-shadow: 0 12px 26px color-mix(in srgb, var(--ca) 22%, transparent); }
+    .nb-club-side .ico { width: 64px; height: 64px; margin-bottom: 4px; filter: drop-shadow(0 5px 8px rgba(0,0,0,.08)); transition: transform .2s; }
+    .nb-club-side:hover .ico { transform: scale(1.08) rotate(-4deg); }
+    .nb-club-side.off1 { width: 132px; padding: 14px 10px; }
+    .nb-club-side.off2 { width: 104px; padding: 12px 8px; opacity: .72; }
+    .nb-club-side.off2 .ico { width: 50px; height: 50px; }
+    .nb-club-side .m { font-size: 18px; font-weight: 900; color: var(--ca); }
+    .nb-club-side.off2 .m { font-size: 15px; }
+    .nb-club-side .y { font-size: 12px; font-weight: 700; color: var(--nb-ink-3); }
+    .nb-club-side .c { font-size: 11px; color: var(--nb-ink-2); font-weight: 800; min-height: 14px; }
+    .nb-club-side .star { font-size: 11px; color: var(--ca); font-weight: 900; }
+    .nb-club-side.mine { border-color: var(--ca); }
+    .nb-club-hint { text-align: center; font-size: 12.5px; color: var(--nb-ink-3); font-weight: 700; margin-bottom: 18px; }
+    .nb-club-hint a { color: var(--nb-pink); text-decoration: none; font-weight: 800; }
+    @keyframes nbClubIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+    @keyframes nbClubFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @media (max-width: 900px) { .nb-club-side.off2 { display: none; } }
+    @media (max-width: 600px) { .nb-club-side.off1 { width: 80px; padding: 10px 4px; } .nb-club-side .ico { width: 44px; height: 44px; } .nb-club-side .m { font-size: 14px; } .nb-club-center { min-width: 0; flex-basis: 220px; padding: 14px 10px 16px; } .nb-club-ico { width: 88px; height: 88px; } .nb-club-month { font-size: 28px; } .nb-club-nav { flex-basis: 34px; height: 34px; font-size: 18px; } .nb-club-track { gap: 8px; } }
+    @media (prefers-reduced-motion: reduce) { .nb-club-center, .nb-club-ico { animation: none; } }
     .nb-group-pills {
       display: flex;
       gap: 10px;
@@ -293,13 +346,22 @@
         </button>
       </div>
 
+      <!-- تبويبا المجتمع: العامّ / نادي الولادة (مطابق للتطبيق) -->
+      <div class="nb-comm-tabs" role="tablist">
+        <button class="nb-comm-tab active" data-mode="public" role="tab">💬 المجتمع العامّ</button>
+        <button class="nb-comm-tab" data-mode="club" role="tab">🤱 نادي الولادة <span id="nb-club-tab-badge"></span></button>
+      </div>
+
+      <!-- بطاقة النادي -->
+      <div id="nb-club-header" style="display:none"></div>
+
       <!-- Group Filter Pills -->
       <div class="nb-group-pills">
         <button class="nb-group-pill active" data-group="all">الكل 🌸</button>
-        <button class="nb-group-pill" data-group="رحلة الحمل">رحلة الحمل 🤰</button>
-        <button class="nb-group-pill" data-group="رعاية الرضيع">رعاية الرضيع 👶</button>
-        <button class="nb-group-pill" data-group="تجارب وتساؤلات">تجارب وتساؤلات 💭</button>
-        <button class="nb-group-pill" data-group="التغذية والصحة">التغذية والصحة 🥗</button>
+        <button class="nb-group-pill" data-group="pregnancy">الحمل 🤰</button>
+        <button class="nb-group-pill" data-group="baby">رعاية الطفل 👶</button>
+        <button class="nb-group-pill" data-group="cycle">الدورة الشهرية 🌸</button>
+        <button class="nb-group-pill" data-group="general">عام 💬</button>
       </div>
 
       <!-- Layout: Posts Feed (2/3) + Sidebar (1/3) -->
@@ -346,19 +408,27 @@
       <div style="margin-bottom:14px">
         <label style="display:block;font-size:12.5px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">اختاري المجموعة المناسبة:</label>
         <select id="nb-post-group-select" style="width:100%;padding:10px 12px;border:1px solid #F4E3EB;border-radius:12px;font-size:14px;font-family:inherit">
-          <option value="رحلة الحمل">رحلة الحمل 🤰</option>
-          <option value="رعاية الرضيع">رعاية الرضيع 👶</option>
-          <option value="تجارب وتساؤلات">تجارب وتساؤلات 💭</option>
-          <option value="التغذية والصحة">التغذية والصحة 🥗</option>
-          <option value="عام">محادثة عامة 🌸</option>
+          <option value="pregnancy">الحمل 🤰</option>
+          <option value="baby">رعاية الطفل 👶</option>
+          <option value="cycle">الدورة الشهرية 🌸</option>
+          <option value="general" selected>عام 💬</option>
         </select>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12.5px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">العنوان (اختياري):</label>
+        <input id="nb-post-title-input" maxlength="120" placeholder="عنوان قصير لمنشوركِ" style="width:100%;padding:10px 12px;border:1px solid #F4E3EB;border-radius:12px;font-size:14px;font-family:inherit">
       </div>
 
       <div style="margin-bottom:20px">
         <label style="display:block;font-size:12.5px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">نص المنشور:</label>
-        <textarea id="nb-post-content-input" rows="5" placeholder="شاركي تجربتكِ، اطرحي سؤالاً، أو اكتبي نصيحة تفيد أخواتكِ الأمهات..." style="width:100%;padding:12px;border:1px solid #F4E3EB;border-radius:12px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
+        <textarea id="nb-post-content-input" maxlength="2000" rows="5" placeholder="شاركي تجربتكِ، اطرحي سؤالاً، أو اكتبي نصيحة تفيد أخواتكِ الأمهات..." style="width:100%;padding:12px;border:1px solid #F4E3EB;border-radius:12px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
       </div>
 
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--nb-ink-2);margin-bottom:16px;cursor:pointer">
+        <input type="checkbox" id="nb-post-anon"> انشري باسم «مجهولة» 🤫
+      </label>
+      <p style="font-size:11.5px;color:var(--nb-ink-3);margin:-6px 0 14px">المجتمع للدعم وتبادل التجارب، وليس بديلاً عن استشارة الطبيبة.</p>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="nb-btn-secondary" style="font-size:13px;padding:8px 16px" onclick="window.closeCreatePostModal()">إلغاء</button>
         <button class="nb-btn-primary" style="font-size:13px;padding:8px 20px" onclick="window.submitNewPost()">نشر في المجتمع</button>
@@ -394,7 +464,18 @@
     </div>
   </div>
 
-  <div id="nb-footer-placeholder"></div>
+  <div class="nb-modal-backdrop" id="nb-club-modal" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="nb-modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h3 style="font-size:18px;font-weight:900;margin:0">🤱 أندية الولادة</h3>
+        <button class="nb-modal-close" onclick="document.getElementById('nb-club-modal').classList.remove('open')">✕</button>
+      </div>
+      <p style="font-size:13px;color:var(--nb-ink-3);margin-bottom:14px">تصفّحي تجارب الأمهات في الأشهر الأخرى للاستفادة — النشر يكون في ناديكِ فقط.</p>
+      <div class="nb-club-picker" id="nb-club-picker"></div>
+    </div>
+  </div>
+
+  <div id="nb-footer"></div>
 
   <script type="module">
     import { initCommunityPage } from '/js/pages/community.js';

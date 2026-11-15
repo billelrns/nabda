@@ -5,7 +5,8 @@
 
 import { auth, db } from '../firebase-init.js';
 import { isHiddenProduct } from '../shop-rules.js';
-import { SITE_HIDE_MEDICAL, PLAY_STORE_URL } from '../site-config.js';
+import { SITE_HIDE_MEDICAL, PLAY_URL } from '../site-config.js';
+import { toDate, pregnancyFromStart, pregnancyFromUser, escapeHtml as esc, getTopArticles, articleCardHtml, getVisibleProducts, productMatchesStage, productCardHtml } from '../utils.js';
 
 // Fruit & Object comparisons emoji map for 42 weeks
 const FRUIT_EMOJIS = {
@@ -22,6 +23,7 @@ let currentWeek = 12;
 let currentUser = null;
 let userProfile = null;
 let userStartDate = null;
+let userPreg = null; // نتيجة pregnancyFromStart للمستخدمة
 
 // Initialize Page
 export async function initPregnancyPage() {
@@ -50,10 +52,8 @@ export async function initPregnancyPage() {
     if (user) {
       try {
         const snap = await db.collection('users').doc(user.uid).get();
-        if (snap.exists) {
-          userProfile = snap.data();
-          handleUserData(userProfile, weekFromUrl);
-        }
+        userProfile = snap.exists ? snap.data() : {};
+        handleUserData(userProfile, weekFromUrl);
       } catch (e) {
         console.warn('Could not read user profile:', e);
       }
@@ -101,55 +101,89 @@ function parseWeekFromUrl() {
 }
 
 function handleUserData(profile, weekFromUrl) {
-  // If user has goal == trying
-  if (profile.goal === 'trying' || profile.lifeStage === 'trying') {
+  // تخطّط للحمل (نفس منطق التطبيق: goal == 'trying' أو lifeStage == 'planning')
+  if (!profile.pregnancyStartDate && (profile.goal === 'trying' || profile.lifeStage === 'planning')) {
     const tryingCard = document.getElementById('nb-trying-card');
     if (tryingCard) tryingCard.style.display = 'flex';
   }
 
-  // Calculate pregnancy week from pregnancyStartDate or lastPeriodDate
-  const startDateStr = profile.pregnancyStartDate || profile.lastPeriodDate;
-  if (startDateStr) {
-    const start = new Date(startDateStr);
-    if (!isNaN(start.getTime())) {
-      userStartDate = start;
-      const now = new Date();
-      const diffMs = now.getTime() - start.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-      // Check if baby was already born (> 294 days = 42 weeks)
-      if (diffDays > 294) {
-        const bornCard = document.getElementById('nb-baby-born-card');
-        if (bornCard) bornCard.style.display = 'flex';
-      }
-
-      const calculatedWeek = Math.min(42, Math.max(1, Math.floor(diffDays / 7) + 1));
-      
-      // If no explicit week was in URL, jump to user's week
-      if (!weekFromUrl) {
-        setWeek(calculatedWeek, false);
-      }
-
-      updateUserMilestoneDates(start);
-    }
+  userPreg = pregnancyFromUser(profile);
+  if (userPreg) {
+    userStartDate = userPreg.start;
+    // بعد 294 يوماً: سؤال «هل وُلد طفلكِ؟» كما في التطبيق (ما لم تؤكّد أنها ما زالت حاملاً)
+    if (userPreg.postTerm && !profile.postTermAck) showBornPrompt();
+    // إعادة الرسم بأيامها الفعلية (أو الانتقال لأسبوعها إن لم يُحدَّد أسبوع في الرابط)
+    setWeek(weekFromUrl || userPreg.week, false);
+    updateUserMilestoneDates(userPreg.start);
   }
 
-  // Update user banner
+  const name = esc(profile.displayName || (currentUser && currentUser.displayName) || 'عزيزتي');
   const userBanner = document.getElementById('nb-user-status-banner');
   if (userBanner) {
-    userBanner.innerHTML = `
+    userBanner.innerHTML = userPreg ? `
       <div style="display:flex;align-items:center;gap:12px">
         <span style="font-size:24px">🤰</span>
         <div>
-          <div style="font-weight:800;color:var(--nb-ink);font-size:15px">مرحباً بكِ، ${profile.displayName || 'عزيزتي الأم'} 🌸</div>
-          <div style="font-size:13px;color:var(--nb-ink-3)">رحلتكِ مُتابعة بدقة بحسب موعد ولادتكِ المحفوظ في نبضة.</div>
+          <div style="font-weight:800;color:var(--nb-ink);font-size:15px">مرحباً ${name} 🌸 أنتِ في الأسبوع ${userPreg.week}</div>
+          <div style="font-size:13px;color:var(--nb-ink-3)">بقي ${userPreg.daysLeft} يوماً على الموعد المتوقّع للولادة.</div>
         </div>
       </div>
-      <button class="nb-btn-secondary" style="font-size:12.5px;padding:6px 14px" onclick="window.openDueDateModal()">تعديل تاريخ الحمل</button>
-    `;
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${currentWeek !== userPreg.week ? `<button class="nb-btn-primary" style="font-size:12.5px;padding:6px 14px" onclick="window.selectPregnancyWeek(${userPreg.week})">أسبوعي الحالي</button>` : ''}
+        <button class="nb-btn-secondary" style="font-size:12.5px;padding:6px 14px" onclick="window.openDueDateModal()">تعديل تاريخ الحمل</button>
+      </div>` : `
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">🌸</span>
+        <div>
+          <div style="font-weight:800;color:var(--nb-ink);font-size:15px">مرحباً ${name}، هل أنتِ حامل؟</div>
+          <div style="font-size:13px;color:var(--nb-ink-3)">أدخلي تاريخ أول يوم من آخر دورة لنتابع حملكِ أسبوعاً بأسبوع.</div>
+        </div>
+      </div>
+      <button class="nb-btn-primary" style="font-size:12.5px;padding:6px 14px" onclick="window.openDueDateModal()">حدّدي تاريخ الحمل</button>`;
     userBanner.style.display = 'flex';
   }
 }
+
+function showBornPrompt() {
+  const card = document.getElementById('nb-baby-born-card');
+  if (!card) return;
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:26px">👶</span>
+      <div>
+        <div style="font-weight:800;color:#E65100;font-size:15px">تجاوزتِ الأسبوع 42 (${userPreg.days ? Math.floor(userPreg.days / 7) : 42} أسبوعاً). هل وُلد طفلكِ؟</div>
+        <div style="font-size:13px;color:#F57C00">عادةً تكون الولادة قد حدثت في هذه المرحلة.</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="nb-btn-primary" style="background:#00897B;font-size:13px;padding:8px 18px" onclick="window.nbConfirmBirth()">نعم، وُلد طفلي 🎉</button>
+      <button class="nb-btn-secondary" style="font-size:13px;padding:8px 18px" onclick="window.nbStillPregnant()">لا، ما زلت حاملاً</button>
+    </div>`;
+  card.style.display = 'flex';
+}
+
+window.nbConfirmBirth = async function () {
+  if (!currentUser) return;
+  const FV = window.firebase.firestore.FieldValue;
+  const ref = db.collection('users').doc(currentUser.uid);
+  try {
+    await ref.collection('pregnancyHistory').add({
+      startDate: userProfile?.pregnancyStartDate || null, endDate: FV.serverTimestamp(), outcome: 'birth', archivedAt: FV.serverTimestamp(),
+    });
+    await ref.set({ pregnancyStartDate: null, dueDate: null, postTermAck: null, lifeStage: 'baby', babyBirthDate: FV.serverTimestamp() }, { merge: true });
+    sessionStorage.removeItem('nb_user_cache');
+    window.nbToast?.('مبروك قدوم صغيركِ 🤍 ننتقل إلى رعاية الطفل', 'success');
+    setTimeout(() => { location.href = '/baby'; }, 1200);
+  } catch (e) { window.nbToast?.('تعذّر الحفظ، حاولي مجدداً', 'error'); }
+};
+
+window.nbStillPregnant = async function () {
+  if (!currentUser) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).set({ postTermAck: true }, { merge: true });
+    document.getElementById('nb-baby-born-card').style.display = 'none';
+  } catch (_) {}
+};
 
 function setupVisitorState(defaultWeek) {
   const userBanner = document.getElementById('nb-user-status-banner');
@@ -196,11 +230,12 @@ function renderWeekStrip() {
 
 function scrollActivePillIntoView() {
   const container = document.getElementById('nb-week-strip');
-  const activeBtn = container?.querySelector(`.nb-week-pill[data-week="${currentWeek}"]`);
-  if (container && activeBtn) {
-    const offset = activeBtn.offsetLeft - (container.clientWidth / 2) + (activeBtn.clientWidth / 2);
-    container.scrollTo({ left: offset, behavior: 'smooth' });
-  }
+  const btn = container?.querySelector(`.nb-week-pill[data-week="${currentWeek}"]`);
+  if (!container || !btn) return;
+  // حساب يعمل في RTL و LTR: نحرّك الحاوية بالفرق بين مركز الزر ومركزها
+  const cr = container.getBoundingClientRect();
+  const br = btn.getBoundingClientRect();
+  container.scrollBy({ left: (br.left + br.width / 2) - (cr.left + cr.width / 2), behavior: 'smooth' });
 }
 
 // Select Week
@@ -266,7 +301,7 @@ function updateHero(data) {
   if (progressText) progressText.textContent = `${pct}% من رحلة الحمل`;
 
   // Days left calculation
-  const daysLeft = Math.max(0, (40 - data.week) * 7);
+  const daysLeft = (userPreg && userPreg.week === data.week) ? userPreg.daysLeft : Math.max(0, (40 - data.week) * 7);
   const daysLeftEl = document.getElementById('nb-hero-days-left');
   if (daysLeftEl) {
     daysLeftEl.textContent = daysLeft > 0 ? `بقي حوالي ${daysLeft} يوماً` : 'حان موعد لقاء ملاككِ الصغير بإذن الله!';
@@ -340,7 +375,7 @@ function updateDiscoverSections(w) {
       </div>
       <div class="nb-discover-subgrid">
         ${(cat.articles || []).slice(0, 3).map(art => `
-          <div class="nb-discover-card" onclick="window.showDiscoverModal('${escapeHtml(art.title)}', '${escapeHtml(art.content)}')">
+          <div class="nb-discover-card" onclick="window.showDiscoverByIndex(${cats.indexOf(cat)}, ${(cat.articles || []).indexOf(art)})">
             <div class="nb-discover-card-img" style="background-image:url('${art.image}')">
               <span class="nb-discover-emoji">${art.emoji || '✨'}</span>
             </div>
@@ -355,6 +390,11 @@ function updateDiscoverSections(w) {
     </div>
   `).join('');
 }
+
+window.showDiscoverByIndex = function (ci, ai) {
+  const art = discoverData?.categories?.[ci]?.articles?.[ai];
+  if (art) window.showDiscoverModal(esc(art.title), esc(art.content || art.summary || ''));
+};
 
 window.showDiscoverModal = function(title, content) {
   let modal = document.getElementById('nb-discover-modal');
@@ -467,18 +507,27 @@ function setupDueDateModal() {
     userStartDate = lmpDate;
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - lmpDate.getTime()) / (1000 * 60 * 60 * 24));
-    const calcWeek = Math.min(42, Math.max(1, Math.floor(diffDays / 7) + 1));
+    const calcWeek = Math.min(42, Math.max(1, Math.floor(diffDays / 7)));
+    userPreg = pregnancyFromStart(lmpDate);
 
     // If logged in, save to Firestore
     if (currentUser) {
       try {
         await db.collection('users').doc(currentUser.uid).set({
-          pregnancyStartDate: input.value,
+          // Timestamp حقيقي — التطبيق يقرأ الحقل كـ Timestamp (النص يُعطّل التطبيق)
+          pregnancyStartDate: window.firebase.firestore.Timestamp.fromDate(lmpDate),
+          // التطبيق يقدّم dueDate على آخر دورة — نحدّثه معها كي لا يبقى تاريخ قديم
+          dueDate: window.firebase.firestore.Timestamp.fromDate(new Date(lmpDate.getTime() + 280 * 86400000)),
+          dueDateSource: 'lmp',
           lifeStage: 'pregnant',
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          postTermAck: null,
+          updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+        sessionStorage.removeItem('nb_user_cache');
+        window.nbToast?.('تم حفظ تاريخ الحمل ✓', 'success');
       } catch (err) {
         console.error('Error saving pregnancy date:', err);
+        window.nbToast?.('تعذّر الحفظ، حاولي مجدداً', 'error');
       }
     }
 
@@ -488,107 +537,28 @@ function setupDueDateModal() {
   };
 }
 
-// Articles Carousel (from web/data/articles/index.json)
+// كاروسال مقالات الحمل (ملف خفيف top_pregnancy.json)
 async function loadPregnancyArticles() {
   const container = document.getElementById('nb-pregnancy-articles-carousel');
   if (!container) return;
-
-  try {
-    const res = await fetch('/data/articles/index.json');
-    const articles = await res.json();
-
-    // Filter articles for pregnancy category or tags
-    const pregArticles = articles.filter(a => {
-      const cat = (a.categoryName || '').toLowerCase();
-      const title = (a.title || '').toLowerCase();
-      return cat.includes('حمل') || title.includes('حمل') || title.includes('جنين') || a.categoryId === 2 || a.categoryId === 'pregnancy';
-    }).slice(0, 8);
-
-    if (pregArticles.length === 0) {
-      container.parentElement.style.display = 'none';
-      return;
-    }
-
-    container.innerHTML = pregArticles.map(art => `
-      <a href="/article/${art.id}" class="nb-art-card">
-        <div class="nb-art-img-wrap">
-          <img src="${art.imagePath || '/img/articles_bg/art_bg_1.png'}" alt="${art.title}" class="nb-art-img" loading="lazy">
-          <span class="nb-art-float-cat">🤰 ${art.categoryName || 'موسوعة الحمل'}</span>
-        </div>
-        <div class="nb-art-body">
-          <div>
-            <h4 class="nb-art-title">${art.title}</h4>
-            <p class="nb-art-desc">${art.summary || 'دليل شامل وموثوق من فريق تحرير نبضة لمرافقتكِ أسبوعاً بأسبوع.'}</p>
-          </div>
-          <div class="nb-art-footer">
-            <span class="nb-art-time">⏱️ ${art.readTime || '3 دقائق'} قراءة</span>
-            <span class="nb-art-cta">قراءة المقال ←</span>
-          </div>
-        </div>
-      </a>
-    `).join('');
-  } catch (err) {
-    console.error('Error loading pregnancy articles:', err);
-  }
+  const list = (await getTopArticles('pregnancy')).slice(0, 10);
+  if (!list.length) { container.closest('section, .nb-section, div').style.display = 'none'; return; }
+  container.innerHTML = list.map((a) => articleCardHtml(a, '🤰')).join('');
 }
 
-// Pregnancy Recommended Products Carousel (filtered by isHiddenProduct)
+// منتجات قد تهمّكِ — منتجات الحمل أوّلاً، مع استبعاد المكمّلات والأجهزة الطبية
 async function loadPregnancyProducts() {
   const container = document.getElementById('nb-pregnancy-products-carousel');
   if (!container) return;
-
   try {
-    const snap = await db.collection('products')
-      .where('active', '==', true)
-      .limit(20)
-      .get();
-
-    const products = [];
-    snap.forEach(doc => {
-      const p = { id: doc.id, ...doc.data() };
-      // Filter compliance (no medical/supplements)
-      if (!isHiddenProduct(p)) {
-        // Prefer products tagged for pregnancy/mom or maternity
-        const tags = p.lifeStageTags || [];
-        const cat = p.category || '';
-        if (tags.includes('pregnant') || tags.includes('mom') || cat.includes('حمل') || cat.includes('أمومة') || cat.includes('رضاعة')) {
-          products.push(p);
-        } else if (products.length < 6) {
-          products.push(p);
-        }
-      }
-    });
-
-    if (products.length === 0) {
-      container.parentElement.style.display = 'none';
-      return;
-    }
-
-    container.innerHTML = products.slice(0, 8).map(p => {
-      const slug = p.slug || p.id;
-      const img = p.image || p.imageUrl || (p.images && p.images[0]) || '/landing-assets/slide-store.png';
-      const price = Number(p.price || 0).toLocaleString();
-
-      return `
-        <div class="nb-prod-card" onclick="window.location.href='/product/${slug}'">
-          <div class="nb-prod-img-wrap">
-            <img src="${img}" alt="${p.name}" class="nb-prod-img" loading="lazy">
-          </div>
-          <div class="nb-prod-body">
-            <div>
-              <div style="font-size:11px;color:var(--nb-pink);font-weight:800;margin-bottom:4px">${p.category || 'العناية بالحامل'}</div>
-              <h4 style="font-size:14px;font-weight:800;color:var(--nb-ink);line-height:1.4;margin-bottom:8px">${p.name}</h4>
-            </div>
-            <div>
-              <div style="font-size:15px;font-weight:900;color:var(--nb-pink);margin-bottom:10px">${price} دج</div>
-              <button class="nb-btn-primary" style="width:100%;font-size:12.5px;padding:6px 12px">عرض المنتج</button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    const all = await getVisibleProducts();
+    const preg = all.filter((p) => productMatchesStage(p, 'pregnant') || productMatchesStage(p, 'mom'));
+    const list = [...preg, ...all.filter((p) => !preg.includes(p))].slice(0, 10);
+    if (!list.length) { container.parentElement.style.display = 'none'; return; }
+    container.innerHTML = list.map(productCardHtml).join('');
   } catch (err) {
     console.error('Error loading pregnancy products:', err);
+    container.parentElement.style.display = 'none';
   }
 }
 

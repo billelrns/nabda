@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/community_engagement_service.dart';
 import '../../models/community_post_model.dart';
 import '../../widgets/follow_button.dart';
+import '../../widgets/club_month_carousel.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({Key? key}) : super(key: key);
@@ -861,62 +862,19 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
               const SizedBox(height: 14),
               Flexible(
-                child: ListView.separated(
+                child: GridView.builder(
                   shrinkWrap: true,
                   itemCount: keys.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 0.78,
+                  ),
                   itemBuilder: (_, i) {
                     final k = keys[i];
-                    final isMine = k == myKey;
-                    final isCurrent = k == (_browsingCohortKey ?? myKey);
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(14),
+                    return ClubPickerTile(
+                      cohortKey: k,
+                      mine: k == myKey,
+                      current: k == (_browsingCohortKey ?? myKey),
                       onTap: () => Navigator.pop(context, k),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                        decoration: BoxDecoration(
-                          color: isCurrent
-                              ? const Color(0xFF00897B).withOpacity(0.09)
-                              : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isCurrent
-                                ? const Color(0xFF00897B).withOpacity(0.35)
-                                : Colors.grey.shade200,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.groups_rounded,
-                                size: 19,
-                                color: isCurrent ? const Color(0xFF00897B) : Colors.grey.shade500),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                CohortService.labelForKey(k),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
-                                  color: const Color(0xFF2D2D3A),
-                                ),
-                              ),
-                            ),
-                            if (isMine)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE91E63).withOpacity(0.10),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text('ناديكِ',
-                                    style: TextStyle(
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFFE91E63))),
-                              ),
-                          ],
-                        ),
-                      ),
                     );
                   },
                 ),
@@ -931,127 +889,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
+  /// كاروسال أندية الولادة بأيقونات الأشهر — نفس تصميم الموقع (club_month_carousel.dart)
   Widget _buildCohortHeaderCard(String cohortKey, {required String myKey}) {
-    final isVisiting = cohortKey != myKey;
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance.collection('cohort_members_count').doc(cohortKey).snapshots(),
-      builder: (context, countSnap) {
-        final count = countSnap.data?.data()?['memberCount'] ?? 1;
-        return Container(
-          width: double.infinity,
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF00897B), Color(0xFF00695C)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF00897B).withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.groups_rounded, color: Colors.white, size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _formatCohortName(cohortKey),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          isVisiting
-                              ? '$count عضوة · أنتِ تتصفّحين هذا النادي'
-                              : '$count عضوة في ناديكِ',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.85),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // زر تصفّح الأندية
-                  InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => _openClubPicker(myKey),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.swap_horiz_rounded, color: Colors.white, size: 17),
-                          SizedBox(width: 5),
-                          Text('الأندية',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (isVisiting) ...[
-                const SizedBox(height: 12),
-                InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: () => setState(() => _browsingCohortKey = null),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 9),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.16),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.arrow_back_rounded, color: Colors.white, size: 15),
-                        SizedBox(width: 6),
-                        Text('العودة إلى ناديكِ',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
+    return ClubMonthCarousel(
+      viewKey: cohortKey,
+      myKey: myKey,
+      onSelect: (k) => setState(() => _browsingCohortKey = k == myKey ? null : k),
+      onOpenAll: () => _openClubPicker(myKey),
     );
   }
 

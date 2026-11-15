@@ -4,12 +4,21 @@
  */
 
 import { auth, db } from '../firebase-init.js';
-import { isHiddenProduct } from '../shop-rules.js';
+import { toDate, escapeHtml as esc, getTopArticles, articleCardHtml, getVisibleProducts, productMatchesStage, productCardHtml } from '../utils.js';
 
 let babyMonthsData = [];
 let currentMonth = 0;
 let currentUser = null;
 let userProfile = null;
+// ── عدّة أطفال، متزامنون لحظياً مع التطبيق (نفس مسار DB.babies في main.dart) ──
+let babiesRef = null;   // users/{uid}/babies أو couples/{coupleId}/babies عند الاقتران
+let profileRef = null;  // users/{uid} (أو مرآة الزوجين للأب)
+let babies = [];        // [{id, name, birthDate, gender, ...}] مرتّبة بتاريخ الإضافة
+let selectedBabyId = null;
+let editingId = null;   // null = إضافة
+let unsubs = [];
+let monthFromUrlGlobal = null;
+let autoMonthDone = false;
 
 export async function initBabyPage() {
   try {
@@ -21,15 +30,27 @@ export async function initBabyPage() {
 
   const monthFromUrl = parseMonthFromUrl();
 
+  monthFromUrlGlobal = monthFromUrl;
   auth.onAuthStateChanged(async (user) => {
     currentUser = user;
+    unsubs.forEach((u) => u()); unsubs = [];
     if (user) {
       try {
         const snap = await db.collection('users').doc(user.uid).get();
-        if (snap.exists) {
-          userProfile = snap.data();
-          handleBabyUserData(userProfile, monthFromUrl);
-        }
+        userProfile = snap.exists ? snap.data() : {};
+        const cid = userProfile.coupleId || null;
+        babiesRef = cid ? db.collection('couples').doc(cid).collection('babies') : db.collection('users').doc(user.uid).collection('babies');
+        profileRef = (cid && userProfile.role === 'partner') ? db.collection('couples').doc(cid).collection('shared').doc('userdoc') : db.collection('users').doc(user.uid);
+        // تحديث لحظي: أي تغيير من التطبيق يظهر هنا فوراً والعكس
+        unsubs.push(babiesRef.onSnapshot((qs) => {
+          babies = qs.docs.map((d) => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => (toDate(a.createdAt)?.getTime() ?? Infinity) - (toDate(b.createdAt)?.getTime() ?? Infinity));
+          renderBabies();
+        }, (e) => { console.warn('babies stream', e); handleBabyUserData(userProfile, monthFromUrl); }));
+        unsubs.push(profileRef.onSnapshot((d) => {
+          userProfile = { ...userProfile, ...(d.exists ? d.data() : {}) };
+          if (userProfile.selectedBabyId && userProfile.selectedBabyId !== selectedBabyId) { selectedBabyId = userProfile.selectedBabyId; renderBabies(); }
+        }, () => {}));
       } catch (e) {
         console.warn('Could not read user profile for baby page:', e);
       }
@@ -68,26 +89,87 @@ function parseMonthFromUrl() {
   return null;
 }
 
+/** الطفل المختار (أو الأول)، مع رجوع لحقول users القديمة إن لم تكن هناك قائمة أطفال */
+function activeBaby() {
+  if (babies.length) return babies.find((b) => b.id === selectedBabyId) || babies[0];
+  if (userProfile && (userProfile.babyBirthDate || userProfile.babyName)) return { id: null, name: userProfile.babyName, birthDate: userProfile.babyBirthDate, gender: userProfile.babyGender };
+  return null;
+}
+
+function ageText(bDate, name) {
+  const diffDays = Math.max(0, Math.floor((Date.now() - bDate.getTime()) / 86400000));
+  const months = Math.floor(diffDays / 30.4375);
+  const restDays = Math.floor(diffDays - months * 30.4375);
+  return { months, text: months < 1 ? `عمر ${name}: ${diffDays} يوماً 🌸` : `عمر ${name}: ${months} ${months <= 10 ? 'أشهر' : 'شهراً'}${restDays ? ` و${restDays} يوماً` : ''} 🌸` };
+}
+
+function renderBabies() {
+  const b = activeBaby();
+  const banner = document.getElementById('nb-baby-status-banner');
+  if (!b) {
+    if (banner) {
+      banner.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px"><span style="font-size:26px">👶</span>
+          <div><div style="font-weight:800;color:var(--nb-ink);font-size:15px">أضيفي طفلكِ لمتابعة نموّه شهراً بشهر</div>
+          <div style="font-size:13px;color:var(--nb-ink-3)">البيانات متزامنة مع تطبيق نبضة: ما تضيفينه هنا يظهر في التطبيق فوراً.</div></div></div>
+        <button class="nb-btn-primary" style="background:#00897B;font-size:12.5px;padding:7px 16px" onclick="window.openBabyProfileModal()">➕ إضافة طفل</button>`;
+      banner.style.display = 'flex';
+    }
+    return;
+  }
+  const bDate = toDate(b.birthDate);
+  const name = esc(b.name || 'صغيركِ');
+  const boy = (b.gender || b.babyGender) === 'male';
+  const acc = boy ? '#4A90D9' : '#00897B';
+  if (bDate) {
+    const a = ageText(bDate, name);
+    if (monthFromUrlGlobal === null && !autoMonthDone) { autoMonthDone = true; setMonth(Math.min(24, a.months), false); }
+    const heroSubtitle = document.getElementById('nb-baby-hero-subtitle');
+    if (heroSubtitle) heroSubtitle.textContent = a.text;
+  }
+  if (!banner) return;
+  const chips = babies.map((x) => {
+    const on = x.id === b.id; const xb = (x.gender || x.babyGender) === 'male';
+    const c = xb ? '#4A90D9' : '#E91E63';
+    return `<button class="nb-baby-chip" data-baby="${esc(x.id)}" style="display:inline-flex;align-items:center;gap:6px;border:1.5px solid ${on ? c : '#EEE3EA'};background:${on ? c : '#fff'};color:${on ? '#fff' : 'var(--nb-ink)'};border-radius:999px;padding:7px 14px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;box-shadow:${on ? `0 6px 16px ${c}33` : 'none'}">${xb ? '👦' : '👧'} ${esc(x.name || 'طفل')}${on ? ' ✓' : ''}</button>`;
+  }).join('');
+  banner.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:260px">
+      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:26px">${boy ? '👦' : '👶'}</span>
+        <div><div style="font-weight:800;color:var(--nb-ink);font-size:15px">مرحباً بكِ وبـ ${name} في نبضة!</div>
+        <div style="font-size:13px;color:var(--nb-ink-3)">${bDate ? 'تاريخ الميلاد: ' + bDate.toLocaleDateString('ar-DZ', { day: 'numeric', month: 'long', year: 'numeric' }) + ' · ' : ''}متزامن مع تطبيق نبضة لحظياً</div></div></div>
+      ${babies.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${chips}
+        <button onclick="window.openBabyProfileModal()" style="display:inline-flex;align-items:center;gap:6px;border:1.5px dashed #80CBC4;background:#E0F2F1;color:#00796B;border-radius:999px;padding:7px 14px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer">➕ إضافة طفل</button></div>` : ''}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="nb-btn-secondary" style="font-size:12.5px;padding:7px 14px;border-color:${acc};color:${acc}" onclick="window.editActiveBaby()">✏️ تعديل بيانات الطفل</button>
+      ${b.id ? `<button class="nb-btn-secondary" style="font-size:12.5px;padding:7px 14px;color:#C62828;border-color:#FFCDD2" onclick="window.deleteActiveBaby()">🗑️ حذف</button>` : ''}
+      ${!babies.length ? `<button class="nb-btn-primary" style="background:#00897B;font-size:12.5px;padding:7px 14px" onclick="window.openBabyProfileModal()">➕ إضافة طفل</button>` : ''}
+    </div>`;
+  banner.style.display = 'flex';
+  banner.querySelectorAll('[data-baby]').forEach((btn) => btn.onclick = () => selectBaby(btn.dataset.baby));
+}
+
+async function selectBaby(id) {
+  selectedBabyId = id; autoMonthDone = false; renderBabies();
+  const b = babies.find((x) => x.id === id);
+  try { await profileRef?.set({ selectedBabyId: id, ...(b ? { babyName: b.name || '', babyBirthDate: b.birthDate || null } : {}) }, { merge: true }); } catch (_) {}
+}
+
 function handleBabyUserData(profile, monthFromUrl) {
-  const babyBirthStr = profile.babyBirthDate || profile.childBirthDate;
-  const babyName = profile.babyName || profile.childName || 'صغيركِ';
+  const bDate = toDate(profile.babyBirthDate || profile.childBirthDate);
+  const babyName = esc(profile.babyName || profile.childName || 'صغيركِ');
 
-  if (babyBirthStr) {
-    const bDate = new Date(babyBirthStr);
-    if (!isNaN(bDate.getTime())) {
-      const now = new Date();
-      const diffMs = now.getTime() - bDate.getTime();
-      const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-      const months = Math.min(24, Math.floor(diffDays / 30.4375));
-
-      if (monthFromUrl === null) {
-        setMonth(months, false);
-      }
-
-      const heroSubtitle = document.getElementById('nb-baby-hero-subtitle');
-      if (heroSubtitle) {
-        heroSubtitle.textContent = `${babyName} يبلغ من العمر ${months} أشهر و ${diffDays % 30} يوماً 🌸`;
-      }
+  if (bDate) {
+    const diffDays = Math.max(0, Math.floor((Date.now() - bDate.getTime()) / 86400000));
+    const months = Math.floor(diffDays / 30.4375);
+    const restDays = Math.floor(diffDays - months * 30.4375);
+    if (monthFromUrl === null) setMonth(Math.min(24, months), false);
+    const heroSubtitle = document.getElementById('nb-baby-hero-subtitle');
+    if (heroSubtitle) {
+      heroSubtitle.textContent = months < 1
+        ? `عمر ${babyName}: ${diffDays} يوماً 🌸`
+        : `عمر ${babyName}: ${months} ${months <= 10 ? 'أشهر' : 'شهراً'}${restDays ? ` و${restDays} يوماً` : ''} 🌸`;
     }
   }
 
@@ -150,12 +232,12 @@ function renderMonthStrip() {
 
 function scrollActiveMonthIntoView() {
   const container = document.getElementById('nb-month-strip');
-  const activeBtn = container?.querySelector(`.nb-week-pill[data-month="${currentMonth}"]`);
-  if (container && activeBtn) {
-    const offset = activeBtn.offsetLeft - (container.clientWidth / 2) + (activeBtn.clientWidth / 2);
-    container.scrollTo({ left: offset, behavior: 'smooth' });
-  }
+  const btn = container?.querySelector(`.nb-week-pill[data-month="${currentMonth}"]`);
+  if (!container || !btn) return;
+  const cr = container.getBoundingClientRect(); const br = btn.getBoundingClientRect();
+  container.scrollBy({ left: (br.left + br.width / 2) - (cr.left + cr.width / 2), behavior: 'smooth' });
 }
+
 
 window.selectBabyMonth = function(m) {
   setMonth(m, true);
@@ -234,144 +316,113 @@ function updateBabySeo(monthNum, data) {
 async function loadBabyArticles() {
   const container = document.getElementById('nb-baby-articles-carousel');
   if (!container) return;
-
-  try {
-    const res = await fetch('/data/articles/index.json');
-    const articles = await res.json();
-    const babyArts = articles.filter(a => {
-      const cat = (a.categoryName || '').toLowerCase();
-      const title = (a.title || '').toLowerCase();
-      return cat.includes('طفل') || cat.includes('رضيع') || title.includes('طفل') || title.includes('رضيع') || a.categoryId === 3;
-    }).slice(0, 6);
-
-    if (babyArts.length === 0) {
-      container.parentElement.style.display = 'none';
-      return;
-    }
-
-    container.innerHTML = babyArts.map(art => `
-      <a href="/article/${art.id}" class="nb-art-card">
-        <div class="nb-art-img-wrap">
-          <img src="${art.imagePath || '/img/articles_bg/art_bg_2.png'}" alt="${art.title}" class="nb-art-img" loading="lazy">
-          <span class="nb-art-float-cat">👶 رعاية الطفل</span>
-        </div>
-        <div class="nb-art-body">
-          <h4 class="nb-art-title">${art.title}</h4>
-          <p class="nb-art-desc">${art.summary || 'نصائح وإرشادات موثوقة من فريق تحرير نبضة لمرافقة نمو صغيركِ.'}</p>
-          <div class="nb-art-footer">
-            <span class="nb-art-time">⏱️ ${art.readTime || '3 دقائق'}</span>
-            <span class="nb-art-cta">قراءة المقال ←</span>
-          </div>
-        </div>
-      </a>
-    `).join('');
-  } catch (err) {
-    console.error('Error loading baby articles:', err);
-  }
+  const list = (await getTopArticles('baby')).slice(0, 10);
+  if (!list.length) { container.parentElement.style.display = 'none'; return; }
+  container.innerHTML = list.map((a) => articleCardHtml(a, '👶')).join('');
 }
 
 async function loadBabyProducts() {
   const container = document.getElementById('nb-baby-products-carousel');
   if (!container) return;
-
   try {
-    const snap = await db.collection('products')
-      .where('active', '==', true)
-      .limit(20)
-      .get();
-
-    const products = [];
-    snap.forEach(doc => {
-      const p = { id: doc.id, ...doc.data() };
-      if (!isHiddenProduct(p)) {
-        const tags = p.lifeStageTags || [];
-        const cat = p.category || '';
-        if (tags.includes('baby') || tags.includes('newborn') || cat.includes('طفل') || cat.includes('مولود') || cat.includes('ملابس أطفال')) {
-          products.push(p);
-        } else if (products.length < 4) {
-          products.push(p);
-        }
-      }
-    });
-
-    if (products.length === 0) {
-      container.parentElement.style.display = 'none';
-      return;
-    }
-
-    container.innerHTML = products.slice(0, 8).map(p => {
-      const slug = p.slug || p.id;
-      const img = p.image || p.imageUrl || (p.images && p.images[0]) || '/landing-assets/slide-store.png';
-      const price = Number(p.price || 0).toLocaleString();
-
-      return `
-        <div class="nb-prod-card" onclick="window.location.href='/product/${slug}'">
-          <div class="nb-prod-img-wrap">
-            <img src="${img}" alt="${p.name}" class="nb-prod-img" loading="lazy">
-          </div>
-          <div class="nb-prod-body">
-            <div>
-              <div style="font-size:11px;color:var(--nb-pink);font-weight:800;margin-bottom:4px">${p.category || 'مستلزمات الطفل'}</div>
-              <h4 style="font-size:14px;font-weight:800;color:var(--nb-ink);line-height:1.4;margin-bottom:8px">${p.name}</h4>
-            </div>
-            <div>
-              <div style="font-size:15px;font-weight:900;color:var(--nb-pink);margin-bottom:10px">${price} دج</div>
-              <button class="nb-btn-primary" style="width:100%;font-size:12.5px;padding:6px 12px">عرض المنتج</button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    const all = await getVisibleProducts();
+    const fit = all.filter((p) => productMatchesStage(p, 'newborn') || productMatchesStage(p, 'baby'));
+    const list = [...fit, ...all.filter((p) => !fit.includes(p))].slice(0, 10);
+    if (!list.length) { container.parentElement.style.display = 'none'; return; }
+    container.innerHTML = list.map(productCardHtml).join('');
   } catch (err) {
     console.error('Error loading baby products:', err);
+    container.parentElement.style.display = 'none';
   }
 }
 
-// Modal for setting/updating baby's birth date
+// ── نافذة إضافة / تعديل طفل (نفس الحقول التي يكتبها التطبيق) ──
+function fillModal(b) {
+  const t = document.getElementById('nb-baby-modal-title');
+  if (t) t.textContent = b ? `تعديل بيانات ${b.name || 'الطفل'}` : (currentUser ? 'إضافة طفل جديد' : 'تحديد عمر وبيانات طفلكِ');
+  document.getElementById('nb-baby-name-input').value = b?.name || '';
+  const d = b ? toDate(b.birthDate) : null;
+  document.getElementById('nb-baby-birth-input').value = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+  const g = document.getElementById('nb-baby-gender-input'); if (g) g.value = (b?.gender || b?.babyGender || '');
+  const del = document.getElementById('nb-baby-delete-btn'); if (del) del.style.display = b && b.id ? 'inline-flex' : 'none';
+}
+
 window.openBabyProfileModal = function() {
-  const modal = document.getElementById('nb-baby-date-modal');
-  if (modal) modal.classList.add('open');
+  editingId = null; fillModal(null);
+  document.getElementById('nb-baby-date-modal')?.classList.add('open');
+};
+window.editActiveBaby = function() {
+  const b = activeBaby();
+  if (!b) return window.openBabyProfileModal();
+  editingId = b.id || '__legacy__'; fillModal(b);
+  document.getElementById('nb-baby-date-modal')?.classList.add('open');
 };
 
 window.closeBabyProfileModal = function() {
-  const modal = document.getElementById('nb-baby-date-modal');
-  if (modal) modal.classList.remove('open');
+  document.getElementById('nb-baby-date-modal')?.classList.remove('open');
 };
 
 window.saveBabyBirthDate = async function() {
   const nameInput = document.getElementById('nb-baby-name-input');
   const dateInput = document.getElementById('nb-baby-birth-input');
-  if (!dateInput || !dateInput.value) {
-    alert('يرجى اختيار تاريخ ميلاد الطفل.');
-    return;
-  }
-
-  const bDate = new Date(dateInput.value);
-  if (isNaN(bDate.getTime()) || bDate > new Date()) {
-    alert('يرجى إدخال تاريخ ميلاد صحيح في الماضي.');
-    return;
-  }
-
+  const gender = document.getElementById('nb-baby-gender-input')?.value || '';
+  if (!dateInput || !dateInput.value) { alert('يرجى اختيار تاريخ ميلاد الطفل.'); return; }
+  const bDate = new Date(dateInput.value + 'T12:00:00');
+  if (isNaN(bDate.getTime()) || bDate > new Date()) { alert('يرجى إدخال تاريخ ميلاد صحيح في الماضي.'); return; }
   const babyName = nameInput?.value?.trim() || 'صغيركِ';
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - bDate.getTime()) / (1000 * 60 * 60 * 24));
-  const months = Math.min(24, Math.floor(diffDays / 30.4375));
+  const months = Math.min(24, Math.floor((Date.now() - bDate.getTime()) / 86400000 / 30.4375));
 
-  if (currentUser) {
+  if (currentUser && babiesRef) {
+    const FS = window.firebase.firestore;
+    const ts = FS.Timestamp.fromDate(bDate);
     try {
-      await db.collection('users').doc(currentUser.uid).set({
-        babyBirthDate: dateInput.value,
-        babyName: babyName,
-        lifeStage: 'baby',
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
+      let id = editingId;
+      if (!id || id === '__legacy__') {
+        // إضافة: نفس وثيقة التطبيق (_addBaby في main.dart)
+        const ref = await babiesRef.add({ name: babyName, birthDate: ts, weight: 0, height: 0, gender, createdAt: FS.FieldValue.serverTimestamp(), userId: currentUser.uid });
+        id = ref.id;
+      } else {
+        await babiesRef.doc(id).set({ name: babyName, birthDate: ts, gender, updatedAt: FS.FieldValue.serverTimestamp() }, { merge: true });
+      }
+      // الطفل النشط في الحساب (يقرؤه التطبيق) — لا نغيّر مرحلة الحياة إلا إن لم تُحدَّد
+      const upd = { selectedBabyId: id, babyName, babyBirthDate: ts, babyGender: gender, updatedAt: FS.FieldValue.serverTimestamp() };
+      if (!userProfile?.lifeStage) upd.lifeStage = 'baby';
+      await profileRef.set(upd, { merge: true });
+      selectedBabyId = id; autoMonthDone = false;
+      sessionStorage.removeItem('nb_user_cache');
+      window.nbToast?.(editingId ? 'حُدّثت بيانات الطفل ✓ (تظهر في التطبيق فوراً)' : 'أُضيف الطفل ✓ (يظهر في التطبيق فوراً)', 'success');
     } catch (err) {
       console.error('Error saving baby profile:', err);
+      window.nbToast?.('تعذّر الحفظ، حاولي مجدداً', 'error');
+      return;
     }
   }
-
   setMonth(months, true);
   window.closeBabyProfileModal();
+};
+
+window.deleteActiveBaby = async function() {
+  const b = editingId && editingId !== '__legacy__' ? babies.find((x) => x.id === editingId) : activeBaby();
+  if (!b || !b.id || !babiesRef) return;
+  if (!confirm(`حذف «${b.name || 'الطفل'}» وكل بياناته من نبضة (الموقع والتطبيق)؟ لا يمكن التراجع.`)) return;
+  const FS = window.firebase.firestore;
+  try {
+    // سجلّات الطفل اليومية (babies/{id}/logs) ثم وثيقته
+    const logs = await babiesRef.doc(b.id).collection('logs').limit(400).get().catch(() => null);
+    if (logs && !logs.empty) { const batch = db.batch(); logs.docs.forEach((d) => batch.delete(d.ref)); await batch.commit(); }
+    await babiesRef.doc(b.id).delete();
+    const rest = babies.filter((x) => x.id !== b.id);
+    const next = rest[0];
+    await profileRef.set(next
+      ? { selectedBabyId: next.id, babyName: next.name || '', babyBirthDate: next.birthDate || null, babyGender: next.gender || '' }
+      : { selectedBabyId: FS.FieldValue.delete(), babyName: FS.FieldValue.delete(), babyBirthDate: FS.FieldValue.delete(), babyGender: FS.FieldValue.delete() }, { merge: true });
+    selectedBabyId = next ? next.id : null;
+    window.closeBabyProfileModal();
+    window.nbToast?.('حُذف الطفل', 'success');
+  } catch (err) {
+    console.error('delete baby', err);
+    window.nbToast?.('تعذّر الحذف، حاولي مجدداً', 'error');
+  }
 };
 
 function getFallbackMonth(m) {

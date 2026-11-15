@@ -6,6 +6,19 @@
   "storage": {
     "rules": "storage.rules"
   },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
   "hosting": {
     "public": "build/web",
     "ignore": [
@@ -13,14 +26,158 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "redirects": [
+      {
+        "source": "/landing",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/landing.html",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/home.html",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/shop/:slug",
+        "destination": "/product/:slug",
+        "type": 301
+      },
+      {
+        "source": "/sa",
+        "destination": "/sa/shop",
+        "type": 302
+      },
+      {
+        "source": "/sa/shop/:slug",
+        "destination": "/sa/product/:slug",
+        "type": 301
+      }
+    ],
     "rewrites": [
+      {
+        "source": "/app",
+        "destination": "/app/index.html"
+      },
+      {
+        "source": "/app/**",
+        "destination": "/app/index.html"
+      },
+      {
+        "source": "/pregnancy",
+        "destination": "/pregnancy.html"
+      },
+      {
+        "source": "/pregnancy/**",
+        "destination": "/pregnancy.html"
+      },
+      {
+        "source": "/baby",
+        "destination": "/baby.html"
+      },
+      {
+        "source": "/baby/**",
+        "destination": "/baby.html"
+      },
+      {
+        "source": "/cycle",
+        "destination": "/cycle.html"
+      },
+      {
+        "source": "/fertility",
+        "destination": "/fertility.html"
+      },
+      {
+        "source": "/qadaa",
+        "destination": "/qadaa.html"
+      },
+      {
+        "source": "/fiqh",
+        "destination": "/fiqh.html"
+      },
+      {
+        "source": "/community",
+        "destination": "/community.html"
+      },
+      {
+        "source": "/community/**",
+        "destination": "/community.html"
+      },
       {
         "source": "/shop",
         "destination": "/shop.html"
       },
       {
-        "source": "/shop/**",
+        "source": "/shop/c/**",
         "destination": "/shop.html"
+      },
+      {
+        "source": "/product/**",
+        "destination": "/product.html"
+      },
+      {
+        "source": "/cart",
+        "destination": "/cart.html"
+      },
+      {
+        "source": "/checkout",
+        "destination": "/checkout.html"
+      },
+      {
+        "source": "/sa/shop",
+        "destination": "/shop.html"
+      },
+      {
+        "source": "/sa/shop/c/**",
+        "destination": "/shop.html"
+      },
+      {
+        "source": "/sa/product/**",
+        "destination": "/product.html"
+      },
+      {
+        "source": "/sa/cart",
+        "destination": "/cart.html"
+      },
+      {
+        "source": "/sa/checkout",
+        "destination": "/checkout.html"
+      },
+      {
+        "source": "/account",
+        "destination": "/account.html"
+      },
+      {
+        "source": "/account/**",
+        "destination": "/account.html"
+      },
+      {
+        "source": "/login",
+        "destination": "/login.html"
+      },
+      {
+        "source": "/signup",
+        "destination": "/login.html"
+      },
+      {
+        "source": "/admin",
+        "destination": "/admin.html"
+      },
+      {
+        "source": "/admin/**",
+        "destination": "/admin.html"
+      },
+      {
+        "source": "/article",
+        "destination": "/article.html"
+      },
+      {
+        "source": "/article/**",
+        "destination": "/article.html"
       },
       {
         "source": "/articles",
@@ -29,14 +186,6 @@
       {
         "source": "/articles/**",
         "destination": "/articles.html"
-      },
-      {
-        "source": "/landing",
-        "destination": "/landing.html"
-      },
-      {
-        "source": "**",
-        "destination": "/index.html"
       }
     ],
     "headers": [
@@ -70,7 +219,56 @@
         ]
       },
       {
-        "source": "/index.html",
+        "source": "/@(admin|admin.html|account|account.html|cart|cart.html|checkout|checkout.html|login|login.html)",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/@(admin|account)/**",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=300"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/data/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400"
+          }
+        ]
+      },
+      {
+        "source": "/@(index.html|app/index.html)",
         "headers": [
           {
             "key": "Cache-Control",
@@ -79,7 +277,7 @@
         ]
       },
       {
-        "source": "/flutter_service_worker.js",
+        "source": "/@(flutter_service_worker.js|app/flutter_service_worker.js|app/flutter_bootstrap.js)",
         "headers": [
           {
             "key": "Cache-Control",
@@ -88,7 +286,7 @@
         ]
       },
       {
-        "source": "**/*.@(js|css|woff|woff2|ttf|otf|png|jpg|jpeg|svg|webp|ico|wasm)",
+        "source": "**/*.@(woff|woff2|ttf|otf|png|jpg|jpeg|svg|webp|ico|wasm)",
         "headers": [
           {
             "key": "Cache-Control",
@@ -97,7 +295,7 @@
         ]
       },
       {
-        "source": "/canvaskit/**",
+        "source": "/@(canvaskit|app/canvaskit)/**",
         "headers": [
           {
             "key": "Cache-Control",

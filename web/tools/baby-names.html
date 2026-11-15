@@ -31,6 +31,10 @@
   }
   </script>
 
+    <link rel="stylesheet" href="/css/site.css">
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <style>
     :root {
       --primary: #E91E63;
@@ -190,24 +194,7 @@
 <body>
 
   <!-- Header -->
-  <header class="header">
-    <div class="header-inner">
-      <a href="/" class="logo-box">
-        <div class="logo-badge">♥</div>
-        <span class="logo-text">نبضة</span>
-      </a>
-      <nav class="nav-links">
-        <a href="/" class="nav-link">الرئيسية</a>
-        <a href="/tools/due-date.html" class="nav-link">حاسبة الولادة</a>
-        <a href="/tools/ovulation.html" class="nav-link">التبويض والخصوبة</a>
-        <a href="/tools/baby-names.html" class="nav-link active">أسماء المواليد</a>
-        <a href="/tools/fetus-size.html" class="nav-link">حجم الجنين</a>
-        <a href="/articles.html" class="nav-link">موسوعة نبضة</a>
-        <a href="/shop" class="nav-link">المتجر</a>
-      </nav>
-      <a href="/" class="app-btn">تطبيق نبضة</a>
-    </div>
-  </header>
+  <header id="nb-header" style="min-height:96px"></header>
 
   <main class="container">
     <div class="breadcrumbs">
@@ -231,6 +218,7 @@
           <button class="filter-tab" onclick="setGenderFilter('boy', this)">أولاد 👦</button>
           <button class="filter-tab" onclick="setGenderFilter('islamic', this)">قرآنية وإسلامية ✨</button>
           <button class="filter-tab" onclick="setGenderFilter('popular', this)">الأكثر شيوعاً ⭐</button>
+          <button class="filter-tab" id="twinsTab" onclick="showTwins(this)">أسماء التوائم 👯</button>
         </div>
         <div class="results-count" id="countDisplay">1765 اسماً متاحاً</div>
       </div>
@@ -2005,6 +1993,13 @@
 <li class="name boy" data-g="m" data-q="1" data-p="917"><a href="/tools/names/nassir-el-din.html"><h3>نصير الدين</h3></a><p>المؤيد والناصر للدين…</p><span class="countries">الجزائر</span></li>
     </ul>
 
+    <!-- أسماء التوائم (ثنائي / ثلاثي / رباعي) — من twin_names_database.dart في التطبيق -->
+    <section id="twinsBox" style="display:none">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px" id="twinTypeChips"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px" id="twinGenderChips"></div>
+      <div id="twinsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px"></div>
+    </section>
+
     <div class="load-more-box" id="loadMoreBox">
       <button class="load-more-btn" onclick="renderMore()">عرض المزيد من الأسماء (100+)</button>
     </div>
@@ -2023,27 +2018,14 @@
       </ul>
 
       <h2>أسماء التوائم المتناسقة</h2>
-      <p>إذا كنتِ تنتظرين توأماً، فإن التناسق اللفظي أو المعنوي يضفي سحراً خاصاً، مثل الجمع بين (آية وليان)، (ريان وريمان)، (عمر وعلي)، أو (يوسف ويونس). يضم تطبيق نبضة قسماً خاصاً لأكثر من 80 ثنائياً توأمياً متناغماً تم اختياره بعناية فائقة.</p>
+      <p>إذا كنتِ تنتظرين توأماً، فإن التناسق اللفظي أو المعنوي يضفي سحراً خاصاً، مثل الجمع بين (آية وليان)، (ريان وريمان)، (عمر وعلي)، أو (يوسف ويونس). في تبويب <a href="#twins" onclick="showTwins(document.getElementById('twinsTab'));window.scrollTo({top:0,behavior:'smooth'});return false;" style="color:var(--primary);font-weight:800">«أسماء التوائم 👯»</a> أعلاه تجدين 87 مجموعة متناسقة: ثنائية وثلاثية ورباعية، للبنات والأولاد والمختلطة، مع سبب التناسق ومعنى كل اسم — نفس قائمة تطبيق نبضة.</p>
     </article>
   </main>
 
   <div id="toast" class="toast">تم نسخ تفاصيل الاسم بنجاح! 📋</div>
 
   <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-links">
-      <a href="/">الرئيسية</a>
-      <a href="/tools/due-date.html">حاسبة الولادة</a>
-      <a href="/tools/ovulation.html">حاسبة التبويض</a>
-      <a href="/tools/baby-names.html">أسماء المواليد</a>
-      <a href="/tools/fetus-size.html">حجم الجنين</a>
-      <a href="/articles.html">موسوعة نبضة</a>
-      <a href="/shop">المتجر</a>
-      <a href="/privacy.html">سياسة الخصوصية</a>
-      <a href="/terms.html">شروط الاستخدام</a>
-    </div>
-    <p>© 2026 نبضة (Nabda). جميع الحقوق محفوظة. المحتوى لأغراض تثقيفية وإرشادية.</p>
-  </footer>
+  <div id="nb-footer"></div>
 
   <script>
     let currentGender = 'all';
@@ -2103,7 +2085,51 @@
       loadMoreBox.style.display = (visibleCount < matchCount) ? 'block' : 'none';
     }
 
+    // ── أسماء التوائم ──
+    let twins = null; let tType = 'ثنائي'; let tGender = 'الكل';
+    const TW_ICON = { 'ثنائي': '👯', 'ثلاثي': '👨‍👩‍👧', 'رباعي': '👨‍👩‍👧‍👦' };
+    const escH = (x) => String(x || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    function chip(label, on, attr) { return `<button class="filter-tab ${on ? 'active' : ''}" ${attr}>${label}</button>`; }
+    function drawTwins() {
+      const q = normalizeAr(document.getElementById('nameSearch').value);
+      const types = ['ثنائي', 'ثلاثي', 'رباعي'];
+      document.getElementById('twinTypeChips').innerHTML = types.map((t) => chip(`${TW_ICON[t]} ${t} (${twins.filter((x) => x.type === t).length})`, tType === t, `data-tt="${t}"`)).join('');
+      document.getElementById('twinGenderChips').innerHTML = ['الكل', 'بنات', 'أولاد', 'مختلط'].map((g) => chip(g === 'بنات' ? 'بنات 👧' : g === 'أولاد' ? 'أولاد 👦' : g === 'مختلط' ? 'مختلط 👧👦' : 'الكل', tGender === g, `data-tg="${g}"`)).join('');
+      const list = twins.filter((x) => x.type === tType && (tGender === 'الكل' || x.genderType === tGender) && (!q || normalizeAr(x.names.join(' ') + ' ' + x.meaning).includes(q)));
+      document.getElementById('countDisplay').textContent = `${list.length} مجموعة أسماء ${tType === 'ثنائي' ? 'لتوأم' : tType === 'ثلاثي' ? 'لتوائم ثلاثية' : 'لتوائم رباعية'}`;
+      const col = (g) => g === 'بنات' ? 'var(--girl-pink)' : g === 'أولاد' ? 'var(--boy-blue)' : 'var(--teal)';
+      document.getElementById('twinsGrid').innerHTML = list.length ? list.map((x) => `
+        <article style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px;box-shadow:var(--shadow)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:12px;font-weight:800;color:${col(x.genderType)};background:${x.genderType === 'أولاد' ? 'var(--boy-bg)' : x.genderType === 'بنات' ? 'var(--girl-bg)' : '#E0F2F1'};padding:3px 10px;border-radius:999px">${escH(x.type)} • ${escH(x.genderType)}</span>
+            <button onclick="navigator.clipboard&&navigator.clipboard.writeText('${escH(x.names.join(' و '))}')" title="نسخ" style="border:none;background:none;cursor:pointer;font-size:16px">📋</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${x.names.map((n) => `<span style="font-size:20px;font-weight:900;color:${col(x.genderType)};background:var(--primary-soft);border-radius:12px;padding:4px 12px">${escH(n)}</span>`).join('<span style="align-self:center;color:var(--text-muted)">•</span>')}</div>
+          <div style="font-size:12.5px;font-weight:800;color:var(--teal);margin-bottom:6px">✨ ${escH(x.harmonyReason)}</div>
+          <p style="font-size:13.5px;color:var(--text-muted);line-height:1.8">${escH(x.meaning)}</p>
+        </article>`).join('') : '<p style="text-align:center;color:var(--text-muted);padding:30px">لا توجد مجموعات مطابقة</p>';
+      document.querySelectorAll('[data-tt]').forEach((b) => b.onclick = () => { tType = b.dataset.tt; drawTwins(); });
+      document.querySelectorAll('[data-tg]').forEach((b) => b.onclick = () => { tGender = b.dataset.tg; drawTwins(); });
+    }
+    async function showTwins(btn) {
+      document.querySelectorAll('.gender-tabs .filter-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentGender = 'twins';
+      document.getElementById('namesGrid').style.display = 'none';
+      document.getElementById('loadMoreBox').style.display = 'none';
+      document.getElementById('twinsBox').style.display = 'block';
+      if (!twins) {
+        document.getElementById('twinsGrid').innerHTML = '<p style="padding:30px;text-align:center">جاري التحميل…</p>';
+        try { twins = await (await fetch('/tools/data/twin_names.json')).json(); } catch (_) { twins = []; }
+      }
+      drawTwins();
+      if (location.hash !== '#twins') history.replaceState(null, '', '#twins');
+    }
+
     function setGenderFilter(filter, btn) {
+      document.getElementById('twinsBox').style.display = 'none';
+      document.getElementById('namesGrid').style.display = '';
+      if (location.hash === '#twins') history.replaceState(null, '', location.pathname);
       document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentGender = filter;
@@ -2112,6 +2138,7 @@
     }
 
     function handleSearch() {
+      if (currentGender === 'twins') return drawTwins();
       currentLimit = 150;
       applyFilters();
     }
@@ -2122,6 +2149,8 @@
     }
 
     applyFilters();
+    if (location.hash === '#twins') showTwins(document.getElementById('twinsTab'));
   </script>
+  <script type="module" src="/js/shell.js"></script>
 </body>
 </html>

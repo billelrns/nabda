@@ -4,7 +4,7 @@
  */
 
 import { auth, db } from '../firebase-init.js';
-import { isHiddenProduct } from '../shop-rules.js';
+import { toDate, getTopArticles, articleCardHtml, getVisibleProducts, productMatchesStage, productCardHtml } from '../utils.js';
 
 let currentUser = null;
 let userProfile = null;
@@ -21,9 +21,8 @@ export async function initCyclePage() {
         const snap = await db.collection('users').doc(user.uid).get();
         if (snap.exists) {
           userProfile = snap.data();
-          if (userProfile.lastPeriodDate) {
-            lastPeriodDate = new Date(userProfile.lastPeriodDate);
-          }
+          // التطبيق يحفظ lastPeriodStart (Timestamp)
+          lastPeriodDate = toDate(userProfile.lastPeriodStart || userProfile.lastPeriodDate);
           if (userProfile.cycleLength) {
             cycleLength = parseInt(userProfile.cycleLength, 10) || 28;
           }
@@ -36,10 +35,12 @@ export async function initCyclePage() {
       }
     }
 
-    // Default if not set
-    if (!lastPeriodDate || isNaN(lastPeriodDate.getTime())) {
-      lastPeriodDate = new Date();
-      lastPeriodDate.setDate(lastPeriodDate.getDate() - 14); // mid-cycle default
+    // زائرة: آخر قيمة أدخلتها محلياً (لا نختلق تاريخاً وهمياً أبداً)
+    if (!lastPeriodDate) {
+      try {
+        const loc = JSON.parse(localStorage.getItem('nb_cycle_local') || 'null');
+        if (loc) { lastPeriodDate = toDate(loc.start); cycleLength = loc.len || 28; }
+      } catch (_) {}
     }
 
     renderCycleSummary();
@@ -68,7 +69,16 @@ export async function initCyclePage() {
 }
 
 function renderCycleSummary() {
-  if (!lastPeriodDate) return;
+  if (!lastPeriodDate) {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('nb-cycle-current-day', '—');
+    set('nb-next-period-date', '—');
+    set('nb-days-until-next', 'أدخلي تاريخ آخر دورة');
+    set('nb-cycle-phase-emoji', '🌸');
+    set('nb-cycle-phase-title', 'لنبدأ: متى بدأت آخر دورة؟');
+    set('nb-cycle-phase-desc', 'أدخلي تاريخ أول يوم من آخر دورة ومتوسط طولها، وسنلوّن لكِ التقويم بالدورة المتوقّعة وأيام الخصوبة.');
+    return;
+  }
 
   const now = new Date();
   const diffMs = now.getTime() - lastPeriodDate.getTime();
@@ -207,23 +217,27 @@ function setupCycleModal() {
       return;
     }
 
-    const newDate = new Date(dateInput.value);
-    const newLen = parseInt(lengthInput?.value, 10) || 28;
+    const newDate = new Date(dateInput.value + 'T00:00:00');
+    const newLen = Math.min(45, Math.max(20, parseInt(lengthInput?.value, 10) || 28));
+    if (isNaN(newDate) || newDate > new Date()) { alert('يرجى إدخال تاريخ صحيح في الماضي.'); return; }
 
     lastPeriodDate = newDate;
     cycleLength = newLen;
 
     if (currentUser) {
       try {
-        await db.collection('users').doc(currentUser.uid).set({
-          lastPeriodDate: dateInput.value,
-          cycleLength: newLen,
-          lifeStage: 'cycle',
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        const FS = window.firebase.firestore;
+        const upd = { lastPeriodStart: FS.Timestamp.fromDate(newDate), cycleLength: newLen, updatedAt: FS.FieldValue.serverTimestamp() };
+        // لا نغيّر وضع التطبيق لمن هي حامل أو أم — فقط من لا مرحلة لها
+        if (!userProfile || !userProfile.lifeStage) upd.lifeStage = 'cycle';
+        await db.collection('users').doc(currentUser.uid).set(upd, { merge: true });
+        window.nbToast?.('تم حفظ دورتكِ ✓', 'success');
       } catch (err) {
         console.error('Error saving cycle data to firestore:', err);
+        window.nbToast?.('تعذّر الحفظ، حاولي مجدداً', 'error');
       }
+    } else {
+      localStorage.setItem('nb_cycle_local', JSON.stringify({ start: newDate.toISOString(), len: newLen }));
     }
 
     renderCycleSummary();
@@ -235,90 +249,22 @@ function setupCycleModal() {
 async function loadCycleArticles() {
   const container = document.getElementById('nb-cycle-articles-grid');
   if (!container) return;
-
-  try {
-    const res = await fetch('/data/articles/index.json');
-    const articles = await res.json();
-    const cycleArts = articles.filter(a => {
-      const cat = (a.categoryName || '').toLowerCase();
-      const title = (a.title || '').toLowerCase();
-      return cat.includes('دورة') || cat.includes('هرمون') || title.includes('دورة') || a.categoryId === 1;
-    }).slice(0, 3);
-
-    if (cycleArts.length === 0) {
-      container.parentElement.style.display = 'none';
-      return;
-    }
-
-    container.innerHTML = cycleArts.map(art => `
-      <a href="/article/${art.id}" class="nb-art-card">
-        <div class="nb-art-img-wrap">
-          <img src="${art.imagePath || '/img/articles_bg/art_bg_3.png'}" alt="${art.title}" class="nb-art-img" loading="lazy">
-          <span class="nb-art-float-cat">🩸 صحة الدورة</span>
-        </div>
-        <div class="nb-art-body">
-          <h4 class="nb-art-title">${art.title}</h4>
-          <p class="nb-art-desc">${art.summary || 'دليل متوازن لفهم دورتكِ الشهرية والتغيرات الهرمونية.'}</p>
-          <div class="nb-art-footer">
-            <span class="nb-art-time">⏱️ ${art.readTime || '3 دقائق'}</span>
-            <span class="nb-art-cta">قراءة المقال ←</span>
-          </div>
-        </div>
-      </a>
-    `).join('');
-  } catch (err) {
-    console.error('Error loading cycle articles:', err);
-  }
+  const list = (await getTopArticles('health')).filter((a) => a.subcategoryId === 'health_period_cycle' || /دورة|الطمث|الحيض/.test(a.title));
+  const fill = list.length >= 6 ? list : [...list, ...(await getTopArticles('health'))].filter((a, i, arr) => arr.indexOf(a) === i);
+  if (!fill.length) { container.parentElement.style.display = 'none'; return; }
+  container.innerHTML = fill.slice(0, 4).map((a) => articleCardHtml(a, '🌸')).join('');
 }
 
 async function loadCycleProducts() {
   const container = document.getElementById('nb-cycle-products-carousel');
   if (!container) return;
-
   try {
-    const snap = await db.collection('products')
-      .where('active', '==', true)
-      .limit(20)
-      .get();
-
-    const products = [];
-    snap.forEach(doc => {
-      const p = { id: doc.id, ...doc.data() };
-      if (!isHiddenProduct(p)) {
-        const cat = (p.category || '').toLowerCase();
-        if (cat.includes('عناية') || cat.includes('راحة') || cat.includes('شخصية')) {
-          products.push(p);
-        } else if (products.length < 4) {
-          products.push(p);
-        }
-      }
-    });
-
-    if (products.length === 0) {
-      container.parentElement.style.display = 'none';
-      return;
-    }
-
-    container.innerHTML = products.slice(0, 4).map(p => {
-      const slug = p.slug || p.id;
-      const img = p.image || p.imageUrl || (p.images && p.images[0]) || '/landing-assets/slide-store.png';
-      const price = Number(p.price || 0).toLocaleString();
-
-      return `
-        <div class="nb-prod-card" onclick="window.location.href='/product/${slug}'">
-          <div class="nb-prod-img-wrap">
-            <img src="${img}" alt="${p.name}" class="nb-prod-img" loading="lazy">
-          </div>
-          <div class="nb-prod-body">
-            <div style="font-size:11px;color:var(--nb-pink);font-weight:800;margin-bottom:4px">العناية والراحة</div>
-            <h4 style="font-size:14px;font-weight:800;color:var(--nb-ink);line-height:1.4;margin-bottom:8px">${p.name}</h4>
-            <div style="font-size:15px;font-weight:900;color:var(--nb-pink);margin-bottom:10px">${price} دج</div>
-            <button class="nb-btn-primary" style="width:100%;font-size:12.5px;padding:6px 12px">عرض المنتج</button>
-          </div>
-        </div>
-      `;
-    }).join('');
+    const all = await getVisibleProducts();
+    const fit = all.filter((p) => productMatchesStage(p, 'mom'));
+    const list = [...fit, ...all.filter((p) => !fit.includes(p))].slice(0, 4);
+    if (!list.length) { container.parentElement.style.display = 'none'; return; }
+    container.innerHTML = list.map(productCardHtml).join('');
   } catch (err) {
-    console.error('Error loading cycle products:', err);
+    container.parentElement.style.display = 'none';
   }
 }

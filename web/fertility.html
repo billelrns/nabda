@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <script src="/js/app-redirect.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الخصوبة والتخطيط للحمل — نبضة</title>
   <meta name="description" content="حاسبة التبويض وأيام الخصوبة، أدعية طلب الذرية الصالحة، مقالات التثبيت الإيماني، وخطوات الاستعداد للحمل بإشراف فريق تحرير نبضة.">
@@ -11,10 +12,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/site.css">
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <style>
     .nb-fert-container {
@@ -191,9 +192,16 @@
         <!-- Injected by JS from fertility.json -->
       </div>
     </section>
+    <section style="margin:40px 0 10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="font-size:20px;font-weight:900;color:var(--nb-ink);margin:0">📚 مقالات التخطيط للحمل</h2>
+        <a href="/articles?cat=fertility" style="color:var(--nb-pink);font-size:13.5px;font-weight:800;text-decoration:none">كل المقالات ←</a>
+      </div>
+      <div class="nb-art-grid" id="nb-fert-articles"></div>
+    </section>
   </main>
 
-  <div id="nb-footer-placeholder"></div>
+  <div id="nb-footer"></div>
 
   <script type="module">
     // Load fertility data
@@ -249,7 +257,7 @@
         return;
       }
 
-      const lmp = new Date(dateVal);
+      const lmp = new Date(dateVal + 'T00:00:00');
       const ovulDayOffset = lenVal - 14;
 
       const ovulDate = new Date(lmp.getTime());
@@ -276,6 +284,13 @@
     };
 
     loadFertilityData();
+
+    import('/js/utils.js').then(async ({ getTopArticles, articleCardHtml }) => {
+      const list = (await getTopArticles('fertility')).slice(0, 10);
+      const box = document.getElementById('nb-fert-articles');
+      if (list.length) box.innerHTML = list.map((a) => articleCardHtml(a, '🌱')).join('');
+      else box.parentElement.style.display = 'none';
+    });
   </script>
   <script type="module" src="/js/shell.js"></script>
 </body>

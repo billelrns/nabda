@@ -207,7 +207,7 @@ service cloud.firestore {
         );
       // تحديث الحالة: المالك أو المشرف، أو الوكيل (agent) للحقول التشغيلية فقط
       allow update: if isOwnerOrSupervisor()
-        || (isActiveStaff() && staffRole() == 'agent'
+        || (isActiveStaff() && staffRole() in ['agent', 'employee']
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['status','history','notes','updatedAt','assignedTo']));
       allow delete: if false;
@@ -253,7 +253,15 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])
             && request.resource.data.stock is int
             && request.resource.data.stock >= 0
-            && request.resource.data.stock < resource.data.stock);
+            && request.resource.data.stock < resource.data.stock)
+        // أو: إنقاص مخزون سوق السعودية فقط (markets.SA.stock) عند طلب من التطبيق
+        || (isAuthenticated()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['markets'])
+            && request.resource.data.markets.diff(resource.data.markets).affectedKeys().hasOnly(['SA'])
+            && request.resource.data.markets.SA.diff(resource.data.markets.SA).affectedKeys().hasOnly(['stock'])
+            && request.resource.data.markets.SA.stock is int
+            && request.resource.data.markets.SA.stock >= 0
+            && request.resource.data.markets.SA.stock < resource.data.markets.SA.stock);
       allow delete: if isOwnerOrSupervisor();
     }
 
@@ -454,6 +462,20 @@ service cloud.firestore {
         && !('status' in request.resource.data);
       allow update: if false;
       allow delete: if isOwnerOrSupervisor();
+    }
+
+    // ─── إعلانات التطبيق (news_section.dart) ─────────────────────────
+    // قراءة عامّة (تُعرض للمستخدمات)، والتطبيق يزيد impressions/clicks بمقدار 1 فقط.
+    // الإدارة (إضافة/تعديل/حذف) للمالك والمشرفة.
+    match /ads/{adId} {
+      allow read: if true;
+      allow create, delete: if isOwnerOrSupervisor();
+      allow update: if isOwnerOrSupervisor() || (isAuthenticated()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['impressions', 'clicks'])
+        && request.resource.data.get('impressions', 0) <= resource.data.get('impressions', 0) + 1
+        && request.resource.data.get('clicks', 0) <= resource.data.get('clicks', 0) + 1
+        && request.resource.data.get('impressions', 0) >= resource.data.get('impressions', 0)
+        && request.resource.data.get('clicks', 0) >= resource.data.get('clicks', 0));
     }
 
     // ─── البلاغات والشكاوى ──────────────────────────────────────────

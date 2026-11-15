@@ -7,6 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/admin_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/notification_images.dart';
+import '../../config/shop_config.dart' show isHiddenProduct;
 import '../../services/dynamic_content_service.dart';
 import '../../services/community_engagement_service.dart';
 import '../../services/specialized_articles_service.dart';
@@ -1252,6 +1254,11 @@ class _AddProductScreenState extends State<_AddProductScreen> {
   final _priceC = TextEditingController();
   final _oldPriceC = TextEditingController();
   final _costPriceC = TextEditingController();
+  // 🌍 سوق السعودية (markets.SA) — نفس مخطّط الموقع، لا تحويل للعملة
+  final _saPriceC = TextEditingController();
+  final _saOldPriceC = TextEditingController();
+  bool _saActive = false;
+  bool _hadSA = false;
   final _stockC = TextEditingController();
   final _descC = TextEditingController();
   final _emojiC = TextEditingController(text: '🛍️');
@@ -1330,6 +1337,13 @@ class _AddProductScreenState extends State<_AddProductScreen> {
       _nameC.text = d['name'] ?? '';
       _priceC.text = d['price'] ?? '';
       _oldPriceC.text = d['oldPrice'] ?? '';
+      final sa = (d['markets'] is Map) ? (d['markets'] as Map)['SA'] : null;
+      if (sa is Map) {
+        _hadSA = true;
+        _saPriceC.text = (sa['price'] ?? '').toString();
+        _saOldPriceC.text = (sa['oldPrice'] ?? '').toString();
+        _saActive = sa['active'] != false && _saPriceC.text.trim().isNotEmpty;
+      }
       _descC.text = d['description'] ?? '';
       _emojiC.text = d['emoji'] ?? '🛍️';
       _category = d['category'] ?? 'ملابس الحمل';
@@ -1458,6 +1472,8 @@ class _AddProductScreenState extends State<_AddProductScreen> {
     _priceC.dispose();
     _oldPriceC.dispose();
     _costPriceC.dispose();
+    _saPriceC.dispose();
+    _saOldPriceC.dispose();
     _stockC.dispose();
     _descC.dispose();
     _emojiC.dispose();
@@ -1738,6 +1754,20 @@ class _AddProductScreenState extends State<_AddProductScreen> {
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
+      // 🌍 سعر السعودية: مفاتيح منقّطة عند التعديل (لا نمسّ markets.DZ ولا i18n من الموقع)
+      final saPrice = _saPriceC.text.trim().replaceAll(',', '.');
+      final saOld = _saOldPriceC.text.trim().replaceAll(',', '.');
+      final saOn = _saActive && (double.tryParse(saPrice) ?? 0) > 0;
+      if (_isEditing) {
+        if (_hadSA || saPrice.isNotEmpty) {
+          data['markets.SA.price'] = saPrice;
+          data['markets.SA.oldPrice'] = saOld;
+          data['markets.SA.active'] = saOn;
+        }
+      } else if (saPrice.isNotEmpty) {
+        data['markets'] = {'SA': {'price': saPrice, 'oldPrice': saOld, 'active': saOn}};
+      }
+
       if (_isEditing) {
         await FirebaseFirestore.instance.collection('products').doc(widget.docId).update(data);
         debugPrint('Product updated: ${widget.docId}');
@@ -1969,6 +1999,43 @@ class _AddProductScreenState extends State<_AddProductScreen> {
                       _field(_oldPriceC, 'السعر القديم المشطوب (اختياري)', Icons.money_off, type: TextInputType.text),
                       _field(_costPriceC, 'سعر التكلفة (للأدمن فقط، اختياري)', Icons.calculate_outlined, type: TextInputType.text),
                       const SizedBox(height: 8),
+                      // 🇸🇦 سوق السعودية — سعر مستقل بالريال (لا تحويل آلي)
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: const Color(0xFFFFF9FC), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFF8BBD0))),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            activeColor: _teal,
+                            title: const Text('🇸🇦 يُباع في السعودية', style: TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: const Text('بلا سعر بالريال لا يظهر المنتج للمستخدمات في السعودية', style: TextStyle(fontSize: 11.5)),
+                            value: _saActive,
+                            onChanged: (v) => setState(() => _saActive = v),
+                          ),
+                          _field(_saPriceC, 'سعر السعودية بالريال (مثال: 89)', Icons.price_check, type: TextInputType.text),
+                          _field(_saOldPriceC, 'السعر القديم بالريال (اختياري)', Icons.money_off, type: TextInputType.text),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: TextButton.icon(
+                              icon: const Icon(Icons.auto_fix_high, size: 18),
+                              label: const Text('⚡ اقتراح من سعر الجزائر (40 دج للريال)'),
+                              onPressed: () {
+                                final dz = double.tryParse(_priceC.text.replaceAll(',', '').trim()) ?? 0;
+                                if (dz <= 0) return;
+                                int r9(double x) => x < 10 ? (x.round() < 1 ? 1 : x.round()) : (((x + 1) / 10).round() * 10 - 1);
+                                setState(() {
+                                  _saPriceC.text = r9(dz / 40).toString();
+                                  final old = double.tryParse(_oldPriceC.text.replaceAll(',', '').trim()) ?? 0;
+                                  if (old > dz) _saOldPriceC.text = r9(old / 40).toString();
+                                  _saActive = true;
+                                });
+                              },
+                            ),
+                          ),
+                        ]),
+                      ),
                     ],
                   ),
                 ),
@@ -4822,12 +4889,31 @@ class _NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<_NotificationsScreen> {
   final _titleC = TextEditingController();
   final _bodyC = TextEditingController();
+  final _imageC = TextEditingController();
   bool _isSending = false;
+
+  /// منتج أو مقال مُرفق: {type, id, label, image}
+  /// الخادم (sendBroadcast) يجلب صورته تلقائياً إن لم يُكتب رابط صريح.
+  Map<String, String>? _link;
+
+  /// الصورة التي ستظهر في الإشعار: الرابط الصريح أولاً، ثم صورة المرفق
+  String? get _previewImage {
+    final explicit = _imageC.text.trim();
+    if (explicit.startsWith('https://')) return explicit;
+    final li = _link?['image'] ?? '';
+    return li.startsWith('https://') ? li : null;
+  }
 
   Future<void> _send() async {
     if (_titleC.text.trim().isEmpty || _bodyC.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى إدخال العنوان والمحتوى'), backgroundColor: Colors.orange));
+      return;
+    }
+    final img = _imageC.text.trim();
+    if (img.isNotEmpty && !img.startsWith('https://')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('رابط الصورة يجب أن يبدأ بـ https://'), backgroundColor: Colors.orange));
       return;
     }
     setState(() => _isSending = true);
@@ -4836,13 +4922,16 @@ class _NotificationsScreenState extends State<_NotificationsScreen> {
         'title': _titleC.text.trim(),
         'body': _bodyC.text.trim(),
         'type': 'broadcast',
+        if (img.isNotEmpty) 'imageUrl': img,
+        if (_link != null) 'link': {'type': _link!['type'], 'id': _link!['id']},
         'createdAt': FieldValue.serverTimestamp(),
         'sentBy': FirebaseAuth.instance.currentUser?.uid,
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إرسال الإشعار ✓'), backgroundColor: _teal));
-        _titleC.clear(); _bodyC.clear();
+          const SnackBar(content: Text('أُرسل الطلب ✓ — تابعي حالته في القائمة أدناه'), backgroundColor: _teal));
+        _titleC.clear(); _bodyC.clear(); _imageC.clear();
+        setState(() => _link = null);
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
@@ -4852,8 +4941,117 @@ class _NotificationsScreenState extends State<_NotificationsScreen> {
     }
   }
 
+  // ── إرفاق منتج ─────────────────────────────────────────────
+  Future<void> _pickProduct() async {
+    final snap = await FirebaseFirestore.instance
+        .collection('products')
+        .orderBy('createdAt', descending: true)
+        .limit(60)
+        .get();
+    // ⚠️ لا تُروَّج المنتجات المحجوبة (مكمّلات/أجهزة طبية) — امتثال Google Play
+    final items = snap.docs.where((d) => !isHiddenProduct(d.data())).toList();
+    if (!mounted) return;
+    final picked = await _pickFrom(
+      'اختاري منتجاً',
+      items.map((d) {
+        final m = d.data();
+        return {
+          'id': d.id,
+          'label': (m['name'] ?? '').toString(),
+          'sub': (m['price'] ?? '').toString(),
+          'image': NotificationImages.productImage(m) ?? '',
+        };
+      }).toList(),
+    );
+    if (picked == null) return;
+    setState(() {
+      _link = {'type': 'product', ...picked};
+      if (_titleC.text.trim().isEmpty) _titleC.text = '🛍️ ${picked['label']}';
+      if (_bodyC.text.trim().isEmpty) {
+        final price = picked['sub'] ?? '';
+        _bodyC.text = '${price.isNotEmpty ? '$price — ' : ''}اطلبيه الآن من متجر نبضة بالدفع عند الاستلام 💗';
+      }
+    });
+  }
+
+  // ── إرفاق مقال ─────────────────────────────────────────────
+  Future<void> _pickArticle() async {
+    final snap = await FirebaseFirestore.instance
+        .collection('articles')
+        .orderBy('createdAt', descending: true)
+        .limit(60)
+        .get();
+    if (!mounted) return;
+    final picked = await _pickFrom(
+      'اختاري مقالاً',
+      snap.docs.map((d) {
+        final m = d.data();
+        return {
+          'id': d.id,
+          'label': (m['title'] ?? '').toString(),
+          'sub': (m['category'] ?? '').toString(),
+          'image': (m['imageUrl'] ?? '').toString(),
+        };
+      }).toList(),
+    );
+    if (picked == null) return;
+    setState(() {
+      _link = {'type': 'article', ...picked};
+      if (_titleC.text.trim().isEmpty) _titleC.text = '📖 مقال جديد في نبضة';
+      if (_bodyC.text.trim().isEmpty) _bodyC.text = picked['label'] ?? '';
+    });
+  }
+
+  Future<Map<String, String>?> _pickFrom(String title, List<Map<String, String>> items) {
+    return showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: SizedBox(
+          height: MediaQuery.of(ctx).size.height * 0.75,
+          child: Column(children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+            Padding(padding: const EdgeInsets.all(14),
+              child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _text1))),
+            Expanded(
+              child: items.isEmpty
+                  ? const Center(child: Text('لا توجد عناصر', style: TextStyle(color: _text2)))
+                  : ListView.builder(
+                      itemCount: items.length,
+                      itemBuilder: (_, i) {
+                        final it = items[i];
+                        final img = it['image'] ?? '';
+                        return ListTile(
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: img.startsWith('http')
+                                ? Image.network(img, width: 52, height: 52, fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => _noImg())
+                                : _noImg(),
+                          ),
+                          title: Text(it['label'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: _text1)),
+                          subtitle: Text(img.startsWith('http') ? (it['sub'] ?? '') : '⚠️ بلا صورة',
+                              style: TextStyle(fontSize: 11.5, color: img.startsWith('http') ? _text2 : Colors.orange)),
+                          onTap: () => Navigator.pop(ctx, it),
+                        );
+                      },
+                    ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _noImg() => Container(width: 52, height: 52, color: _bg,
+      child: const Icon(Icons.image_not_supported_outlined, color: _text2, size: 20));
+
   @override
-  void dispose() { _titleC.dispose(); _bodyC.dispose(); super.dispose(); }
+  void dispose() { _titleC.dispose(); _bodyC.dispose(); _imageC.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -4912,6 +5110,67 @@ class _NotificationsScreenState extends State<_NotificationsScreen> {
             TextField(controller: _bodyC, maxLines: 4, decoration: InputDecoration(labelText: 'محتوى الإشعار', alignLabelWithHint: true,
               filled: true, fillColor: _bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
             const SizedBox(height: 14),
+            // ── الصورة ──
+            const Text('صورة الإشعار', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: _text1)),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: OutlinedButton.icon(
+                onPressed: _pickProduct,
+                icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+                label: const Text('إرفاق منتج'),
+                style: OutlinedButton.styleFrom(foregroundColor: _teal, side: BorderSide(color: _teal.withOpacity(0.4)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              )),
+              const SizedBox(width: 10),
+              Expanded(child: OutlinedButton.icon(
+                onPressed: _pickArticle,
+                icon: const Icon(Icons.article_outlined, size: 18),
+                label: const Text('إرفاق مقال'),
+                style: OutlinedButton.styleFrom(foregroundColor: _teal, side: BorderSide(color: _teal.withOpacity(0.4)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              )),
+            ]),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _imageC,
+              textDirection: TextDirection.ltr,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                labelText: 'أو رابط صورة مباشر (https://…)',
+                prefixIcon: const Icon(Icons.image_outlined, color: _teal),
+                filled: true, fillColor: _bg,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+            ),
+            if (_link != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(color: _teal.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+                child: Row(children: [
+                  Icon(_link!['type'] == 'product' ? Icons.shopping_bag : Icons.article, size: 16, color: _teal),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('مُرفق: ${_link!['label']}', maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12.5, color: _text1))),
+                  InkWell(onTap: () => setState(() => _link = null),
+                      child: const Icon(Icons.close, size: 18, color: _text2)),
+                ]),
+              ),
+            ],
+            // معاينة تقريبية لشكل الإشعار
+            if (_previewImage != null) ...[
+              const SizedBox(height: 12),
+              const Text('معاينة', style: TextStyle(fontSize: 12, color: _text2)),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.network(_previewImage!, height: 150, width: double.infinity, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(height: 60, color: Colors.orange.withOpacity(0.08),
+                    alignment: Alignment.center,
+                    child: const Text('⚠️ تعذّر تحميل الصورة — تحقّقي من الرابط',
+                        style: TextStyle(fontSize: 12, color: Colors.orange)))),
+              ),
+            ],
+            const SizedBox(height: 14),
             SizedBox(width: double.infinity, child: ElevatedButton.icon(
               onPressed: _isSending ? null : _send,
               icon: _isSending ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.send),
@@ -4924,22 +5183,55 @@ class _NotificationsScreenState extends State<_NotificationsScreen> {
         const Text('الإشعارات السابقة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _text1)),
         const SizedBox(height: 10),
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('notifications').where('type', isEqualTo: 'broadcast').orderBy('createdAt', descending: true).limit(20).snapshots(),
+          // بلا where: القاعدة لا تسمح إلا بـ type == 'broadcast' في هذه المجموعة،
+          // وتركيب where + orderBy كان يتطلّب فهرساً مركّباً غير موجود.
+          stream: FirebaseFirestore.instance.collection('notifications').orderBy('createdAt', descending: true).limit(20).snapshots(),
           builder: (_, snap) {
+            if (snap.hasError) {
+              return Padding(padding: const EdgeInsets.all(16),
+                child: Text('تعذّر تحميل القائمة: ${snap.error}', style: const TextStyle(color: Colors.red, fontSize: 12)));
+            }
             if (!snap.hasData || snap.data!.docs.isEmpty) {
               return Center(child: Padding(padding: const EdgeInsets.all(30),
                 child: Text('لا توجد إشعارات سابقة', style: TextStyle(color: _text2))));
             }
             return Column(children: snap.data!.docs.map((doc) {
               final d = doc.data() as Map<String, dynamic>;
+              final status = d['status'] as String?;
+              final img = (d['resolvedImage'] ?? d['imageUrl'] ?? '') as String;
+              final (label, color) = switch (status) {
+                'sent' => ('✓ أُرسل', _teal),
+                'failed' => ('✗ فشل', Colors.red),
+                'rejected' => ('✗ مرفوض', Colors.red),
+                _ => ('⏳ قيد الإرسال', Colors.orange),
+              };
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14)),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(d['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: _text1)),
-                  const SizedBox(height: 4),
-                  Text(d['body'] ?? '', style: TextStyle(fontSize: 13, color: _text2), maxLines: 3, overflow: TextOverflow.ellipsis),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  if (img.startsWith('http')) ...[
+                    ClipRRect(borderRadius: BorderRadius.circular(10),
+                      child: Image.network(img, width: 56, height: 56, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _noImg())),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Expanded(child: Text(d['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: _text1))),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(999)),
+                        child: Text(label, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: color)),
+                      ),
+                    ]),
+                    const SizedBox(height: 4),
+                    Text(d['body'] ?? '', style: TextStyle(fontSize: 13, color: _text2), maxLines: 3, overflow: TextOverflow.ellipsis),
+                    if (d['error'] != null) ...[
+                      const SizedBox(height: 4),
+                      Text('${d['error']}', style: const TextStyle(fontSize: 11, color: Colors.red)),
+                    ],
+                  ])),
                 ]),
               );
             }).toList());

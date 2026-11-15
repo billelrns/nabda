@@ -2,11 +2,14 @@
 //  سلة التسوق — متجر نبضة (localStorage)
 // ═══════════════════════════════════════════════════════════════════
 
-const CART_KEY = 'nb_cart_v1';
+import { currentMarket } from './market.js';
+
+// سلة مستقلة لكل سوق (عملة واحدة في كل سلة): الجزائر = المفتاح التاريخي
+export const cartKey = (code = currentMarket()) => (code === 'DZ' ? 'nb_cart_v1' : 'nb_cart_' + code);
 
 export function getCart() {
   try {
-    const raw = localStorage.getItem(CART_KEY);
+    const raw = localStorage.getItem(cartKey());
     return raw ? JSON.parse(raw) : { items: [] };
   } catch (e) {
     console.error('Error reading cart:', e);
@@ -16,7 +19,7 @@ export function getCart() {
 
 export function saveCart(cart) {
   try {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    localStorage.setItem(cartKey(), JSON.stringify(cart));
     window.dispatchEvent(new CustomEvent('nb-cart-updated', { detail: cart }));
   } catch (e) {
     console.error('Error saving cart:', e);

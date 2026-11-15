@@ -11,9 +11,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/site.css">
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
   <style>
     .nb-checkout-container {
@@ -91,20 +91,20 @@
         </div>
 
         <div class="nb-form-group">
-          <label class="nb-form-label">رقم الهاتف للتأكيد (موبيليس، جيزي، أوريدو) *:</label>
+          <label class="nb-form-label" id="nb-co-phone-label">رقم الهاتف للتأكيد (موبيليس، جيزي، أوريدو) *:</label>
           <input type="tel" id="nb-co-phone" class="nb-form-input" placeholder="مثال: 0550123456" dir="ltr">
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div class="nb-form-group">
-            <label class="nb-form-label">الولاية (58 ولاية) *:</label>
+            <label class="nb-form-label" id="nb-co-region-label">الولاية (58 ولاية) *:</label>
             <select id="nb-co-wilaya" class="nb-form-input">
               <option value="">-- اختاري الولاية --</option>
             </select>
           </div>
 
           <div class="nb-form-group">
-            <label class="nb-form-label">البلدية / الدائرة:</label>
+            <label class="nb-form-label" id="nb-co-city-label">البلدية / الدائرة:</label>
             <select id="nb-co-commune" class="nb-form-input">
               <option value="">-- اختاري البلدية --</option>
             </select>
@@ -170,11 +170,15 @@
     <div id="nb-checkout-success" style="display:none"></div>
   </main>
 
-  <div id="nb-footer-placeholder"></div>
+  <div id="nb-footer"></div>
 
   <script type="module">
     import { auth, db } from '/js/firebase-init.js';
     import { getCart, clearCart } from '/js/cart.js';
+    import { getShippingRates, shippingFeeFor, wilayaEnabled, getStoreSettings, whatsappLink } from '/js/store-config.js';
+    import { escapeHtml as esc } from '/js/utils.js';
+    import { M, currentMarket, money, mUrl, syncShopPath, normPhoneFor, validPhoneFor, intlPhone, SA_REGIONS, marketEnabled } from '/js/market.js';
+    const MK = M();
 
     let currentUser = null;
     let citiesData = null;
@@ -185,11 +189,14 @@
     });
 
     async function initCheckout() {
+      if (syncShopPath()) return;
       const cart = getCart();
       if (!cart || !cart.items || cart.items.length === 0) {
-        window.location.replace('/cart');
+        window.location.replace(mUrl('/cart'));
         return;
       }
+      if (!(await marketEnabled(db))) { window.location.replace(mUrl('/shop')); return; }
+      adaptToMarket();
 
       await loadCities();
       await loadShipping();
@@ -197,7 +204,28 @@
       updateCheckoutTotals();
     }
 
+    /** السعودية: المناطق + مدينة نصّية، رقم جوال 05، بلا استلام من مكتب */
+    function adaptToMarket() {
+      if (MK.code === 'DZ') return;
+      document.getElementById('nb-co-region-label').textContent = MK.regionLabel + ' *:';
+      document.getElementById('nb-co-city-label').textContent = MK.cityLabel + ':';
+      document.getElementById('nb-co-phone-label').textContent = MK.phoneLabel + ' للتأكيد *:';
+      document.getElementById('nb-co-phone').placeholder = 'مثال: ' + MK.phoneHint;
+      const old = document.getElementById('nb-co-commune');
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.id = 'nb-co-commune'; inp.className = old.className; inp.placeholder = 'مثال: جدة — حي الروضة'; inp.maxLength = 80;
+      old.replaceWith(inp);
+      const office = document.querySelector('input[name="coDeliveryType"][value="office"]');
+      if (office) office.closest('label').style.display = 'none';
+    }
+
     async function loadCities() {
+      if (MK.code !== 'DZ') {
+        const select = document.getElementById('nb-co-wilaya');
+        select.innerHTML = `<option value="">-- اختاري ${MK.regionLabel} --</option>` + SA_REGIONS.map((r) => `<option value="${r}">${r}</option>`).join('');
+        select.addEventListener('change', () => window.updateCheckoutTotals());
+        return;
+      }
       try {
         const res = await fetch('/data/algeria_cities.json');
         citiesData = await res.json();
@@ -235,10 +263,7 @@
     }
 
     async function loadShipping() {
-      try {
-        const snap = await db.collection('site_config').doc('shipping').get();
-        if (snap.exists) shippingRates = snap.data();
-      } catch (e) {}
+      shippingRates = await getShippingRates();
     }
 
     function renderItemsSummary(cart) {
@@ -247,12 +272,12 @@
 
       listEl.innerHTML = cart.items.map(item => `
         <div style="display:flex;align-items:center;gap:12px;font-size:13px">
-          <img src="${item.image || '/landing-assets/slide-store.png'}" style="width:48px;height:48px;border-radius:10px;object-fit:cover">
+          <img src="${item.image || '/landing-assets/slide-store.webp'}" style="width:48px;height:48px;border-radius:10px;object-fit:cover">
           <div style="flex-grow:1">
-            <div style="font-weight:800;color:var(--nb-ink);line-height:1.3">${item.name}</div>
-            <div style="font-size:11.5px;color:var(--nb-ink-3)">الكمية: ${item.qty} × ${Number(item.price || 0).toLocaleString()} دج</div>
+            <div style="font-weight:800;color:var(--nb-ink);line-height:1.3">${esc(item.name)}</div>
+            <div style="font-size:11.5px;color:var(--nb-ink-3)">الكمية: ${item.qty} × ${money(item.price)}</div>
           </div>
-          <strong style="color:var(--nb-pink)">${(item.price * item.qty).toLocaleString()} دج</strong>
+          <strong style="color:var(--nb-pink)">${money(item.price * item.qty)}</strong>
         </div>
       `).join('');
     }
@@ -264,19 +289,13 @@
       const wilaya = document.getElementById('nb-co-wilaya')?.value;
       const isHome = document.querySelector('input[name="coDeliveryType"]:checked')?.value !== 'office';
 
-      let shipping = 600;
-      if (wilaya && shippingRates[wilaya]) {
-        shipping = isHome ? (shippingRates[wilaya].home || 600) : (shippingRates[wilaya].desk || 400);
-      } else if (wilaya) {
-        const central = ['الجزائر', 'البليدة', 'بومرداس', 'تيبازة'];
-        shipping = central.includes(wilaya) ? (isHome ? 450 : 300) : (isHome ? 650 : 400);
-      }
+      const shipping = shippingFeeFor(shippingRates, wilaya, isHome);
 
       const total = subtotal + shipping;
 
-      document.getElementById('nb-co-subtotal').textContent = `${subtotal.toLocaleString()} دج`;
-      document.getElementById('nb-co-shipping').textContent = `${shipping.toLocaleString()} دج`;
-      document.getElementById('nb-co-total').textContent = `${total.toLocaleString()} دج`;
+      document.getElementById('nb-co-subtotal').textContent = money(subtotal);
+      document.getElementById('nb-co-shipping').textContent = wilaya ? money(shipping) : `اختاري ${MK.regionLabel}`;
+      document.getElementById('nb-co-total').textContent = money(total);
     };
 
     window.submitCheckoutOrder = async function() {
@@ -284,7 +303,7 @@
       if (!cart || cart.items.length === 0) return;
 
       const name = document.getElementById('nb-co-name')?.value?.trim();
-      const phone = document.getElementById('nb-co-phone')?.value?.trim();
+      const phone = normPhoneFor(document.getElementById('nb-co-phone')?.value);
       const wilaya = document.getElementById('nb-co-wilaya')?.value;
       const commune = document.getElementById('nb-co-commune')?.value;
       const address = document.getElementById('nb-co-address')?.value?.trim();
@@ -295,14 +314,17 @@
         return;
       }
 
-      const phoneRegex = /^0[567]\d{8}$/;
-      if (!phone || !phoneRegex.test(phone)) {
-        alert('يرجى إدخال رقم هاتف جزائري صحيح للتأكيد (مثال: 0550123456).');
+      if (!phone || !validPhoneFor(phone)) {
+        alert(MK.code === 'SA' ? 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 0551234567).' : 'يرجى إدخال رقم هاتف جزائري صحيح للتأكيد (مثال: 0550123456).');
         return;
       }
 
       if (!wilaya) {
-        alert('يرجى اختيار الولاية.');
+        alert(`يرجى اختيار ${MK.regionLabel}.`);
+        return;
+      }
+      if (!wilayaEnabled(shippingRates, wilaya)) {
+        alert(`عذراً، التوصيل إلى هذه ${MK.regionLabel} متوقّف مؤقتاً.`);
         return;
       }
 
@@ -312,10 +334,7 @@
 
       const cartId = 'cart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
       const isHome = deliveryType !== 'office';
-      let shippingFee = 600;
-      if (wilaya && shippingRates[wilaya]) {
-        shippingFee = isHome ? (shippingRates[wilaya].home || 600) : (shippingRates[wilaya].desk || 400);
-      }
+      const shippingFee = shippingFeeFor(shippingRates, wilaya, isHome);
 
       try {
         const batch = db.batch();
@@ -338,11 +357,16 @@
             commune: commune || '',
             address: address || '',
             deliveryType: deliveryType,
+            country: MK.code,
+            currency: MK.currency,
+            phoneIntl: intlPhone(phone),
             productId: item.productId,
             productName: item.name,
             quantity: parseInt(item.qty, 10),
             unitPrice: Number(item.price),
             shippingFee: lineShipping,
+            lineTotal: Number(item.price) * parseInt(item.qty, 10) + lineShipping,
+            cartSize: cart.items.length,
             variant: item.variant || '',
             cartId: cartId,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -358,8 +382,8 @@
         const successBox = document.getElementById('nb-checkout-success');
         const shortCartId = cartId.slice(-6);
 
-        const waMsg = encodeURIComponent(`مرحباً متجر نبضة، قمت بتأكيد طلبيتي برقم السلة #${shortCartId} بمبلغ إجمالي: ${totalAmount.toLocaleString()} دج`);
-        const waLink = `https://wa.me/213550000000?text=${waMsg}`;
+        const waMsg = encodeURIComponent(`مرحباً متجر نبضة، قمت بتأكيد طلبيتي برقم السلة #${shortCartId} بمبلغ إجمالي: ${money(totalAmount)}`);
+        const waLink = whatsappLink(await getStoreSettings(), decodeURIComponent(waMsg));
 
         successBox.innerHTML = `
           <div style="background:#FFFFFF;border:1px solid #C8E6C9;border-radius:28px;padding:48px 32px;text-align:center;max-width:680px;margin:30px auto;box-shadow:0 16px 40px rgba(0,137,123,0.1)">
@@ -367,18 +391,18 @@
             <h2 style="font-size:26px;font-weight:900;color:var(--nb-ink);margin:0 0 10px">تم تسجيل طلبيتكِ بنجاح!</h2>
             <p style="font-size:15px;color:var(--nb-ink-2);line-height:1.7;margin-bottom:24px">
               شكراً لطلبكِ من نبضة. رقم الطلبية هو: <strong style="color:var(--nb-pink)">#${shortCartId}</strong>.<br>
-              سيتصل بكِ فريق خدمة العملاء على الرقم <strong>${phone}</strong> لتأكيد الشحن والتسليم.
+              سيتصل بكِ فريق خدمة العملاء على الرقم <strong>${esc(phone)}</strong> لتأكيد الشحن والتسليم.
             </p>
 
             <div style="background:#F1F8E9;border:1px solid #C8E6C9;border-radius:18px;padding:18px;margin-bottom:28px;font-size:15px;color:#2E7D32;font-weight:900">
-              المبلغ الإجمالي عند الاستلام: ${totalAmount.toLocaleString()} دج
+              المبلغ الإجمالي عند الاستلام: ${money(totalAmount)}
             </div>
 
             <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-              <a href="${waLink}" target="_blank" class="nb-btn-primary" style="background:#25D366;font-size:14px;padding:12px 24px;text-decoration:none">
+              ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener" class="nb-btn-primary" style="background:#25D366;font-size:14px;padding:12px 24px;text-decoration:none">
                 متابعة الطلبية عبر واتساب 💬
-              </a>
-              <a href="/shop" class="nb-btn-secondary" style="font-size:14px;padding:12px 24px;text-decoration:none">
+              </a>` : ''}
+              <a href="${mUrl('/shop')}" class="nb-btn-secondary" style="font-size:14px;padding:12px 24px;text-decoration:none">
                 العودة للمتجر 🛍️
               </a>
             </div>

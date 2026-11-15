@@ -6,15 +6,18 @@
   <title>تفاصيل المنتج — متجر نبضة</title>
   <meta name="description" content="تسوقي بأمان منتجات الأم والطفل الأصلية مع خدمة الدفع عند الاستلام والتوصيل السريع لـ 58 ولاية من متجر نبضة.">
   <link rel="icon" type="image/png" href="/favicon.png">
+  <!--OG-->
+  <meta property="og:site_name" content="متجر نبضة">
+  <meta property="og:type" content="product">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/site.css">
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <style>
     .nb-prod-container {
@@ -219,207 +222,207 @@
       .nb-trust-row { grid-template-columns: 1fr 1fr; }
       .nb-sticky-buy-bar { display: flex; }
     }
+  
+    /* ── إضافات: تكبير، تبويبات، تقييمات، شاهدتِها مؤخراً ── */
+    .nb-main-img-wrap { position: relative; cursor: zoom-in; }
+    .nb-main-img-wrap .nb-zoom-hint { position: absolute; bottom: 12px; left: 12px; background: rgba(255,255,255,.9); border-radius: 999px; padding: 4px 12px; font-size: 11.5px; font-weight: 800; color: var(--nb-ink-2); }
+    .nb-main-img-wrap .nb-gal-badge { position: absolute; top: 14px; right: 14px; background: var(--nb-pink); color: #fff; font-weight: 900; font-size: 13px; padding: 4px 12px; border-radius: 999px; }
+    .nb-lightbox { position: fixed; inset: 0; background: rgba(20,14,20,.92); z-index: 3000; display: none; align-items: center; justify-content: center; }
+    .nb-lightbox.open { display: flex; }
+    .nb-lightbox img { max-width: 92vw; max-height: 86vh; object-fit: contain; border-radius: 12px; }
+    .nb-lb-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border-radius: 50%; border: none; background: rgba(255,255,255,.15); color: #fff; font-size: 24px; cursor: pointer; }
+    .nb-lb-close { position: absolute; top: 18px; left: 18px; width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(255,255,255,.15); color: #fff; font-size: 18px; cursor: pointer; }
+    .nb-p-meta-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+    .nb-stars { color: #FFB300; letter-spacing: 1px; }
+    .nb-stock-pill { font-size: 12px; font-weight: 800; padding: 3px 12px; border-radius: 999px; }
+    .nb-tabs { background: #fff; border: 1px solid #F8E1EA; border-radius: 24px; margin-bottom: 40px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,.02); }
+    .nb-tabs-head { display: flex; gap: 4px; border-bottom: 1px solid #F8E1EA; padding: 8px 10px 0; overflow-x: auto; }
+    .nb-tab-btn { border: none; background: transparent; padding: 14px 18px; font-family: inherit; font-size: 14px; font-weight: 800; color: var(--nb-ink-3); cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+    .nb-tab-btn.active { color: var(--nb-pink); border-bottom-color: var(--nb-pink); }
+    .nb-tab-panel { display: none; padding: 26px 30px; line-height: 1.9; color: var(--nb-ink-2); font-size: 14.5px; }
+    .nb-tab-panel.active { display: block; }
+    .nb-tab-panel p { margin-bottom: 10px; }
+    .nb-tab-panel ul { padding-right: 22px; margin: 8px 0; }
+    .nb-spec-table { width: 100%; border-collapse: collapse; }
+    .nb-spec-table td { padding: 10px 14px; border-bottom: 1px solid #F8E1EA; }
+    .nb-spec-table td:first-child { font-weight: 800; color: var(--nb-ink); width: 34%; background: #FFF9FC; }
+    .nb-review { border-bottom: 1px solid #F8E1EA; padding: 14px 0; }
+    .nb-review:last-child { border-bottom: none; }
+    .nb-rating-summary { display: flex; align-items: center; gap: 18px; margin-bottom: 16px; }
+    .nb-rating-big { font-size: 42px; font-weight: 900; color: var(--nb-ink); line-height: 1; }
+    .nb-oos-box { background: #FFF3E0; border: 1px solid #FFE0B2; border-radius: 16px; padding: 14px 16px; font-size: 13.5px; color: #E65100; font-weight: 700; }
+    .nb-field-error { border-color: #E53935 !important; box-shadow: 0 0 0 3px rgba(229,57,53,.12) !important; }
+    .nb-err-msg { color: #E53935; font-size: 12px; font-weight: 700; margin-top: 4px; display: none; }
+    @media (min-width: 901px) { .nb-sticky-buy-bar { display: none !important; } }
+    @media (max-width: 900px) { body { padding-bottom: 140px; } .nb-tab-panel { padding: 20px; } .nb-sticky-buy-bar { bottom: 66px !important; border-radius: 16px 16px 0 0; } }
   </style>
 </head>
 <body>
   <header id="nb-header" style="min-height:96px"></header>
 
   <main class="nb-prod-container">
-    <!-- Breadcrumb -->
-    <nav style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--nb-ink-3);margin-bottom:18px">
-      <a href="/" style="color:inherit;text-decoration:none">الرئيسية</a>
-      <span>›</span>
-      <a href="/shop" style="color:inherit;text-decoration:none">المتجر</a>
-      <span>›</span>
-      <a id="nb-bc-category" href="/shop" style="color:inherit;text-decoration:none">القسم</a>
-      <span>›</span>
+    <nav aria-label="مسار التنقّل" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--nb-ink-3);margin-bottom:18px;flex-wrap:wrap">
+      <a href="/" style="color:inherit;text-decoration:none">الرئيسية</a><span>›</span>
+      <a href="/shop" style="color:inherit;text-decoration:none">المتجر</a><span>›</span>
+      <a id="nb-bc-category" href="/shop" style="color:inherit;text-decoration:none">القسم</a><span>›</span>
       <span id="nb-bc-title" style="color:var(--nb-pink);font-weight:700">المنتج</span>
     </nav>
 
-    <!-- Product View -->
     <div id="nb-product-view-container">
       <div class="nb-product-main-grid">
-        <!-- Gallery -->
         <div class="nb-gallery-box">
-          <div class="nb-main-img-wrap">
-            <img id="nb-main-img" src="" alt="صورة المنتج" class="nb-main-img">
+          <div class="nb-main-img-wrap" id="nb-main-img-wrap" onclick="window.nbOpenLightbox()">
+            <img id="nb-main-img" src="/landing-assets/slide-store.webp" alt="صورة المنتج" class="nb-main-img">
+            <span class="nb-gal-badge" id="nb-gal-badge" style="display:none"></span>
+            <span class="nb-zoom-hint">🔍 اضغطي للتكبير</span>
           </div>
           <div class="nb-gallery-thumbs" id="nb-gallery-thumbs"></div>
         </div>
 
-        <!-- Details & Direct COD -->
         <div class="nb-product-details">
           <div>
-            <div style="font-size:12.5px;color:var(--nb-pink);font-weight:800;margin-bottom:4px" id="nb-p-brand">علامة أصلية ومضمونة</div>
-            <h1 class="nb-p-title" id="nb-p-title">اسم المنتج</h1>
-            <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
-              <span id="nb-p-rating" style="font-size:13px;font-weight:800;color:var(--nb-ink)">4.9 ★ (24 تقييم)</span>
-              <span id="nb-p-stock-badge" style="font-size:12px;font-weight:800">متوفر في المخزن ✓</span>
+            <div style="font-size:12.5px;color:var(--nb-pink);font-weight:800;margin-bottom:4px" id="nb-p-brand"></div>
+            <h1 class="nb-p-title" id="nb-p-title">…</h1>
+            <div class="nb-p-meta-row">
+              <span id="nb-p-rating" style="font-size:13px;font-weight:800;color:var(--nb-ink)"></span>
+              <span id="nb-p-stock-badge" class="nb-stock-pill"></span>
+              <span id="nb-p-sold" style="font-size:12px;color:var(--nb-ink-3);font-weight:700"></span>
             </div>
           </div>
 
-          <!-- Price -->
           <div class="nb-p-price-box">
             <span class="nb-p-price" id="nb-p-price">— دج</span>
-            <span class="nb-p-old-price" id="nb-p-old-price">— دج</span>
-            <span class="nb-savings-badge" id="nb-p-savings-badge" style="display:none">تخفيض خاص 🔥</span>
+            <span class="nb-p-old-price" id="nb-p-old-price" style="display:none"></span>
+            <span class="nb-savings-badge" id="nb-p-savings-badge" style="display:none"></span>
           </div>
 
-          <!-- Variants -->
           <div id="nb-p-variants-box"></div>
 
-          <!-- Quantity -->
           <div style="display:flex;align-items:center;gap:14px">
             <span style="font-size:13px;font-weight:800;color:var(--nb-ink)">الكمية:</span>
             <div style="display:flex;align-items:center;border:1px solid #F4E3EB;border-radius:12px;overflow:hidden;background:#FFF9FC">
-              <button style="border:none;background:transparent;width:34px;height:34px;font-size:16px;font-weight:bold;cursor:pointer" onclick="window.changeQuantity(-1)">-</button>
+              <button aria-label="إنقاص الكمية" style="border:none;background:transparent;width:34px;height:34px;font-size:16px;font-weight:bold;cursor:pointer" onclick="window.changeQuantity(-1)">-</button>
               <span style="width:40px;text-align:center;font-weight:900;font-size:14px" id="nb-qty-val">1</span>
-              <button style="border:none;background:transparent;width:34px;height:34px;font-size:16px;font-weight:bold;cursor:pointer" onclick="window.changeQuantity(1)">+</button>
+              <button aria-label="زيادة الكمية" style="border:none;background:transparent;width:34px;height:34px;font-size:16px;font-weight:bold;cursor:pointer" onclick="window.changeQuantity(1)">+</button>
             </div>
           </div>
 
-          <!-- ── Direct COD Order Form (أعلى معدل تحويل) ── -->
-          <div class="nb-cod-form-box">
+          <div class="nb-cod-form-box" id="nb-cod-box">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
               <span style="font-size:22px">🚚</span>
-              <h3 style="font-size:16.5px;font-weight:900;color:var(--nb-ink);margin:0">طلب فوري — الدفع عند الاستلام</h3>
+              <h2 style="font-size:16.5px;font-weight:900;color:var(--nb-ink);margin:0">اطلبي الآن — الدفع عند الاستلام</h2>
             </div>
-
-            <div class="nb-cod-field">
-              <label class="nb-cod-label">الاسم الكامل *:</label>
-              <input type="text" id="nb-cod-name" class="nb-cod-input" placeholder="مثال: مريم بن سالم">
-            </div>
-
-            <div class="nb-cod-field">
-              <label class="nb-cod-label">رقم الهاتف للتأكيد (موبيليس، جيزي، أوريدو) *:</label>
-              <input type="tel" id="nb-cod-phone" class="nb-cod-input" placeholder="مثال: 0550123456" dir="ltr">
-            </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div id="nb-oos-box" class="nb-oos-box" style="display:none;margin-bottom:14px"></div>
+            <form id="nb-cod-form" novalidate onsubmit="event.preventDefault();window.submitDirectCodOrder()">
               <div class="nb-cod-field">
-                <label class="nb-cod-label">الولاية (58 ولاية) *:</label>
-                <select id="nb-cod-wilaya" class="nb-cod-input">
-                  <option value="">-- اختاري الولاية --</option>
-                </select>
+                <label class="nb-cod-label" for="nb-cod-name">الاسم الكامل *</label>
+                <input type="text" id="nb-cod-name" class="nb-cod-input" placeholder="مثال: مريم بن سالم" autocomplete="name" maxlength="80">
+                <div class="nb-err-msg" id="err-name">يرجى إدخال الاسم الكامل</div>
               </div>
-
               <div class="nb-cod-field">
-                <label class="nb-cod-label">البلدية / الدائرة:</label>
-                <select id="nb-cod-commune" class="nb-cod-input">
-                  <option value="">-- اختاري البلدية --</option>
-                </select>
+                <label class="nb-cod-label" for="nb-cod-phone">رقم الهاتف للتأكيد *</label>
+                <input type="tel" id="nb-cod-phone" class="nb-cod-input" placeholder="05XXXXXXXX" dir="ltr" inputmode="numeric" autocomplete="tel" maxlength="20">
+                <div class="nb-err-msg" id="err-phone">رقم جزائري من 10 أرقام يبدأ بـ 05 أو 06 أو 07</div>
               </div>
-            </div>
-
-            <div class="nb-cod-field">
-              <label class="nb-cod-label">العنوان أو الحي:</label>
-              <input type="text" id="nb-cod-address" class="nb-cod-input" placeholder="اسم الحي أو الشارع">
-            </div>
-
-            <!-- Delivery Option -->
-            <div style="display:flex;gap:16px;margin-bottom:14px;font-size:13px;font-weight:700">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                <input type="radio" name="deliveryType" value="home" checked onchange="updateCodTotals()">
-                <span>التوصيل لباب المنزل</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                <input type="radio" name="deliveryType" value="office" onchange="updateCodTotals()">
-                <span>الاستلام من مكتب التوصيل</span>
-              </label>
-            </div>
-
-            <!-- Totals Breakdown -->
-            <div style="background:#FFF9FC;border:1px solid #F8E1EA;border-radius:14px;padding:12px 16px;margin-bottom:16px;font-size:13px">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                <span style="color:var(--nb-ink-3)">سعر المنتجات:</span>
-                <span id="nb-cod-subtotal" style="font-weight:700">— دج</span>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="nb-cod-field">
+                  <label class="nb-cod-label" for="nb-cod-wilaya">الولاية *</label>
+                  <select id="nb-cod-wilaya" class="nb-cod-input"><option value="">— الولاية —</option></select>
+                  <div class="nb-err-msg" id="err-wilaya">اختاري الولاية</div>
+                </div>
+                <div class="nb-cod-field">
+                  <label class="nb-cod-label" for="nb-cod-commune">البلدية</label>
+                  <select id="nb-cod-commune" class="nb-cod-input"><option value="">— البلدية —</option></select>
+                </div>
               </div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-                <span style="color:var(--nb-ink-3)">رسوم التوصيل:</span>
-                <span id="nb-cod-shipping" style="font-weight:700">— دج</span>
+              <div class="nb-cod-field">
+                <label class="nb-cod-label" for="nb-cod-address">العنوان أو الحي</label>
+                <input type="text" id="nb-cod-address" class="nb-cod-input" placeholder="اسم الحي أو الشارع" autocomplete="street-address" maxlength="160">
               </div>
-              <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid #F4E3EB;font-size:15px;font-weight:900">
-                <span>المبلغ الإجمالي عند الاستلام:</span>
-                <span id="nb-cod-total" style="color:var(--nb-pink)">— دج</span>
+              <div style="display:flex;gap:16px;margin-bottom:14px;font-size:13px;font-weight:700;flex-wrap:wrap">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="deliveryType" value="home" checked> <span>🏠 للمنزل</span></label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="deliveryType" value="office"> <span>🏢 من مكتب التوصيل</span></label>
               </div>
-            </div>
-
-            <button id="nb-cod-submit-btn" class="nb-btn-primary" style="width:100%;font-size:15px;padding:12px;font-weight:900" onclick="window.submitDirectCodOrder()">
-              تأكيد الطلب — الدفع عند الاستلام 🚚
-            </button>
-
-            <!-- Secondary Actions -->
+              <div style="background:#FFF9FC;border:1px solid #F8E1EA;border-radius:14px;padding:12px 16px;margin-bottom:16px;font-size:13px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--nb-ink-3)">سعر المنتجات</span><span id="nb-cod-subtotal" style="font-weight:700">— دج</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--nb-ink-3)">التوصيل</span><span id="nb-cod-shipping" style="font-weight:700">اختاري الولاية</span></div>
+                <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid #F4E3EB;font-size:15px;font-weight:900"><span>الإجمالي عند الاستلام</span><span id="nb-cod-total" style="color:var(--nb-pink)">— دج</span></div>
+              </div>
+              <button type="submit" id="nb-cod-submit-btn" class="nb-btn-primary" style="width:100%;font-size:15px;padding:13px;font-weight:900;border:none;cursor:pointer">تأكيد الطلب — الدفع عند الاستلام</button>
+            </form>
             <div style="display:flex;gap:10px;margin-top:10px">
-              <button class="nb-btn-secondary" style="flex:1;font-size:13px;padding:8px" onclick="window.addToCartFromPage()">
-                أضيفي للسلة 🛒
-              </button>
-              <button class="nb-btn-secondary" style="flex:1;font-size:13px;padding:8px;color:#25D366;border-color:#25D366" onclick="window.orderViaWhatsApp()">
-                طلب عبر واتساب 💬
-              </button>
+              <button id="nb-add-cart-btn" class="nb-btn-secondary" style="flex:1;font-size:13px;padding:9px;cursor:pointer" onclick="window.addToCartFromPage()">🛒 أضيفي للسلة</button>
+              <button id="nb-wa-btn" class="nb-btn-secondary" style="flex:1;font-size:13px;padding:9px;color:#1DA851;border-color:#25D366;cursor:pointer;display:none" onclick="window.orderViaWhatsApp()">💬 عبر واتساب</button>
             </div>
           </div>
 
-          <!-- Trust Badges -->
           <div class="nb-trust-row">
-            <div class="nb-trust-item">
-              <div>🚚</div>
-              <div>توصيل لـ 58 ولاية</div>
-            </div>
-            <div class="nb-trust-item">
-              <div>💵</div>
-              <div>دفع عند الاستلام</div>
-            </div>
-            <div class="nb-trust-item">
-              <div>↩️</div>
-              <div>إرجاع خلال 7 أيام</div>
-            </div>
-            <div class="nb-trust-item">
-              <div>✅</div>
-              <div>منتج أصلي 100%</div>
-            </div>
+            <div class="nb-trust-item"><div>🚚</div><div data-mk-sa="توصيل لكل المناطق">توصيل لـ 58 ولاية</div></div>
+            <div class="nb-trust-item"><div>💵</div><div>الدفع عند الاستلام</div></div>
+            <div class="nb-trust-item"><div>↩️</div><div>إرجاع خلال 7 أيام</div></div>
+            <div class="nb-trust-item"><div>✅</div><div>منتج أصلي</div></div>
           </div>
         </div>
       </div>
 
-      <!-- Description Content -->
-      <section style="background:#FFFFFF;border:1px solid #F8E1EA;border-radius:24px;padding:30px;margin-bottom:40px;box-shadow:0 6px 20px rgba(0,0,0,0.02)">
-        <h3 style="font-size:18px;font-weight:900;color:var(--nb-ink);margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid #F8E1EA">
-          الوصف والمميزات
-        </h3>
-        <div id="nb-p-desc-content" style="line-height:1.8;color:var(--nb-ink-2);font-size:14.5px"></div>
+      <section class="nb-tabs" aria-label="تفاصيل المنتج">
+        <div class="nb-tabs-head" role="tablist">
+          <button class="nb-tab-btn active" data-tab="desc" role="tab">الوصف</button>
+          <button class="nb-tab-btn" data-tab="specs" role="tab">المواصفات</button>
+          <button class="nb-tab-btn" data-tab="shipping" role="tab">التوصيل والإرجاع</button>
+          <button class="nb-tab-btn" data-tab="reviews" role="tab" id="nb-tab-reviews-btn">التقييمات</button>
+        </div>
+        <div class="nb-tab-panel active" id="tab-desc"><div id="nb-p-desc-content"></div></div>
+        <div class="nb-tab-panel" id="tab-specs"><table class="nb-spec-table" id="nb-spec-table"></table></div>
+        <div class="nb-tab-panel" id="tab-shipping">
+          <p data-mk-sa-html="&lt;strong&gt;🚚 التوصيل:&lt;/strong&gt; نوصّل إلى كل مناطق المملكة حتى باب البيت. تُحسب الرسوم تلقائياً حسب المنطقة عند الطلب."><strong>🚚 التوصيل:</strong> نوصّل إلى كل الولايات الـ 58، للمنزل أو لمكتب شركة التوصيل. تُحسب الرسوم تلقائياً حسب الولاية عند الطلب.</p>
+          <p><strong>📞 التأكيد:</strong> نتّصل بكِ هاتفياً لتأكيد الطلب والعنوان قبل الشحن.</p>
+          <p><strong>💵 الدفع:</strong> نقداً عند الاستلام، بعد معاينة الطرد.</p>
+          <p><strong>↩️ الإرجاع والاستبدال:</strong> خلال 7 أيام من الاستلام إذا كان المنتج بحالته الأصلية وغلافه سليماً.</p>
+          <div id="nb-custom-policy"></div>
+        </div>
+        <div class="nb-tab-panel" id="tab-reviews"><div id="nb-reviews-box"></div></div>
       </section>
 
-      <!-- Similar Products -->
-      <section style="margin-bottom:20px">
-        <h3 style="font-size:20px;font-weight:900;color:var(--nb-ink);margin:0 0 18px">منتجات مشابهة قد تعجبكِ 🛍️</h3>
-        <div class="nb-products-grid" id="nb-similar-products-grid"></div>
+      <section style="margin-bottom:34px">
+        <h2 style="font-size:20px;font-weight:900;color:var(--nb-ink);margin:0 0 18px">منتجات مشابهة قد تعجبكِ 🛍️</h2>
+        <div class="nb-prod" id="nb-similar-products-grid"></div>
+      </section>
+
+      <section style="margin-bottom:20px;display:none" id="nb-recent-sec">
+        <h2 style="font-size:18px;font-weight:900;color:var(--nb-ink);margin:0 0 16px">شاهدتِها مؤخراً 👀</h2>
+        <div class="nb-prod" id="nb-recent-grid"></div>
       </section>
     </div>
 
-    <!-- Product Not Found View -->
     <div id="nb-product-not-found" style="display:none;text-align:center;padding:60px 20px;background:#FFFFFF;border-radius:28px;border:1px dashed #F8BBD0;margin-bottom:40px">
       <div style="font-size:48px;margin-bottom:12px">🌸</div>
-      <h2 style="font-size:22px;font-weight:900;color:var(--nb-ink);margin-bottom:8px">عذراً، هذا المنتج غير متوفر حالياً</h2>
-      <p style="font-size:14px;color:var(--nb-ink-3);margin-bottom:24px">قد يكون المنتج قد نفد من المخزن أو تم تحديث رابطه. تفضلي بالاطلاع على التشكيلة المميزة البديلة:</p>
-      <a href="/shop" class="nb-btn-primary" style="text-decoration:none;font-size:14px;padding:10px 24px">زيارة المتجر الرئيسي ←</a>
+      <h1 style="font-size:22px;font-weight:900;color:var(--nb-ink);margin-bottom:8px">عذراً، هذا المنتج غير متوفّر حالياً</h1>
+      <p style="font-size:14px;color:var(--nb-ink-3);margin-bottom:24px">ربما تغيّر رابطه أو لم يعد متاحاً. إليكِ منتجات بديلة مختارة:</p>
+      <div class="nb-prod" id="nb-alt-products-grid" style="text-align:right;margin-bottom:24px"></div>
+      <a href="/shop" class="nb-btn-primary" style="text-decoration:none;font-size:14px;padding:10px 24px">زيارة المتجر ←</a>
     </div>
 
-    <!-- Mobile Sticky Buy Bar -->
     <div class="nb-sticky-buy-bar" id="nb-sticky-buy-bar" style="display:none">
       <div style="display:flex;align-items:center;gap:10px">
-        <img id="nb-sticky-thumb" src="" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover">
+        <img id="nb-sticky-thumb" src="/landing-assets/slide-store.webp" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover">
         <div>
-          <div style="font-size:11px;color:var(--nb-ink-3)">الإجمالي:</div>
+          <div style="font-size:11px;color:var(--nb-ink-3)">السعر</div>
           <div id="nb-sticky-price" style="font-weight:900;color:var(--nb-pink);font-size:16px">— دج</div>
         </div>
       </div>
-      <button class="nb-btn-primary" style="font-size:13px;padding:8px 18px" onclick="document.querySelector('.nb-cod-form-box').scrollIntoView({behavior:'smooth'})">
-        اطلبي الآن 🚚
-      </button>
+      <button class="nb-btn-primary" style="font-size:13px;padding:9px 18px;border:none" onclick="document.getElementById('nb-cod-box').scrollIntoView({behavior:'smooth',block:'start'})">اطلبي الآن 🚚</button>
     </div>
   </main>
 
-  <div id="nb-footer-placeholder"></div>
+  <div class="nb-lightbox" id="nb-lightbox" onclick="if(event.target===this)window.nbCloseLightbox()">
+    <button class="nb-lb-close" onclick="window.nbCloseLightbox()" aria-label="إغلاق">✕</button>
+    <button class="nb-lb-btn" style="right:18px" onclick="window.nbLightboxStep(-1)" aria-label="السابقة"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;margin:auto"><path d="M9 5l7 7-7 7"/></svg></button>
+    <img id="nb-lightbox-img" src="" alt="">
+    <button class="nb-lb-btn" style="left:18px" onclick="window.nbLightboxStep(1)" aria-label="التالية"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;margin:auto"><path d="M15 5l-7 7 7 7"/></svg></button>
+  </div>
+
+  <div id="nb-footer"></div>
 
   <script type="module">
     import { initProductPage } from '/js/pages/product.js';

@@ -4,543 +4,84 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>لوحة التحكم الإدارية — نبضة</title>
+  <title>لوحة تحكم نبضة</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/admin.css">
-
-  <!-- Firebase Web SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
-
-  <!-- Self-hosted Chart.js -->
-  <script src="/vendor/chart.umd.min.js"></script>
+  <script>try { if (localStorage.getItem('ad_theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}</script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script src="/vendor/chart.umd.min.js" defer></script>
 </head>
 <body>
+  <!-- تحميل -->
+  <div id="gate-loading" class="ad-gate"><div class="ad-gate-card"><div class="ad-gate-logo">💗</div><h1>لوحة تحكم نبضة</h1><p>جاري التحقّق من الصلاحيات…</p><div class="skel" style="height:8px"></div></div></div>
 
-  <!-- ── 1. Login View (If not signed in) ── -->
-  <div id="ad-login-view" style="display:none;width:100vw;height:100vh;align-items:center;justify-content:center;background:var(--ad-bg);padding:20px">
-    <div style="background:var(--ad-card);border:1px solid var(--ad-border);border-radius:24px;padding:40px;max-width:420px;width:100%;box-shadow:var(--ad-shadow);text-align:center">
-      <div style="font-size:44px;margin-bottom:12px">🌸</div>
-      <h2 style="font-size:22px;font-weight:900;color:var(--ad-primary);margin-bottom:6px">لوحة تحكم نبضة</h2>
-      <p style="font-size:13px;color:var(--ad-text-muted);margin-bottom:24px">الوصول مقتصر على طاقم الإدارة المصرح لهم.</p>
-
-      <div style="margin-bottom:16px;text-align:right">
-        <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:6px">البريد الإلكتروني:</label>
-        <input type="email" id="ad-login-email" class="ad-search-input" style="border:1px solid var(--ad-border);padding:10px 14px;border-radius:10px;width:100%">
-      </div>
-
-      <div style="margin-bottom:24px;text-align:right">
-        <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:6px">كلمة المرور:</label>
-        <input type="password" id="ad-login-pass" class="ad-search-input" style="border:1px solid var(--ad-border);padding:10px 14px;border-radius:10px;width:100%">
-      </div>
-
-      <button class="ad-btn ad-btn-primary" style="width:100%;padding:12px;font-size:14px" onclick="handleAdminLogin()">
-        تسجيل الدخول للوحة التحكم 🔒
-      </button>
+  <!-- تسجيل الدخول -->
+  <div id="gate-login" class="ad-gate hidden">
+    <div class="ad-gate-card">
+      <div class="ad-gate-logo">💗</div>
+      <h1>لوحة تحكم نبضة</h1>
+      <p>دخول الطاقم فقط</p>
+      <form id="login-form" autocomplete="on">
+        <div class="field"><label for="lg-email">البريد الإلكتروني</label><input class="input" id="lg-email" type="email" required autocomplete="username" dir="ltr"></div>
+        <div class="field"><label for="lg-pass">كلمة المرور</label><input class="input" id="lg-pass" type="password" required autocomplete="current-password" dir="ltr"></div>
+        <button class="btn btn-primary" type="submit" style="height:44px;justify-content:center">دخول</button>
+        <button class="btn" type="button" id="lg-google" style="height:44px;justify-content:center">الدخول عبر Google</button>
+        <div id="lg-err" class="alert red hidden"></div>
+      </form>
     </div>
   </div>
 
-  <!-- ── 2. Unauthorized View ── -->
-  <div id="ad-unauthorized" style="display:none;width:100vw;height:100vh;align-items:center;justify-content:center;background:var(--ad-bg);padding:20px">
-    <div style="background:var(--ad-card);border:1px solid var(--ad-border);border-radius:24px;padding:40px;max-width:440px;width:100%;text-align:center;box-shadow:var(--ad-shadow)">
-      <div style="font-size:50px;margin-bottom:14px">🚫</div>
-      <h2 style="font-size:20px;font-weight:900;color:var(--ad-danger);margin-bottom:8px">غير مصرح بالدخول</h2>
-      <p style="font-size:13.5px;color:var(--ad-text-muted);line-height:1.7;margin-bottom:24px">
-        حسابكِ الحالي ليس مسجلاً ضمن طاقم إدارة متجر ومنصة نبضة (staff). يرجى مراجعة المالك أو تسجيل الدخول بالحساب الصحيح.
-      </p>
-      <button class="ad-btn ad-btn-secondary" onclick="firebase.auth().signOut().then(() => location.reload())">
-        تسجيل الخروج والعودة
-      </button>
+  <!-- غير مصرّح -->
+  <div id="gate-denied" class="ad-gate hidden">
+    <div class="ad-gate-card">
+      <div class="ad-gate-logo" style="background:#9CA3AF">🔒</div>
+      <h1>غير مصرّح</h1>
+      <p id="denied-msg">هذا الحساب ليس ضمن طاقم نبضة النشط.</p>
+      <div style="display:flex;gap:8px;justify-content:center"><a class="btn" href="/">الموقع</a><button class="btn btn-danger" id="denied-logout">تسجيل الخروج</button></div>
     </div>
   </div>
 
-  <!-- ── 3. Main Dashboard App ── -->
-  <div id="ad-app" style="display:none;width:100%">
-    <!-- Sidebar -->
-    <aside class="ad-sidebar" id="ad-sidebar">
-      <div class="ad-sidebar-header">
-        <a href="/admin" class="ad-brand">
-          <span>🌸 نبضة أدمن</span>
-        </a>
-        <button class="ad-icon-btn" onclick="window.toggleAdminSidebar()" title="طي / فتح الشريط">☰</button>
-      </div>
-
-      <ul class="ad-nav-list">
-        <li>
-          <a class="ad-nav-item active" data-module="dashboard">
-            <span class="ad-nav-icon">📊</span>
-            <span class="ad-nav-label">لوحة القيادة</span>
-          </a>
-        </li>
-        <li>
-          <a class="ad-nav-item" data-module="orders">
-            <span class="ad-nav-icon">📦</span>
-            <span class="ad-nav-label">الطلبات</span>
-            <span class="ad-nav-badge" id="ad-badge-orders" style="display:none">0</span>
-          </a>
-        </li>
-        <li>
-          <a class="ad-nav-item" data-module="products">
-            <span class="ad-nav-icon">🛍️</span>
-            <span class="ad-nav-label">المنتجات والمخزون</span>
-          </a>
-        </li>
-        <li>
-          <a class="ad-nav-item" data-module="shipping">
-            <span class="ad-nav-icon">🚚</span>
-            <span class="ad-nav-label">تسعيرات الشحن (58)</span>
-          </a>
-        </li>
-        <li>
-          <a class="ad-nav-item" data-module="customers">
-            <span class="ad-nav-icon">👥</span>
-            <span class="ad-nav-label">دليل العميلات</span>
-          </a>
-        </li>
-        <li>
-          <a class="ad-nav-item" data-module="moderation">
-            <span class="ad-nav-icon">🛡️</span>
-            <span class="ad-nav-label">إشراف المجتمع</span>
-          </a>
-        </li>
-        <li class="ad-owner-only">
-          <a class="ad-nav-item" data-module="staff">
-            <span class="ad-nav-icon">🧑‍💼</span>
-            <span class="ad-nav-label">الطاقم والصلاحيات</span>
-          </a>
-        </li>
-      </ul>
-
-      <div style="padding:16px;border-top:1px solid var(--ad-border)">
-        <a href="/" target="_blank" class="ad-btn ad-btn-secondary" style="width:100%;font-size:12px;text-decoration:none">
-          زيارة الموقع 🌐
-        </a>
+  <!-- التطبيق -->
+  <div id="app" class="ad-app hidden">
+    <aside class="ad-side" id="side">
+      <div class="ad-brand"><div class="ad-brand-ic">💗</div><div class="ad-brand-txt">نبضة<small>لوحة التحكم</small></div></div>
+      <nav class="ad-nav" id="nav"></nav>
+      <div class="ad-side-foot">
+        <a class="btn btn-ghost btn-sm" href="/" target="_blank" rel="noopener">🌐 <span class="ad-side-foot-txt">فتح الموقع</span></a>
+        <button class="btn btn-ghost btn-sm" id="logout">🚪 <span class="ad-side-foot-txt">تسجيل الخروج</span></button>
       </div>
     </aside>
-
-    <!-- Main View -->
     <div class="ad-main">
-      <!-- Header -->
-      <header class="ad-header">
-        <div class="ad-search-box">
-          <span>🔍</span>
-          <input type="text" id="ad-global-search" class="ad-search-input" placeholder="بحث شامل: رقم هاتف، اسم، طلب #...">
-          <span class="ad-kbd">Ctrl+K</span>
+      <header class="ad-top">
+        <button class="ad-icon-btn" id="toggle-side" title="طيّ القائمة" aria-label="القائمة">☰</button>
+        <div class="ad-search">
+          <span class="ic">🔍</span>
+          <input id="gsearch" placeholder="بحث: رقم هاتف، اسم زبونة، رقم طلب، منتج…" autocomplete="off" aria-label="بحث شامل">
+          <kbd>Ctrl K</kbd>
+          <div class="ad-search-results hidden" id="gsearch-results"></div>
         </div>
-
-        <div class="ad-header-actions">
-          <button class="ad-icon-btn" onclick="window.toggleAdminTheme()" title="تبديل الوضع الداكن/الفاتح">🌓</button>
-          
-          <div class="ad-user-capsule" onclick="if(confirm('تسجيل الخروج من اللوحة؟')) firebase.auth().signOut()">
-            <div class="ad-user-avatar" id="ad-staff-avatar">A</div>
-            <div>
-              <div style="font-size:13px;font-weight:800;color:var(--ad-text)" id="ad-staff-name">الموظف</div>
-              <div style="font-size:11px;color:var(--ad-text-muted)" id="ad-staff-role">وكيل</div>
-            </div>
-            <span style="font-size:12px;color:var(--ad-text-muted)">🚪</span>
-          </div>
+        <div class="ad-top-actions">
+          <button class="ad-icon-btn" id="sound-btn" title="صوت الإشعارات">🔔</button>
+          <button class="ad-icon-btn" id="theme-btn" title="الوضع الليلي">🌙</button>
+          <div class="ad-me"><div><b id="me-name">—</b><small id="me-role">—</small></div><div class="ad-me-av" id="me-av">ن</div></div>
         </div>
       </header>
-
-      <!-- Content Area -->
-      <div class="ad-content">
-        <!-- Module 1: Dashboard -->
-        <div class="ad-module-pane" id="ad-mod-dashboard">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-            <div>
-              <h1 style="font-size:24px;font-weight:900;color:var(--ad-text);margin:0 0 4px">لوحة القيادة والمؤشرات 📊</h1>
-              <div style="font-size:13px;color:var(--ad-text-muted)">متابعة فورية للمبيعات، الطلبات، ونسب التحويل والتسليم</div>
-            </div>
-          </div>
-
-          <!-- KPI Cards -->
-          <div class="ad-kpi-grid">
-            <div class="ad-kpi-card">
-              <div class="ad-kpi-header">
-                <span class="ad-kpi-title">طلبات اليوم</span>
-                <div class="ad-kpi-icon" style="background:#FFF3E0;color:#E65100">📦</div>
-              </div>
-              <div class="ad-kpi-val ad-tabular" id="ad-kpi-today-orders">0</div>
-              <div class="ad-kpi-footer">
-                <span class="ad-trend-up">↑ نشط اليوم</span>
-              </div>
-            </div>
-
-            <div class="ad-kpi-card">
-              <div class="ad-kpi-header">
-                <span class="ad-kpi-title">إيراد الطلبات المُسلَّمة</span>
-                <div class="ad-kpi-icon" style="background:#E8F5E9;color:#2E7D32">💵</div>
-              </div>
-              <div class="ad-kpi-val ad-tabular" id="ad-kpi-revenue">0 دج</div>
-              <div class="ad-kpi-footer">
-                <span style="color:var(--ad-text-subtle)">المبالغ المحصلة فعلياً</span>
-              </div>
-            </div>
-
-            <div class="ad-kpi-card">
-              <div class="ad-kpi-header">
-                <span class="ad-kpi-title">نسبة التأكيد</span>
-                <div class="ad-kpi-icon" style="background:#E1F5FE;color:#0288D1">📞</div>
-              </div>
-              <div class="ad-kpi-val ad-tabular" id="ad-kpi-confirm-rate">0%</div>
-              <div class="ad-kpi-footer">
-                <span class="ad-trend-up">من إجمالي الطلبات</span>
-              </div>
-            </div>
-
-            <div class="ad-kpi-card">
-              <div class="ad-kpi-header">
-                <span class="ad-kpi-title">نسبة التسليم الناجح</span>
-                <div class="ad-kpi-icon" style="background:#EDE7F6;color:#5E35B1">🚚</div>
-              </div>
-              <div class="ad-kpi-val ad-tabular" id="ad-kpi-deliver-rate">0%</div>
-              <div class="ad-kpi-footer">
-                <span style="color:var(--ad-text-subtle)">معدل تسليم شركات الشحن</span>
-              </div>
-            </div>
-
-            <div class="ad-kpi-card">
-              <div class="ad-kpi-header">
-                <span class="ad-kpi-title">نسبة الإرجاع</span>
-                <div class="ad-kpi-icon" style="background:#FFEBEE;color:#D32F2F">↩️</div>
-              </div>
-              <div class="ad-kpi-val ad-tabular" id="ad-kpi-return-rate">0%</div>
-              <div class="ad-kpi-footer">
-                <span style="color:var(--ad-text-subtle)">الطرود المرتجعة</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Charts Grid -->
-          <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:28px">
-            <div class="ad-card">
-              <h3 class="ad-card-title" style="margin-bottom:16px">حركة الطلبات خلال آخر 30 يوماً</h3>
-              <canvas id="ad-chart-orders" height="110"></canvas>
-            </div>
-
-            <div class="ad-card">
-              <h3 class="ad-card-title" style="margin-bottom:16px">توزيع حالات الطلبات</h3>
-              <canvas id="ad-chart-status" height="200"></canvas>
-            </div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px">
-            <div class="ad-card">
-              <h3 class="ad-card-title" style="margin-bottom:16px">أعلى 10 ولايات من حيث الطلب</h3>
-              <canvas id="ad-chart-wilayas" height="130"></canvas>
-            </div>
-
-            <div class="ad-card">
-              <h3 class="ad-card-title" style="margin-bottom:16px">آخر الطلبات الواردة</h3>
-              <div class="ad-table-wrap">
-                <table class="ad-table">
-                  <thead>
-                    <tr>
-                      <th>الطلب</th>
-                      <th>العميلة</th>
-                      <th>الولاية</th>
-                      <th>المنتج</th>
-                      <th>الإجمالي</th>
-                      <th>الحالة</th>
-                    </tr>
-                  </thead>
-                  <tbody id="ad-recent-orders-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Module 2: Orders -->
-        <div class="ad-module-pane" id="ad-mod-orders" style="display:none">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-            <div>
-              <h1 style="font-size:24px;font-weight:900;color:var(--ad-text);margin:0 0 4px">إدارة ومعالجة الطلبات 📦</h1>
-              <div style="font-size:13px;color:var(--ad-text-muted)">اسحبي وأفلتي بطاقات الطلبات بين الحالات للتحديث الفوري</div>
-            </div>
-
-            <div style="display:flex;gap:10px">
-              <button class="ad-btn ad-btn-secondary" id="ad-btn-kanban" onclick="window.toggleOrdersView('kanban')">لوحة كانبان 📋</button>
-              <button class="ad-btn ad-btn-secondary" id="ad-btn-table" onclick="window.toggleOrdersView('table')">جدول مفصل 📑</button>
-            </div>
-          </div>
-
-          <!-- Kanban View -->
-          <div class="ad-kanban-board" id="ad-orders-kanban"></div>
-
-          <!-- Table View (Hidden by default) -->
-          <div id="ad-orders-table-view" class="ad-card" style="display:none">
-            <div class="ad-table-wrap">
-              <table class="ad-table">
-                <thead>
-                  <tr>
-                    <th>الطلب</th>
-                    <th>العميلة</th>
-                    <th>الهاتف</th>
-                    <th>الولاية</th>
-                    <th>المنتج</th>
-                    <th>الكمية</th>
-                    <th>المبلغ</th>
-                    <th>الحالة</th>
-                    <th>إجراء</th>
-                  </tr>
-                </thead>
-                <tbody id="ad-orders-table-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Module 3: Products -->
-        <div class="ad-module-pane" id="ad-mod-products" style="display:none">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-            <div>
-              <h1 style="font-size:24px;font-weight:900;color:var(--ad-text);margin:0 0 4px">كتالوج المنتجات والمخزون 🛍️</h1>
-              <div style="font-size:13px;color:var(--ad-text-muted)">إدارة الأسعار، المخزون، وحارس الامتثال لمنع المكملات والأجهزة الطبية</div>
-            </div>
-            <button class="ad-btn ad-btn-primary" onclick="window.openNewProductModal()">+ إضافة منتج جديد</button>
-          </div>
-
-          <div class="ad-card">
-            <div class="ad-table-wrap">
-              <table class="ad-table">
-                <thead>
-                  <tr>
-                    <th>الصورة</th>
-                    <th>اسم المنتج</th>
-                    <th>التصنيف</th>
-                    <th>السعر</th>
-                    <th>المخزون</th>
-                    <th>تفعيل</th>
-                    <th>الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody id="ad-products-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Module 4: Shipping -->
-        <div class="ad-module-pane" id="ad-mod-shipping" style="display:none">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-            <div>
-              <h1 style="font-size:24px;font-weight:900;color:var(--ad-text);margin:0 0 4px">تسعيرات الشحن لـ 58 ولاية 🚚</h1>
-              <div style="font-size:13px;color:var(--ad-text-muted)">تحديد تكاليف التوصيل للمنزل والمكتب لكل ولاية</div>
-            </div>
-          </div>
-
-          <div class="ad-card">
-            <div class="ad-table-wrap">
-              <table class="ad-table">
-                <thead>
-                  <tr>
-                    <th>الرمز</th>
-                    <th>الولاية</th>
-                    <th>توصيل للمنزل (دج)</th>
-                    <th>توصيل للمكتب (دج)</th>
-                    <th>حفظ</th>
-                  </tr>
-                </thead>
-                <tbody id="ad-shipping-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Module 5: Customers -->
-        <div class="ad-module-pane" id="ad-mod-customers" style="display:none">
-          <div style="margin-bottom:20px">
-            <h1 style="font-size:24px;font-weight:900;color:var(--ad-text);margin:0 0 4px">دليل العميلات 👥</h1>
-            <div style="font-size:13px;color:var(--ad-text-muted)">مستخرج من الطلبات الفعلية، مع إحصائيات التسليم وزر الحظر السريع</div>
-          </div>
-
-          <div class="ad-card">
-            <div class="ad-table-wrap">
-              <table class="ad-table">
-                <thead>
-                  <tr>
-                    <th>الاسم</th>
-                    <th>رقم الهاتف</th>
-                    <th>الولاية</th>
-                    <th>عدد الطلبات</th>
-                    <th>المُسلَّمة</th>
-                    <th>إجمالي الإنفاق</th>
-                    <th>إجراء</th>
-                  </tr>
-                </thead>
-                <tbody id="ad-customers-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Module 6: Moderation -->
-        <div class="ad-module-pane" id="ad-mod-moderation" style="display:none">
-          <div style="margin-bottom:20px">
-            <h1 style="font-size:24px;font-weight:900;color:var(--ad-text);margin:0 0 4px">إشراف المجتمع والبلاغات 🛡️</h1>
-            <div style="font-size:13px;color:var(--ad-text-muted)">مراجعة البلاغات الواردة من العضوات وحذف المحتوى المخالف</div>
-          </div>
-
-          <div class="ad-card">
-            <div class="ad-table-wrap">
-              <table class="ad-table">
-                <thead>
-                  <tr>
-                    <th>البلاغ</th>
-                    <th>سبب الإبلاغ</th>
-                    <th>معرّف المنشور</th>
-                    <th>الحالة</th>
-                    <th>الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody id="ad-moderation-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Module 7: Staff -->
-        <div class="ad-module-pane" id="ad-mod-staff" style="display:none">
-          <div style="margin-bottom:20px">
-            <h1 style="font-size:24px;font-weight:900;color:var(--ad-text);margin:0 0 4px">الطاقم والصلاحيات 🧑‍💼</h1>
-            <div style="font-size:13px;color:var(--ad-text-muted)">إدارة صلاحيات الموظفين (مالك، مشرف، وكيل)</div>
-          </div>
-
-          <div class="ad-card">
-            <div class="ad-table-wrap">
-              <table class="ad-table">
-                <thead>
-                  <tr>
-                    <th>الاسم</th>
-                    <th>البريد</th>
-                    <th>الدور</th>
-                    <th>الحالة</th>
-                    <th>الإجراء</th>
-                  </tr>
-                </thead>
-                <tbody id="ad-staff-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
+      <main class="ad-content" id="view"></main>
     </div>
   </div>
 
-  <!-- ── Order Detail Drawer ── -->
-  <div class="ad-drawer-backdrop" id="ad-order-drawer-backdrop" onclick="window.closeOrderDetailDrawer()">
-    <div class="ad-drawer" id="ad-order-drawer" onclick="event.stopPropagation()">
-      <div class="ad-drawer-header">
-        <h3 style="font-size:16px;font-weight:800;margin:0">تفاصيل الطلب</h3>
-        <button class="ad-icon-btn" onclick="window.closeOrderDetailDrawer()">✕</button>
-      </div>
-      <div class="ad-drawer-body" id="ad-drawer-order-body"></div>
-    </div>
-  </div>
+  <div class="backdrop" id="backdrop"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true"><div class="drawer-h"><h3 id="drawer-title"></h3><button class="ad-icon-btn" data-close-drawer aria-label="إغلاق">✕</button></div><div class="drawer-b" id="drawer-body"></div><div class="drawer-f" id="drawer-foot"></div></aside>
+  <div class="modal" id="modal" role="dialog" aria-modal="true"><div class="modal-card" id="modal-card"><div class="modal-h"><h3 id="modal-title"></h3><button class="ad-icon-btn" data-close-modal aria-label="إغلاق">✕</button></div><div class="modal-b" id="modal-body"></div><div class="modal-f" id="modal-foot"></div></div></div>
+  <div class="toasts" id="toasts"></div>
+  <div id="print-area"></div>
 
-  <!-- ── Product Edit Modal ── -->
-  <div class="ad-drawer-backdrop" id="ad-product-modal">
-    <div class="ad-card" style="max-width:600px;width:100%;margin:auto;max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <h3 id="ad-product-modal-title" style="font-size:18px;font-weight:800;margin:0">تعديل المنتج</h3>
-        <button class="ad-icon-btn" onclick="window.closeProductModal()">✕</button>
-      </div>
-
-      <!-- Compliance Guard Red Alert -->
-      <div id="ad-p-compliance-alert" style="display:none;background:#FFEBEE;border:1px solid #FFCDD2;border-radius:12px;padding:12px;margin-bottom:16px;color:#C62828;font-size:13px;font-weight:700">
-        ⚠️ هذا المنتج يندرج تحت المكملات أو الأجهزة الطبية وهو ممنوع في متجر نبضة للحفاظ على الامتثال.
-      </div>
-
-      <input type="hidden" id="ad-p-form-id">
-
-      <div style="margin-bottom:14px">
-        <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:6px">اسم المنتج *:</label>
-        <input type="text" id="ad-p-form-name" class="ad-form-input" style="width:100%">
-      </div>
-
-      <div style="margin-bottom:14px">
-        <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:6px">الرابط المخصص (Slug):</label>
-        <input type="text" id="ad-p-form-slug" class="ad-form-input" style="width:100%">
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div>
-          <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:6px">التصنيف:</label>
-          <select id="ad-p-form-category" class="ad-form-input" style="width:100%">
-            <option value="الحمل والولادة">الحمل والولادة</option>
-            <option value="المولود الجديد">المولود الجديد</option>
-            <option value="الرضاعة والتغذية">الرضاعة والتغذية</option>
-            <option value="ملابس الأطفال">ملابس الأطفال</option>
-            <option value="العناية بالأم">العناية بالأم</option>
-            <option value="الألعاب والهدايا">الألعاب والهدايا</option>
-            <option value="الاستحمام والنظافة">الاستحمام والنظافة</option>
-          </select>
-        </div>
-
-        <div>
-          <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:6px">الكمية في المخزون:</label>
-          <input type="number" id="ad-p-form-stock" class="ad-form-input" style="width:100%">
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
-        <div>
-          <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:6px">سعر البيع (دج) *:</label>
-          <input type="number" id="ad-p-form-price" class="ad-form-input" style="width:100%">
-        </div>
-        <div>
-          <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:6px">السعر القديم:</label>
-          <input type="number" id="ad-p-form-old-price" class="ad-form-input" style="width:100%">
-        </div>
-        <div>
-          <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:6px">سعر التكلفة (سري):</label>
-          <input type="number" id="ad-p-form-cost" class="ad-form-input" style="width:100%">
-        </div>
-      </div>
-
-      <div style="margin-bottom:18px">
-        <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:6px">الوصف والمميزات:</label>
-        <textarea id="ad-p-form-desc" rows="4" class="ad-form-input" style="width:100%;font-family:inherit"></textarea>
-      </div>
-
-      <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button class="ad-btn ad-btn-secondary" onclick="window.closeProductModal()">إلغاء</button>
-        <button class="ad-btn ad-btn-primary" onclick="window.saveProductForm()">حفظ المنتج</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Print Area (For A6 Label and Invoices) ── -->
-  <div id="nb-print-area"></div>
-
-  <!-- ── Toast Notifications ── -->
-  <div id="ad-toasts" class="ad-toast-container"></div>
-
-  <!-- Scripts -->
-  <script type="module">
-    import { initAdminDashboard } from '/js/admin/admin.js';
-    initAdminDashboard();
-
-    window.handleAdminLogin = async function() {
-      const email = document.getElementById('ad-login-email')?.value?.trim();
-      const pass = document.getElementById('ad-login-pass')?.value;
-      if (!email || !pass) {
-        alert('يرجى إدخال البريد وكلمة المرور.');
-        return;
-      }
-      try {
-        await firebase.auth().signInWithEmailAndPassword(email, pass);
-      } catch (err) {
-        alert('فشل تسجيل الدخول: ' + err.message);
-      }
-    };
-  </script>
+  <script type="module" src="/js/admin/app.js"></script>
 </body>
 </html>

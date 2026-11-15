@@ -1,565 +1,505 @@
 /**
- * Nabda - Dedicated Product Page Controller
- * Author: فريق تحرير نبضة
+ * نبضة — صفحة المنتج المستقلّة (/product/<slug>)
+ * معرض + تكبير، متغيّرات، طلب COD مباشر، سلة، واتساب، تبويبات، مشابهة، شاهدتِها مؤخراً، SEO
  */
-
 import { auth, db } from '../firebase-init.js';
 import { isHiddenProduct } from '../shop-rules.js';
 import { addToCart } from '../cart.js';
+import { escapeHtml as esc, getVisibleProducts, productCardHtml, productImg, productImages, productOldPrice, formatDA, toDate } from '../utils.js';
+import { getShippingRates, shippingFeeFor, wilayaEnabled, getStoreSettings, whatsappLink } from '../store-config.js';
+import { M, currentMarket, mUrl, syncShopPath, marketEnabled, mAvailable, localize, normPhoneFor, validPhoneFor, intlPhone, SA_REGIONS } from '../market.js';
 
-let currentProduct = null;
-let selectedQuantity = 1;
-let selectedVariant = null;
-let citiesData = null;
-let shippingRates = {};
+let currentUser = null;
+let product = null;
+let images = [];
+let imgIndex = 0;
+let qty = 1;
+let selected = {}; // { 'المقاس': 'M' }
+let cities = null;
+let rates = {};
+let settings = {};
+let raw = null; // المنتج كما في Firestore (قبل التوطين) — لروابط hreflang
+
+auth.onAuthStateChanged((u) => { currentUser = u; });
 
 export async function initProductPage() {
-  const slug = getProductSlugFromUrl();
-  if (!slug) {
-    showProductNotFound();
-    return;
-  }
-
-  // Load cities & shipping
-  loadAlgeriaCities();
-  loadShippingConfig();
-
-  // Fetch Product
-  await fetchProductData(slug);
-}
-
-function getProductSlugFromUrl() {
-  const path = window.location.pathname;
-  const match = path.match(/\/product\/([^/?#]+)/);
-  if (match) return decodeURIComponent(match[1]);
-
-  const params = new URLSearchParams(window.location.search);
-  return params.get('slug') || params.get('id');
-}
-
-async function fetchProductData(slugOrId) {
+  if (syncShopPath()) return;
+  const slug = slugFromUrl();
+  const [rr, ss] = await Promise.all([getShippingRates(), getStoreSettings(), loadCities()]);
+  rates = rr; settings = ss;
+  if (!slug) return notFound();
   try {
-    // 1. Try querying by slug
-    let snap = await db.collection('products')
-      .where('slug', '==', slugOrId)
-      .limit(1)
-      .get();
-
-    // 2. If not found by slug, fallback to document ID
-    if (snap.empty) {
-      const doc = await db.collection('products').doc(slugOrId).get();
-      if (doc.exists) {
-        currentProduct = { id: doc.id, ...doc.data() };
-      }
-    } else {
-      const doc = snap.docs[0];
-      currentProduct = { id: doc.id, ...doc.data() };
-    }
-
-    if (!currentProduct || !currentProduct.active || isHiddenProduct(currentProduct)) {
-      showProductNotFound();
-      return;
-    }
-
-    renderProductView(currentProduct);
-    saveRecentlyViewed(currentProduct);
-    loadSimilarProducts(currentProduct);
-    updateProductSeo(currentProduct);
-  } catch (err) {
-    console.error('Error fetching product:', err);
-    showProductNotFound();
+    raw = await fetchProduct(slug);
+  } catch (e) {
+    console.error('product fetch', e);
   }
+  // غير موجود، معطّل، ممنوع (مكمّلات/أجهزة طبية)، أو غير مسعّر في هذا السوق → صفحة بديلة
+  if (!raw || isHiddenProduct(raw) || !mAvailable(raw) || !(await marketEnabled(db))) return notFound();
+  product = localize(raw);
+
+  // الرابط الرسمي بالـ slug (إن فُتح بالمعرّف)
+  if (product.slug && slug !== product.slug) {
+    history.replaceState(null, '', mUrl('/product/' + encodeURIComponent(product.slug)) + location.search);
+  }
+  render();
+  wireForm();
+  wireTabs();
+  saveRecent();
+  loadSimilar();
+  renderRecent();
+  seo();
 }
 
-function showProductNotFound() {
+function slugFromUrl() {
+  const m = location.pathname.match(/\/product\/([^/?#]+)/);
+  if (m) return decodeURIComponent(m[1]);
+  const q = new URLSearchParams(location.search);
+  return q.get('slug') || q.get('id');
+}
+
+async function fetchProduct(slug) {
+  const snap = await db.collection('products').where('slug', '==', slug).limit(1).get();
+  if (!snap.empty) { const d = snap.docs[0]; return { id: d.id, ...d.data() }; }
+  const doc = await db.collection('products').doc(slug).get();
+  return doc.exists ? { id: doc.id, ...doc.data() } : null;
+}
+
+async function notFound() {
   document.getElementById('nb-product-view-container').style.display = 'none';
   document.getElementById('nb-product-not-found').style.display = 'block';
-  loadSimilarProducts(null);
+  document.title = 'المنتج غير متوفّر — متجر نبضة';
+  const meta = document.createElement('meta'); meta.name = 'robots'; meta.content = 'noindex'; document.head.appendChild(meta);
+  try {
+    const list = (await getVisibleProducts()).slice(0, 8);
+    document.getElementById('nb-alt-products-grid').innerHTML = list.map(productCardHtml).join('');
+  } catch (_) {}
 }
 
-function renderProductView(p) {
-  // Breadcrumb
-  const bcCat = document.getElementById('nb-bc-category');
-  if (bcCat) {
-    bcCat.textContent = p.category || 'المتجر';
-    bcCat.href = `/shop?cat=${encodeURIComponent(p.category || 'all')}`;
-  }
-  const bcName = document.getElementById('nb-bc-title');
-  if (bcName) bcName.textContent = p.name;
+/* ─────────────── العرض ─────────────── */
+function hasStockField(p) { return typeof p.stock === 'number'; }
+function inStock(p) { return !hasStockField(p) || p.stock > 0; }
 
-  // Title, Brand & Ratings
-  const nameEl = document.getElementById('nb-p-title');
-  if (nameEl) nameEl.textContent = p.name;
+function render() {
+  const p = product;
+  const cat = p.category || 'المتجر';
+  const bc = document.getElementById('nb-bc-category');
+  bc.textContent = cat; bc.href = mUrl('/shop?cat=' + encodeURIComponent(cat));
+  document.getElementById('nb-bc-title').textContent = p.name;
+  document.getElementById('nb-p-title').textContent = p.name;
+  document.getElementById('nb-p-brand').textContent = p.brand ? p.brand : cat;
 
-  const brandEl = document.getElementById('nb-p-brand');
-  if (brandEl) brandEl.textContent = p.brand ? `الماركة: ${p.brand}` : 'علامة موثوقة ومضمونة';
+  const rating = Number(p.rating || 0);
+  const rc = Number(p.reviewCount || 0);
+  document.getElementById('nb-p-rating').innerHTML = rating
+    ? `<span class="nb-stars">${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))}</span> ${rating.toFixed(1)} ${rc ? `(${rc} تقييم)` : ''}`
+    : '';
+  if (p.soldCount > 10) document.getElementById('nb-p-sold').textContent = `🔥 بيع ${p.soldCount}+ قطعة`;
 
-  const ratingEl = document.getElementById('nb-p-rating');
-  if (ratingEl) ratingEl.textContent = `${p.rating || 4.9} ★ (${p.reviewCount || 24} تقييم)`;
-
-  // Pricing
   const price = Number(p.price || 0);
-  const oldPrice = p.oldPrice || p.originalPrice ? Number(p.oldPrice || p.originalPrice) : null;
-
-  const priceEl = document.getElementById('nb-p-price');
-  if (priceEl) priceEl.textContent = `${price.toLocaleString()} دج`;
-
-  const oldPriceEl = document.getElementById('nb-p-old-price');
-  if (oldPriceEl) {
-    if (oldPrice && oldPrice > price) {
-      oldPriceEl.textContent = `${oldPrice.toLocaleString()} دج`;
-      oldPriceEl.style.display = 'inline-block';
-
-      const saveBadge = document.getElementById('nb-p-savings-badge');
-      if (saveBadge) {
-        const diff = oldPrice - price;
-        saveBadge.textContent = `وفّري ${diff.toLocaleString()} دج 🔥`;
-        saveBadge.style.display = 'inline-block';
-      }
-    } else {
-      oldPriceEl.style.display = 'none';
-    }
+  const old = productOldPrice(p);
+  document.getElementById('nb-p-price').textContent = formatDA(price);
+  if (old) {
+    const o = document.getElementById('nb-p-old-price'); o.textContent = formatDA(old); o.style.display = 'inline-block';
+    const b = document.getElementById('nb-p-savings-badge');
+    b.textContent = `وفّري ${formatDA(old - price)} (-${Math.round((1 - price / old) * 100)}%)`; b.style.display = 'inline-block';
+    const g = document.getElementById('nb-gal-badge'); g.textContent = `-${Math.round((1 - price / old) * 100)}%`; g.style.display = 'inline-block';
   }
 
-  // Stock
-  const stockEl = document.getElementById('nb-p-stock-badge');
-  if (stockEl) {
-    if (p.stock > 0 && p.stock <= 5) {
-      stockEl.textContent = `بقي ${p.stock} قطع فقط في المخزن!`;
-      stockEl.style.color = '#E65100';
-    } else if (p.stock > 5) {
-      stockEl.textContent = 'متوفر في المخزن وجاهز للشحن الفوري ✓';
-      stockEl.style.color = '#2E7D32';
-    } else {
-      stockEl.textContent = 'نفد من المخزن مؤقتاً';
-      stockEl.style.color = '#C2185B';
-    }
+  const st = document.getElementById('nb-p-stock-badge');
+  if (!inStock(p)) {
+    st.textContent = 'نفد مؤقتاً'; st.style.background = '#FCE4EC'; st.style.color = '#C2185B';
+    const box = document.getElementById('nb-oos-box');
+    box.innerHTML = 'هذا المنتج نفد حالياً. <a href="#" id="nb-notify-link" style="color:#C2185B;font-weight:900">أعلميني عند توفّره ←</a>';
+    box.style.display = 'block';
+    document.getElementById('nb-cod-form').style.display = 'none';
+    document.getElementById('nb-add-cart-btn').disabled = true;
+    document.getElementById('nb-notify-link')?.addEventListener('click', (e) => { e.preventDefault(); notifyMe(); });
+  } else if (hasStockField(p) && p.stock <= 5) {
+    st.textContent = `بقي ${p.stock} فقط!`; st.style.background = '#FFF3E0'; st.style.color = '#E65100';
+  } else {
+    st.textContent = 'متوفّر ✓'; st.style.background = '#E8F5E9'; st.style.color = '#2E7D32';
   }
 
-  // Gallery
-  const images = (Array.isArray(p.images) && p.images.length > 0)
-    ? p.images
-    : [p.image || p.imageUrl || '/landing-assets/slide-store.png'];
+  images = productImages(p);
+  renderGallery();
+  renderVariants();
+  renderDescription();
+  renderSpecs();
+  renderReviews();
+  if (settings.returnPolicy || settings.shippingPolicy) {
+    document.getElementById('nb-custom-policy').innerHTML = paragraphs([settings.shippingPolicy, settings.returnPolicy].filter(Boolean).join('\n\n'));
+  }
+  if (whatsappLink(settings, 'x')) document.getElementById('nb-wa-btn').style.display = 'block';
 
-  renderGallery(images);
-
-  // Variants
-  renderVariants(p.variants);
-
-  // Description & Tabs
-  const descEl = document.getElementById('nb-p-desc-content');
-  if (descEl) descEl.innerHTML = p.description || p.desc || '<p>منتج عالي الجودة لراحة طفلكِ وسلامته.</p>';
-
-  // Setup COD calculations
-  updateCodTotals();
-
-  // Sticky mobile bar
-  setupStickyMobileBar(p);
+  document.getElementById('nb-sticky-thumb').src = images[0];
+  document.getElementById('nb-sticky-price').textContent = formatDA(price);
+  document.getElementById('nb-sticky-buy-bar').style.display = inStock(p) ? 'flex' : 'none';
+  updateTotals();
 }
 
-function renderGallery(images) {
-  const mainImg = document.getElementById('nb-main-img');
-  if (mainImg) {
-    mainImg.src = images[0];
-    mainImg.alt = currentProduct?.name || 'صورة المنتج';
+function renderGallery() {
+  const main = document.getElementById('nb-main-img');
+  main.src = images[imgIndex]; main.alt = product.name;
+  const strip = document.getElementById('nb-gallery-thumbs');
+  if (images.length <= 1) { strip.style.display = 'none'; return; }
+  strip.innerHTML = images.map((src, i) => `
+    <button class="nb-thumb-btn ${i === imgIndex ? 'active' : ''}" data-i="${i}" aria-label="الصورة ${i + 1}">
+      <img src="${esc(src)}" alt="" class="nb-thumb-img" loading="lazy">
+    </button>`).join('');
+  strip.querySelectorAll('.nb-thumb-btn').forEach((b) => b.addEventListener('click', () => { imgIndex = +b.dataset.i; renderGallery(); }));
+  // سحب على الهاتف
+  const wrap = document.getElementById('nb-main-img-wrap');
+  if (!wrap.dataset.swipe) {
+    wrap.dataset.swipe = 1;
+    let x0 = null;
+    wrap.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    wrap.addEventListener('touchend', (e) => {
+      if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 40) { imgIndex = (imgIndex + (dx > 0 ? 1 : -1) + images.length) % images.length; renderGallery(); }
+    });
   }
-
-  const thumbStrip = document.getElementById('nb-gallery-thumbs');
-  if (!thumbStrip) return;
-
-  if (images.length <= 1) {
-    thumbStrip.style.display = 'none';
-    return;
-  }
-
-  thumbStrip.innerHTML = images.map((img, idx) => `
-    <button class="nb-thumb-btn ${idx === 0 ? 'active' : ''}" onclick="window.selectGalleryImage('${img}', this)">
-      <img src="${img}" alt="معاينة" class="nb-thumb-img">
-    </button>
-  `).join('');
 }
 
-window.selectGalleryImage = function(src, btn) {
-  const mainImg = document.getElementById('nb-main-img');
-  if (mainImg) mainImg.src = src;
+window.nbOpenLightbox = () => { document.getElementById('nb-lightbox-img').src = images[imgIndex]; document.getElementById('nb-lightbox').classList.add('open'); };
+window.nbCloseLightbox = () => document.getElementById('nb-lightbox').classList.remove('open');
+window.nbLightboxStep = (d) => { imgIndex = (imgIndex + d + images.length) % images.length; document.getElementById('nb-lightbox-img').src = images[imgIndex]; renderGallery(); };
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('nb-lightbox')?.classList.contains('open')) return;
+  if (e.key === 'Escape') window.nbCloseLightbox();
+  if (e.key === 'ArrowLeft') window.nbLightboxStep(1);
+  if (e.key === 'ArrowRight') window.nbLightboxStep(-1);
+});
 
-  document.querySelectorAll('.nb-thumb-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-};
-
-function renderVariants(variants) {
-  const container = document.getElementById('nb-p-variants-box');
-  if (!container) return;
-
-  if (!Array.isArray(variants) || variants.length === 0) {
-    container.style.display = 'none';
-    return;
-  }
-
-  container.innerHTML = variants.map(v => `
+function renderVariants() {
+  const box = document.getElementById('nb-p-variants-box');
+  const vs = Array.isArray(product.variants) ? product.variants.filter((v) => v && (v.options || []).length) : [];
+  if (!vs.length) { box.style.display = 'none'; return; }
+  box.innerHTML = vs.map((v, vi) => `
     <div style="margin-bottom:12px">
-      <div style="font-size:12.5px;font-weight:700;color:var(--nb-ink);margin-bottom:6px">${v.label || 'الخيارات'}:</div>
+      <div style="font-size:12.5px;font-weight:800;color:var(--nb-ink);margin-bottom:6px">${esc(v.label || 'الخيار')}: <span id="nb-vsel-${vi}" style="color:var(--nb-pink)">${esc(v.options[0])}</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${(v.options || []).map((opt, i) => `
-          <button class="nb-variant-btn ${i === 0 ? 'active' : ''}" onclick="window.selectProductVariant('${opt}', this)">
-            ${opt}
-          </button>
-        `).join('')}
+        ${v.options.map((o, oi) => `<button type="button" class="nb-variant-btn ${oi === 0 ? 'active' : ''}" data-vi="${vi}" data-oi="${oi}">${esc(o)}</button>`).join('')}
       </div>
-    </div>
-  `).join('');
-
-  selectedVariant = variants[0]?.options?.[0] || null;
+    </div>`).join('');
+  vs.forEach((v) => { selected[v.label || 'الخيار'] = v.options[0]; });
+  box.querySelectorAll('.nb-variant-btn').forEach((b) => b.addEventListener('click', () => {
+    const v = vs[+b.dataset.vi]; const o = v.options[+b.dataset.oi];
+    selected[v.label || 'الخيار'] = o;
+    b.parentElement.querySelectorAll('.nb-variant-btn').forEach((x) => x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('nb-vsel-' + b.dataset.vi).textContent = o;
+  }));
 }
+function variantText() { return Object.entries(selected).map(([k, v]) => `${k}: ${v}`).join(' • '); }
 
-window.selectProductVariant = function(opt, btn) {
-  selectedVariant = opt;
-  const parent = btn.parentElement;
-  parent.querySelectorAll('.nb-variant-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-};
-
-// Quantity controls
-window.changeQuantity = function(delta) {
-  selectedQuantity = Math.max(1, selectedQuantity + delta);
-  const qEl = document.getElementById('nb-qty-val');
-  if (qEl) qEl.textContent = selectedQuantity;
-  updateCodTotals();
-};
-
-async function loadAlgeriaCities() {
-  try {
-    const res = await fetch('/data/algeria_cities.json');
-    citiesData = await res.json();
-    populateWilayas();
-  } catch (e) {
-    console.error('Error loading algeria_cities.json:', e);
-  }
-}
-
-function populateWilayas() {
-  const wilayaSelect = document.getElementById('nb-cod-wilaya');
-  if (!wilayaSelect || !citiesData || !citiesData.wilayas) return;
-
-  wilayaSelect.innerHTML = '<option value="">-- اختاري الولاية (58 ولاية) --</option>' +
-    citiesData.wilayas.map(w => `
-      <option value="${w.wilaya_name_arabic}" data-id="${w.wilaya_id}">
-        ${w.wilaya_id} - ${w.wilaya_name_arabic}
-      </option>
-    `).join('');
-
-  wilayaSelect.addEventListener('change', () => {
-    const selectedOption = wilayaSelect.options[wilayaSelect.selectedIndex];
-    const wId = parseInt(selectedOption?.dataset?.id, 10);
-    populateCommunes(wId);
-    updateCodTotals();
-  });
-}
-
-function populateCommunes(wilayaId) {
-  const communeSelect = document.getElementById('nb-cod-commune');
-  if (!communeSelect || !citiesData) return;
-
-  const communes = (citiesData.communes || []).filter(c => c.wilaya_id === wilayaId);
-
-  if (communes.length === 0) {
-    communeSelect.innerHTML = '<option value="">-- البلدية / الدائرة --</option>';
-    return;
-  }
-
-  communeSelect.innerHTML = '<option value="">-- اختاري البلدية --</option>' +
-    communes.map(c => `
-      <option value="${c.commune_name_arabic || c.commune_name_latin}">
-        ${c.commune_name_arabic || c.commune_name_latin}
-      </option>
-    `).join('');
-}
-
-async function loadShippingConfig() {
-  try {
-    const snap = await db.collection('site_config').doc('shipping').get();
-    if (snap.exists) {
-      shippingRates = snap.data();
+/** نص الوصف آمن: فقرات + قوائم (أسطر تبدأ بـ - أو •) + **غامق** */
+function paragraphs(text) {
+  const blocks = String(text || '').replace(/\r/g, '').split(/\n{2,}/);
+  return blocks.map((b) => {
+    const lines = b.split('\n').filter((l) => l.trim());
+    if (lines.length && lines.every((l) => /^\s*[-•*]\s+/.test(l))) {
+      return '<ul>' + lines.map((l) => `<li>${fmt(l.replace(/^\s*[-•*]\s+/, ''))}</li>`).join('') + '</ul>';
     }
-  } catch (e) {
-    console.warn('Using default shipping rates map');
-  }
+    return `<p>${lines.map(fmt).join('<br>')}</p>`;
+  }).join('');
+}
+function fmt(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); }
+
+function renderDescription() {
+  const d = product.description || product.desc || '';
+  document.getElementById('nb-p-desc-content').innerHTML = d ? paragraphs(d) : '<p>منتج مختار بعناية لكِ ولطفلكِ من متجر نبضة.</p>';
 }
 
-function getCalculatedShippingFee() {
-  const wilaya = document.getElementById('nb-cod-wilaya')?.value;
-  const isHome = document.querySelector('input[name="deliveryType"]:checked')?.value !== 'office';
-
-  if (!wilaya) return 600; // default average
-
-  // If customized in site_config/shipping
-  if (shippingRates[wilaya]) {
-    return isHome ? (shippingRates[wilaya].home || 600) : (shippingRates[wilaya].desk || 400);
-  }
-
-  // Standard defaults by region
-  const central = ['الجزائر', 'البليدة', 'بومرداس', 'تيبازة'];
-  if (central.includes(wilaya)) return isHome ? 450 : 300;
-
-  return isHome ? 650 : 400;
+function renderSpecs() {
+  const rows = [];
+  if (product.brand) rows.push(['الماركة', product.brand]);
+  if (product.category) rows.push(['القسم', product.category]);
+  if (product.sku) rows.push(['رمز المنتج', product.sku]);
+  if (product.specs && typeof product.specs === 'object') Object.entries(product.specs).forEach(([k, v]) => rows.push([k, v]));
+  (product.variants || []).forEach((v) => v && v.options && rows.push([v.label || 'الخيارات', v.options.join('، ')]));
+  const t = document.getElementById('nb-spec-table');
+  t.innerHTML = rows.length ? rows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('') : '<tr><td colspan="2">لا توجد مواصفات إضافية.</td></tr>';
 }
 
-function updateCodTotals() {
-  if (!currentProduct) return;
-
-  const unitPrice = Number(currentProduct.price || 0);
-  const subtotal = unitPrice * selectedQuantity;
-  const shipping = getCalculatedShippingFee();
-  const total = subtotal + shipping;
-
-  const subtotalEl = document.getElementById('nb-cod-subtotal');
-  const shipEl = document.getElementById('nb-cod-shipping');
-  const totalEl = document.getElementById('nb-cod-total');
-
-  if (subtotalEl) subtotalEl.textContent = `${subtotal.toLocaleString()} دج`;
-  if (shipEl) shipEl.textContent = `${shipping.toLocaleString()} دج`;
-  if (totalEl) totalEl.textContent = `${total.toLocaleString()} دج`;
+function renderReviews() {
+  const box = document.getElementById('nb-reviews-box');
+  const list = Array.isArray(product.reviews) ? product.reviews : [];
+  const rating = Number(product.rating || 0);
+  const rc = Number(product.reviewCount || list.length || 0);
+  document.getElementById('nb-tab-reviews-btn').textContent = `التقييمات${rc ? ` (${rc})` : ''}`;
+  box.innerHTML = `
+    ${rating ? `<div class="nb-rating-summary"><div class="nb-rating-big">${rating.toFixed(1)}</div><div><div class="nb-stars" style="font-size:20px">${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))}</div><div style="font-size:13px;color:var(--nb-ink-3)">${rc} تقييم</div></div></div>` : ''}
+    ${list.length ? list.slice(0, 20).map((r) => `
+      <div class="nb-review">
+        <div style="display:flex;justify-content:space-between;align-items:center"><strong style="color:var(--nb-ink)">${esc(r.name || 'زبونة نبضة')}</strong><span class="nb-stars">${'★'.repeat(Math.max(1, Math.min(5, Math.round(r.rating || 5))))}</span></div>
+        <p style="margin:6px 0 0">${esc(r.text || r.comment || '')}</p>
+      </div>`).join('') : '<p>لا توجد تقييمات مكتوبة بعد. كوني أول من يقيّم هذا المنتج بعد استلامه 🌸</p>'}`;
 }
 
-// Order Confirmation (Direct COD Form)
-window.submitDirectCodOrder = async function() {
-  if (!currentProduct) return;
+function wireTabs() {
+  document.querySelectorAll('.nb-tab-btn').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.nb-tab-btn').forEach((x) => x.classList.remove('active'));
+    document.querySelectorAll('.nb-tab-panel').forEach((x) => x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('tab-' + b.dataset.tab).classList.add('active');
+  }));
+}
 
-  const name = document.getElementById('nb-cod-name')?.value?.trim();
-  const phone = document.getElementById('nb-cod-phone')?.value?.trim();
-  const wilaya = document.getElementById('nb-cod-wilaya')?.value;
-  const commune = document.getElementById('nb-cod-commune')?.value;
-  const address = document.getElementById('nb-cod-address')?.value?.trim();
-  const deliveryType = document.querySelector('input[name="deliveryType"]:checked')?.value || 'home';
+/* ─────────────── نموذج الطلب ─────────────── */
+async function loadCities() {
+  if (currentMarket() !== 'DZ') { cities = { wilayas: [], communes: [] }; return; }
+  try { cities = await (await fetch('/data/algeria_cities.json')).json(); } catch (_) { cities = { wilayas: [], communes: [] }; }
+}
 
-  // Validation
-  if (!name || name.length < 2) {
-    alert('يرجى إدخال اسمكِ الكامل.');
-    return;
+/** حقول العنوان حسب السوق: السعودية = المناطق + مدينة نصّية، بلا استلام من مكتب */
+function adaptFormToMarket() {
+  const mk = M();
+  if (mk.code === 'DZ') return;
+  const lab = (id) => document.querySelector(`label[for="${id}"]`);
+  lab('nb-cod-wilaya').textContent = mk.regionLabel + ' *';
+  lab('nb-cod-commune').textContent = mk.cityLabel;
+  lab('nb-cod-phone').textContent = mk.phoneLabel + ' *';
+  document.getElementById('err-wilaya').textContent = 'اختاري ' + mk.regionLabel;
+  document.getElementById('err-phone').textContent = 'رقم جوال سعودي من 10 أرقام يبدأ بـ 05';
+  document.getElementById('nb-cod-phone').placeholder = mk.phoneHint;
+  document.getElementById('nb-cod-name').placeholder = 'مثال: نورة العتيبي';
+  const old = document.getElementById('nb-cod-commune');
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.id = 'nb-cod-commune'; inp.className = old.className; inp.placeholder = 'مثال: جدة — حي الروضة'; inp.maxLength = 80; inp.autocomplete = 'address-level2';
+  old.replaceWith(inp);
+  const office = document.querySelector('input[name="deliveryType"][value="office"]');
+  if (office) office.closest('label').style.display = 'none';
+  document.getElementById('nb-cod-shipping').textContent = 'اختاري ' + mk.regionLabel;
+}
+
+function wireForm() {
+  adaptFormToMarket();
+  const ws = document.getElementById('nb-cod-wilaya');
+  if (currentMarket() !== 'DZ') {
+    ws.innerHTML = `<option value="">— ${M().regionLabel} —</option>` + SA_REGIONS.filter((r) => wilayaEnabled(rates, r)).map((r) => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+  } else {
+  ws.innerHTML = '<option value="">— الولاية —</option>' + (cities.wilayas || [])
+    .filter((w) => wilayaEnabled(rates, w.wilaya_name_arabic))
+    .map((w) => `<option value="${esc(w.wilaya_name_arabic)}" data-id="${w.wilaya_id}">${w.wilaya_id} - ${esc(w.wilaya_name_arabic)}</option>`).join('');
   }
+  ws.addEventListener('change', () => {
+    const id = parseInt(ws.options[ws.selectedIndex]?.dataset?.id, 10);
+    const cs = document.getElementById('nb-cod-commune');
+    if (cs.tagName !== 'SELECT') { clearErr('wilaya'); updateTotals(); return; }
+    const list = (cities.communes || []).filter((c) => c.wilaya_id === id);
+    cs.innerHTML = '<option value="">— البلدية —</option>' + list.map((c) => {
+      const n = c.commune_name_arabic || c.commune_name_latin; return `<option value="${esc(n)}">${esc(n)}</option>`;
+    }).join('');
+    clearErr('wilaya');
+    updateTotals();
+  });
+  document.querySelectorAll('input[name="deliveryType"]').forEach((r) => r.addEventListener('change', updateTotals));
+  document.getElementById('nb-cod-name').addEventListener('input', () => clearErr('name'));
+  document.getElementById('nb-cod-phone').addEventListener('input', () => clearErr('phone'));
+  // تعبئة تلقائية من آخر طلب
+  try {
+    const last = JSON.parse(localStorage.getItem('nb_last_customer' + (currentMarket() === 'DZ' ? '' : '_' + currentMarket())) || 'null');
+    if (last) {
+      document.getElementById('nb-cod-name').value = last.name || '';
+      document.getElementById('nb-cod-phone').value = last.phone || '';
+      document.getElementById('nb-cod-address').value = last.address || '';
+      if (last.wilaya) { ws.value = last.wilaya; ws.dispatchEvent(new Event('change')); document.getElementById('nb-cod-commune').value = last.commune || ''; }
+    }
+  } catch (_) {}
+}
 
-  const phoneRegex = /^0[567]\d{8}$/;
-  if (!phone || !phoneRegex.test(phone)) {
-    alert('يرجى إدخال رقم هاتف جزائري صحيح (مثال: 0550123456 أو 0660123456).');
-    return;
-  }
+function isHome() { return document.querySelector('input[name="deliveryType"]:checked')?.value !== 'office'; }
+function currentShipping() { return shippingFeeFor(rates, document.getElementById('nb-cod-wilaya').value, isHome()); }
 
-  if (!wilaya) {
-    alert('يرجى اختيار الولاية.');
-    return;
-  }
+function updateTotals() {
+  if (!product) return;
+  const sub = Number(product.price || 0) * qty;
+  const wil = document.getElementById('nb-cod-wilaya')?.value;
+  const ship = wil ? currentShipping() : 0;
+  document.getElementById('nb-cod-subtotal').textContent = formatDA(sub);
+  document.getElementById('nb-cod-shipping').textContent = wil ? formatDA(ship) : 'اختاري ' + M().regionLabel;
+  document.getElementById('nb-cod-total').textContent = formatDA(sub + ship);
+}
 
-  const submitBtn = document.getElementById('nb-cod-submit-btn');
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = 'جاري تأكيد طلبيتكِ... ⏳';
-  }
+window.changeQuantity = function (d) {
+  const max = hasStockField(product || {}) ? Math.max(1, product.stock) : 50;
+  qty = Math.min(max, Math.max(1, qty + d));
+  document.getElementById('nb-qty-val').textContent = qty;
+  updateTotals();
+};
 
-  const unitPrice = Number(currentProduct.price || 0);
-  const shippingFee = getCalculatedShippingFee();
-  const cartId = 'cod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+function showErr(k) { document.getElementById('err-' + k).style.display = 'block'; document.getElementById('nb-cod-' + k).classList.add('nb-field-error'); }
+function clearErr(k) { document.getElementById('err-' + k).style.display = 'none'; document.getElementById('nb-cod-' + k).classList.remove('nb-field-error'); }
+export function normalizePhone(v) { return normPhoneFor(v); }
 
-  const orderData = {
+let submitting = false;
+window.submitDirectCodOrder = async function () {
+  if (!product || submitting) return;
+  const name = document.getElementById('nb-cod-name').value.trim();
+  const phone = normalizePhone(document.getElementById('nb-cod-phone').value);
+  const wilaya = document.getElementById('nb-cod-wilaya').value;
+  const commune = document.getElementById('nb-cod-commune').value;
+  const address = document.getElementById('nb-cod-address').value.trim();
+  let ok = true;
+  if (name.length < 2) { showErr('name'); ok = false; }
+  if (!validPhoneFor(phone)) { showErr('phone'); ok = false; }
+  if (!wilaya) { showErr('wilaya'); ok = false; }
+  if (!ok) { document.querySelector('.nb-field-error')?.focus(); return; }
+
+  submitting = true;
+  const btn = document.getElementById('nb-cod-submit-btn');
+  btn.disabled = true; btn.textContent = 'جاري تأكيد طلبيتكِ… ⏳';
+  const unitPrice = Number(product.price || 0);
+  const shippingFee = currentShipping();
+  const order = {
     userId: currentUser ? currentUser.uid : null,
     source: 'website',
     status: 'pending',
-    customerName: name,
+    customerName: name.slice(0, 110),
     customerPhone: phone,
-    wilaya: wilaya,
+    wilaya,
     commune: commune || '',
     address: address || '',
-    deliveryType: deliveryType,
-    productId: currentProduct.id,
-    productName: currentProduct.name,
-    quantity: parseInt(selectedQuantity, 10),
-    unitPrice: unitPrice,
-    shippingFee: shippingFee,
-    variant: selectedVariant || '',
-    cartId: cartId,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    deliveryType: isHome() ? 'home' : 'office',
+    country: currentMarket(),
+    currency: M().currency,
+    phoneIntl: intlPhone(phone),
+    productId: product.id,
+    productName: product.name,
+    productImage: images[0] || '',
+    quantity: qty,
+    unitPrice,
+    shippingFee,
+    lineTotal: unitPrice * qty + shippingFee,
+    variant: variantText(),
+    cartId: 'cod_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    cartSize: 1,
+    referrer: document.referrer ? document.referrer.slice(0, 200) : '',
+    createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
   };
-
   try {
-    const docRef = await db.collection('orders').add(orderData);
-
-    // Show Thank You Screen
-    showThankYouView({
-      orderId: docRef.id,
-      productName: currentProduct.name,
-      total: (unitPrice * selectedQuantity) + shippingFee,
-      customerPhone: phone
-    });
+    const ref = await db.collection('orders').add(order);
+    localStorage.setItem('nb_last_customer' + (currentMarket() === 'DZ' ? '' : '_' + currentMarket()), JSON.stringify({ name, phone, wilaya, commune, address }));
+    thankYou({ id: ref.id, total: order.lineTotal, phone });
   } catch (err) {
-    console.error('Error creating order:', err);
-    alert('حدث خطأ أثناء حفظ الطلب: ' + err.message);
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = 'تأكيد الطلب — الدفع عند الاستلام 🚚';
-    }
-  }
+    console.error('order error', err);
+    window.nbToast?.('تعذّر إرسال الطلب، تحقّقي من الاتصال وحاولي مجدداً', 'error');
+    btn.disabled = false; btn.textContent = 'تأكيد الطلب — الدفع عند الاستلام';
+  } finally { submitting = false; }
 };
 
-function showThankYouView(info) {
-  const container = document.getElementById('nb-product-view-container');
-  if (!container) return;
-
-  const whatsappMsg = encodeURIComponent(`مرحباً نبضة، قمت بتأكيد طلبيتي لرقم الطلب #${info.orderId.slice(-6)} للمنتج: ${info.productName}`);
-  const whatsappUrl = `https://wa.me/213550000000?text=${whatsappMsg}`;
-
-  container.innerHTML = `
-    <div style="background:#FFFFFF;border:1px solid #C8E6C9;border-radius:28px;padding:48px 32px;text-align:center;max-width:680px;margin:40px auto;box-shadow:0 16px 40px rgba(0,137,123,0.1)">
+function thankYou(info) {
+  const code = info.id.slice(-6).toUpperCase();
+  const wa = whatsappLink(settings, `مرحباً متجر نبضة، طلبي رقم #${code} — ${product.name}`);
+  const c = document.getElementById('nb-product-view-container');
+  c.innerHTML = `
+    <div style="background:#fff;border:1px solid #C8E6C9;border-radius:28px;padding:48px 28px;text-align:center;max-width:680px;margin:30px auto;box-shadow:0 16px 40px rgba(0,137,123,.1)">
       <div style="font-size:56px;margin-bottom:14px">🎉</div>
-      <h2 style="font-size:26px;font-weight:900;color:var(--nb-ink);margin:0 0 10px">تم تأكيد طلبيتكِ بنجاح!</h2>
-      <p style="font-size:15px;color:var(--nb-ink-2);line-height:1.7;margin-bottom:24px">
-        شكراً لثقتكِ بمتجر نبضة. رقم طلبيتكِ هو: <strong style="color:var(--nb-pink)">#${info.orderId.slice(-6)}</strong>.<br>
-        سيتصل بكِ فريق خدمة العملاء هاتفياً على الرقم <strong>${info.customerPhone}</strong> لتأكيد العنوان وموعد الشحن.
+      <h1 style="font-size:26px;font-weight:900;color:var(--nb-ink);margin:0 0 10px">تم تسجيل طلبكِ بنجاح!</h1>
+      <p style="font-size:15px;color:var(--nb-ink-2);line-height:1.8;margin-bottom:22px">
+        رقم الطلب: <strong style="color:var(--nb-pink)">#${code}</strong><br>
+        سنتّصل بكِ على <strong dir="ltr">${esc(info.phone)}</strong> لتأكيد العنوان وموعد التوصيل.
       </p>
-
-      <div style="background:#F1F8E9;border:1px solid #C8E6C9;border-radius:18px;padding:18px;margin-bottom:28px;font-size:14px;color:#2E7D32;font-weight:700">
-        المبلغ الإجمالي للدفع عند الاستلام: ${info.total.toLocaleString()} دج
-      </div>
-
-      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-        <a href="${whatsappUrl}" target="_blank" class="nb-btn-primary" style="background:#25D366;font-size:13.5px;padding:12px 24px;text-decoration:none">
-          متابعة الطلبية عبر واتساب 💬
-        </a>
-        <a href="/shop" class="nb-btn-secondary" style="font-size:13.5px;padding:12px 24px;text-decoration:none">
-          مواصلة التسوق 🛍️
-        </a>
+      <div style="background:#F1F8E9;border:1px solid #C8E6C9;border-radius:18px;padding:16px;margin-bottom:26px;font-size:15px;color:#2E7D32;font-weight:900">المبلغ عند الاستلام: ${formatDA(info.total)}</div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        ${wa ? `<a href="${wa}" target="_blank" rel="noopener" class="nb-btn-primary" style="background:#25D366;text-decoration:none;padding:12px 22px">💬 تابعي طلبكِ عبر واتساب</a>` : ''}
+        <a href="${mUrl('/shop')}" class="nb-btn-secondary" style="text-decoration:none;padding:12px 22px">مواصلة التسوّق 🛍️</a>
       </div>
     </div>
-  `;
+    <section style="margin:30px 0"><h2 style="font-size:19px;font-weight:900;margin-bottom:16px">قد يعجبكِ أيضاً</h2><div class="nb-prod" id="nb-ty-grid"></div></section>`;
+  document.getElementById('nb-sticky-buy-bar').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  getVisibleProducts().then((l) => {
+    document.getElementById('nb-ty-grid').innerHTML = l.filter((p) => p.id !== product.id).slice(0, 8).map(productCardHtml).join('');
+  }).catch(() => {});
 }
 
-window.addToCartFromPage = function() {
-  if (!currentProduct) return;
-  addToCart({
-    productId: currentProduct.id,
-    slug: currentProduct.slug || currentProduct.id,
-    name: currentProduct.name,
-    image: currentProduct.image || currentProduct.imageUrl || (currentProduct.images && currentProduct.images[0]),
-    price: Number(currentProduct.price || 0),
-    variant: selectedVariant,
-    qty: selectedQuantity
+window.addToCartFromPage = function () {
+  if (!product || !inStock(product)) return;
+  addToCart({ productId: product.id, slug: product.slug || product.id, name: product.name, image: images[0], price: Number(product.price || 0), oldPrice: productOldPrice(product), variant: variantText(), qty });
+  window.nbToast?.('أُضيف المنتج إلى السلة 🛒', 'success');
+  window.nbOpenCart?.();
+};
+
+window.orderViaWhatsApp = function () {
+  const link = whatsappLink(settings, `مرحباً متجر نبضة، أريد طلب: ${product.name}${variantText() ? ' (' + variantText() + ')' : ''} — الكمية ${qty} — ${formatDA(product.price)}\n${location.origin}${mUrl('/product/' + encodeURIComponent(product.slug || product.id))}`);
+  if (link) window.open(link, '_blank', 'noopener');
+};
+
+async function notifyMe() {
+  if (!currentUser) { location.href = '/login?next=' + encodeURIComponent(location.pathname); return; }
+  const phone = normalizePhone(prompt('رقم هاتفكِ لنعلمكِ عند توفّر المنتج:') || '');
+  if (!validPhoneFor(phone)) { window.nbToast?.('رقم الهاتف غير صحيح', 'error'); return; }
+  try {
+    // الحقول مطابقة تماماً لقاعدة waitlist (hasOnly)
+    await db.collection('waitlist').add({
+      phone, userId: currentUser.uid, productId: product.id, productName: String(product.name).slice(0, 200),
+      status: 'waiting', type: 'restock', createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    window.nbToast?.('سنعلمكِ فور توفّر المنتج 💗', 'success');
+  } catch (e) { window.nbToast?.('تعذّر التسجيل، حاولي لاحقاً', 'error'); }
+}
+
+/* ─────────────── مشابهة + مؤخراً ─────────────── */
+async function loadSimilar() {
+  const box = document.getElementById('nb-similar-products-grid');
+  try {
+    const all = (await getVisibleProducts()).filter((p) => p.id !== product.id);
+    const same = all.filter((p) => p.category && p.category === product.category);
+    const list = [...same, ...all.filter((p) => !same.includes(p))].slice(0, 10);
+    if (!list.length) { box.parentElement.style.display = 'none'; return; }
+    box.innerHTML = list.map(productCardHtml).join('');
+  } catch (_) { box.parentElement.style.display = 'none'; }
+}
+
+const recentKey = () => 'nb_recent_viewed' + (currentMarket() === 'DZ' ? '' : '_' + currentMarket());
+function saveRecent() {
+  try {
+    let r = JSON.parse(localStorage.getItem(recentKey()) || '[]').filter((x) => x.id !== product.id);
+    r.unshift({ id: product.id, slug: product.slug || product.id, name: product.name, price: product.price, oldPrice: productOldPrice(product), image: images[0], category: product.category });
+    localStorage.setItem(recentKey(), JSON.stringify(r.slice(0, 12)));
+  } catch (_) {}
+}
+
+function renderRecent() {
+  try {
+    const r = JSON.parse(localStorage.getItem(recentKey()) || '[]').filter((x) => x.id !== product.id);
+    if (!r.length) return;
+    document.getElementById('nb-recent-grid').innerHTML = r.slice(0, 8).map((x) => productCardHtml({ ...x, images: [x.image] })).join('');
+    document.getElementById('nb-recent-sec').style.display = 'block';
+  } catch (_) {}
+}
+
+/* ─────────────── SEO ─────────────── */
+function seo() {
+  const p = product;
+  const path = '/product/' + encodeURIComponent(p.slug || p.id);
+  const url = `https://nabda.online${mUrl(path)}`;
+  // نسخ المنتج في الأسواق الأخرى (hreflang) — فقط حيث هو متاح ومسعّر
+  [['DZ', 'ar-DZ'], ['SA', 'ar-SA']].forEach(([c, lang]) => {
+    if (!mAvailable(raw, c)) return;
+    const l = document.createElement('link'); l.rel = 'alternate'; l.hreflang = lang; l.href = `https://nabda.online${mUrl(path, c)}`; document.head.appendChild(l);
   });
-
-  if (window.openCartDrawer) {
-    window.openCartDrawer();
-  }
-};
-
-window.orderViaWhatsApp = function() {
-  if (!currentProduct) return;
-  const url = window.location.href;
-  const msg = encodeURIComponent(`مرحباً متجر نبضة، أود طلب المنتج: ${currentProduct.name} - السعر: ${currentProduct.price} دج. الرابط: ${url}`);
-  window.open(`https://wa.me/213550000000?text=${msg}`, '_blank');
-};
-
-function setupStickyMobileBar(p) {
-  const bar = document.getElementById('nb-sticky-buy-bar');
-  if (!bar) return;
-
-  const thumb = document.getElementById('nb-sticky-thumb');
-  const price = document.getElementById('nb-sticky-price');
-  if (thumb) thumb.src = p.image || p.imageUrl || (p.images && p.images[0]) || '';
-  if (price) price.textContent = `${Number(p.price || 0).toLocaleString()} دج`;
-
-  bar.style.display = 'flex';
-}
-
-function saveRecentlyViewed(p) {
-  try {
-    let recent = JSON.parse(localStorage.getItem('nb_recent_viewed') || '[]');
-    recent = recent.filter(item => item.id !== p.id);
-    recent.unshift({
-      id: p.id,
-      slug: p.slug || p.id,
-      name: p.name,
-      price: p.price,
-      image: p.image || p.imageUrl || (p.images && p.images[0])
-    });
-    localStorage.setItem('nb_recent_viewed', JSON.stringify(recent.slice(0, 8)));
-  } catch (e) {}
-}
-
-async function loadSimilarProducts(p) {
-  const container = document.getElementById('nb-similar-products-grid');
-  if (!container) return;
-
-  try {
-    const snap = await db.collection('products')
-      .where('active', '==', true)
-      .limit(10)
-      .get();
-
-    const products = [];
-    snap.forEach(doc => {
-      const item = { id: doc.id, ...doc.data() };
-      if (item.id !== p?.id && !isHiddenProduct(item)) {
-        products.push(item);
-      }
-    });
-
-    if (products.length === 0) {
-      container.parentElement.style.display = 'none';
-      return;
-    }
-
-    container.innerHTML = products.slice(0, 4).map(prod => `
-      <div class="nb-shop-card" onclick="window.location.href='/product/${prod.slug || prod.id}'">
-        <div class="nb-shop-card-img-wrap" style="height:170px">
-          <img src="${prod.image || prod.imageUrl || (prod.images && prod.images[0])}" alt="${prod.name}" class="nb-shop-img" loading="lazy">
-        </div>
-        <div class="nb-shop-card-body">
-          <h4 class="nb-shop-card-title">${prod.name}</h4>
-          <div style="font-size:15px;font-weight:900;color:var(--nb-pink);margin-bottom:8px">${Number(prod.price || 0).toLocaleString()} دج</div>
-          <button class="nb-btn-primary" style="width:100%;font-size:12px;padding:6px">عرض المنتج</button>
-        </div>
-      </div>
-    `).join('');
-  } catch (err) {
-    console.error('Error loading similar products:', err);
-  }
-}
-
-function updateProductSeo(p) {
-  const title = `${p.name} — متجر نبضة`;
-  document.title = title;
-
-  const desc = (p.description || p.desc || '').slice(0, 160);
-  const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc) metaDesc.setAttribute('content', desc);
-
-  // Canonical
-  let canonical = document.querySelector('link[rel="canonical"]');
-  if (!canonical) {
-    canonical = document.createElement('link');
-    canonical.rel = 'canonical';
-    document.head.appendChild(canonical);
-  }
-  canonical.href = `https://nabda.online/product/${p.slug || p.id}`;
-
-  // Structured Data
-  let script = document.getElementById('nb-product-jsonld');
-  if (!script) {
-    script = document.createElement('script');
-    script.id = 'nb-product-jsonld';
-    script.type = 'application/ld+json';
-    document.head.appendChild(script);
-  }
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    'name': p.name,
-    'image': p.image || p.imageUrl || (p.images && p.images[0]),
-    'description': desc,
-    'offers': {
-      '@type': 'Offer',
-      'price': p.price,
-      'priceCurrency': 'DZD',
-      'availability': p.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
-    }
+  const desc = String(p.seoDescription || p.description || p.desc || '').replace(/\s+/g, ' ').slice(0, 160);
+  document.title = `${p.seoTitle || p.name} — متجر نبضة`;
+  setMeta('name', 'description', desc);
+  setMeta('property', 'og:title', `${p.name} | ${formatDA(p.price)}`);
+  setMeta('property', 'og:description', desc);
+  setMeta('property', 'og:image', images[0]);
+  setMeta('property', 'og:url', url);
+  let c = document.querySelector('link[rel="canonical"]');
+  if (!c) { c = document.createElement('link'); c.rel = 'canonical'; document.head.appendChild(c); }
+  c.href = url;
+  const ld = {
+    '@context': 'https://schema.org', '@type': 'Product', name: p.name, image: images, description: desc, sku: p.sku || p.id,
+    brand: p.brand ? { '@type': 'Brand', name: p.brand } : undefined,
+    offers: { '@type': 'Offer', url, price: Number(p.price || 0), priceCurrency: M().currency, availability: inStock(p) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' },
   };
-  script.textContent = JSON.stringify(jsonLd);
+  if (p.rating && p.reviewCount) ld.aggregateRating = { '@type': 'AggregateRating', ratingValue: Number(p.rating), reviewCount: Number(p.reviewCount) };
+  const s = document.createElement('script'); s.type = 'application/ld+json'; s.textContent = JSON.stringify(ld); document.head.appendChild(s);
+}
+function setMeta(attr, key, val) {
+  let m = document.querySelector(`meta[${attr}="${key}"]`);
+  if (!m) { m = document.createElement('meta'); m.setAttribute(attr, key); document.head.appendChild(m); }
+  m.setAttribute('content', val || '');
 }

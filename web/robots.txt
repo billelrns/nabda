@@ -1,7 +1,12 @@
 User-agent: *
 Allow: /
-Allow: /tools/
-Allow: /articles.html
-Allow: /shop
+Disallow: /admin
+Disallow: /admin/
+Disallow: /account
+Disallow: /account/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /app/
+Disallow: /app
 
 Sitemap: https://nabda.online/sitemap.xml

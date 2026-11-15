@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <script src="/js/app-redirect.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>متابعة الدورة الشهرية والخصوبة — نبضة</title>
   <meta name="description" content="تابعي دورتكِ الشهرية وأيام الخصوبة والتبويض بدقة وسهولة مع تقويم نبضة الذكي. نصائح وإرشادات التوازن الهرموني بإشراف فريق تحرير نبضة.">
@@ -11,10 +12,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/site.css">
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <style>
     .nb-cycle-container {
@@ -206,8 +207,8 @@
           <h2 style="font-size:20px;font-weight:900;color:var(--nb-ink);margin:0" id="nb-cal-month-title">أكتوبر 2026</h2>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="nb-strip-nav-btn" id="nb-cal-prev">›</button>
-          <button class="nb-strip-nav-btn" id="nb-cal-next">‹</button>
+          <button class="nb-strip-nav-btn" id="nb-cal-prev" aria-label="الشهر السابق"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;margin:auto"><path d="M9 5l7 7-7 7"/></svg></button>
+          <button class="nb-strip-nav-btn" id="nb-cal-next" aria-label="الشهر التالي"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;margin:auto"><path d="M15 5l-7 7 7 7"/></svg></button>
         </div>
       </div>
 
@@ -247,12 +248,12 @@
           <h3 style="font-size:18px;font-weight:900;color:var(--nb-ink);margin:0">مقالات توازن الهرمونات والدورة</h3>
           <a href="/articles" style="color:var(--nb-pink);font-size:13px;font-weight:800;text-decoration:none">الموسوعة ←</a>
         </div>
-        <div class="nb-art-grid" id="nb-cycle-articles-grid" style="grid-template-columns:1fr;gap:16px"></div>
+        <div class="nb-art-grid" id="nb-cycle-articles-grid" style="grid-template-columns:1fr;grid-auto-flow:row;overflow:visible;gap:16px"></div>
       </div>
 
       <div>
         <h3 style="font-size:18px;font-weight:900;color:var(--nb-ink);margin-bottom:16px">منتجات لراحتكِ أثناء الدورة</h3>
-        <div class="nb-prod" id="nb-cycle-products-carousel" style="grid-template-columns:1fr;gap:14px"></div>
+        <div class="nb-prod" id="nb-cycle-products-carousel" style="grid-template-columns:1fr 1fr;grid-auto-flow:row;overflow:visible;gap:14px"></div>
       </div>
     </div>
   </main>
@@ -282,7 +283,7 @@
     </div>
   </div>
 
-  <div id="nb-footer-placeholder"></div>
+  <div id="nb-footer"></div>
 
   <script type="module">
     import { initCyclePage } from '/js/pages/cycle.js';

@@ -1,7 +1,7 @@
 name: nabda_app
 description: NABDA - Women's Health App
 publish_to: 'none'
-version: 1.0.1+3
+version: 1.0.3+5
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -28,6 +28,7 @@ dependencies:
   sqflite: ^2.4.3                # ⬆️ patch
   simple_gesture_detector: ^0.2.1
   http: ^1.2.1
+  path_provider: ^2.1.0          # موجودة أصلاً كتبعية غير مباشرة — لا تُضيف كوداً أصلياً جديداً (لصور الإشعارات)
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.1              # ⬆️ patch فقط (0.11 يتعارض مع flutter_local_notifications 18)
   image_picker: ^1.2.2           # ⬆️ patch
@@ -93,6 +94,7 @@ flutter:
     - assets/images/pregnancy_news/
     - assets/images/smart_articles/
     - assets/images/share_cards/
+    - assets/images/clubs/
     # تسجيل ملفات البيانات التشغيلية فردياً لمنع تسريب ملفات العمل والنسخ الاحتياطية
     - assets/data/smart_2500_articles.json
     - assets/data/smart_100_articles.json

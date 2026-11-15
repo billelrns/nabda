@@ -74,7 +74,8 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _runTimer() async {
-    await Future.delayed(const Duration(milliseconds: 3200));
+    // كان 3.2 ثانية في كل إقلاع — 1.6 ثانية تكفي لحركة الشعار (1.1 ث)
+    await Future.delayed(const Duration(milliseconds: 1600));
     if (!mounted) return;
     widget.onDone?.call();
   }

@@ -11,10 +11,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/site.css">
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <style>
     .nb-shop-container {
@@ -205,6 +205,7 @@
       gap: 20px;
     }
     .nb-shop-card {
+      position: relative;
       background: #FFFFFF;
       border: 1px solid #F8E1EA;
       border-radius: 20px;
@@ -354,6 +355,18 @@
       .nb-products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
       .nb-shop-card-img-wrap { height: 160px; }
     }
+  
+    @media (max-width: 900px) {
+      #nb-open-filters { display: inline-flex !important; }
+      .nb-shop-filters { position: fixed; inset: auto 0 0 0; max-height: 80vh; overflow-y: auto; z-index: 1500; border-radius: 24px 24px 0 0 !important; transform: translateY(105%); transition: transform .3s ease; display: block !important; box-shadow: 0 -10px 40px rgba(0,0,0,.15); }
+      .nb-shop-filters.open { transform: translateY(0); }
+    }
+    .nb-shop-card .nb-wish-heart.on { color: #E91E63; }
+    .nb-wish-heart { z-index: 3; }
+    .nb-shop-cat-pill { text-decoration: none; color: inherit; }
+    .nb-stage-tab-btn.nb-suggested { box-shadow: 0 0 0 2px #F8BBD0; }
+    .nb-shop-card-img-wrap { display: block; }
+    .nb-cat-count { font-size: 10.5px; color: var(--nb-ink-3); font-weight: 700; }
   </style>
 </head>
 <body>
@@ -376,7 +389,7 @@
         <h1 style="font-size:28px;font-weight:900;color:var(--nb-ink);margin:0 0 10px;line-height:1.3">
           كل ما تحتاجينه لرحلتكِ من الحمل حتى رعاية طفلكِ
         </h1>
-        <p style="font-size:14px;color:var(--nb-ink-2);margin:0 0 18px;max-width:520px">
+        <p style="font-size:14px;color:var(--nb-ink-2);margin:0 0 18px;max-width:520px" data-mk-sa="منتجات أصلية مختارة بعناية للأمهات والمواليد، بأسعار بالريال السعودي والدفع عند الاستلام والتوصيل لكل مناطق المملكة.">
           منتجات أصلية مختارة بعناية فائقة للأمهات والمواليد مع خدمة الدفع عند الاستلام والتوصيل السريع لكافة ولايات الجزائر.
         </p>
         <div style="display:flex;gap:10px">
@@ -388,8 +401,8 @@
 
       <div class="nb-shop-side-banner">
         <div style="font-size:36px;margin-bottom:10px">🚚</div>
-        <h3 style="font-size:18px;font-weight:900;color:#00897B;margin:0 0 8px">توصيل لـ 58 ولاية</h3>
-        <p style="font-size:13px;color:var(--nb-ink-2);line-height:1.6;margin:0 0 14px">
+        <h3 style="font-size:18px;font-weight:900;color:#00897B;margin:0 0 8px" data-mk-sa="توصيل لكل مناطق المملكة">توصيل لـ 58 ولاية</h3>
+        <p style="font-size:13px;color:var(--nb-ink-2);line-height:1.6;margin:0 0 14px" data-mk-sa="اطلبي عبر الموقع وادفعي نقداً عند استلام طلبكِ عند باب بيتكِ.">
           اطلبي عبر الموقع وادفعي عند استلام طلبيتكِ في منزلكِ أو مكتب شركة الشحن.
         </p>
         <span style="font-size:12px;font-weight:800;color:#00897B">ضمان الاسترجاع والاستبدال خلال 7 أيام ✓</span>
@@ -414,18 +427,31 @@
     </div>
 
     <!-- Flash Deals Section -->
-    <section style="margin-bottom:36px;background:#FFFFFF;border:1px solid #F8E1EA;border-radius:var(--nb-radius-md);overflow:hidden;box-shadow:0 8px 24px rgba(244,63,126,0.06)">
+    <section id="nb-deals-sec" style="margin-bottom:36px;background:#FFFFFF;border:1px solid #F8E1EA;border-radius:var(--nb-radius-md);overflow:hidden;box-shadow:0 8px 24px rgba(244,63,126,0.06)">
       <div class="nb-flash-deals-header">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:24px">⚡</span>
-          <h2 style="font-size:18px;font-weight:900;margin:0">عروض وتخفيضات اليوم</h2>
+          <h2 style="font-size:18px;font-weight:900;margin:0">عروض وتخفيضات</h2>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:12.5px">ينتهي العرض خلال:</span>
-          <span class="nb-deals-timer-badge" id="nb-deals-timer">18:42:10</span>
-        </div>
+        <a href="/shop?discount=1#nb-shop-results-sec" style="color:#fff;font-size:12.5px;font-weight:800;text-decoration:none">كل العروض ←</a>
       </div>
-      <div style="padding:20px" class="nb-products-grid" id="nb-flash-deals-shelf"></div>
+      <div style="padding:20px" class="nb-prod" id="nb-flash-deals-shelf"></div>
+    </section>
+
+    <section id="nb-best-sec" style="margin-bottom:36px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h2 style="font-size:19px;font-weight:900;margin:0;color:var(--nb-ink)">🔥 الأكثر مبيعاً</h2>
+        <a href="/shop?sort=best_seller#nb-shop-results-sec" style="color:var(--nb-pink);font-size:13px;font-weight:800;text-decoration:none">عرض الكل ←</a>
+      </div>
+      <div class="nb-prod" id="nb-bestsellers-shelf"></div>
+    </section>
+
+    <section id="nb-new-sec" style="margin-bottom:36px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h2 style="font-size:19px;font-weight:900;margin:0;color:var(--nb-ink)">✨ وصل حديثاً</h2>
+        <a href="/shop?sort=newest#nb-shop-results-sec" style="color:var(--nb-pink);font-size:13px;font-weight:800;text-decoration:none">عرض الكل ←</a>
+      </div>
+      <div class="nb-prod" id="nb-new-shelf"></div>
     </section>
 
     <!-- Main Results Section -->
@@ -456,6 +482,20 @@
           </label>
         </div>
 
+        <div class="nb-filter-sec">
+          <div class="nb-filter-title">السعر (دج):</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="nb-price-min" placeholder="من" min="0" style="width:100%;padding:9px 10px;border:1px solid #F4E3EB;border-radius:10px;font-size:13px;font-family:inherit">
+            <span>—</span>
+            <input type="number" id="nb-price-max" placeholder="إلى" min="0" style="width:100%;padding:9px 10px;border:1px solid #F4E3EB;border-radius:10px;font-size:13px;font-family:inherit">
+          </div>
+        </div>
+
+        <div class="nb-filter-sec" id="nb-brand-filter-sec" style="display:none">
+          <div class="nb-filter-title">الماركة:</div>
+          <div id="nb-brand-filters" style="max-height:200px;overflow-y:auto"></div>
+        </div>
+
         <!-- Trust Badges -->
         <div style="background:#FFF9FC;border-radius:14px;padding:14px;font-size:12px;color:var(--nb-ink-2);line-height:1.7">
           <div style="font-weight:800;color:var(--nb-pink);margin-bottom:4px">🛡️ تسوق آمن مع نبضة:</div>
@@ -468,6 +508,7 @@
       <!-- Products Grid & Sort Bar -->
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+          <button id="nb-open-filters" class="nb-btn-secondary" style="display:none;font-size:13px;padding:8px 16px">⚙️ الفلاتر</button>
           <div id="nb-products-count" style="font-size:14px;font-weight:800;color:var(--nb-ink)">جاري التحميل...</div>
           
           <div style="display:flex;align-items:center;gap:8px">
@@ -495,7 +536,7 @@
     </div>
   </main>
 
-  <div id="nb-footer-placeholder"></div>
+  <div id="nb-footer"></div>
 
   <script type="module">
     import { initShopPage } from '/js/pages/shop.js';

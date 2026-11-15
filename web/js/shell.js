@@ -5,6 +5,9 @@
 import { PLAY_URL, OFFICIAL_FACEBOOK } from './site-config.js';
 import { auth, db } from './firebase-init.js';
 import { getCart, getCartCount, getCartTotal, updateQty, removeFromCart, onCartChange } from './cart.js';
+import { escapeHtml as esc, pregnancyFromUser } from './utils.js';
+import { MARKETS, currentMarket, saveMarket, switchMarketUrl, mUrl, money, detectCountryOnce, savedMarket, syncShopPath } from './market.js';
+import { cartKey } from './cart.js';
 
 // ── 1. SVG Animated Logo Template ──
 const SVG_LOGO = `
@@ -21,8 +24,8 @@ const SVG_LOGO = `
     <path id="nblH" d="M50 32C36 6 4 12 4 38C4 60 28 74 50 92C72 74 96 60 96 38C96 12 64 6 50 32Z"/>
     <g id="nblD"><use href="#nblH" x="-50" y="-50" fill="url(#nblB)"/><use href="#nblH" x="-50" y="-50" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3.4"/><ellipse cx="-21" cy="-26" rx="17" ry="10" fill="#fff" fill-opacity=".62" filter="url(#nblF3)"/><ellipse cx="-26" cy="-30" rx="5.5" ry="3.4" fill="#fff" fill-opacity=".95"/></g>
   </defs>
-  <image class="nblMo" href="/landing-assets/heart-big.png" x="1779" y="40" width="1000" height="921" style="transform-origin:2279px 500px"/>
-  <image class="nblBa" href="/landing-assets/heart-small.png" x="2081" y="374" width="450" height="382" style="transform-origin:2306px 565px"/>
+  <image class="nblMo" href="/landing-assets/heart-big.webp" x="1779" y="40" width="1000" height="921" style="transform-origin:2279px 500px"/>
+  <image class="nblBa" href="/landing-assets/heart-small.webp" x="2081" y="374" width="450" height="382" style="transform-origin:2306px 565px"/>
   <g transform="translate(40 168) scale(0.7508)">
     <path fill="url(#nblW)" d="M446 193L446 537Q446 543 450 547Q454 551 462 551L496 551L496 680L417 680Q366 680 324 640Q275 689 206 689L205 689L203 689Q103 689 46 606Q0 541 0 451Q0 341 70 269Q133 204 227 204Q278 204 328 225L369 193ZM291 344Q267 338 246 338Q202 338 177 368Q152 398 152 451Q152 501 179.5 533Q207 565 251 565Q268 565 291 560ZM823 343Q950 207 1123 207Q1247 207 1330 281Q1407 350 1407 456L1407 512Q1407 524 1408 551L1439 551L1439 680L1420 680L1382 634L1380 634Q1342 680 1283 680L489 680L489 551L669 551L669 220L823 220ZM1253 473Q1252 408 1201 370Q1159 339 1104 339Q984 339 884 457Q878 467 863 488Q835 529 822 551L1238 551Q1253 551 1253 537ZM1766 220L1766 542Q1766 546 1767 551L1816 551L1816 680L1785 680L1741 634L1739 634Q1701 680 1641 680L1432 680L1432 551L1592 551Q1601 551 1606 545Q1612 540 1612 531L1612 220ZM2143 220L2143 556Q2143 600 2114 635Q2076 680 2018 680L1809 680L1809 551L1974 551Q1980 551 1984 548Q1989 544 1989 537L1989 220Z"/>
     <g class="nbd d1"><g class="nbp"><use href="#nblD" transform="translate(2065 78) scale(1.95)"/></g></g>
@@ -35,7 +38,7 @@ const SVG_LOGO = `
 
 // ── 2. Helper to determine active link ──
 function getActivePath() {
-  const p = window.location.pathname.toLowerCase();
+  const p = window.location.pathname.toLowerCase().replace(/^\/sa(?=\/|$)/, '') || '/';
   if (p === '/' || p === '/index.html' || p === '/home.html') return '/';
   if (p.startsWith('/pregnancy')) return '/pregnancy';
   if (p.startsWith('/baby')) return '/baby';
@@ -58,30 +61,22 @@ function renderHeader(user, userData) {
 
   let actionsHtml = '';
   if (user) {
-    const name = userData?.displayName || user.displayName || user.email?.split('@')[0] || 'عضوة نبضة';
-    const photo = userData?.photoURL || user.photoURL || '';
+    const name = esc(userData?.displayName || user.displayName || user.email?.split('@')[0] || 'عضوة نبضة');
+    const photo = esc(userData?.photoURL || userData?.photoUrl || user.photoURL || '');
     
     // Stage badge calculation
     let stageBadge = 'عضوة نبضة 💗';
     let journeyLink = '/pregnancy';
-    if (userData?.lifeStage === 'pregnant' || userData?.pregnancyStartDate) {
-      if (userData.pregnancyStartDate) {
-        try {
-          const start = userData.pregnancyStartDate.toDate ? userData.pregnancyStartDate.toDate() : new Date(userData.pregnancyStartDate);
-          const days = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24));
-          const week = Math.min(42, Math.max(1, Math.floor(days / 7)));
-          stageBadge = `🤰 الأسبوع ${week} من الحمل`;
-          journeyLink = `/pregnancy/week-${week}`;
-        } catch (_) {
-          stageBadge = '🤰 متابعة الحمل';
-        }
-      } else {
-        stageBadge = '🤰 متابعة الحمل';
-      }
+    const preg = pregnancyFromUser(userData);
+    if (preg) {
+      stageBadge = `🤰 الأسبوع ${preg.week} من الحمل`;
+      journeyLink = `/pregnancy/week-${preg.week}`;
+    } else if (userData?.lifeStage === 'pregnant') {
+      stageBadge = '🤰 رحلة الحمل';
     } else if (userData?.lifeStage === 'baby') {
-      stageBadge = '👶 أم جديدة';
+      stageBadge = '👶 رعاية الطفل';
       journeyLink = '/baby';
-    } else if (userData?.lifeStage === 'trying' || userData?.goal === 'trying') {
+    } else if (userData?.lifeStage === 'planning' || userData?.goal === 'trying') {
       stageBadge = '🌱 أخطط للحمل';
       journeyLink = '/fertility';
     } else if (userData?.lifeStage === 'cycle') {
@@ -100,7 +95,7 @@ function renderHeader(user, userData) {
       </button>
 
       <div class="nb-user-menu">
-        <div class="nb-user-capsule" id="nb-user-capsule">
+        <div class="nb-user-capsule" id="nb-user-capsule" role="button" tabindex="0" aria-haspopup="true" aria-label="قائمة الحساب">
           ${avatarContent}
           <span class="nb-user-name">${name}</span>
           <span style="font-size:11px;color:#9b8f95">▾</span>
@@ -117,6 +112,7 @@ function renderHeader(user, userData) {
           <a href="${journeyLink}" class="nb-dropdown-item">🤰 رحلتي</a>
           <a href="/account#settings" class="nb-dropdown-item">⚙️ الإعدادات والخصوصية</a>
           <a href="/app/" class="nb-dropdown-item" style="color:var(--nb-teal);font-weight:700">📱 النسخة الكاملة</a>
+          <div id="nb-staff-slot"></div>
           <div class="nb-dropdown-divider"></div>
           <button id="nb-logout-btn" class="nb-dropdown-item danger" style="width:100%;text-align:right">🚪 تسجيل الخروج</button>
         </div>
@@ -168,11 +164,15 @@ function renderHeader(user, userData) {
       e.stopPropagation();
       dropdown.classList.toggle('show');
     });
-    document.addEventListener('click', (e) => {
-      if (!dropdown.contains(e.target) && !capsule.contains(e.target)) {
-        dropdown.classList.remove('show');
-      }
-    });
+    if (!window.__nbDropdownWired) {
+      window.__nbDropdownWired = true;
+      document.addEventListener('click', (e) => {
+        const dd = document.getElementById('nb-user-dropdown');
+        const cp = document.getElementById('nb-user-capsule');
+        if (dd && cp && !dd.contains(e.target) && !cp.contains(e.target)) dd.classList.remove('show');
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.getElementById('nb-user-dropdown')?.classList.remove('show'); });
+    }
   }
 
   // Wire Logout
@@ -197,6 +197,8 @@ function renderHeader(user, userData) {
     });
   }
 
+  mountMarketSwitch();
+
   // Wire Mobile drawer toggle
   const mobileToggle = document.getElementById('nb-mobile-toggle');
   if (mobileToggle) {
@@ -208,7 +210,7 @@ function renderHeader(user, userData) {
 
 // ── 4. Render Footer ──
 function renderFooter() {
-  const footerEl = document.getElementById('nb-footer');
+  const footerEl = document.getElementById('nb-footer') || document.getElementById('nb-footer-placeholder');
   if (!footerEl) return;
 
   footerEl.className = 'nb-footer';
@@ -234,6 +236,9 @@ function renderFooter() {
             <li><a href="/fertility">الخصوبة والتخطيط للحمل</a></li>
             <li><a href="/community">مجتمع أمهات نبضة</a></li>
             <li><a href="/articles">موسوعة المقالات الشاملة</a></li>
+            <li><a href="/fiqh">فقه المرأة المسلمة</a></li>
+            <li><a href="/qadaa">أيام قضاء رمضان</a></li>
+            <li><a href="/tools/baby-names.html">معجم الأسماء وأسماء التوائم</a></li>
           </ul>
         </div>
 
@@ -281,8 +286,11 @@ function renderFooter() {
 
 // ── 5. Render Mobile Drawer & Bottom Tabs ──
 function renderMobileElements(user) {
-  // Check if drawer exists
-  if (!document.getElementById('nb-drawer-backdrop')) {
+  // يُعاد بناء الدرج عند تغيّر حالة الدخول
+  document.getElementById('nb-drawer-backdrop')?.remove();
+  document.getElementById('nb-drawer')?.remove();
+  document.getElementById('nb-bottom-bar')?.remove();
+  {
     const drawerHtml = `
       <div class="nb-drawer-backdrop" id="nb-drawer-backdrop"></div>
       <div class="nb-drawer" id="nb-drawer">
@@ -299,11 +307,15 @@ function renderMobileElements(user) {
           <a href="/community" class="nb-drawer-link">💬 المجتمع</a>
           <a href="/shop" class="nb-drawer-link">🛍️ المتجر</a>
           <a href="/articles" class="nb-drawer-link" style="color:var(--nb-pink-hot);font-weight:800">📚 موسوعة نبضة</a>
+          <a href="/fiqh" class="nb-drawer-link">🌙 فقه المرأة</a>
+          <a href="/qadaa" class="nb-drawer-link">📅 أيام القضاء</a>
+          <a href="/tools/baby-names.html" class="nb-drawer-link">👶 الأسماء والتوائم</a>
           <div style="height:1px;background:var(--nb-line);margin:10px 0"></div>
           ${user ? `
             <a href="/account" class="nb-drawer-link">👤 حسابي</a>
             <a href="/account#orders" class="nb-drawer-link">📦 طلباتي</a>
             <a href="/app/" class="nb-drawer-link" style="color:var(--nb-teal)">📱 النسخة الكاملة</a>
+            <div id="nb-staff-slot-m"></div>
           ` : `
             <a href="/login" class="nb-drawer-link" style="color:var(--nb-pink);font-weight:800">🔑 تسجيل الدخول</a>
             <a href="/signup" class="nb-drawer-link">✨ إنشاء حساب جديد</a>
@@ -317,8 +329,7 @@ function renderMobileElements(user) {
     document.getElementById('nb-drawer-close').addEventListener('click', closeMobileDrawer);
   }
 
-  // Check if bottom bar exists
-  if (!document.getElementById('nb-bottom-bar')) {
+  {
     const currentPath = getActivePath();
     const bottomBarHtml = `
       <div class="nb-bottom-bar" id="nb-bottom-bar">
@@ -383,7 +394,7 @@ function renderCartDrawer() {
       <div class="nb-cart-footer">
         <div class="nb-cart-total-row">
           <span>المجموع الفرعي:</span>
-          <span id="nb-cart-drawer-total" style="color:var(--nb-pink)">0 دج</span>
+          <span id="nb-cart-drawer-total" style="color:var(--nb-pink)">${money(0)}</span>
         </div>
         <a href="/checkout" class="nb-btn-primary" style="width:100%;text-align:center;margin-bottom:8px">
           إتمام الطلب — الدفع عند الاستلام 💵
@@ -419,7 +430,7 @@ function updateCartDrawerContent() {
         </a>
       </div>
     `;
-    totalEl.textContent = '0 دج';
+    totalEl.textContent = money(0);
     return;
   }
 
@@ -430,7 +441,7 @@ function updateCartDrawerContent() {
         <div class="nb-cart-item-title">${item.name}</div>
         ${item.variant ? `<div style="font-size:12px;color:var(--nb-ink-3)">المقاس/النوع: ${item.variant}</div>` : ''}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
-          <div class="nb-cart-item-price">${(item.price * item.qty).toLocaleString()} دج</div>
+          <div class="nb-cart-item-price">${money(item.price * item.qty)}</div>
           <div class="nb-cart-qty-ctrl">
             <button class="nb-cart-qty-btn" onclick="window.nbCartUpdate('${item.productId}', '${item.variant || ''}', ${item.qty - 1})">-</button>
             <span style="font-weight:800;font-size:13px">${item.qty}</span>
@@ -441,7 +452,7 @@ function updateCartDrawerContent() {
     </div>
   `).join('');
 
-  totalEl.textContent = `${getCartTotal().toLocaleString()} دج`;
+  totalEl.textContent = money(getCartTotal());
 }
 
 export function openCartDrawer() {
@@ -504,6 +515,7 @@ export function initShell() {
   renderHeader(cachedUser, cachedData);
   renderFooter();
   renderMobileElements(cachedUser);
+  if (cachedUser?.uid) showStaffLink(cachedUser.uid);
   renderCartDrawer();
 
   // Watch Cart Changes to update badges
@@ -520,8 +532,29 @@ export function initShell() {
     updateCartDrawerContent();
   });
 
+  // مزامنة السلة بين التبويبات
+  window.addEventListener('storage', (e) => { if (e.key === cartKey()) window.dispatchEvent(new CustomEvent('nb-cart-updated', { detail: getCart() })); });
+
+  // صفحات الموقع التي لها نظير في التطبيق: المسجّلة تُفتح لها نسخة التطبيق
+  // (إلا إذا اختارت «تصفّح الموقع» → sessionStorage.nb_site). المقالات والمتجر تبقى صفحات موقع.
+  function shouldOpenApp() {
+    try {
+      const q = new URLSearchParams(location.search);
+      if (q.get('site') === '1') sessionStorage.setItem('nb_site', '1');
+      if (q.get('app') === '1') sessionStorage.removeItem('nb_site');
+      if (sessionStorage.getItem('nb_site') === '1') return false;
+    } catch (_) {}
+    // الحاسوب: الموقع يبقى كما هو حتى بعد الدخول — التحويل على الهاتف فقط
+    if (!(window.matchMedia('(max-width: 820px)').matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent))) return false;
+    const p = location.pathname.replace(/\/+$/, '') || '/';
+    return ['/', '/index.html', '/home.html', '/pregnancy', '/baby', '/cycle', '/fertility', '/community'].includes(p);
+  }
+
   // Watch Auth State
   auth.onAuthStateChanged(async (user) => {
+    // إشارة للتحويل الفوري (app-redirect.js) + تحويل المسجّلة من صفحات «التطبيق» إلى /app/
+    try { localStorage.setItem('nb_auth', user ? '1' : '0'); } catch (_) {}
+    if (user && shouldOpenApp()) { location.replace('/app/'); return; }
     if (user) {
       let userData = null;
       try {
@@ -540,12 +573,78 @@ export function initShell() {
 
       renderHeader(user, userData);
       renderMobileElements(user);
+      showStaffLink(user.uid);
     } else {
       sessionStorage.removeItem('nb_user_cache');
       renderHeader(null, null);
       renderMobileElements(null);
     }
   });
+}
+
+/** رابط «لوحة التحكم» يظهر فقط للطاقم النشط (staff/{uid}.isActive — نفس منطق AdminService في التطبيق) */
+const ROLE_AR = { owner: 'المالك', supervisor: 'مشرفة', employee: 'موظفة', agent: 'وكيلة تأكيد' };
+async function showStaffLink(uid) {
+  let role = null;
+  try {
+    const c = JSON.parse(sessionStorage.getItem('nb_staff_' + uid) || 'null');
+    if (c && Date.now() - c.t < 10 * 60 * 1000) role = c.role;
+    else {
+      const d = await db.collection('staff').doc(uid).get();
+      role = d.exists && d.data().isActive !== false ? (d.data().role || 'employee') : '';
+      sessionStorage.setItem('nb_staff_' + uid, JSON.stringify({ role, t: Date.now() }));
+    }
+  } catch (_) { role = ''; }
+  if (!role) return;
+  const link = (cls) => `<a href="/admin" class="${cls} nb-admin-link" style="display:flex;align-items:center;gap:8px;font-weight:800;color:#fff;background:linear-gradient(135deg,#1E1B2E,#4A2C5E);border-radius:12px;margin:6px 8px;padding:10px 14px;text-decoration:none">🛡️ لوحة التحكم <span style="margin-inline-start:auto;font-size:10.5px;background:rgba(255,255,255,.18);padding:2px 8px;border-radius:999px">${ROLE_AR[role] || role}</span></a>`;
+  const a = document.getElementById('nb-staff-slot'); if (a) a.innerHTML = link('nb-dropdown-item');
+  const b = document.getElementById('nb-staff-slot-m'); if (b) b.innerHTML = link('nb-drawer-link');
+}
+
+/* ── الدولة / السوق: زر العلم + اكتشاف أوّل زيارة + روابط المتجر بالبادئة الصحيحة ── */
+function mountMarketSwitch() {
+  const anchor = document.getElementById('nb-cart-trigger');
+  if (!anchor || document.getElementById('nb-mk-btn')) return;
+  const cur = MARKETS[currentMarket()];
+  anchor.insertAdjacentHTML('beforebegin', `
+    <div class="nb-mk" style="position:relative">
+      <button id="nb-mk-btn" class="nb-cart-btn" title="الدولة والعملة: ${cur.name}" aria-label="تغيير الدولة" aria-haspopup="true" style="font-size:19px">${cur.flag}</button>
+      <div id="nb-mk-menu" role="menu" style="display:none;position:absolute;top:calc(100% + 8px);left:0;min-width:210px;background:#fff;border:1px solid #F8E1EA;border-radius:16px;box-shadow:0 16px 40px rgba(233,30,99,.15);padding:6px;z-index:1200">
+        <div style="font-size:11.5px;font-weight:800;color:#9b8f95;padding:6px 10px">التسوّق والتوصيل إلى:</div>
+        ${Object.values(MARKETS).map((m) => `<button data-mk="${m.code}" role="menuitem" style="display:flex;align-items:center;gap:10px;width:100%;border:none;background:${m.code === cur.code ? '#FFF0F5' : 'none'};border-radius:11px;padding:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:800;color:var(--nb-ink);text-align:right"><span style="font-size:20px">${m.flag}</span><span style="flex:1">${m.name}</span><span style="font-size:12px;color:#9b8f95">${m.symbol}</span>${m.code === cur.code ? '<span style="color:var(--nb-pink)">✓</span>' : ''}</button>`).join('')}
+      </div>
+    </div>`);
+  const btn = document.getElementById('nb-mk-btn'); const menu = document.getElementById('nb-mk-menu');
+  btn.addEventListener('click', (e) => { e.stopPropagation(); menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.nb-mk')) menu.style.display = 'none'; });
+  menu.querySelectorAll('[data-mk]').forEach((b) => b.addEventListener('click', () => {
+    const code = b.dataset.mk;
+    saveMarket(code);
+    if (code === currentMarket()) { menu.style.display = 'none'; return; }
+    location.href = switchMarketUrl(code);
+  }));
+}
+
+// نصوص بديلة حسب السوق في الصفحات الثابتة: data-mk-sa="…" (نص) أو data-mk-sa-html="…"
+function applyMarketTexts() {
+  const c = currentMarket().toLowerCase(); if (c === 'dz') return;
+  document.querySelectorAll(`[data-mk-${c}]`).forEach((el) => { el.textContent = el.getAttribute(`data-mk-${c}`); });
+  document.querySelectorAll(`[data-mk-${c}-html]`).forEach((el) => { el.innerHTML = el.getAttribute(`data-mk-${c}-html`); });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyMarketTexts); else applyMarketTexts();
+
+// روابط المتجر في أي صفحة تأخذ بادئة السوق المختار (/sa/…) لحظة النقر
+document.addEventListener('click', (e) => {
+  const a = e.target.closest && e.target.closest('a[href^="/"]');
+  if (!a || a.target === '_blank' || a.hasAttribute('data-mk-keep')) return;
+  const h = a.getAttribute('href'); const n = mUrl(h);
+  if (n !== h) a.setAttribute('href', n);
+}, true);
+
+// أوّل زيارة: اكتشاف الدولة؛ إن كانت سوقاً آخر ونحن في صفحة متجر بلا بادئة ننتقل إليها
+if (!syncShopPath() && !savedMarket()) {
+  const initial = currentMarket();
+  detectCountryOnce().then(() => { const s = savedMarket(); if (s && s !== initial && !syncShopPath()) location.reload(); }).catch(() => {});
 }
 
 // Auto-run when DOM is ready

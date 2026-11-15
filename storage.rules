@@ -84,6 +84,25 @@ service firebase.storage {
       allow delete: if isOwner(uid) || isStaff();
     }
 
+    // ─── صور دفتر ذكريات الطفل ───────────────────────────────────
+    // المسار: baby_memories/{motherUid}/{babyId}/{file}
+    // 🔒 صور أطفال = خاصّة جداً: للأم وزوجها المرتبط بها فقط (لا «أي مستخدمة
+    //    مسجّلة» كصور المجتمع). المسار باسم الأم دائماً حتى تبقى ملكها بعد
+    //    أي فكّ ارتباط. الزوج يُعرف عبر users/{motherUid}.coupleId ثم
+    //    couples/{id}.partnerUid — قراءتان فقط، ولا تُنفَّذان للأم نفسها.
+    function isPartnerOf(motherUid) {
+      let cid = firestore.get(/databases/(default)/documents/users/$(motherUid)).data.get('coupleId', '');
+      return isAuth() && cid != '' &&
+        firestore.get(/databases/(default)/documents/couples/$(cid)).data.get('partnerUid', '') == request.auth.uid;
+    }
+
+    match /baby_memories/{motherUid}/{babyId}/{file} {
+      allow read, delete: if isOwner(motherUid) || isPartnerOf(motherUid);
+      allow create, update: if (isOwner(motherUid) || isPartnerOf(motherUid))
+                            && isImage()
+                            && maxBytes(8 * 1024 * 1024);
+    }
+
     // ─── ملفّات إداريّة عامّة (لوحة الأدمن) ──────────────────────
     // كل ملفّات الأدمن (تحميلات، نسخ احتياطي مرئي، إلخ) محصورة بالطاقم.
     match /admin/{allPaths=**} {

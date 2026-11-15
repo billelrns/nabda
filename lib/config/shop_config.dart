@@ -6,6 +6,8 @@
 /// محفوظة في Firestore.
 library;
 
+import '../services/country_currency_service.dart';
+
 /// أقسام المتجر المحذوفة.
 const Set<String> kHiddenShopCategories = {
   'فيتامينات ومكملات',
@@ -28,3 +30,9 @@ bool isHiddenProduct(Map<dynamic, dynamic>? product) {
   final name = (product['name'] ?? product['title'] ?? '').toString();
   return _supplementNameWords.any(name.contains);
 }
+
+/// للقوائم التي تراها الزبونة: ممنوع، أو غير متاح/غير مسعّر في سوق دولتها الحالية
+/// (السعودية تحتاج markets.SA.price، والمنتجات الثابتة القديمة بالدينار للجزائر فقط).
+/// لوحة الأدمن تستعمل [isHiddenProduct] وحدها.
+bool isShopHidden(Map<dynamic, dynamic>? product) =>
+    isHiddenProduct(product) || !CountryCurrencyService().isAvailable(product);

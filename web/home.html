@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <script src="/js/app-redirect.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>نبضة — رفيقتكِ الموثوقة لصحة المرأة ورحلة الحمل والطفولة</title>
   <meta name="description" content="منصة نبضة الرائدة لصحة المرأة العربية: دليلكِ الشامل للحمل أسبوعاً بأسبوع، رعاية الطفل، متجر مستلزمات الأم والطفل، ومجتمع الأمهات.">
@@ -12,10 +13,10 @@
   <link rel="stylesheet" href="/css/site.css">
 
   <!-- Firebase Web SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <style>
     /* ── Hero Slider ── */
@@ -48,6 +49,8 @@
       transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;
       display: flex;
       align-items: center;
+      /* الصور: الموضوع يميناً والفراغ يساراً ⇒ النص في الجهة اليسرى (نهاية السطر في RTL) */
+      justify-content: flex-end;
     }
 
     .nb-slide.on {
@@ -71,14 +74,16 @@
     .nb-slide-grad {
       position: absolute;
       inset: 0;
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 45%, rgba(255, 255, 255, 0.2) 100%);
+      /* تبييض خفيف في اليسار تحت النص فقط، والصورة واضحة يميناً */
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.8) 34%, rgba(255, 255, 255, 0.25) 58%, rgba(255, 255, 255, 0) 72%);
     }
 
     .nb-slide-panel {
       position: relative;
       z-index: 3;
-      max-width: 580px;
-      padding: 0 50px;
+      max-width: 560px;
+      padding: 0 40px;
+      padding-inline-end: 92px; /* مسافة عن سهم اليسار */
     }
 
     .nb-slide-badge {
@@ -334,10 +339,12 @@
     }
 
     @media (max-width: 600px) {
-      .nb-slide-panel { padding: 0 24px; }
+      .nb-slide-panel { padding: 0 24px; padding-inline-end: 24px; }
+      .nb-slide-grad { background: linear-gradient(0deg, rgba(255,255,255,.94) 0%, rgba(255,255,255,.82) 55%, rgba(255,255,255,.35) 100%); }
       .nb-slide-title { font-size: 24px; }
       .nb-j4 { grid-template-columns: 1fr; }
     }
+      @media (max-width: 600px) { .nb-arrow { display: none !important; } }
   </style>
 </head>
 <body>
@@ -352,8 +359,8 @@
         <div class="nb-slider" id="nb-slider">
           <!-- Slides dynamically rendered by JS -->
         </div>
-        <button class="nb-arrow" style="left:16px" onclick="nbNext()" aria-label="التالي">‹</button>
-        <button class="nb-arrow" style="right:16px" onclick="nbPrev()" aria-label="السابق">›</button>
+        <button class="nb-arrow" style="left:16px" onclick="nbNext()" aria-label="التالي"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;margin:auto"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="nb-arrow" style="right:16px" onclick="nbPrev()" aria-label="السابق"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;margin:auto"><path d="M9 5l7 7-7 7"/></svg></button>
         <div class="nb-dots" id="nb-dots"></div>
       </div>
 
@@ -411,7 +418,7 @@
 
       <div class="nb-j4">
         <div onclick="window.location.href='/pregnancy'" class="nb-j4-card">
-          <img src="/landing-assets/slide-pregnancy.png" alt="رحلة الحمل" class="nb-j4-img">
+          <img loading="lazy" decoding="async" src="/landing-assets/slide-pregnancy.webp" alt="رحلة الحمل" class="nb-j4-img">
           <div class="nb-j4-body">
             <h3 style="font-size:18px;font-weight:800;margin-bottom:6px">رحلة الحمل 🤰</h3>
             <p style="font-size:13px;color:var(--nb-ink-3);line-height:1.7;flex:1">تابعي تطور طفلكِ أسبوعاً بأسبوع من أول نبضة وحتى موعد الولادة باطمئنان.</p>
@@ -420,7 +427,7 @@
         </div>
 
         <div onclick="window.location.href='/baby'" class="nb-j4-card">
-          <img src="/landing-assets/slide-baby.png" alt="رعاية الطفل والمولود" class="nb-j4-img">
+          <img loading="lazy" decoding="async" src="/landing-assets/slide-baby.webp" alt="رعاية الطفل والمولود" class="nb-j4-img">
           <div class="nb-j4-body">
             <h3 style="font-size:18px;font-weight:800;margin-bottom:6px">المولود والطفل 👶</h3>
             <p style="font-size:13px;color:var(--nb-ink-3);line-height:1.7;flex:1">دليلكِ لنمو طفلكِ شهراً بشهر، الرضاعة، النوم، التغذية، والأنشطة المناسبة لعمره.</p>
@@ -429,7 +436,7 @@
         </div>
 
         <div onclick="window.location.href='/cycle'" class="nb-j4-card">
-          <img src="/landing-assets/slide-cycle.png" alt="متابعة الدورة الشهرية" class="nb-j4-img">
+          <img loading="lazy" decoding="async" src="/landing-assets/slide-cycle.webp" alt="متابعة الدورة الشهرية" class="nb-j4-img">
           <div class="nb-j4-body">
             <h3 style="font-size:18px;font-weight:800;margin-bottom:6px">الدورة الشهرية 🌸</h3>
             <p style="font-size:13px;color:var(--nb-ink-3);line-height:1.7;flex:1">تقويم ذكي يتوقع مواعيد دورتكِ الشهرية القادمة ويساعدكِ على فهم إشارات جسمكِ.</p>
@@ -438,7 +445,7 @@
         </div>
 
         <div onclick="window.location.href='/fertility'" class="nb-j4-card">
-          <img src="/landing-assets/fertility.png" alt="الخصوبة والتخطيط للحمل" class="nb-j4-img">
+          <img loading="lazy" decoding="async" src="/landing-assets/fertility.webp" alt="الخصوبة والتخطيط للحمل" class="nb-j4-img">
           <div class="nb-j4-body">
             <h3 style="font-size:18px;font-weight:800;margin-bottom:6px">الخصوبة والتبويض 🌱</h3>
             <p style="font-size:13px;color:var(--nb-ink-3);line-height:1.7;flex:1">حاسبة دقيقة لأيام الإباضة العالية مع إرشادات ونفحات إيمانية وأدعية الذرية الصالحة.</p>
@@ -477,7 +484,7 @@
               <a href="/tools/baby-names.html" class="nb-btn-primary" style="font-size:14px;padding:10px 22px">تصفح معجم الأسماء ←</a>
             </div>
           </div>
-          <img src="/landing-assets/baby.png" alt="أسماء المواليد" style="max-height:180px;object-fit:contain">
+          <img loading="lazy" decoding="async" src="/landing-assets/baby.webp" alt="أسماء المواليد" style="max-height:180px;object-fit:contain">
         </div>
       </div>
     </section>
@@ -524,6 +531,16 @@
       </div>
     </section>
 
+    <!-- موسوعة نبضة الشاملة: كاروسال لكل قسم (كما في الصفحة الرئيسية السابقة) -->
+    <section style="margin:60px 0 20px">
+      <div style="text-align:center;margin-bottom:26px">
+        <h2 style="font-size:30px;font-weight:900;color:var(--nb-ink);margin-bottom:8px">موسوعة نبضة الشاملة 📚</h2>
+        <p style="color:var(--nb-ink-3);font-size:15px">آلاف المقالات المبسّطة في الحمل والجمال ورعاية الرضيع والخصوبة وصحة المرأة — بإشراف فريق تحرير نبضة</p>
+      </div>
+      <div id="home-wiki"></div>
+      <div style="text-align:center;margin-top:10px"><a href="/articles" class="nb-btn-primary" style="text-decoration:none;padding:12px 28px">تصفّحي الموسوعة كاملة ←</a></div>
+    </section>
+
     <!-- بانر تحميل التطبيق -->
     <section class="nb-container" style="margin-top:64px;margin-bottom:40px">
       <div class="nb-card" style="background:linear-gradient(135deg, #1F1A20 0%, #3D2C3D 100%);color:#fff;padding:48px;border-radius:var(--nb-radius-lg);box-shadow:0 24px 60px rgba(0,0,0,0.2)">
@@ -547,7 +564,7 @@
               </a>
             </div>
           </div>
-          <img src="/landing-assets/slide-community.png" alt="تطبيق نبضة" style="max-height:240px;object-fit:contain;filter:drop-shadow(0 14px 30px rgba(0,0,0,0.4))">
+          <img loading="lazy" decoding="async" src="/landing-assets/slide-community.webp" alt="تطبيق نبضة" style="max-height:240px;object-fit:contain;filter:drop-shadow(0 14px 30px rgba(0,0,0,0.4))">
         </div>
       </div>
     </section>
@@ -559,15 +576,15 @@
   <script type="module" src="/js/shell.js"></script>
   <script type="module">
     import { auth, db } from '/js/firebase-init.js';
-    import { isHiddenProduct } from '/js/shop-rules.js';
+    import { pregnancyFromStart, pregnancyFromUser, getVisibleProducts, productCardHtml, getTopArticles, articleCardHtml, escapeHtml as esc } from '/js/utils.js';
 
     // ── 1. Slides Setup with site_config/home fallback ──
     const DEFAULT_SLIDES = [
-      { img:'/landing-assets/slide-pregnancy.png', tag:'✨ تطبيق صحة المرأة بالعربية', title:'رحلتُكِ إلى الأمومة تبدأ من هنا', desc:'تابعي حملكِ أسبوعاً بأسبوع مع نصائح مخصّصة وعدّ تنازلي للولادة.', cta:'ابدئي رحلتكِ', link:'/pregnancy' },
-      { img:'/landing-assets/slide-cycle.png', tag:'📅 تتبع الدورة الشهرية', title:'افهمي جسمكِ بشكل أعمق', desc:'تقويم ذكي يتوقّع دورتكِ وأيام الخصوبة ويحلّل أعراضكِ بدقة.', cta:'تتبّعي دورتكِ', link:'/cycle' },
-      { img:'/landing-assets/slide-baby.png', tag:'👶 رعاية الطفل', title:'رافقي نموّ طفلكِ يوماً بيوم', desc:'مراحل النمو الشهرية، نصائح الرضاعة والنوم والعناية بطفلكِ.', cta:'اكتشفي المزيد', link:'/baby' },
-      { img:'/landing-assets/slide-store.png', tag:'🛍️ متجر نبضة', title:'كل ما يحتاجه طفلكِ في مكان واحد', desc:'منتجات مختارة بعناية للأم والطفل مع خدمة التوصيل والدفع عند الاستلام.', cta:'تسوّقي الآن', link:'/shop' },
-      { img:'/landing-assets/slide-community.png', tag:'👩‍👩‍👧 مجتمع الأمهات', title:'لستِ وحدكِ في هذه الرحلة', desc:'شاركي تجاربكِ وتواصلي مع آلاف الأمهات اللاتي يفهمن ما تمرين به.', cta:'انضمّي للمجتمع', link:'/community' }
+      { img:'/landing-assets/slide-pregnancy.webp', tag:'✨ تطبيق صحة المرأة بالعربية', title:'رحلتُكِ إلى الأمومة تبدأ من هنا', desc:'تابعي حملكِ أسبوعاً بأسبوع مع نصائح مخصّصة وعدّ تنازلي للولادة.', cta:'ابدئي رحلتكِ', link:'/pregnancy' },
+      { img:'/landing-assets/slide-cycle.webp', tag:'📅 تتبع الدورة الشهرية', title:'افهمي جسمكِ بشكل أعمق', desc:'تقويم ذكي يتوقّع دورتكِ وأيام الخصوبة ويحلّل أعراضكِ بدقة.', cta:'تتبّعي دورتكِ', link:'/cycle' },
+      { img:'/landing-assets/slide-baby.webp', tag:'👶 رعاية الطفل', title:'رافقي نموّ طفلكِ يوماً بيوم', desc:'مراحل النمو الشهرية، نصائح الرضاعة والنوم والعناية بطفلكِ.', cta:'اكتشفي المزيد', link:'/baby' },
+      { img:'/landing-assets/slide-store.webp', tag:'🛍️ متجر نبضة', title:'كل ما يحتاجه طفلكِ في مكان واحد', desc:'منتجات مختارة بعناية للأم والطفل مع خدمة التوصيل والدفع عند الاستلام.', cta:'تسوّقي الآن', link:'/shop' },
+      { img:'/landing-assets/slide-community.webp', tag:'👩‍👩‍👧 مجتمع الأمهات', title:'لستِ وحدكِ في هذه الرحلة', desc:'شاركي تجاربكِ وتواصلي مع آلاف الأمهات اللاتي يفهمن ما تمرين به.', cta:'انضمّي للمجتمع', link:'/community' }
     ];
 
     let currentSlides = DEFAULT_SLIDES;
@@ -594,7 +611,7 @@
         const d = document.createElement('div');
         d.className = 'nb-slide' + (i === 0 ? ' on' : '');
         d.innerHTML = `
-          <div class="nb-slide-img" style="background-image:url('${sl.img}')"></div>
+          <div class="nb-slide-img" style="background-image:url('${String(sl.img || '').replace(/(\/landing-assets\/(?:slide-[a-z]+|baby|fertility))\.png$/, '$1.webp')}')"></div>
           <div class="nb-slide-grad"></div>
           <div class="nb-slide-panel">
             <div class="nb-slide-badge">${sl.tag}</div>
@@ -643,18 +660,22 @@
       try {
         const snap = await db.collection('users').doc(user.uid).get();
         const data = snap.exists ? snap.data() : {};
-        const stage = data.lifeStage || 'pregnant';
+        const preg = pregnancyFromUser(data);
+        const stage = preg ? 'pregnant' : (data.lifeStage === 'trying' ? 'planning' : (data.lifeStage || 'cycle'));
 
         wrap.style.display = 'block';
         const name = data.displayName || user.displayName || 'عزيزتي';
         document.getElementById('today-greeting').textContent = `أهلاً بكِ يا ${name} 💗`;
 
         if (stage === 'pregnant') {
-          let week = 12;
-          if (data.pregnancyStartDate) {
-            const start = data.pregnancyStartDate.toDate ? data.pregnancyStartDate.toDate() : new Date(data.pregnancyStartDate);
-            const days = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24));
-            week = Math.min(42, Math.max(1, Math.floor(days / 7)));
+          const week = preg ? preg.week : null;
+          if (!week) {
+            document.getElementById('today-stage-icon').textContent = '🤰';
+            document.getElementById('today-stage-badge').textContent = 'رحلة الحمل';
+            document.getElementById('today-title').textContent = 'حدّدي تاريخ حملكِ لنتابعكِ أسبوعاً بأسبوع';
+            document.getElementById('today-desc').textContent = 'أدخلي تاريخ أول يوم من آخر دورة وسنعرض لكِ أسبوعكِ الحالي ونصائحه.';
+            document.getElementById('today-cta-btn').href = '/pregnancy';
+            return;
           }
           document.getElementById('today-stage-icon').textContent = '🤰';
           document.getElementById('today-stage-badge').textContent = `الأسبوع ${week} من الحمل`;
@@ -667,7 +688,7 @@
           document.getElementById('today-title').textContent = 'مرحلة نمو طفلكِ واكتشافاته';
           document.getElementById('today-desc').textContent = 'نصائح الرضاعة، فترات النوم وأنشطة التحفيز الحسي المناسبة لعمره.';
           document.getElementById('today-cta-btn').href = '/baby';
-        } else if (stage === 'trying') {
+        } else if (stage === 'planning') {
           document.getElementById('today-stage-icon').textContent = '🌱';
           document.getElementById('today-stage-badge').textContent = 'أيام التبويض والخصوبة';
           document.getElementById('today-title').textContent = 'التخطيط للحمل الطبيعي';
@@ -685,65 +706,48 @@
       }
     });
 
-    // ── 3. Featured Products from Store ──
+    // ── 3. منتجات مميّزة (featured أوّلاً) — بلا مكمّلات/أجهزة طبية ──
     async function loadFeaturedProducts() {
       const container = document.getElementById('home-featured-products');
       try {
-        const snap = await db.collection('products')
-          .where('active', '==', true)
-          .limit(16)
-          .get();
-
-        const products = [];
-        snap.forEach(doc => {
-          const p = { id: doc.id, ...doc.data() };
-          if (!isHiddenProduct(p)) products.push(p);
-        });
-
-        if (products.length === 0) {
-          // Fallback demo mock products
-          container.innerHTML = `
-            <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--nb-ink-3)">
-              تفضلي بزيارة المتجر للاطلاع على كافة منتجات الأم والطفل المتوفرة.
-              <div style="margin-top:14px"><a href="/shop" class="nb-btn-primary">فتح المتجر</a></div>
-            </div>
-          `;
-          return;
-        }
-
-        container.innerHTML = products.slice(0, 8).map(p => {
-          const slug = p.slug || p.id;
-          const img = p.image || p.imageUrl || (p.images && p.images[0]) || '/landing-assets/slide-store.png';
-          const price = Number(p.price || 0).toLocaleString();
-          const oldPrice = p.oldPrice || p.originalPrice ? Number(p.oldPrice || p.originalPrice).toLocaleString() : null;
-
-          return `
-            <div class="nb-prod-card" onclick="window.location.href='/product/${slug}'">
-              <div class="nb-prod-img-wrap">
-                <img src="${img}" alt="${p.name}" class="nb-prod-img" loading="lazy">
-                ${oldPrice ? `<span style="position:absolute;top:10px;right:10px;background:var(--nb-pink);color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px">تخفيض 🔥</span>` : ''}
-              </div>
-              <div class="nb-prod-body">
-                <div>
-                  <div style="font-size:11px;color:var(--nb-pink);font-weight:800;margin-bottom:4px">${p.category || 'منتجات الأطفال'}</div>
-                  <h4 style="font-size:14.5px;font-weight:800;color:var(--nb-ink);line-height:1.4;margin-bottom:8px">${p.name}</h4>
-                </div>
-                <div>
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-                    <span style="font-size:16px;font-weight:900;color:var(--nb-pink)">${price} دج</span>
-                    ${oldPrice ? `<span style="font-size:13px;color:#aaa;text-decoration:line-through">${oldPrice} دج</span>` : ''}
-                  </div>
-                  <button class="nb-btn-primary" style="width:100%;font-size:13px;padding:8px 14px">عرض المنتج والتفاصيل</button>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('');
+        const all = await getVisibleProducts();
+        const list = [...all.filter((p) => p.featured), ...all.filter((p) => !p.featured)].slice(0, 8);
+        container.innerHTML = list.length ? list.map(productCardHtml).join('')
+          : '<div style="grid-column:1/-1;text-align:center;padding:20px"><a href="/shop" class="nb-btn-primary">فتح المتجر</a></div>';
       } catch (err) {
         console.error('Error loading featured products:', err);
         container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px"><a href="/shop" class="nb-btn-primary">زيارة المتجر</a></div>';
       }
     }
+
+    // ── 4. موسوعة نبضة: 6 كاروسالات ──
+    const WIKI = [
+      ['pregnancy', '🤰 مقالات الحمل والولادة'], ['beauty', '💄 جمالكِ وعنايتكِ'], ['baby', '👶 رعاية الرضيع'],
+      ['fertility', '🌸 التبويض والخصوبة'], ['health', '💗 صحّة المرأة'], ['marriage', '💕 حياتكِ الزوجية'],
+    ];
+    async function loadWiki() {
+      const box = document.getElementById('home-wiki');
+      box.innerHTML = WIKI.map(([cat, title]) => `
+        <div style="margin-bottom:34px" id="wiki-${cat}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="font-size:20px;font-weight:900;color:var(--nb-ink);margin:0">${title}</h3>
+            <a href="/articles?cat=${cat}" style="color:var(--nb-pink);font-size:13.5px;font-weight:800;text-decoration:none">اكتشفي المزيد ←</a>
+          </div>
+          <div class="nb-art-grid" id="wiki-grid-${cat}"><div class="nb-skeleton" style="height:260px"></div><div class="nb-skeleton" style="height:260px"></div><div class="nb-skeleton" style="height:260px"></div></div>
+        </div>`).join('');
+      // تحميل كسول عند الاقتراب من القسم
+      const io = new IntersectionObserver((entries) => entries.forEach(async (en) => {
+        if (!en.isIntersecting) return;
+        io.unobserve(en.target);
+        const cat = en.target.id.replace('wiki-', '');
+        const list = (await getTopArticles(cat)).slice(0, 12);
+        const grid = document.getElementById('wiki-grid-' + cat);
+        if (list.length) grid.innerHTML = list.map((a) => articleCardHtml(a, WIKI.find((w) => w[0] === cat)[1].split(' ')[0])).join('');
+        else en.target.style.display = 'none';
+      }), { rootMargin: '400px' });
+      WIKI.forEach(([cat]) => io.observe(document.getElementById('wiki-' + cat)));
+    }
+    loadWiki();
 
     loadFeaturedProducts();
   </script>

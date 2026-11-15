@@ -109,13 +109,15 @@ class _InvitePartnerScreenState extends State<InvitePartnerScreen> {
     );
     if (yes != true) return;
     setState(() => _busy = true);
-    await PartnerService.unlink(id);
+    final ok = await PartnerService.unlink(id);
     if (!mounted) return;
     setState(() {
       _busy = false;
-      _coupleId = null;
+      if (ok) _coupleId = null;
     });
-    _snack('تم إلغاء المشاركة');
+    _snack(ok
+        ? 'تم إلغاء المشاركة — بيانات أطفالكِ وذكرياتهم محفوظة عندكِ'
+        : 'تعذّر حفظ بيانات أطفالكِ فلم نُلغِ المشاركة — حاولي مع اتصال أفضل');
   }
 
   void _snack(String m) => ScaffoldMessenger.of(context).showSnackBar(
@@ -146,7 +148,8 @@ class _InvitePartnerScreenState extends State<InvitePartnerScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2));
                       }
                       final link = snap.data;
-                      if (link == null) return _buildIntro();
+                      // فكّه الزوج: البيانات تُسترجع عند الإقلاع، ونعرض دعوة جديدة
+                      if (link == null || link.isUnlinked) return _buildIntro();
                       if (link.isLinked) return _buildLinked(link);
                       return _buildWaiting(link);
                     },

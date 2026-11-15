@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الصفحة غير موجودة (404) — نبضة</title>
+  <meta name="description" content="عذراً، الصفحة التي تبحثين عنها غير متوفرة. يمكنكِ العودة إلى الصفحة الرئيسية أو استكشاف أقسام نبضة.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+  <style>
+    .nb-404-container {
+      max-width: 800px;
+      margin: 40px auto 80px;
+      padding: 0 24px;
+      text-align: center;
+    }
+    .nb-404-card {
+      background: #FFFFFF;
+      border: 1px solid #F8D7E5;
+      border-radius: var(--nb-radius-lg);
+      padding: 50px 36px;
+      box-shadow: 0 16px 40px rgba(244, 63, 126, 0.08);
+    }
+    .nb-404-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 30px;
+      text-align: right;
+    }
+    .nb-404-link {
+      background: #FFF9FC;
+      border: 1px solid #F4E3EB;
+      border-radius: 16px;
+      padding: 14px 18px;
+      text-decoration: none;
+      color: var(--nb-ink);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .nb-404-link:hover {
+      background: #FFFFFF;
+      border-color: var(--nb-pink);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(244, 63, 126, 0.1);
+      color: var(--nb-pink);
+    }
+    @media (max-width: 600px) {
+      .nb-404-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header id="nb-header" style="min-height:96px"></header>
+
+  <main class="nb-404-container">
+    <div class="nb-404-card">
+      <div style="font-size:72px;line-height:1;margin-bottom:12px">🌸</div>
+      <span style="background:var(--nb-pink-bg);color:var(--nb-pink);font-size:13px;font-weight:900;padding:4px 16px;border-radius:999px;display:inline-block;margin-bottom:14px">خطأ 404</span>
+      <h1 style="font-size:28px;font-weight:900;color:var(--nb-ink);margin:0 0 12px">عذراً، لم نتمكن من العثور على هذه الصفحة!</h1>
+      <p style="font-size:15px;color:var(--nb-ink-2);line-height:1.75;max-width:540px;margin:0 auto 24px">
+        ربما تم نقل الصفحة أو تغيير رابطها. لا تقلقي، دليلكِ لصحة المرأة والأم والطفل متاح عبر الأقسام التالية:
+      </p>
+
+      <div style="display:flex;justify-content:center;gap:12px;margin-bottom:20px">
+        <a href="/" class="nb-btn-primary" style="font-size:14px;padding:12px 28px;text-decoration:none">
+          العودة للصفحة الرئيسية 🏠
+        </a>
+      </div>
+
+      <div class="nb-404-grid">
+        <a href="/pregnancy" class="nb-404-link">
+          <span style="font-size:22px">🤰</span>
+          <span>رحلة الحمل أسبوعاً بأسبوع</span>
+        </a>
+        <a href="/baby" class="nb-404-link">
+          <span style="font-size:22px">👶</span>
+          <span>رعاية الطفل شهراً بشهر</span>
+        </a>
+        <a href="/cycle" class="nb-404-link">
+          <span style="font-size:22px">🗓️</span>
+          <span>تقويم الدورة والخصوبة</span>
+        </a>
+        <a href="/fertility" class="nb-404-link">
+          <span style="font-size:22px">🌱</span>
+          <span>الخصوبة وأدعية الذرية</span>
+        </a>
+        <a href="/shop" class="nb-404-link">
+          <span style="font-size:22px">🛍️</span>
+          <span>متجر مستلزمات الأم والطفل</span>
+        </a>
+        <a href="/articles" class="nb-404-link">
+          <span style="font-size:22px">📚</span>
+          <span>موسوعة نبضة الشاملة</span>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <div id="nb-footer"></div>
+
+  <script type="module" src="/js/shell.js"></script>
+</body>
+</html>

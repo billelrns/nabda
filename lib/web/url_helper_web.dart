@@ -22,3 +22,31 @@ String? getInitialPath() {
     return null;
   }
 }
+
+/// الانتقال إلى صفحة أخرى في الموقع (يستبدل الصفحة الحالية في السجلّ).
+void webRedirect(String url) {
+  try {
+    html.window.location.replace(url);
+  } catch (_) {}
+}
+
+/// قراءة قيمة من localStorage (أو sessionStorage إن session = true).
+String? webStorageGet(String key, {bool session = false}) {
+  try {
+    return (session ? html.window.sessionStorage : html.window.localStorage)[key];
+  } catch (_) {
+    return null;
+  }
+}
+
+/// كتابة قيمة (null = حذف) في localStorage أو sessionStorage.
+void webStorageSet(String key, String? value, {bool session = false}) {
+  try {
+    final s = session ? html.window.sessionStorage : html.window.localStorage;
+    if (value == null) {
+      s.remove(key);
+    } else {
+      s[key] = value;
+    }
+  } catch (_) {}
+}

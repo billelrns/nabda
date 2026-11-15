@@ -64,6 +64,10 @@
   }
   </script>
 
+    <link rel="stylesheet" href="/css/site.css">
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <style>
     :root {
       --primary: #E91E63;
@@ -243,24 +247,7 @@
 <body>
 
   <!-- Header -->
-  <header class="header">
-    <div class="header-inner">
-      <a href="/" class="logo-box">
-        <div class="logo-badge">♥</div>
-        <span class="logo-text">نبضة</span>
-      </a>
-      <nav class="nav-links">
-        <a href="/" class="nav-link">الرئيسية</a>
-        <a href="/tools/due-date.html" class="nav-link">حاسبة الولادة</a>
-        <a href="/tools/ovulation.html" class="nav-link">التبويض والخصوبة</a>
-        <a href="/tools/baby-names.html" class="nav-link">أسماء المواليد</a>
-        <a href="/tools/fetus-size.html" class="nav-link active">حجم الجنين</a>
-        <a href="/articles.html" class="nav-link">موسوعة نبضة</a>
-        <a href="/shop" class="nav-link">المتجر</a>
-      </nav>
-      <a href="/" class="app-btn">تطبيق نبضة</a>
-    </div>
-  </header>
+  <header id="nb-header" style="min-height:96px"></header>
 
   <main class="container">
     <div class="breadcrumbs">
@@ -1532,20 +1519,7 @@
   </main>
 
   <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-links">
-      <a href="/">الرئيسية</a>
-      <a href="/tools/due-date.html">حاسبة الولادة</a>
-      <a href="/tools/ovulation.html">حاسبة التبويض</a>
-      <a href="/tools/baby-names.html">أسماء المواليد</a>
-      <a href="/tools/fetus-size.html">حجم الجنين</a>
-      <a href="/articles.html">موسوعة نبضة</a>
-      <a href="/shop">المتجر</a>
-      <a href="/privacy.html">سياسة الخصوصية</a>
-      <a href="/terms.html">شروط الاستخدام</a>
-    </div>
-    <p>© 2026 نبضة (Nabda). جميع الحقوق محفوظة. المحتوى لأغراض تثقيفية وإرشادية ولا يغني عن الاستشارة الطبية المتخصصة.</p>
-  </footer>
+  <div id="nb-footer"></div>
 
   <script>
     function filterTrimester(tri, btn) {
@@ -1600,5 +1574,6 @@
     window.addEventListener('load', checkHash);
     window.addEventListener('hashchange', checkHash);
   </script>
+  <script type="module" src="/js/shell.js"></script>
 </body>
 </html>

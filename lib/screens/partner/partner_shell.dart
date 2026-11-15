@@ -515,6 +515,13 @@ Future<void> syncPartnerSnapshotIfLinked() async {
       await CartService().disableCoupleSync();
       return;
     }
+    // الزوج فكّ الارتباط من جهته (فكّ ناعم): نسترجع بيانات الأطفال
+    // والذكريات إلى وثيقة الزوجة ثم ننظّف الحاوية.
+    if ((snap.data()?['status'] as String?) == 'unlinked') {
+      await PartnerService.unlink(id);
+      await CartService().disableCoupleSync();
+      return;
+    }
     await PartnerService.syncAll();
     await CartService().enableCoupleSync(id);
   } catch (_) {/* أفضل-جهد */}

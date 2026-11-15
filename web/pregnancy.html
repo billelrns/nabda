@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <script src="/js/app-redirect.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>دليل الحمل أسبوعاً بأسبوع — نبضة</title>
   <meta name="description" content="تابعي تطور جنينكِ أسبوعاً بأسبوع مع نبضة: الحجم، الوزن، التغيرات الجسدية، نصائح التغذية، وخطة الولادة بإشراف فريق تحرير نبضة.">
@@ -12,10 +13,10 @@
   <link rel="stylesheet" href="/css/site.css">
 
   <!-- Firebase Web SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <style>
     /* ── Pregnancy Specific Styles ── */
@@ -657,11 +658,11 @@
 
     <!-- Week Scroller Strip -->
     <div class="nb-week-strip-wrap">
-      <button class="nb-strip-nav-btn" onclick="document.getElementById('nb-week-strip').scrollBy({left:200,behavior:'smooth'})" aria-label="السابق">›</button>
+      <button class="nb-strip-nav-btn" onclick="document.getElementById('nb-week-strip').scrollBy({left:200,behavior:'smooth'})" aria-label="السابق"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;margin:auto"><path d="M9 5l7 7-7 7"/></svg></button>
       <div class="nb-week-strip" id="nb-week-strip">
         <!-- Rendered by JS: 1 to 42 -->
       </div>
-      <button class="nb-strip-nav-btn" onclick="document.getElementById('nb-week-strip').scrollBy({left:-200,behavior:'smooth'})" aria-label="التالي">‹</button>
+      <button class="nb-strip-nav-btn" onclick="document.getElementById('nb-week-strip').scrollBy({left:-200,behavior:'smooth'})" aria-label="التالي"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;margin:auto"><path d="M15 5l-7 7 7 7"/></svg></button>
     </div>
 
     <!-- Hero Card -->
@@ -1036,7 +1037,7 @@
   </div>
 
   <!-- Footer will be injected by shell.js -->
-  <div id="nb-footer-placeholder"></div>
+  <div id="nb-footer"></div>
 
   <!-- Scripts -->
   <script type="module">

@@ -8,6 +8,15 @@
 
 ---
 
+## ⚠️ تصحيحات امتثال إلزامية (تتقدّم على أي كود أدناه — راجع `CLAUDE.md`)
+
+1. **المؤلّف دائماً `kEditorialAuthor` («فريق تحرير نبضة»)** — استبدل كل «فريق التحرير الطبي — نبضة» و«فريق التحرير الشرعي — نبضة» و«فريق التحرير — نبضة» في الأمثلة.
+2. **`SmartProductsCarousel`:** احذف الفئات `vitamins`, `supplements`, `medical_devices`, `fertility_supplements`, `ovulation_kits`, `medical_devices`. استعمل تصنيفات المتجر العربية الفعلية الموجودة في Firestore، وطبّق `isHiddenProduct()` من `lib/config/shop_config.dart` على كل منتج قبل عرضه.
+3. **`ArticleToolRouter`:** كل مسار لميزة طبية يُضاف فقط `if (!kHideMedicalFeatures)`: `kick_counter`, `medication_tracker`, `medication_reminder`, `vaccine_schedule`, `vaccination_schedule`, `health_tracker` (إن كان يحوي الضغط/السكر). `ai_chat` يُفتح فقط إن `kShowLifestyleAssistant`. عند الحجب → snackbar «متاحة قريباً».
+4. **روابط المشاركة:** `https://nabda.online/article/<id>` بحقل `id` (لا `originalId`).
+
+---
+
 ## 📐 السياق الحالي
 
 **المقالات الحالية موزّعة على عدّة تصاميم:**

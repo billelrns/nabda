@@ -5,6 +5,7 @@ import '../../widgets/news_section.dart';
 import '../../widgets/conditional_content.dart';
 import '../../widgets/smart_articles_carousel.dart';
 import '../../widgets/smart_article_carousel.dart';
+import '../fiqh/fertility_duas_screen.dart';
 
 /// رحلة الخصوبة — تصميم فاخر (glassmorphism) للنساء اللواتي يحاولن الحمل.
 /// محتوى إرشادي فقط ولا يغني عن استشارة الطبيب.
@@ -168,6 +169,9 @@ class _FertilityScreenState extends State<FertilityScreen> {
       _knowledgeCard('🩺', 'متى أراجع أخصائي الخصوبة؟', 'علامات تستدعي زيارة الطبيب والفحوصات', _lav, () => _openArticle('متى تراجعين الأخصائي', _whenSpecialistText)),
       const SizedBox(height: 10),
       _knowledgeCard('📋', 'استبيان الخصوبة', 'أجيبي على أسئلة قصيرة لتوجيه مخصّص', _peach, _openQuestionnaire),
+      const SizedBox(height: 14),
+      // ── الزاد الإيماني: أدعية موثّقة بالمصدر والدرجة ──
+      _duasBanner(),
       const SizedBox(height: 22),
       const SmartArticlesCarousel(
         categoryFilter: 'fertility',
@@ -313,6 +317,60 @@ class _FertilityScreenState extends State<FertilityScreen> {
       Switch(value: _remindersOn, activeColor: _rose, onChanged: _toggleReminders),
     ]),
   );
+
+  /// بطاقة أدعية الذرّية — مميّزة بصرياً لأنها زاد يومي لا مقال يُقرأ مرّة
+  Widget _duasBanner() => GestureDetector(
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const FertilityDuasScreen())),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [Color(0xFF1B7A5A), Color(0xFF145C44)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                  color: const Color(0xFF145C44).withOpacity(0.28),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8)),
+            ],
+          ),
+          child: Row(children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Center(
+                  child: Text('🤲', style: TextStyle(fontSize: 24))),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('أدعية الذرّية',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white)),
+                    const SizedBox(height: 4),
+                    Text('من القرآن والسنة — كلّ دعاء بمصدره ودرجته',
+                        style: TextStyle(
+                            fontSize: 11.5,
+                            height: 1.5,
+                            color: Colors.white.withOpacity(0.92))),
+                  ]),
+            ),
+            const Icon(Icons.arrow_back_ios, size: 15, color: Colors.white),
+          ]),
+        ),
+      );
 
   Widget _knowledgeCard(String emoji, String title, String sub, Color c, VoidCallback onTap) => GestureDetector(
     onTap: onTap,

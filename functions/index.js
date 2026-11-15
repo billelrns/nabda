@@ -436,86 +436,117 @@ function isHiddenProduct(p){
   return SUPP_WORDS.some(w => n.includes(w));
 }
 
-exports.productPage = onRequest({ region: REGION }, async (req, res) => {
-  const parts = req.path.split('/');
-  const slug = decodeURIComponent(parts[parts.length - 1] || '');
+// قالب product.html يُقرأ من الاستضافة (ملف ثابت لا يمرّ بهذه الدالة) ويُخزَّن 10 دقائق.
+// القالب يُجلب من نفس النطاق الذي طُلبت منه الصفحة (الإنتاج أو قناة معاينة)، ضمن قائمة نطاقات موثوقة فقط.
+const _tpl = new Map();
+function templateHost(req) {
+  const h = String(req.get('x-forwarded-host') || req.hostname || '').split(',')[0].trim().toLowerCase();
+  const ok = h === 'nabda.online' || h === 'www.nabda.online' || /^nabda-app-ca864(--[a-z0-9-]+)?\.(web\.app|firebaseapp\.com)$/.test(h);
+  return ok ? h : 'nabda.online';
+}
+async function productTemplate(host) {
+  const c = _tpl.get(host);
+  if (c && Date.now() - c.at < 10 * 60 * 1000) return c.html;
+  const r = await fetch(`https://${host}/product.html`, { headers: { 'User-Agent': 'nabda-productPage' } });
+  if (!r.ok) throw new Error('template HTTP ' + r.status);
+  const html = await r.text();
+  _tpl.set(host, { html, at: Date.now() });
+  return html;
+}
+const escAttr = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+/**
+ * /product/<slug> → يعيد صفحة المنتج الحقيقية مع وسوم Open Graph في HTML الخام
+ * (فيسبوك وواتساب لا يشغّلان JavaScript). لا تحويل — فلا حلقة إعادة توجيه.
+ */
+exports.productPage = onRequest({ region: REGION, memory: '256MiB', maxInstances: 10 }, async (req, res) => {
+  const parts = req.path.split('/').filter(Boolean);
+  const slug = decodeURIComponent(parts[1] || '');
+  let html;
   try {
-    let snap = await db.collection('products').where('slug', '==', slug).limit(1).get();
-    if (snap.empty) {
-      const doc = await db.collection('products').doc(slug).get();
-      if (doc.exists) snap = { empty: false, docs: [doc] };
-    }
-
-    const p = !snap.empty ? snap.docs[0].data() : null;
-    if (!p || isHiddenProduct(p) || p.active === false) {
-      res.redirect(301, '/shop');
-      return;
-    }
-
-    const name = String(p.name || 'منتج من متجر نبضة').replace(/"/g, '&quot;');
-    const desc = String(p.description || p.desc || 'تسوقي بأمان من متجر نبضة للأم والطفل. الدفع عند الاستلام والتوصيل لـ 58 ولاية.').slice(0, 200).replace(/"/g, '&quot;');
-    const img = p.image || p.imageUrl || (p.images && p.images[0]) || 'https://nabda.online/landing-assets/slide-store.png';
-    const price = Number(p.price || 0).toLocaleString();
-
-    const html = `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <title>${name} — متجر نبضة</title>
-  <meta name="description" content="${desc}">
-  <meta property="og:title" content="${name} | ${price} دج">
-  <meta property="og:description" content="${desc}">
-  <meta property="og:image" content="${img}">
-  <meta property="og:type" content="product">
-  <meta property="og:url" content="https://nabda.online/product/${encodeURIComponent(slug)}">
-  <meta property="product:price:amount" content="${p.price}">
-  <meta property="product:price:currency" content="DZD">
-  <meta http-equiv="refresh" content="0; url=/product/${encodeURIComponent(slug)}">
-  <script>location.replace('/product/${encodeURIComponent(slug)}');</script>
-</head>
-<body>
-  <p>يتم تحويلكِ إلى <a href="/product/${encodeURIComponent(slug)}">${name}</a>...</p>
-</body>
-</html>`;
-
-    res.set('Cache-Control', 'public, max-age=300, s-maxage=600');
-    res.send(html);
-  } catch (err) {
-    logger.error('productPage error', err);
-    res.redirect(302, '/shop');
+    html = await productTemplate(templateHost(req));
+  } catch (e) {
+    logger.error('productPage template', e);
+    res.status(503).set('Retry-After', '30').send('<!doctype html><meta charset="utf-8"><p>الصفحة غير متاحة مؤقتاً، أعيدي المحاولة بعد لحظات.</p>');
+    return;
   }
+  let meta = '';
+  try {
+    let p = null; let id = null;
+    if (slug) {
+      const snap = await db.collection('products').where('slug', '==', slug).limit(1).get();
+      if (!snap.empty) { p = snap.docs[0].data(); id = snap.docs[0].id; } else {
+        const doc = await db.collection('products').doc(slug).get();
+        if (doc.exists) { p = doc.data(); id = doc.id; }
+      }
+    }
+    if (p && p.active !== false && !isHiddenProduct(p)) {
+      const url = `https://nabda.online/product/${encodeURIComponent(p.slug || id)}`;
+      const img = (Array.isArray(p.images) && p.images[0]) || p.image || p.imageUrl || 'https://nabda.online/landing-assets/slide-store.png';
+      const price = Number(p.price || 0);
+      const desc = String(p.seoDescription || p.description || p.desc || 'الدفع عند الاستلام والتوصيل لـ 58 ولاية من متجر نبضة للأم والطفل.').replace(/\s+/g, ' ').slice(0, 200);
+      meta = [
+        `<meta property="og:title" content="${escAttr(p.name)} | ${price.toLocaleString('en-US')} دج">`,
+        `<meta property="og:description" content="${escAttr(desc)}">`,
+        `<meta property="og:image" content="${escAttr(img)}">`,
+        `<meta property="og:url" content="${escAttr(url)}">`,
+        `<meta property="product:price:amount" content="${price}">`,
+        `<meta property="product:price:currency" content="DZD">`,
+        `<meta name="twitter:card" content="summary_large_image">`,
+        `<link rel="canonical" href="${escAttr(url)}">`,
+      ].join('\n  ');
+      html = html.replace(/<title>[^<]*<\/title>/, `<title>${escAttr(p.name)} — متجر نبضة</title>`)
+                 .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${escAttr(desc.slice(0, 160))}">`);
+    } else {
+      meta = '<meta name="robots" content="noindex">';
+      res.status(404);
+    }
+  } catch (err) {
+    logger.error('productPage data', err);
+  }
+  res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
+  res.send(html.replace('<!--OG-->', meta));
 });
 
 // ══════════════════════════════════════════════════════════════════
 //  ٦) إنقاص المخزون وتحديث المبيعات تلقائياً عند إنشاء طلب
 // ══════════════════════════════════════════════════════════════════
-exports.onOrderCreated = onDocumentCreated('orders/{orderId}', async (event) => {
-  const snap = event.data;
-  if (!snap) return;
-  const order = snap.data();
-  const productId = order.productId;
-  const qty = parseInt(order.quantity, 10) || 1;
+// (أُلغي) إنقاص المخزون عند إنشاء الطلب: لوحة التحكم تخصمه الآن عند أوّل «تأكيد» لطلبات الموقع
+// وتعيده عند الإلغاء/الإرجاع — فلا يُفعَّل هنا كي لا يُخصم مرّتين.
 
-  if (!productId) return;
-
+// ══════════════════════════════════════════════════════════════════
+//  ٧) خريطة المنتجات للمحرّكات (/sitemap-products.xml) — حيّة من Firestore
+// ══════════════════════════════════════════════════════════════════
+exports.sitemapProducts = onRequest({ region: REGION, memory: '256MiB', maxInstances: 3 }, async (req, res) => {
   try {
-    const prodRef = db.collection('products').doc(productId);
-    await db.runTransaction(async (t) => {
-      const doc = await t.get(prodRef);
-      if (!doc.exists) return;
-      const currentStock = doc.data().stock || 0;
-      const newStock = Math.max(0, currentStock - qty);
-      const newSold = (doc.data().soldCount || 0) + qty;
-      t.update(prodRef, {
-        stock: newStock,
-        soldCount: newSold,
-        updatedAt: FieldValue.serverTimestamp()
-      });
+    const snap = await db.collection('products').get();
+    const urls = [];
+    snap.forEach((d) => {
+      const p = d.data();
+      if (p.active === false || isHiddenProduct(p)) return;
+      const t = (p.updatedAt && p.updatedAt.toDate ? p.updatedAt.toDate() : (p.createdAt && p.createdAt.toDate ? p.createdAt.toDate() : new Date()));
+      const slug = encodeURIComponent(p.slug || d.id);
+      urls.push(`  <url><loc>https://nabda.online/product/${slug}</loc><lastmod>${t.toISOString().slice(0, 10)}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`);
     });
-    logger.info(`Stock updated for product ${productId}: -${qty}`);
-  } catch (err) {
-    logger.error('Error updating stock on order created:', err);
+    res.set('Content-Type', 'application/xml; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=3600, s-maxage=21600');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
+  } catch (e) {
+    logger.error('sitemapProducts', e);
+    res.status(500).send('error');
   }
 });
 
+// ══════════════════════════════════════════════════════════════════
+//  ٨) إحصاءات للوحة التحكم (stats/users) — عدد فقط، بلا أي بيانات شخصية
+// ══════════════════════════════════════════════════════════════════
+const { onSchedule } = require('firebase-functions/v2/scheduler');
+exports.refreshStats = onSchedule({ schedule: 'every 6 hours', region: REGION, timeZone: 'Africa/Algiers' }, async () => {
+  const [users, posts] = await Promise.all([
+    db.collection('users').count().get(),
+    db.collection('community_posts').count().get(),
+  ]);
+  await db.collection('stats').doc('users').set({
+    count: users.data().count, communityPosts: posts.data().count, updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+});

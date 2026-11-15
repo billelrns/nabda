@@ -18,7 +18,7 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/data/latest_10y.dart' as tzdata; // أخفّ من latest_all — إقلاع أسرع
 import 'package:timezone/timezone.dart' as tz;
 import 'firebase_options.dart';
 import 'screens/community/community_screen.dart';
@@ -39,13 +39,18 @@ import 'widgets/due_date_card.dart';
 import 'screens/fertility/fertility_screen.dart';
 import 'services/country_currency_service.dart';
 import 'services/notification_service.dart';
+import 'services/notification_router.dart';
+import 'services/smart_articles_service.dart';
 import 'services/admin_service.dart';
 import 'services/dynamic_content_service.dart';
 import 'data/baby_care_age_articles.dart';
 import 'services/auth_service.dart';
 import 'screens/admin/admin_panel_screen.dart';
 import 'config/theme.dart';
-import 'config/secrets.dart';
+// ⚠️ لا تُعِد استيراد config/secrets.dart هنا: مفتاح Gemini صار على الخادم
+//    (functions/index.js → askAssistant). استيراده يُضمّنه في ملف الـAPK
+//    فيُستخرج منه — وهذا ما كان يحدث قبل أكتوبر 2026.
+import 'config/functions_config.dart';
 import 'config/play_compliance.dart';
 import 'config/shop_config.dart';
 import 'screens/onboarding_screen.dart' show OnboardingScreen, PrivacyPolicyPage, TermsOfServicePage;
@@ -101,6 +106,10 @@ import 'screens/partner/role_choice_screen.dart';
 import 'screens/partner/invite_partner_screen.dart';
 import 'screens/partner/father_daily_tips.dart';
 import 'utils/voice.dart';
+import 'screens/fiqh/fertility_duas_screen.dart';
+import 'services/notification_images.dart';
+import 'screens/baby/baby_memories_screen.dart';
+import 'widgets/app_tour.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -216,6 +225,9 @@ class AppLocalizations {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // ⚡ مهامّ محلية لا تحتاج Firebase تبدأ فوراً بالتوازي مع تهيئته
+  final localeReady = localeNotifier.loadSavedLocale().catchError((_) {});
+  final articlesReady = ArticleImages.preload();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // ✅ تهيئة المنطقة الزمنية للإشعارات المجدولة (الجزائر UTC+1)
@@ -284,7 +296,7 @@ void main() async {
   // طلب أذونات إشعارات الأدوية وإنشاء القناة — في الخلفية حتى لا تؤخّر الإقلاع
   NotifService.ensureMedSetup();
 
-  await localeNotifier.loadSavedLocale();
+  await localeReady;
   CountryCurrencyService().initialize();
 
   // ✅ تحميل مسبق لخطّ Almarai (يحلّ مشكلة □□□ على Flutter Web)
@@ -298,14 +310,14 @@ void main() async {
       GoogleFonts.almarai(fontWeight: FontWeight.w600);
       GoogleFonts.almarai(fontWeight: FontWeight.w700);
       GoogleFonts.almarai(fontWeight: FontWeight.w800);
-      await GoogleFonts.pendingFonts().timeout(const Duration(seconds: 5));
+      await GoogleFonts.pendingFonts().timeout(const Duration(milliseconds: 2500));
     } catch (_) {
       // تجاهل: العرض سيتمّ بخطّ احتياطي، ثم يُبدَّل تلقائيًا عند وصول الخطّ.
     }
   }
 
   // خريطة عنوان المقال → معرّفه (ملف JSON صغير — سريع)
-  await ArticleImages.preload();
+  await articlesReady;
   // AdMob لا يجب أن يحجب أول إطار
   AdMobService.init();
   // تهيئة كاش المفضلة والمحفوظات للوصول الفوري بدون إنترنت
@@ -344,6 +356,8 @@ class _NabdaAppState extends State<NabdaApp> {
       ],
       supportedLocales: [Locale('ar', 'SA'), Locale('fr', 'FR'), Locale('en', 'US')],
       locale: localeNotifier.locale,
+      // يسمح بفتح صفحة المنتج عند الضغط على الإشعار من أي مكان
+      navigatorKey: appNavigatorKey,
       home: const RootGate(),
     );
   }
@@ -426,6 +440,19 @@ Future<void> _ensureUserDirectoryEntry(String uid, Map<String, dynamic> userData
 
 // ==================== AUTH GATE ====================
 class AuthGate extends StatelessWidget {
+  // الويب: هل رأينا مستخدمة مسجّلة في هذه الجلسة؟ (لتمييز الخروج عن الزيارة المباشرة)
+  static bool _webHadUser = false;
+  // الويب: بدأ التحويل إلى الموقع — نُبقي شاشة التحميل حتى يكتمل
+  static bool _webRedirecting = false;
+
+  // الويب على الهاتف (أندرويد/آيفون أو شاشة ضيّقة). الحاسوب يبقى كما كان.
+  static bool _isMobileWeb(BuildContext context) {
+    final p = Theme.of(context).platform;
+    return p == TargetPlatform.android ||
+        p == TargetPlatform.iOS ||
+        MediaQuery.of(context).size.width < 820;
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -434,6 +461,14 @@ class AuthGate extends StatelessWidget {
         if (snap.connectionState == ConnectionState.waiting)
           return Scaffold(body: Center(child: CircularProgressIndicator()));
         if (snap.hasData) {
+          if (kIsWeb) {
+            _webHadUser = true;
+            _webRedirecting = false;
+            // إشارة للموقع: المستخدمة مسجّلة → صفحات الموقع تحوّلها إلى /app/ فوراً
+            webStorageSet('nb_auth', '1');
+            // دخلت التطبيق → إلغاء وضع «تصفّح الموقع» لهذه الجلسة
+            webStorageSet('nb_site', null, session: true);
+          }
           // 🚧 معطّل مؤقّتًا أثناء العمل على الموقع — اضبطي على true لإعادة التفعيل.
           //    عند التفعيل: مستخدمات Email/Password يجب أن يؤكّدن البريد قبل الدخول.
           //    مستخدمات Google/Apple/Facebook لا يحتجن للتحقّق (المزوّد يضمنه).
@@ -536,8 +571,26 @@ class AuthGate extends StatelessWidget {
             },
           );
         }
-        // الويب: صفحة عامّة للزوّار (مقالات + دخول/تسجيل). الموبايل: شاشة الدخول.
+        // الويب على الهاتف: غير مسجّلة → نُعيدها إلى الموقع (الحاسوب: الواجهة العامّة كما كانت).
+        //  • بعد تسجيل الخروج → الصفحة الرئيسية للموقع.
+        //  • زيارة مباشرة لـ /app/ دون حساب → صفحة الدخول ثم العودة للتطبيق.
+        // حماية من الحلقة: إن تكرّر التحويل خلال 15 ثانية نعرض الواجهة العامّة.
         if (kIsWeb) {
+          webStorageSet('nb_auth', '0');
+          final now = DateTime.now().millisecondsSinceEpoch;
+          final last = int.tryParse(webStorageGet('nb_app_bounce', session: true) ?? '') ?? 0;
+          if (_isMobileWeb(context) && (_webRedirecting || now - last > 15000)) {
+            if (!_webRedirecting) {
+              _webRedirecting = true;
+              webStorageSet('nb_app_bounce', '$now', session: true);
+              final target = _webHadUser ? '/' : '/login?next=%2Fapp%2F';
+              WidgetsBinding.instance.addPostFrameCallback((_) => webRedirect(target));
+            }
+            return const Scaffold(
+              backgroundColor: Color(0xFFFFF8FB),
+              body: Center(child: CircularProgressIndicator(color: Color(0xFFE91E63))),
+            );
+          }
           return WebPublicHome(
             articlesSection: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1094,7 +1147,7 @@ class _PublicShop extends StatelessWidget {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(color: Color(0xFFE91E63))));
         }
-        final docs = (snap.data?.docs ?? []).where((d) => !isHiddenProduct(d.data() as Map)).toList();
+        final docs = (snap.data?.docs ?? []).where((d) => !isShopHidden(d.data() as Map)).toList();
         if (docs.isEmpty) {
           return const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('لا توجد منتجات بعد', style: TextStyle(color: Color(0xFF9B8F95)))));
         }
@@ -1103,12 +1156,18 @@ class _PublicShop extends StatelessWidget {
           return GridView.count(
             crossAxisCount: cols, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 16, crossAxisSpacing: 16, childAspectRatio: 0.72,
-            children: [for (final d in docs) _PublicProductCard(data: d.data() as Map<String, dynamic>)],
+            children: [for (final d in docs) _PublicProductCard(data: CountryCurrencyService().localize(d.data() as Map))],
           );
         });
       },
     );
   }
+}
+
+/// السعر بعملة سوق الزائرة (المنتج مُوطَّن مسبقاً)
+String _publicPrice(dynamic raw) {
+  final v = CountryCurrencyService.parseDZDPrice('${raw ?? ''}');
+  return v > 0 ? CountryCurrencyService().formatPrice(v) : '${raw ?? ''}';
 }
 
 class _PublicProductCard extends StatelessWidget {
@@ -1127,7 +1186,7 @@ class _PublicProductCard extends StatelessWidget {
           Text((data['name'] ?? '') as String, maxLines: 2, overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20))),
           const SizedBox(height: 6),
-          Text('${data['price'] ?? ''}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF00897B))),
+          Text(_publicPrice(data['price']), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF00897B))),
         ])),
       ]),
     );
@@ -1448,6 +1507,7 @@ class AppNotifs {
   static const _tipsCh = 'tips_channel';
   static const _pregCh = 'pregnancy_channel';
   static const _prodCh = 'products_channel';
+  static const _artCh = 'articles_channel';
 
   // \u0646\u0637\u0627\u0642\u0627\u062A \u0627\u0644\u0645\u0639\u0631\u0651\u0641\u0627\u062A (\u0644\u0627 \u062A\u062A\u0639\u0627\u0631\u0636 \u0645\u0639 \u062A\u0630\u0643\u064A\u0631\u0627\u062A \u0627\u0644\u0623\u062F\u0648\u064A\u0629 \u0627\u0644\u062A\u064A \u062A\u0633\u062A\u062E\u062F\u0645 hash \u0643\u0628\u064A\u0631)
   static const _waterBase = 1000; // 1000-1019
@@ -1455,6 +1515,7 @@ class AppNotifs {
   static const _pregBase = 1200;  // 1200-1219
   static const _prodBase = 1300;  // 1300-1329
   static const _fertBase = 1400;  // 1400-1419
+  static const _artBase = 1600;   // 1600-1629 (مقالات اليوم)
 
   static bool _done = false;
 
@@ -1510,17 +1571,36 @@ class AppNotifs {
     } catch (_) {}
   }
 
+  /// [image] اختياري: رابط https أو مسار أصل (assets/...) يظهر صورةً كبيرة
+  /// داخل الإشعار. إن تعذّرت الصورة يُجدول الإشعار نصّياً كما كان.
   static Future<void> _zonedOnce(
-      int id, String ch, String name, String title, String body, tz.TZDateTime when) async {
+      int id, String ch, String name, String title, String body, tz.TZDateTime when,
+      {String? image, String? payload}) async {
     if (!when.isAfter(tz.TZDateTime.now(tz.local))) return;
     try {
+      final style = image == null
+          ? null
+          : await NotificationImages.bigPicture(image, title: title, body: body);
       await flutterLocalNotificationsPlugin.zonedSchedule(
-        id, title, body, when, _d(ch, name),
+        id, title, body, when,
+        style == null ? _d(ch, name) : _dPic(ch, name, style),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        payload: payload,
       );
     } catch (_) {}
   }
+
+  static NotificationDetails _dPic(
+          String ch, String name, BigPictureStyleInformation style) =>
+      NotificationDetails(
+        android: AndroidNotificationDetails(ch, name,
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            largeIcon: style.largeIcon,
+            styleInformation: style),
+      );
 
   static Future<void> _cancelRange(int start, int end) async {
     for (int i = start; i <= end; i++) {
@@ -1539,7 +1619,10 @@ class AppNotifs {
         [_tipsCh, '\u0646\u0635\u0627\u0626\u062D \u064A\u0648\u0645\u064A\u0629'],
         [_pregCh, '\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644 \u0648\u0627\u0644\u062F\u0648\u0631\u0629'],
         [_prodCh, '\u0639\u0631\u0648\u0636 \u0648\u0645\u0646\u062A\u062C\u0627\u062A \u0646\u0628\u0636\u0629'],
+        [_artCh, 'مقالات نبضة'],
         [_fatherCh, '\u0646\u0635\u0627\u0626\u062D \u0627\u0644\u0623\u0628'],
+        // \u062A\u0646\u0628\u064A\u0647\u0627\u062A \u0627\u0644\u0632\u0648\u062C\u064A\u0646 (\u0645\u0646 \u0627\u0644\u062E\u0627\u062F\u0645: \u0625\u0636\u0627\u0641\u0629 \u0644\u0644\u0633\u0644\u0651\u0629\u060C \u0625\u062A\u0645\u0627\u0645 \u0637\u0644\u0628\u2026)
+        ['partner_channel', '\u062A\u0646\u0628\u064A\u0647\u0627\u062A \u0627\u0644\u0632\u0648\u062C\u064A\u0646'],
       ];
       for (final c in chs) {
         await a?.createNotificationChannel(
@@ -1560,6 +1643,7 @@ class AppNotifs {
       if (_on('tips')) await _scheduleTips(); else await _cancelRange(_tipsBase, _tipsBase + 29);
       if (_on('pregnancy')) await _schedulePregnancyAndCycle(); else await _cancelRange(_pregBase, _pregBase + 19);
       if (_on('products')) await _scheduleProducts(); else await _cancelRange(_prodBase, _prodBase + 29);
+      if (_on('articles')) await _scheduleArticles(); else await _cancelRange(_artBase, _artBase + 29);
       await _scheduleFertility();
       await _scheduleFatherTips();
     } catch (_) {}
@@ -1642,7 +1726,9 @@ class AppNotifs {
           await _zonedOnce(id++, _pregCh, '\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062D\u0645\u0644',
               '\uD83E\uDD30 \u0627\u0644\u0623\u0633\u0628\u0648\u0639 $cw \u0645\u0646 \u0627\u0644\u062D\u0645\u0644',
               '\u0623\u0646\u062A\u0650 \u0641\u064A \u0627\u0644\u0623\u0633\u0628\u0648\u0639 $cw \uD83D\uDC95 \u0627\u0637\u0651\u0644\u0639\u064A \u0639\u0644\u0649 \u062A\u0637\u0648\u0651\u0631 \u0637\u0641\u0644\u0643 \u0648\u0646\u0635\u0627\u0626\u062D \u0647\u0630\u0627 \u0627\u0644\u0623\u0633\u0628\u0648\u0639 \u0641\u064A \u062A\u0637\u0628\u064A\u0642 \u0646\u0628\u0636\u0629.',
-              _inDaysAt(w * 7, 10, 0));
+              _inDaysAt(w * 7, 10, 0),
+              // صورة الجنين في ذلك الأسبوع — نفس صور دائرة الحمل في التطبيق
+              image: 'assets/images/fetus_hd/week_${cw.clamp(4, 41)}.png');
         }
         return;
       }
@@ -1716,24 +1802,35 @@ class AppNotifs {
         final m = d.data();
         final name = (m['name'] ?? '').toString().trim();
         if (name.isEmpty) continue;
-        if (isHiddenProduct(m)) continue;
+        if (isShopHidden(m)) continue;
+        // السعر بعملة سوق المستخدمة (لا تحويل): «89 ر.س» أو «3,500 دج»
+        final svc = CountryCurrencyService();
+        final lp = svc.priceFor(m);
         products.add({
-          'name': name,
-          'price': (m['price'] ?? '').toString().trim(),
+          'id': d.id,
+          'name': (svc.localize(m)['name'] ?? name).toString(),
+          'price': lp > 0 ? svc.formatPrice(lp) : '',
           'emoji': (m['emoji'] ?? '\uD83D\uDECD\uFE0F').toString(),
+          // \u0635\u0648\u0631\u0629 \u0627\u0644\u0645\u0646\u062A\u062C \u062A\u0638\u0647\u0631 \u062F\u0627\u062E\u0644 \u0627\u0644\u0625\u0634\u0639\u0627\u0631 (BigPicture)
+          'image': NotificationImages.productImage(m) ?? '',
         });
       }
     } catch (_) {}
 
-    // \u0645\u0631\u062A\u064A\u0646 \u064A\u0648\u0645\u064A\u0627\u064B (11:00 \u0648 19:00) \u0644\u0644\u0623\u064A\u0627\u0645 \u0627\u0644\u062B\u0644\u0627\u062B\u0629 \u0627\u0644\u0642\u0627\u062F\u0645\u0629
-    const times = [11, 19];
+    // 3 مرّات يومياً (11:00 و15:00 و20:00) للأيام الثلاثة القادمة
+    const times = [11, 15, 20];
     int id = _prodBase;
     for (int day = 0; day < 3; day++) {
       for (int t = 0; t < times.length; t++) {
         final slot = day * times.length + t;
         String title, body;
+        String? image;
+        String? payload;
         if (products.isNotEmpty) {
           final p = products[slot % products.length];
+          // الضغط على الإشعار يفتح صفحة هذا المنتج
+          payload = NotificationRouter.productPayload(p['id']!);
+          image = (p['image'] ?? '').isEmpty ? null : p['image'];
           final price = p['price']!.isNotEmpty ? ' \u0628\u0633\u0639\u0631 ${p['price']}' : '';
           title = '${p['emoji']} \u0639\u0631\u0636 \u0627\u0644\u064A\u0648\u0645 \u0645\u0646 \u0645\u062A\u062C\u0631 \u0646\u0628\u0636\u0629';
           body = '${p['name']}$price \uD83D\uDED2 \u062A\u0633\u0648\u0651\u0642\u064A \u0627\u0644\u0622\u0646 \u0645\u0646 \u0645\u062A\u062C\u0631 \u0646\u0628\u0636\u0629!';
@@ -1742,9 +1839,57 @@ class AppNotifs {
           body = '\u0627\u0643\u062A\u0634\u0641\u064A \u0645\u0646\u062A\u062C\u0627\u062A \u0645\u062E\u062A\u0627\u0631\u0629 \u0644\u0644\u0623\u0645 \u0648\u0627\u0644\u0637\u0641\u0644 \u0641\u064A \u0645\u062A\u062C\u0631 \u0646\u0628\u0636\u0629 \uD83D\uDC95';
         }
         await _zonedOnce(id++, _prodCh, '\u0639\u0631\u0648\u0636 \u0648\u0645\u0646\u062A\u062C\u0627\u062A \u0646\u0628\u0636\u0629', title, body,
-            _inDaysAt(day, times[t], 0));
+            _inDaysAt(day, times[t], 0), image: image, payload: payload);
       }
     }
+  }
+
+  // ── مقال اليوم: إشعار يومي الساعة 9:00 لسبعة أيام، بصورة المقال ──
+  // يختار من قسم مرحلتها (حامل → الحمل، أم → الطفل، تخطّط → الخصوبة)،
+  // من الأكثر قراءةً، ويتغيّر كل يوم. الضغط يفتح المقال مباشرة.
+  static const List<int> _articleHours = [9];
+
+  static Future<void> _scheduleArticles() async {
+    await _cancelRange(_artBase, _artBase + 29);
+    try {
+      final all = await SmartArticlesService().loadAll();
+      if (all.isEmpty) return;
+      final prefs = await SharedPreferences.getInstance();
+      final stage = prefs.getString('life_stage') ?? '';
+      final List<String> cats;
+      if (stage == 'pregnant') {
+        cats = ['pregnancy'];
+      } else if (stage == 'baby') {
+        cats = ['baby'];
+      } else if (stage == 'planning') {
+        cats = ['fertility', 'pregnancy'];
+      } else {
+        cats = ['health', 'beauty'];
+      }
+      var pool = all
+          .where((a) => cats.contains(a.categoryId) && !isHiddenArticleTitle(a.title))
+          .toList();
+      if (pool.length < 10) pool = all.where((a) => !isHiddenArticleTitle(a.title)).toList();
+      if (pool.isEmpty) return;
+      pool.sort((a, b) => b.originalViews.compareTo(a.originalViews));
+      final top = pool.take(150).toList();
+      // تدوير يومي ثابت: نفس اليوم = نفس المقال، واليوم التالي مقال آخر
+      final dayIndex = DateTime.now().difference(DateTime(2026, 1, 1)).inDays;
+      int id = _artBase;
+      for (int day = 0; day < 7; day++) {
+        for (int h = 0; h < _articleHours.length; h++) {
+          final a = top[(dayIndex * _articleHours.length + day * _articleHours.length + h) % top.length];
+          final resolved = ArticleImages.resolve(a.title, section: a.categoryId);
+          final image = (resolved.startsWith('assets/') || resolved.startsWith('http'))
+              ? resolved
+              : a.imagePath;
+          await _zonedOnce(id++, _artCh, 'مقالات نبضة',
+              '📖 مقال اليوم ${a.iconEmoji}', a.title,
+              _inDaysAt(day, _articleHours[h], 0),
+              image: image, payload: NotificationRouter.articlePayload(a.id));
+        }
+      }
+    } catch (_) {}
   }
 }
 
@@ -2655,6 +2800,9 @@ class MainNav extends StatefulWidget {
 class _MainNavState extends State<MainNav> {
   late int _index;
   late final List<Widget> _pages;
+  // التبويبات التي فُتحت — لا تُبنى صفحة (ولا تُطلق استعلاماتها) قبل أوّل زيارة،
+  // ثم تبقى حيّة في IndexedStack كما كانت.
+  final Set<int> _visitedTabs = {};
 
   static int _tabForStage(String? stage) {
     switch (stage) {
@@ -2677,6 +2825,37 @@ class _MainNavState extends State<MainNav> {
     _index = _tabForStage(widget.initialStage);
     _pages = [HomePage(onCardTap: goToTab), CyclePage(), PregnancyPage(), BabyPage(), ShopPage()];
     if (widget.initialStage == null) _applyInitialTab();
+
+    // ── الجولة التعريفية: مرّة واحدة تلقائياً، وعند الطلب من صفحة الحساب ──
+    AppTour.replayRequests.addListener(_onTourReplay);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeStartTour());
+  }
+
+  @override
+  void dispose() {
+    AppTour.replayRequests.removeListener(_onTourReplay);
+    super.dispose();
+  }
+
+  Future<void> _maybeStartTour() async {
+    if (await AppTour.isDone()) return;
+    // نترك الصفحة تستقرّ (ونافذة إذن الإشعارات تظهر وتُغلق) قبل البدء
+    await Future.delayed(const Duration(milliseconds: 1600));
+    if (!mounted) return;
+    // الهاتف فقط: على سطح المكتب لا شريط سفلي (الشريط الجانبي بدله)
+    if (TourKeys.tabs.first.currentContext == null) return;
+    // لا تقطع المستخدمة إن فتحت صفحة أخرى فوق التطبيق في هذه الأثناء
+    if (ModalRoute.of(context)?.isCurrent == false) return;
+    AppTour.runMother(context, goToTab: goToTab, currentTab: _index);
+  }
+
+  void _onTourReplay() {
+    // تُستدعى بعد إغلاق صفحة الحساب والعودة للجذر
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+      AppTour.runMother(context, goToTab: goToTab, currentTab: _index);
+    });
   }
 
   // احتياطي فقط عند عدم تمرير المرحلة: نقرأها من التخزين المحلي
@@ -2786,14 +2965,19 @@ class _MainNavState extends State<MainNav> {
 
   // المحتوى المشترك: الصفحات + زر الحساب أعلى اليمين
   Widget _buildContent(BuildContext context) {
+    _visitedTabs.add(_index);
     return Stack(
           children: [
-            IndexedStack(index: _index, children: _pages),
+            IndexedStack(index: _index, children: [
+              for (var i = 0; i < _pages.length; i++)
+                (i == _index || _visitedTabs.contains(i)) ? _pages[i] : const SizedBox.shrink(),
+            ]),
             // Profile circle button at top
             Positioned(
               top: MediaQuery.of(context).padding.top + 8,
               right: 16,
               child: GestureDetector(
+                key: TourKeys.profile, // الجولة التعريفية
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage())),
                 child: StreamBuilder<DocumentSnapshot>(
                   stream: DB.userDoc.snapshots(),
@@ -2926,6 +3110,7 @@ class _MainNavState extends State<MainNav> {
               return Flexible(
                 fit: FlexFit.loose,
                 child: GestureDetector(
+                key: TourKeys.tabs[i], // الجولة التعريفية
                 onTap: () => setState(() => _index = i),
                 behavior: HitTestBehavior.opaque,
                 child: AnimatedContainer(
@@ -3081,6 +3266,8 @@ class _MainNavState extends State<MainNav> {
                   // ── الموسوعة الشرعية والمقالات الذكية ──
                   _navItem(context, '📗', 'فقه المرأة',
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WomensFiqhScreen()))),
+                  _navItem(context, '🤲', 'أدعية الذرّية',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FertilityDuasScreen()))),
                   _navItem(context, '🌙', 'قضاء الصيام',
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QadaaScreen()))),
                   _navItem(context, '📚', 'مكتبة نبضة',
@@ -3315,21 +3502,27 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           const SizedBox(width: 10),
                           // Search icon for articles & smart tools
-                          _topBarIconBtn(
-                            icon: Icons.search_rounded,
-                            color: _pink,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const ArticlesSearchScreen()),
+                          KeyedSubtree(
+                            key: TourKeys.search, // الجولة التعريفية
+                            child: _topBarIconBtn(
+                              icon: Icons.search_rounded,
+                              color: _pink,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ArticlesSearchScreen()),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 6),
                           // Bell icon
-                          _topBarIconBtn(
-                            icon: Icons.notifications_outlined,
-                            color: _pink,
-                            showDot: true,
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage())),
+                          KeyedSubtree(
+                            key: TourKeys.bell, // الجولة التعريفية
+                            child: _topBarIconBtn(
+                              icon: Icons.notifications_outlined,
+                              color: _pink,
+                              showDot: true,
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindersPage())),
+                            ),
                           ),
                           // Logo center — الشعار الرسمي المتحرك (الكلمة يساراً والقلبان يميناً)
                           const Expanded(
@@ -4433,6 +4626,9 @@ const SizedBox(height: 30),
       _QAData(Icons.menu_book, 'فقه المرأة', '273 حكماً شرعياً', '',
         [_teal, _tealDeep],
         () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WomensFiqhScreen()))),
+      _QAData(Icons.volunteer_activism, 'أدعية الذرّية', 'بمصدرها ودرجتها', '',
+        [const Color(0xFF1B7A5A), const Color(0xFF145C44)],
+        () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FertilityDuasScreen()))),
       _QAData(Icons.nightlight_round, 'قضاء الصيام', 'متتبّع أيام القضاء', '',
         [_lavender, _lavender2],
         () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QadaaScreen()))),
@@ -5853,6 +6049,98 @@ class _BabyPageState extends State<BabyPage> {
 
   Future<void> _setBabyInfo() async => _addBaby();
 
+  /// تعديل أو حذف طفل — متزامن مع الموقع (نفس DB.babies و selectedBabyId)
+  Future<void> _editBaby(String id, Map<String, dynamic> bd, List<QueryDocumentSnapshot> all) async {
+    final nameC = TextEditingController(text: (bd['name'] ?? '').toString());
+    DateTime? pickedDate = bd['birthDate'] is Timestamp ? (bd['birthDate'] as Timestamp).toDate() : null;
+    String gender = (bd['gender'] ?? bd['babyGender'] ?? '').toString();
+    final action = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (ctx2, setD) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: Colors.white,
+          title: const Text('تعديل بيانات الطفل', style: TextStyle(fontWeight: FontWeight.w800, color: _ink)),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextField(controller: nameC, decoration: InputDecoration(
+              labelText: 'اسم الطفل',
+              prefixIcon: const Icon(Icons.child_care, color: _pink),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)))),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.calendar_month),
+              label: Text(pickedDate != null ? '${pickedDate!.year}/${pickedDate!.month}/${pickedDate!.day}' : 'تاريخ الميلاد'),
+              onPressed: () async {
+                final d = await showDatePicker(context: ctx2, initialDate: pickedDate ?? DateTime.now(),
+                  firstDate: DateTime(2000), lastDate: DateTime.now(), helpText: 'تاريخ الميلاد',
+                  builder: (context, child) => Localizations.override(context: context, locale: const Locale('en'), child: child!));
+                if (d != null) setD(() => pickedDate = d);
+              },
+            ),
+            const SizedBox(height: 12),
+            Wrap(spacing: 8, children: [
+              ChoiceChip(label: const Text('👧 بنت'), selected: gender == 'female', onSelected: (_) => setD(() => gender = 'female')),
+              ChoiceChip(label: const Text('👦 ولد'), selected: gender == 'male', onSelected: (_) => setD(() => gender = 'male')),
+            ]),
+          ]),
+          actions: [
+            TextButton.icon(
+              onPressed: () => Navigator.pop(ctx, 'delete'),
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              label: const Text('حذف', style: TextStyle(color: Colors.red)),
+            ),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: _pink, foregroundColor: Colors.white),
+              onPressed: () => Navigator.pop(ctx, 'save'),
+              child: const Text('حفظ'),
+            ),
+          ],
+        ),
+      )),
+    );
+    if (action == 'save' && pickedDate != null) {
+      final name = nameC.text.trim().isEmpty ? 'طفل' : nameC.text.trim();
+      final ts = Timestamp.fromDate(pickedDate!);
+      await DB.babies.doc(id).set({'name': name, 'birthDate': ts, 'gender': gender, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+      if (id == _selectedBabyId) {
+        await DB.userDoc.set({'babyName': name, 'babyBirthDate': ts, 'babyGender': gender}, SetOptions(merge: true));
+      }
+    } else if (action == 'delete') {
+      final ok = await showDialog<bool>(context: context, builder: (c) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('حذف الطفل؟'),
+          content: Text('سيُحذف «${bd['name'] ?? 'الطفل'}» وسجلّاته من التطبيق والموقع. لا يمكن التراجع.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('حذف', style: TextStyle(color: Colors.red))),
+          ],
+        ),
+      ));
+      if (ok != true) return;
+      try {
+        final logs = await DB.babyLogsFor(id).limit(400).get();
+        if (logs.docs.isNotEmpty) {
+          final batch = FirebaseFirestore.instance.batch();
+          for (final d in logs.docs) { batch.delete(d.reference); }
+          await batch.commit();
+        }
+      } catch (_) {}
+      await DB.babies.doc(id).delete();
+      final rest = all.where((d) => d.id != id).toList();
+      if (rest.isNotEmpty) {
+        final n = rest.first.data() as Map<String, dynamic>;
+        await DB.userDoc.set({'selectedBabyId': rest.first.id, 'babyName': n['name'] ?? '', 'babyBirthDate': n['birthDate'], 'babyGender': n['gender'] ?? ''}, SetOptions(merge: true));
+        if (mounted) setState(() => _selectedBabyId = rest.first.id);
+      } else {
+        await DB.userDoc.set({'selectedBabyId': FieldValue.delete(), 'babyName': FieldValue.delete(), 'babyBirthDate': FieldValue.delete(), 'babyGender': FieldValue.delete()}, SetOptions(merge: true));
+        if (mounted) setState(() => _selectedBabyId = null);
+      }
+    }
+  }
+
   Future<void> _addLog(String type, [String? babyId]) async {
     final id = babyId ?? _selectedBabyId;
     final col = id != null ? DB.babyLogsFor(id) : DB.babyLogs;
@@ -5955,6 +6243,7 @@ class _BabyPageState extends State<BabyPage> {
               String ageText = '';
               double weight = 0;
               double babyHeight = 0;
+              DateTime? activeBirthDate; // لحساب عمر الطفل يوم كل ذكرى
               String? activeBabyId = _selectedBabyId;
               
               if (babyDocs.isNotEmpty) {
@@ -5974,6 +6263,7 @@ class _BabyPageState extends State<BabyPage> {
                 if (bd['birthDate'] != null) {
                   try {
                     Timestamp ts = bd['birthDate'];
+                    activeBirthDate = ts.toDate();
                     ageDays = DateTime.now().difference(ts.toDate()).inDays;
                     if (ageDays < 30) ageText = '$ageDays \u064A\u0648\u0645';
                     else if (ageDays < 365) ageText = '${(ageDays / 30).floor()} \u0623\u0634\u0647\u0631';
@@ -6070,7 +6360,15 @@ class _BabyPageState extends State<BabyPage> {
                               ]),
                             ])),
                             GestureDetector(
-                              onTap: _setBabyInfo,
+                              // تعديل الطفل المختار (أو إضافة طفل إن لم يوجد) — متزامن مع الموقع
+                              onTap: () {
+                                if (babyDocs.isNotEmpty) {
+                                  final sel = babyDocs.firstWhere((x) => x.id == activeBabyId, orElse: () => babyDocs.first);
+                                  _editBaby(sel.id, sel.data() as Map<String, dynamic>, babyDocs);
+                                } else {
+                                  _setBabyInfo();
+                                }
+                              },
                               child: Container(
                                 width: 40, height: 40,
                                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: Colors.white.withOpacity(0.8)),
@@ -6104,8 +6402,9 @@ class _BabyPageState extends State<BabyPage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         setState(() => _selectedBabyId = doc.id);
-                                        DB.userDoc.update({'selectedBabyId': doc.id});
+                                        DB.userDoc.set({'selectedBabyId': doc.id, 'babyName': bd['name'] ?? '', 'babyBirthDate': bd['birthDate']}, SetOptions(merge: true));
                                       },
+                                      onLongPress: () => _editBaby(doc.id, bd, babyDocs),
                                       child: AnimatedContainer(
                                         duration: const Duration(milliseconds: 250),
                                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
@@ -6138,6 +6437,29 @@ class _BabyPageState extends State<BabyPage> {
                                     ),
                                   );
                                 }),
+                                // زر تعديل/حذف الطفل المختار
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      final sel = babyDocs.firstWhere((x) => x.id == activeBabyId, orElse: () => babyDocs.first);
+                                      _editBaby(sel.id, sel.data() as Map<String, dynamic>, babyDocs);
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: gAccent.withOpacity(0.4), width: 1.5),
+                                        color: gAccent.withOpacity(0.06),
+                                      ),
+                                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                        Icon(Icons.edit_outlined, size: 17, color: gAccent),
+                                        const SizedBox(width: 6),
+                                        Text('تعديل / حذف', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: gAccent)),
+                                      ]),
+                                    ),
+                                  ),
+                                ),
                                 // Add baby button
                                 Padding(
                                   padding: const EdgeInsets.only(left: 8),
@@ -6255,6 +6577,19 @@ class _BabyPageState extends State<BabyPage> {
                           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                           child: BabyLogsChart(babyId: activeBabyId),
                         ),
+
+                        // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 \u062F\u0641\u062A\u0631 \u0627\u0644\u0630\u0643\u0631\u064A\u0627\u062A (\u0623\u0648\u0644 \u0633\u0646\u0651\u060C \u0623\u0648\u0644 \u062E\u0637\u0648\u0629\u2026) \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                        // \u064A\u062D\u062A\u0627\u062C \u0648\u062B\u064A\u0642\u0629 \u0637\u0641\u0644 \u062D\u0642\u064A\u0642\u064A\u0629 \u2014 \u0627\u0644\u062D\u0633\u0627\u0628\u0627\u062A \u0627\u0644\u0642\u062F\u064A\u0645\u0629 \u0628\u0644\u0627 \u0623\u0637\u0641\u0627\u0644
+                        // \u0641\u064A \u0627\u0644\u0645\u062C\u0645\u0648\u0639\u0629 \u062A\u0631\u0649 \u0632\u0631\u0651 \u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u0637\u0641\u0644 \u0623\u0639\u0644\u0649 \u0627\u0644\u0635\u0641\u062D\u0629.
+                        if (activeBabyId != null) ...[
+                          _sectionHeader('\u062F\u0641\u062A\u0631 \u0627\u0644\u0630\u0643\u0631\u064A\u0627\u062A', V.t('\u0644\u062D\u0638\u0627\u062A\u0647 \u0627\u0644\u0623\u0648\u0644\u0649 \u2014 \u0627\u062D\u0641\u0638\u064A\u0647\u0627 \u0644\u0644\u0623\u0628\u062F')),
+                          BabyMemoriesSection(
+                            babyRef: DB.babies.doc(activeBabyId),
+                            babyId: activeBabyId,
+                            babyName: babyName,
+                            birthDate: activeBirthDate,
+                          ),
+                        ],
 
                         // \u2500\u2500 \u0645\u0642\u0627\u0644\u0627\u062A \u0631\u0639\u0627\u064A\u0629 \u0627\u0644\u0631\u0636\u064A\u0639 (\u0628\u0639\u062F \u0627\u0644\u0633\u062C\u0644 \u0627\u0644\u064A\u0648\u0645\u064A) \u2500\u2500
                         const SizedBox(height: 18),
@@ -8037,7 +8372,7 @@ class _ArticleDetailPageState extends State<_ArticleDetailPage> {
                       // لا مكملات ولا أجهزة طبية في المنتجات المقترحة (shop_config.dart)
                       final allProducts = NabdaAds.rankProducts<Map<String, String>>(
                         <Map<String, String>>[...dynamicProducts, ...staticProducts]
-                            .where((p) => !isHiddenProduct(p))
+                            .where((p) => !isShopHidden(p))
                             .toList(),
                         '$_title $_body',
                       );
@@ -8634,6 +8969,12 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1F1A20))),
                   ]),
                 ),
+                // الجولة التعريفية: نعود للجذر (الجولة تُضيء عناصر MainNav
+                // الموجودة تحت هذه الصفحة) ثم يُشغّلها MainNav عبر AppTour.
+                _menuItem('الجولة التعريفية', Icons.explore_outlined, const Color(0xFFE0195B), () {
+                  Navigator.of(context).popUntil((r) => r.isFirst);
+                  AppTour.requestReplay();
+                }),
                 _menuItem('الدعم الفني', Icons.support_agent, Colors.teal.shade600, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()));
                 }),
@@ -9638,8 +9979,7 @@ class _AIChatPageState extends State<AIChatPage> {
   List<Map<String, String>> messages = [];
   List<Map<String, dynamic>> _chatHistory = [];
   bool _isLoading = false;
-  // المفتاح في lib/config/secrets.dart (مستثنى من git) — لا تُعِده هنا.
-  final String _apiKey = kGeminiApiKey;
+  // لا مفتاح هنا: الاستدعاء يمرّ عبر الدالة askAssistant على الخادم.
 
   // Quick suggestion buttons
   // أسئلة سريعة غير طبية (مساعدة نمط حياة — انظر play_compliance.dart)
@@ -9749,85 +10089,65 @@ class _AIChatPageState extends State<AIChatPage> {
     return 'يمكنني مساعدتكِ في: أسماء المواليد، حقيبة الولادة، تنظيم اليوم، أفكار الوجبات والديكور والتهاني، واستعمال التطبيق. للأسئلة الصحية راجعي طبيبتكِ.';
   }
 
-  // ─── حدّ يوميّ للمستخدمة (تخفيف من إساءة الاستخدام/الفاتورة) ────
-  // 50 سؤالًا/يوم — كافٍ للاستخدام الطبيعي، يمنع الاستهلاك الجائر.
-  static const int _aiDailyLimit = 50;
-
-  /// يفحص الحصّة اليوميّة في Firestore (ai_quota/{uid}) ويزيد العدّاد.
-  /// يُرجع true إذا الحصّة متوفّرة، false إذا انتهت.
-  Future<bool> _checkAndConsumeQuota() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return false;
-    final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
-    final ref = FirebaseFirestore.instance.collection('ai_quota').doc(uid);
-    try {
-      return await FirebaseFirestore.instance.runTransaction<bool>((tx) async {
-        final snap = await tx.get(ref);
-        int count = 0;
-        if (snap.exists) {
-          final data = snap.data()!;
-          if (data['date'] == today) {
-            count = (data['count'] as num?)?.toInt() ?? 0;
-          }
-        }
-        if (count >= _aiDailyLimit) return false;
-        tx.set(ref, {
-          'date': today,
-          'count': count + 1,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        return true;
-      });
-    } catch (_) {
-      // فشل الشبكة/Firestore → اسمحي بالاستدعاء (fail-open)؛
-      // حماية إضافيّة موجودة عبر تقييد المفتاح في Cloud Console.
-      return true;
-    }
-  }
-
+  /// ═══════════════════════════════════════════════════════════════
+  ///  المساعد عبر الخادم (functions/index.js → askAssistant)
+  ///
+  ///  كان التطبيق يستدعي Gemini مباشرة بمفتاح مضمَّن في الـAPK، وكانت
+  ///  الحصّة اليومية تُفحص في الهاتف بأسلوب fail-open — فيستطيع من
+  ///  يستخرج المفتاح تجاوز كل شيء. الآن: المفتاح والتعليمات والفلتر
+  ///  الطبّي والحصّة كلّها على الخادم ولا يمكن تجاوزها من الهاتف.
+  /// ═══════════════════════════════════════════════════════════════
   Future<String> _callGemini(String userMessage) async {
-    // أسئلة الأعراض/الأدوية/الأمراض لا تُرسل إلى النموذج أصلًا (play_compliance.dart)
+    // نُبقي الفلتر هنا أيضاً لتوفير استدعاء — والخادم يكرّره فلا يمكن تجاوزه
     if (isMedicalQuestion(userMessage)) return kMedicalRedirectReply;
-    // 🚦 فحص الحصّة قبل أيّ استدعاء — يحمي من إساءة الاستخدام.
-    final allowed = await _checkAndConsumeQuota();
-    if (!allowed) {
-      return 'لقد وصلتِ إلى الحدّ اليوميّ ($_aiDailyLimit سؤال). يُرجى المحاولة غدًا.\n\n'
-             'في غضون ذلك، يمكنني الإجابة من قاعدة معرفتي المحلّيّة:\n\n'
-             + _getSmartReply(userMessage);
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return 'سجّلي الدخول لاستعمال المساعد الذكي.\n\n' + _getSmartReply(userMessage);
     }
 
-    _chatHistory.add({'role': 'user', 'parts': [{'text': userMessage}]});
-
-    final sysText = kAssistantSystemPrompt;
-
     try {
-      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$_apiKey';
-      final body = jsonEncode({
-        'systemInstruction': {'parts': [{'text': sysText}]},
-        'contents': _chatHistory,
-      });
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: body,
-      );
+      final idToken = await user.getIdToken();
+      final response = await http
+          .post(
+            callableUrl('askAssistant'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
+            },
+            // بروتوكول callable: الطلب داخل "data"، والسجلّ بلا الرسالة الحالية
+            body: jsonEncode({
+              'data': {'message': userMessage, 'history': _chatHistory},
+            }),
+          )
+          .timeout(const Duration(seconds: 35));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        String reply = data['candidates']?[0]?['content']?['parts']?[0]?['text'] ?? 'لم أتمكن من الإجابة';
-        _chatHistory.add({'role': 'model', 'parts': [{'text': reply}]});
-        return reply;
-      }
-      // غير 200 (مفتاح/فوترة/نموذج): سجّل الرمز بدل ابتلاعه صامتًا —
-      // هذا الابتلاع أخفى ثلاثة أعطال متتالية (403 ثم 404 ثم 402).
-      debugPrint('Gemini HTTP ${response.statusCode}: ${response.body.length > 300 ? response.body.substring(0, 300) : response.body}');
-    } catch (e) {
-      debugPrint('Gemini call failed: $e');
-    }
+        final result = (jsonDecode(response.body) as Map)['result'] as Map? ?? {};
 
-    // سؤال المستخدمة سُجّل في السجلّ ولم يُجَب — أزِله كي لا يتراكم سياق بلا ردود.
-    if (_chatHistory.isNotEmpty) _chatHistory.removeLast();
+        if (result['quotaExceeded'] == true) {
+          return 'لقد وصلتِ إلى الحدّ اليوميّ (${result['limit'] ?? 50} سؤال). يُرجى المحاولة غدًا.\n\n'
+              'في غضون ذلك، إليكِ إجابة من قاعدة معرفة نبضة:\n\n' +
+              _getSmartReply(userMessage);
+        }
+
+        final reply = result['reply'] as String?;
+        if (reply != null && reply.isNotEmpty) {
+          // الأسئلة الطبية لا تدخل سياق المحادثة
+          if (result['medical'] != true) {
+            _chatHistory.add({'role': 'user', 'parts': [{'text': userMessage}]});
+            _chatHistory.add({'role': 'model', 'parts': [{'text': reply}]});
+          }
+          return reply;
+        }
+      }
+      // غير 200: سجّل الرمز بدل ابتلاعه صامتًا —
+      // هذا الابتلاع أخفى ثلاثة أعطال متتالية سابقاً (403 ثم 404 ثم 402).
+      debugPrint('askAssistant HTTP ${response.statusCode}: '
+          '${response.body.length > 300 ? response.body.substring(0, 300) : response.body}');
+    } catch (e) {
+      debugPrint('askAssistant failed: $e');
+    }
 
     // Fallback صريح: لا نقدّم الإجابة المحلية كأنها من الذكاء الاصطناعي.
     return 'المساعد الذكي غير متاح مؤقتًا. إليكِ إجابة من قاعدة معرفة نبضة:\n\n'
@@ -9852,7 +10172,9 @@ class _AIChatPageState extends State<AIChatPage> {
         messages.add({'role': 'assistant', 'text': reply, 'time': replyTime});
         _isLoading = false;
       });
-      DB.userDoc.collection('chat_history').add({
+      // 🔒 ownUserDoc لا userDoc: عند الأب يشير userDoc إلى المرآة المشتركة،
+      //    فكانت أسئلته للمساعد تُحفظ حيث تستطيع زوجته قراءتها.
+      DB.ownUserDoc.collection('chat_history').add({
         'question': text,
         'answer': reply,
         'timestamp': FieldValue.serverTimestamp(),

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>أيام القضاء لشهر رمضان — متتبّع القضاء | نبضة</title>
+  <meta name="description" content="احفظي أيام رمضان التي أفطرتِ فيها (حيض، حمل، رضاعة، نفاس…) وتابعي قضاءها يوماً بيوم — متزامن مع تطبيق نبضة.">
+  <link rel="canonical" href="https://nabda.online/qadaa">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <style>
+    .qd-wrap { max-width: 1000px; margin: 0 auto; padding: 16px 24px 60px; }
+    .qd-hero { background: linear-gradient(135deg, #EDE7F6 0%, #FFFFFF 55%, #FFF0F5 100%); border: 1px solid #E1D5F5; border-radius: var(--nb-radius-lg); padding: 28px 30px; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap; box-shadow: 0 16px 40px rgba(103,58,183,.08); }
+    .qd-hero h1 { font-size: 28px; font-weight: 900; margin: 0 0 6px; }
+    .qd-hero p { margin: 0; color: var(--nb-ink-2); line-height: 1.9; font-size: 14.5px; }
+    .qd-total { display: flex; gap: 10px; }
+    .qd-stat { background: #fff; border-radius: 18px; padding: 12px 16px; text-align: center; min-width: 92px; box-shadow: 0 6px 16px rgba(0,0,0,.05); }
+    .qd-stat b { display: block; font-size: 24px; font-weight: 900; color: #6A1B9A; }
+    .qd-stat span { font-size: 11.5px; color: var(--nb-ink-3); font-weight: 700; }
+    .qd-year { background: #fff; border: 1px solid #EEE4F7; border-radius: 22px; padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.03); }
+    .qd-year-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .qd-year-h h3 { margin: 0; font-size: 17px; font-weight: 900; flex: 1; }
+    .qd-bar { height: 10px; background: #F3E5F5; border-radius: 999px; overflow: hidden; margin: 6px 0 12px; }
+    .qd-bar i { display: block; height: 100%; background: linear-gradient(90deg, #AB47BC, #E91E63); border-radius: 999px; transition: width .4s; }
+    .qd-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; font-size: 11.5px; color: var(--nb-ink-3); font-weight: 800; text-align: center; margin-bottom: 6px; }
+    .qd-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .qd-day { aspect-ratio: 1; border-radius: 14px; border: 1.5px solid #EEE4F7; background: #FAF7FD; font-family: inherit; font-weight: 900; font-size: 15px; color: var(--nb-ink-2); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; transition: transform .12s, background .2s; position: relative; }
+    .qd-day small { font-size: 9.5px; font-weight: 700; color: var(--nb-ink-3); }
+    .qd-day:hover { transform: translateY(-2px); }
+    .qd-day.missed { background: #FCE4EC; border-color: #F48FB1; color: #AD1457; }
+    .qd-day.done { background: #E8F5E9; border-color: #81C784; color: #2E7D32; }
+    .qd-day.done::after { content: '✓'; position: absolute; top: 4px; left: 6px; font-size: 11px; }
+    .qd-day.sel { background: #7B1FA2; border-color: #7B1FA2; color: #fff; }
+    .qd-day.sel small { color: rgba(255,255,255,.8); }
+    .qd-day.off { visibility: hidden; }
+    .qd-day[disabled] { cursor: default; opacity: .45; transform: none; }
+    .qd-btn { border: none; border-radius: 12px; padding: 9px 16px; font-family: inherit; font-weight: 800; font-size: 13px; cursor: pointer; }
+    .qd-btn.p { background: linear-gradient(135deg, #8E24AA, #E91E63); color: #fff; box-shadow: 0 8px 20px rgba(142,36,170,.25); }
+    .qd-btn.s { background: #F3E5F5; color: #6A1B9A; }
+    .qd-btn.d { background: #FFEBEE; color: #C62828; }
+    .qd-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--nb-ink-3); font-weight: 700; margin-top: 10px; }
+    .qd-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: middle; margin-left: 4px; }
+    .qd-congrats { background: #E8F5E9; border-radius: 14px; padding: 10px 14px; color: #2E7D32; font-weight: 800; font-size: 13.5px; margin-top: 10px; }
+    @media (max-width: 600px) { .qd-day { font-size: 13px; border-radius: 11px; } .qd-day small { display: none; } .qd-hero h1 { font-size: 22px; } }
+  </style>
+</head>
+<body>
+  <header id="nb-header" style="min-height:96px"></header>
+  <main class="qd-wrap">
+    <nav style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--nb-ink-3);margin-bottom:14px">
+      <a href="/" style="color:inherit;text-decoration:none">الرئيسية</a><span>›</span>
+      <a href="/fiqh" style="color:inherit;text-decoration:none">فقه المرأة</a><span>›</span>
+      <span style="color:#7B1FA2;font-weight:700">أيام القضاء</span>
+    </nav>
+    <section class="qd-hero">
+      <div style="flex:1;min-width:260px">
+        <h1>🌙 أيام القضاء لشهر رمضان المبارك</h1>
+        <p>احفظي الأيام التي أفطرتِ فيها وتابعي قضاءها. تشمل أيام القضاء الحيض والحمل والرضاعة والنفاس وغيرها من الأسباب. <b>متزامن مع تطبيق نبضة.</b></p>
+      </div>
+      <div class="qd-total" id="qd-total"></div>
+    </section>
+    <div id="qd-add" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px"></div>
+    <div id="qd-years"><div style="padding:40px;text-align:center;color:var(--nb-ink-3)">جاري التحميل…</div></div>
+    <p style="font-size:12.5px;color:var(--nb-ink-3);line-height:1.8;margin-top:18px">📚 أحكام القضاء والفدية للحامل والمرضع في <a href="/fiqh?cat=siyam" style="color:#7B1FA2;font-weight:800">فقه المرأة ← أحكام الصيام</a>.</p>
+  </main>
+  <div id="nb-footer"></div>
+
+  <script type="module">
+    import { auth, db } from '/js/firebase-init.js';
+    // نفس جدول QadaaService.supportedRamadanYears في التطبيق (startWeekday: 1=الاثنين … 7=الأحد)
+    const YEARS = [
+      { year: 2027, hijri: 1448, start: 7, days: 30 },
+      { year: 2026, hijri: 1447, start: 3, days: 30 },
+      { year: 2025, hijri: 1446, start: 6, days: 30 },
+      { year: 2024, hijri: 1445, start: 1, days: 30 },
+      { year: 2023, hijri: 1444, start: 4, days: 29 },
+    ];
+    const WD = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
+    const OFF = { 6: 0, 7: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6 }; // إزاحة اليوم الأول (السبت أولاً)
+    const info = (y) => YEARS.find((x) => x.year === y) || { year: y, hijri: y - 579, start: 3, days: 30 };
+    let uid = null; let data = {}; let editing = null; let sel = new Set(); let unsub = null;
+    const $ = (i) => document.getElementById(i);
+
+    // users/{uid}/qadaa_days/{year} = {year, hijriYear, missedDays[], completedDays[], updatedAt(ISO)} — مثل QadaaYearData
+    const ref = (y) => db.collection('users').doc(uid).collection('qadaa_days').doc(String(y));
+    const done = (d) => (d.completedDays || []).filter((x) => (d.missedDays || []).includes(x)).length;
+
+    function render() {
+      const years = Object.values(data).filter((d) => (d.missedDays || []).length).sort((a, b) => b.year - a.year);
+      const miss = years.reduce((s, d) => s + d.missedDays.length, 0); const comp = years.reduce((s, d) => s + done(d), 0);
+      $('qd-total').innerHTML = `<div class="qd-stat"><b>${miss - comp}</b><span>يوم متبقٍّ</span></div><div class="qd-stat"><b style="color:#2E7D32">${comp}</b><span>تمّ قضاؤه</span></div>`;
+      const used = new Set(years.map((d) => d.year));
+      $('qd-add').innerHTML = uid ? `<b style="font-size:14px">إضافة أيام القضاء:</b>${YEARS.filter((y) => !used.has(y.year)).map((y) => `<button class="qd-btn s" data-new="${y.year}">＋ رمضان ${y.hijri} - ${y.year}</button>`).join('')}` : '';
+      const blocks = [];
+      if (editing && !used.has(editing)) blocks.push(yearBlock({ year: editing, missedDays: [], completedDays: [] }));
+      years.forEach((d) => blocks.push(yearBlock(d)));
+      $('qd-years').innerHTML = !uid
+        ? `<div class="qd-year" style="text-align:center;padding:34px"><div style="font-size:42px">🔐</div><h3 style="margin:8px 0">سجّلي الدخول لحفظ أيام القضاء</h3><p style="color:var(--nb-ink-3)">تُحفظ في حسابكِ وتظهر في تطبيق نبضة على هاتفكِ.</p><a href="/login?next=/qadaa" class="nb-btn-primary" style="text-decoration:none;display:inline-block;margin-top:8px">تسجيل الدخول</a></div>`
+        : (blocks.join('') || `<div class="qd-year" style="text-align:center;padding:30px;color:var(--nb-ink-3)">لم تسجّلي أيام قضاء بعد — اختاري سنة رمضان من الأعلى ثم اضغطي على الأيام التي أفطرتِ فيها.</div>`);
+      wire();
+    }
+
+    function yearBlock(d) {
+      const inf = info(d.year); const isEdit = editing === d.year;
+      const missed = new Set(d.missedDays || []); const comp = new Set(d.completedDays || []);
+      const total = missed.size; const c = done(d); const pct = total ? Math.round(c / total * 100) : 0;
+      const cells = [];
+      for (let i = 0; i < OFF[inf.start]; i++) cells.push('<span class="qd-day off"></span>');
+      for (let n = 1; n <= inf.days; n++) {
+        const wd = WD[(OFF[inf.start] + n - 1) % 7];
+        if (isEdit) cells.push(`<button class="qd-day ${sel.has(n) ? 'sel' : ''}" data-y="${d.year}" data-n="${n}" data-m="edit"><span>${n}</span><small>${wd}</small></button>`);
+        else cells.push(`<button class="qd-day ${missed.has(n) ? (comp.has(n) ? 'done' : 'missed') : ''}" data-y="${d.year}" data-n="${n}" data-m="toggle" ${missed.has(n) ? '' : 'disabled'} title="${missed.has(n) ? (comp.has(n) ? 'تمّ قضاؤه — اضغطي للتراجع' : 'اضغطي عند قضائه') : ''}"><span>${n}</span><small>${wd}</small></button>`);
+      }
+      return `<section class="qd-year">
+        <div class="qd-year-h"><h3>رمضان ${inf.hijri} - ${d.year}</h3>
+          ${isEdit ? `<button class="qd-btn p" data-save="${d.year}">💾 حفظ أيام القضاء (${sel.size})</button><button class="qd-btn s" data-cancel="1">إلغاء</button>`
+                   : `<button class="qd-btn s" data-edit="${d.year}">✏️ تعديل أيام القضاء</button><button class="qd-btn d" data-del="${d.year}">🗑️</button>`}</div>
+        ${isEdit ? '<p style="margin:0 0 10px;font-size:13px;color:#6A1B9A;font-weight:700">قومي بالضغط على اليوم الذي تريدين إضافته لأيام القضاء</p>'
+                 : `<div style="font-size:13px;font-weight:800;color:var(--nb-ink-2)">${c}/${total} يوم تمّ قضاؤهم</div><div class="qd-bar"><i style="width:${pct}%"></i></div>`}
+        <div class="qd-week">${WD.map((w) => `<span>${w}</span>`).join('')}</div>
+        <div class="qd-grid">${cells.join('')}</div>
+        ${!isEdit ? `<div class="qd-legend"><span><i style="background:#FCE4EC;border:1px solid #F48FB1"></i>لم يُقضَ بعد</span><span><i style="background:#E8F5E9;border:1px solid #81C784"></i>تمّ قضاؤه</span></div>` : ''}
+        ${!isEdit && total && c === total ? '<div class="qd-congrats">هنيئاً لكِ إتمام قضاء جميع الأيام المفطرة لهذا العام، تقبّل الله منكِ صالح الأعمال 🤍</div>' : ''}
+      </section>`;
+    }
+
+    function wire() {
+      document.querySelectorAll('[data-new]').forEach((b) => b.onclick = () => { editing = +b.dataset.new; sel = new Set(); render(); });
+      document.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => { editing = +b.dataset.edit; sel = new Set(data[editing]?.missedDays || []); render(); });
+      document.querySelectorAll('[data-cancel]').forEach((b) => b.onclick = () => { editing = null; render(); });
+      document.querySelectorAll('.qd-day[data-m="edit"]').forEach((b) => b.onclick = () => { const n = +b.dataset.n; sel.has(n) ? sel.delete(n) : sel.add(n); b.classList.toggle('sel'); document.querySelector('[data-save]').textContent = `💾 حفظ أيام القضاء (${sel.size})`; });
+      document.querySelectorAll('.qd-day[data-m="toggle"]').forEach((b) => b.onclick = async () => {
+        const y = +b.dataset.y; const n = +b.dataset.n; const d = data[y]; if (!d) return;
+        const comp = new Set(d.completedDays || []); comp.has(n) ? comp.delete(n) : comp.add(n);
+        await save(y, d.missedDays, [...comp].sort((a, c) => a - c));
+      });
+      document.querySelectorAll('[data-save]').forEach((b) => b.onclick = async () => {
+        const y = +b.dataset.save; const missed = [...sel].sort((a, c) => a - c);
+        const prev = data[y]?.completedDays || [];
+        await save(y, missed, prev.filter((x) => missed.includes(x)));
+        editing = null; window.nbToast?.(missed.length ? `تم حفظ ${missed.length} يوم قضاء لسنة ${y} بنجاح ✨` : `تم حذف أيام القضاء لسنة ${y}`, 'success'); render();
+      });
+      document.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+        const y = +b.dataset.del; if (!confirm(`حذف أيام القضاء لرمضان ${y}؟`)) return;
+        await save(y, [], []); window.nbToast?.(`تم حذف أيام القضاء لسنة ${y}`, 'success');
+      });
+    }
+
+    /** نفس شكل toMap() في التطبيق. الحذف = وثيقة فارغة بتاريخ أحدث (يمسحها التطبيق عند المزامنة) */
+    async function save(year, missedDays, completedDays) {
+      const doc = { year, hijriYear: info(year).hijri, missedDays, completedDays, updatedAt: new Date().toISOString() };
+      data[year] = doc; render();
+      try { await ref(year).set(doc); } catch (e) { console.error(e); window.nbToast?.('تعذّر الحفظ، تحقّقي من الاتصال', 'error'); }
+    }
+
+    auth.onAuthStateChanged((u) => {
+      uid = u ? u.uid : null; data = {}; if (unsub) unsub();
+      if (!uid) return render();
+      // تحديث لحظي: ما تسجّلينه في التطبيق يظهر هنا فوراً
+      unsub = db.collection('users').doc(uid).collection('qadaa_days').onSnapshot((qs) => {
+        data = {}; qs.forEach((d) => { const v = d.data(); const y = +(v.year || d.id); if (y) data[y] = { ...v, year: y }; });
+        if (editing === null) render();
+      }, () => render());
+    });
+  </script>
+  <script type="module" src="/js/shell.js"></script>
+</body>
+</html>

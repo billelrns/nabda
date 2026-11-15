@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,6 +14,8 @@ class QadaaService extends ChangeNotifier {
   static const String _prefsKey = 'nabda_qadaa_data_v1';
   final Map<int, QadaaYearData> _yearsData = {};
   bool _isInitialized = false;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _cloudSub;
+  StreamSubscription<User?>? _authSub;
 
   /// جدول توقيت شهر رمضان لسنوات متعددة
   static const List<RamadanYearInfo> supportedRamadanYears = [
@@ -94,8 +97,18 @@ class QadaaService extends ChangeNotifier {
         });
       }
 
-      // محاولة المزامنة السحابية الصامتة
-      _syncFromFirestore();
+      // مزامنة لحظية مع Firestore (الموقع nabda.online/qadaa يكتب نفس الوثائق)
+      _authSub ??= FirebaseAuth.instance.authStateChanges().listen((u) {
+        _cloudSub?.cancel();
+        _cloudSub = null;
+        if (u == null) return;
+        _cloudSub = FirebaseFirestore.instance
+            .collection('users')
+            .doc(u.uid)
+            .collection('qadaa_days')
+            .snapshots()
+            .listen(_applyCloud, onError: (_) {});
+      });
 
       _isInitialized = true;
       notifyListeners();
@@ -208,13 +221,43 @@ class QadaaService extends ChangeNotifier {
             .doc(year.toString());
 
         if (data != null && data.missedDays.isNotEmpty) {
-          await docRef.set(data.toMap(), SetOptions(merge: true));
+          await docRef.set(data.toMap());
         } else {
-          await docRef.delete();
+          // شاهد حذف بتاريخ أحدث بدل الحذف الفعلي — فتعرف الأجهزة الأخرى والموقع أن السنة حُذفت
+          final info = getYearInfo(year);
+          await docRef.set(QadaaYearData(year: year, hijriYear: info.hijriYear, missedDays: const [], completedDays: const []).toMap());
         }
       }
     } catch (e) {
       debugPrint('QadaaService save error: $e');
+    }
+  }
+
+  /// إعادة المزامنة يدوياً (عند فتح الشاشة)
+  Future<void> refresh() => _syncFromFirestore();
+
+  /// دمج لقطة السحابة: الأحدث يفوز، والوثيقة بلا أيام = حذف (من الموقع أو جهاز آخر)
+  Future<void> _applyCloud(QuerySnapshot<Map<String, dynamic>> snapshot) async {
+    bool changed = false;
+    for (final doc in snapshot.docs) {
+      final year = int.tryParse(doc.id);
+      if (year == null) continue;
+      final cloud = QadaaYearData.fromMap(doc.data());
+      final local = _yearsData[year];
+      if (local != null && !cloud.updatedAt.isAfter(local.updatedAt)) continue;
+      if (cloud.missedDays.isEmpty) {
+        if (_yearsData.remove(year) != null) changed = true;
+      } else {
+        _yearsData[year] = cloud;
+        changed = true;
+      }
+    }
+    if (changed) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_prefsKey, jsonEncode(_yearsData.map((k, v) => MapEntry(k.toString(), v.toMap()))));
+      } catch (_) {}
+      notifyListeners();
     }
   }
 
@@ -238,8 +281,12 @@ class QadaaService extends ChangeNotifier {
             final localData = _yearsData[year];
             if (localData == null ||
                 cloudData.updatedAt.isAfter(localData.updatedAt)) {
-              _yearsData[year] = cloudData;
-              changed = true;
+              if (cloudData.missedDays.isEmpty) {
+                if (_yearsData.remove(year) != null) changed = true;
+              } else {
+                _yearsData[year] = cloudData;
+                changed = true;
+              }
             }
           }
         }

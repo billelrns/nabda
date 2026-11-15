@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import '../services/country_currency_service.dart';
 
 class FeedVideoAd extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -142,7 +143,10 @@ class _FeedVideoAdState extends State<FeedVideoAd> {
         ? widget.product['videoThumbnail'].toString()
         : (imageUrls.isNotEmpty ? imageUrls.first.toString() : (widget.product['imageUrl']?.toString() ?? ''));
 
-    final productPrice = widget.product['price']?.toString() ?? '';
+    // السعر مُوطَّن لسوق المستخدمة (shop_page) — نعرضه بعملته
+    final rawPrice = widget.product['price']?.toString() ?? '';
+    final pv = CountryCurrencyService.parseDZDPrice(rawPrice);
+    final productPrice = pv > 0 ? CountryCurrencyService().formatPrice(pv) : rawPrice;
     final productName = widget.product['name']?.toString() ?? '';
 
     return Container(

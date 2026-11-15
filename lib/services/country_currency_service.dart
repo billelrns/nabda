@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -320,6 +321,9 @@ class CountryCurrencyService extends ChangeNotifier {
       _ratesLastUpdated = DateTime.fromMillisecondsSinceEpoch(cachedTime);
     }
 
+    // إعدادات الأسواق (السعودية مفتوحة؟ شحن المناطق) — مثل market.js في الموقع
+    loadMarkets();
+
     // Refresh rates if older than 6 hours or empty
     if (_exchangeRates.isEmpty ||
         _ratesLastUpdated == null ||
@@ -357,13 +361,18 @@ class CountryCurrencyService extends ChangeNotifier {
   }
 
   // ─── Set country manually ───
+  /// يُستدعى عند تغيّر السوق (لتفريغ السلّة: لا عملتين في سلّة واحدة)
+  static VoidCallback? onMarketChanged;
+
   Future<void> setCountry(String countryCode) async {
+    final before = marketCode;
     _currentCountry = supportedCountries.firstWhere(
       (c) => c.code == countryCode,
       orElse: () => supportedCountries.first,
     );
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('selected_country', countryCode);
+    if (before != marketCode) onMarketChanged?.call();
     notifyListeners();
   }
 
@@ -416,11 +425,135 @@ class CountryCurrencyService extends ChangeNotifier {
   }
 
   // ─── Format price with currency symbol ───
-  String formatPrice(double priceDZD) {
-    final converted = convertPrice(priceDZD);
-    final country = currentCountry;
-    final formatted = _formatNumber(converted, country.decimalPlaces);
-    return '$formatted ${country.currencySymbol}';
+  /// ⚠️ لا تحويل للعملة بعد اليوم: السعر المُمرَّر هو أصلاً بعملة السوق الحالي
+  /// (المنتجات تُوطَّن عبر [localize] قبل العرض). الجزائر = دج، السعودية = ر.س.
+  String formatPrice(double price) {
+    final c = getCountry(marketCode ?? 'DZ') ?? supportedCountries.first;
+    final decimals = (c.decimalPlaces > 0 && price % 1 != 0) ? c.decimalPlaces : 0;
+    return '${_formatNumber(price, decimals)} ${c.currencySymbol}';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  الأسواق (الدول) — نفس منطق web/js/market.js
+  //  الجزائر = الحقول الأصلية (price / oldPrice / stock / name / description)
+  //  السعودية = markets.SA {price, oldPrice, active, stock?} + i18n.SA {name, description}
+  //  منتج بلا سعر في سوق ⇒ لا يظهر فيه. لا تحويل آلي للعملة أبداً.
+  // ═══════════════════════════════════════════════════════════════════
+  static const List<String> marketCodes = ['DZ', 'SA'];
+  Map<String, dynamic> _marketsCfg = {};
+  Map<String, dynamic> _shippingCfg = {};
+
+  /// رمز السوق الحالي، أو null إن كانت الدولة غير مخدومة بعد (مثلاً مصر)
+  String? get marketCode => marketCodes.contains(currentCountry.code) ? currentCountry.code : null;
+  bool get isDZ => marketCode == 'DZ';
+  /// المتجر مفتوح لهذه الدولة؟ (الجزائر دائماً، السعودية حسب site_config/markets.SA.enabled)
+  bool get marketOpen {
+    final m = marketCode;
+    if (m == null) return false;
+    if (m == 'DZ') return true;
+    final c = _marketsCfg[m];
+    return c is Map && c['enabled'] == true;
+  }
+
+  Future<void> loadMarkets() async {
+    try {
+      final fs = FirebaseFirestore.instance;
+      final m = await fs.collection('site_config').doc('markets').get();
+      _marketsCfg = m.data() ?? {};
+      final sh = await fs.collection('site_config').doc('shipping_SA').get();
+      _shippingCfg = sh.data() ?? {};
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  static double _num(dynamic v) {
+    if (v == null) return 0;
+    if (v is num) return v.toDouble();
+    return parseDZDPrice(v.toString());
+  }
+
+  Map? _mk(Map p, String m) {
+    final ms = p['markets'];
+    if (ms is Map && ms[m] is Map) return ms[m] as Map;
+    return null;
+  }
+
+  /// سعر المنتج في السوق (0 = غير مسعّر)
+  double priceFor(Map p, [String? market]) {
+    final m = market ?? marketCode ?? 'DZ';
+    if (m == 'DZ') return _num(p['price']);
+    return _num(_mk(p, m)?['price']);
+  }
+
+  /// متاح للبيع في السوق الحالي؟ (الحظر العام isHiddenProduct يُطبّق خارجاً)
+  bool isAvailable(Map? p) {
+    if (p == null) return false;
+    final m = marketCode;
+    if (m == null || !marketOpen) return false;
+    if (p['active'] == false) return false;
+    if (m == 'DZ') return _mk(p, 'DZ')?['active'] != false;
+    final mk = _mk(p, m);
+    return mk != null && mk['active'] != false && _num(mk['price']) > 0;
+  }
+
+  /// نسخة من المنتج بقيم السوق الحالي: السعر والسعر القديم والمخزون والاسم والوصف،
+  /// والعروض (offers) بنفس نسبة سعر السوق إلى السعر الأصلي — فتعمل الشاشات الحالية كما هي.
+  Map<String, dynamic> localize(Map p) {
+    final out = Map<String, dynamic>.from(p);
+    final m = marketCode ?? 'DZ';
+    out['_market'] = m;
+    if (m == 'DZ') return out;
+    final mk = _mk(p, m) ?? {};
+    final dz = _num(p['price']);
+    final price = _num(mk['price']);
+    final old = _num(mk['oldPrice']);
+    String s(double v) => v <= 0 ? '' : (v % 1 == 0 ? v.toInt().toString() : v.toStringAsFixed(2));
+    out['price'] = s(price);
+    out['oldPrice'] = old > price ? s(old) : '';
+    if (mk['stock'] is num) {
+      out['stock'] = (mk['stock'] as num).toInt();
+    } else {
+      out.remove('stock');
+    }
+    final tr = (p['i18n'] is Map) ? (p['i18n'] as Map)[m] : null;
+    if (tr is Map) {
+      for (final f in ['name', 'shortName', 'description', 'shortDescription']) {
+        final v = tr[f];
+        if (v is String && v.trim().isNotEmpty) out[f] = v;
+      }
+    }
+    // العروض: نفس الخصم النسبي محسوباً من سعر السوق (لا من سعر الصرف)
+    final offers = p['offers'];
+    if (offers is List && offers.isNotEmpty && dz > 0 && price > 0) {
+      final ratio = price / dz;
+      out['offers'] = offers.map((o) {
+        final mo = Map<String, dynamic>.from(o as Map);
+        final pp = _num(mo['pricePerPiece']);
+        if (pp > 0) mo['pricePerPiece'] = (pp * ratio).roundToDouble();
+        return mo;
+      }).toList();
+    } else if (offers is List && offers.isNotEmpty) {
+      out['offers'] = [];
+    }
+    // إعدادات الشحن المخصّصة بالدينار لا تنطبق خارج الجزائر (يبقى «توصيل مجاني» فقط)
+    final sh = p['shipping'];
+    if (sh is Map) {
+      out['shipping'] = {'freeShipping': sh['freeShipping'] == true};
+    }
+    return out;
+  }
+
+  /// سعر التوصيل في السوق الحالي لمنطقة (السعودية: site_config/shipping_SA)
+  double marketShipping(String? region) {
+    final r = (region == null || region.isEmpty) ? null : _shippingCfg[region];
+    if (r is Map && r['home'] is num) return (r['home'] as num).toDouble();
+    final d = _shippingCfg['_default'];
+    if (d is Map && d['home'] is num) return (d['home'] as num).toDouble();
+    return 30;
+  }
+  bool regionEnabled(String region) {
+    final r = _shippingCfg[region];
+    return !(r is Map && r['enabled'] == false);
   }
 
   // ─── Parse DZD price from string like "2,500 د.ج" ───

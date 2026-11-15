@@ -97,13 +97,24 @@ class PartnerService {
     final uid = _uid;
     if (uid == null) return (code: null, error: 'سجّلي الدخول أولاً');
 
-    // ألغِ الدعوة المعلّقة السابقة حتى لا تبقى أكواد سارية متعدّدة
+    // ألغِ الدعوة السابقة (معلّقة أو مفكوكة) حتى لا تبقى أكواد متعدّدة.
+    // ⚠️ عبر unlink() لا الحذف المباشر: الأطفال يُرحَّلون إلى الحاوية حتى
+    //    وهي معلّقة، فالحذف المباشر كان يُضيّع ما سُجّل منذ إنشاء الدعوة.
     final existing = await currentCoupleId();
     if (existing != null) {
       try {
         final snap = await _couples.doc(existing).get();
-        if ((snap.data()?['status'] as String?) == 'pending') {
-          await _couples.doc(existing).delete();
+        final status = snap.data()?['status'] as String?;
+        if (status == 'linked') {
+          return (code: null, error: 'أنتِ مرتبطة بزوجك بالفعل');
+        }
+        if (snap.exists) {
+          final ok = await unlink(existing);
+          if (!ok) {
+            return (code: null, error: 'تعذّر حفظ بيانات أطفالك — تحقّقي من الاتصال');
+          }
+        } else {
+          await _cacheCoupleId(null);
         }
       } catch (_) {/* تجاهل */}
     }
@@ -247,42 +258,139 @@ class PartnerService {
   /// ⚠️ ترتيب الحذف مقصود: قواعد الأمان للمجموعات الفرعية تعتمد على
   /// `get()` للوثيقة الأمّ، فلو حُذفت أوّلاً لأصبحت البيانات الفرعية
   /// غير قابلة للحذف وبقيت يتيمة في قاعدة البيانات إلى الأبد.
-  static Future<void> unlink(String coupleId) async {
+  /// ═══════════════════════════════════════════════════════════════
+  ///  فكّ الارتباط — **لا يُضيّع بيانات الطفل أبداً**
+  ///
+  ///  ⚠️ الإصدار السابق كان يحذف وثيقة couples/{id} مباشرة. لكن الأطفال
+  ///     وسجلّاتهم اليومية (والذكريات) تعيش تحتها منذ الترحيل، وقواعد الأمان
+  ///     تتحقّق من العضوية عبر تلك الوثيقة — فبحذفها تصبح البيانات غير قابلة
+  ///     للوصول، وتعود الزوجة لنسختها القديمة قبل الربط فتفقد كل ما سُجّل بعده.
+  ///
+  ///  الآن:
+  ///  • الزوجة: تُنسخ الأطفال والسجلّات والذكريات إلى users/{uid} أوّلاً،
+  ///    وإن فشل النسخ **لا يُحذف شيء** ويُعاد false.
+  ///  • الزوج: لا يملك الكتابة في وثيقة زوجته، فيفكّ الارتباط «ناعماً»
+  ///    (partnerUid=null, status=unlinked) ويترك البيانات مكانها، ثم يسترجعها
+  ///    تطبيق الزوجة تلقائياً عند إقلاعه التالي (syncPartnerSnapshotIfLinked).
+  /// ═══════════════════════════════════════════════════════════════
+  static Future<bool> unlink(String coupleId) async {
     final uid = _uid;
+    if (uid == null) return false;
     final root = _couples.doc(coupleId);
 
+    String? motherUid;
+    bool exists = false;
     try {
-      final batch = _db.batch();
-      batch.delete(root.collection('shared').doc('pregnancy'));
-      batch.delete(root.collection('shared').doc('baby'));
-      batch.delete(root.collection('lists').doc('hospital_bag'));
-      batch.delete(root.collection('lists').doc('baby_prep'));
-      await batch.commit();
-    } catch (_) {/* أفضل-جهد */}
+      final snap = await root.get();
+      exists = snap.exists;
+      motherUid = snap.data()?['motherUid'] as String?;
+    } catch (_) {/* لا صلاحية = لم نعد أعضاء */}
 
-    // الأسماء قد تكون كثيرة — تُحذف على دفعات
-    try {
-      final names = await root.collection('names').limit(400).get();
-      for (var i = 0; i < names.docs.length; i += 400) {
-        final b = _db.batch();
-        for (final d in names.docs.skip(i).take(400)) {
-          b.delete(d.reference);
-        }
-        await b.commit();
-      }
-    } catch (_) {/* أفضل-جهد */}
-
-    try {
-      await root.delete();
-    } catch (_) {/* قد يكون محذوفاً مسبقاً */}
-    if (uid != null) {
+    if (exists && motherUid != null && motherUid != uid) {
+      // ── الزوج: فكّ ناعم ──
       try {
-        await _db.collection('users').doc(uid).set({
-          'coupleId': FieldValue.delete(),
-        }, SetOptions(merge: true));
+        await root.update({
+          'partnerUid': null,
+          'partnerName': null,
+          'status': 'unlinked',
+          'unlinkedAt': FieldValue.serverTimestamp(),
+        });
+      } catch (_) {/* ربما فُكّ مسبقاً */}
+    } else if (exists && motherUid == uid) {
+      // ── الزوجة: استرجاع ثم تنظيف ──
+      final ok = await _reclaimToMother(root, uid);
+      if (!ok) return false; // البيانات باقية في مكانها — نحاول لاحقاً
+      await _deleteCoupleContents(root);
+      try {
+        await root.delete();
       } catch (_) {/* تجاهل */}
     }
+
+    try {
+      await _db.collection('users').doc(uid).set({
+        'coupleId': FieldValue.delete(),
+      }, SetOptions(merge: true));
+    } catch (_) {/* تجاهل */}
     await _cacheCoupleId(null);
+    return true;
+  }
+
+  /// ينسخ مجموعة كاملة (على صفحات) إلى وجهة أخرى بالمعرّفات نفسها.
+  static Future<void> _copyCollection(
+    CollectionReference<Map<String, dynamic>> src,
+    CollectionReference<Map<String, dynamic>> dst,
+  ) async {
+    DocumentSnapshot? last;
+    while (true) {
+      var q = src.limit(300);
+      if (last != null) q = q.startAfterDocument(last);
+      final page = await q.get();
+      if (page.docs.isEmpty) break;
+      final batch = _db.batch();
+      for (final d in page.docs) {
+        batch.set(dst.doc(d.id), d.data(), SetOptions(merge: true));
+      }
+      await batch.commit();
+      if (page.docs.length < 300) break;
+      last = page.docs.last;
+    }
+  }
+
+  static Future<void> _deleteCollection(
+      CollectionReference<Map<String, dynamic>> col) async {
+    while (true) {
+      final page = await col.limit(300).get();
+      if (page.docs.isEmpty) break;
+      final batch = _db.batch();
+      for (final d in page.docs) {
+        batch.delete(d.reference);
+      }
+      await batch.commit();
+      if (page.docs.length < 300) break;
+    }
+  }
+
+  /// ينسخ بيانات الطفل من حاوية الزوجين إلى وثيقة الزوجة. يُعيد false
+  /// عند أيّ فشل — والمُستدعي لا يحذف شيئاً حينها.
+  static Future<bool> _reclaimToMother(
+      DocumentReference<Map<String, dynamic>> root, String motherUid) async {
+    final user = _db.collection('users').doc(motherUid);
+    try {
+      final babies = await root.collection('babies').get();
+      for (final b in babies.docs) {
+        await user.collection('babies').doc(b.id).set(b.data(), SetOptions(merge: true));
+        for (final sub in const ['logs', 'memories']) {
+          await _copyCollection(
+            root.collection('babies').doc(b.id).collection(sub),
+            user.collection('babies').doc(b.id).collection(sub),
+          );
+        }
+      }
+      await _copyCollection(root.collection('baby_logs'), user.collection('baby_logs'));
+      return true;
+    } catch (e) {
+      debugPrint('reclaimToMother failed: $e');
+      return false;
+    }
+  }
+
+  /// يحذف كل ما تحت حاوية الزوجين (بعد نجاح الاسترجاع فقط)
+  static Future<void> _deleteCoupleContents(
+      DocumentReference<Map<String, dynamic>> root) async {
+    try {
+      final babies = await root.collection('babies').get();
+      for (final b in babies.docs) {
+        for (final sub in const ['logs', 'memories']) {
+          await _deleteCollection(root.collection('babies').doc(b.id).collection(sub));
+        }
+        await b.reference.delete();
+      }
+      for (final col in const [
+        'baby_logs', 'shared', 'lists', 'names', 'notifications', 'cart', 'orders',
+      ]) {
+        await _deleteCollection(root.collection(col));
+      }
+    } catch (_) {/* أفضل-جهد: البيانات نُسخت بالفعل */}
   }
 
   // ══════════════════════════════════════════════════════════
@@ -611,10 +719,14 @@ class PartnerService {
   // ══════════════════════════════════════════════════════════
 
   /// يُسجّل حدثاً يراه الطرف الآخر. آمن إن لم يكن هناك اقتران.
+  /// [productId] يجعل الخادم يُرفق صورة المنتج بالإشعار الفوري.
+  /// [imageUrl] صورة صريحة (https فقط) إن لم يكن هناك منتج.
   static Future<void> notify({
     required String type,
     required String title,
     required String body,
+    String? productId,
+    String? imageUrl,
   }) async {
     final uid = _uid;
     if (uid == null) return;
@@ -626,6 +738,8 @@ class PartnerService {
         'title': title,
         'body': body,
         'byUid': uid,
+        if (productId != null && productId.isNotEmpty) 'productId': productId,
+        if (imageUrl != null && imageUrl.startsWith('https://')) 'imageUrl': imageUrl,
         'createdAt': FieldValue.serverTimestamp(),
         'readBy': <String>[],
       });
@@ -683,6 +797,9 @@ class CoupleLink {
 
   bool get isLinked => status == 'linked' && partnerUid != null;
   bool get isPending => status == 'pending';
+
+  /// فكّه الزوج من جهته — بانتظار أن يسترجع تطبيق الزوجة البيانات
+  bool get isUnlinked => status == 'unlinked';
   bool get isExpired =>
       expiresAt != null && expiresAt!.isBefore(DateTime.now()) && isPending;
 
@@ -716,14 +833,38 @@ class SharedPregnancy {
 
   double get progress => (week / 40).clamp(0.0, 1.0);
 
-  factory SharedPregnancy.fromMap(Map<String, dynamic> m) => SharedPregnancy(
-        week: (m['week'] as num?)?.toInt() ?? 0,
-        dayOfWeek: (m['dayOfWeek'] as num?)?.toInt() ?? 0,
-        daysLeft: (m['daysLeft'] as num?)?.toInt() ?? 0,
-        trimester: (m['trimester'] as num?)?.toInt() ?? 1,
-        dueDate: (m['dueDate'] as Timestamp?)?.toDate(),
-        updatedAt: (m['updatedAt'] as Timestamp?)?.toDate(),
+  /// يُشتقّ الأسبوع والأيام المتبقّية من تاريخ الولادة **لحظة العرض**.
+  /// القيم المخزّنة (week, daysLeft) تُكتب فقط حين تفتح الزوجة تطبيقها،
+  /// فكانت تبقى قديمة عند الأب أياماً — ولم تكن تتغيّر وحدها مع مرور الوقت.
+  factory SharedPregnancy.fromMap(Map<String, dynamic> m) {
+    final due = (m['dueDate'] as Timestamp?)?.toDate();
+    final updated = (m['updatedAt'] as Timestamp?)?.toDate();
+
+    if (due != null) {
+      final now = DateTime.now();
+      final start = due.subtract(const Duration(days: PregnancyDates.totalDays));
+      final days = now.difference(start).inDays;
+      final week = (days / 7).floor().clamp(1, 42);
+      return SharedPregnancy(
+        week: week,
+        dayOfWeek: days < 0 ? 0 : days % 7,
+        daysLeft: due.difference(now).inDays,
+        trimester: week <= 13 ? 1 : (week <= 27 ? 2 : 3),
+        dueDate: due,
+        updatedAt: updated,
       );
+    }
+
+    // احتياط للّقطات القديمة التي لا تحمل تاريخ ولادة
+    return SharedPregnancy(
+      week: (m['week'] as num?)?.toInt() ?? 0,
+      dayOfWeek: (m['dayOfWeek'] as num?)?.toInt() ?? 0,
+      daysLeft: (m['daysLeft'] as num?)?.toInt() ?? 0,
+      trimester: (m['trimester'] as num?)?.toInt() ?? 1,
+      dueDate: null,
+      updatedAt: updated,
+    );
+  }
 }
 
 class SharedProfile {

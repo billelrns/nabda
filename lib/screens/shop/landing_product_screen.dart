@@ -196,6 +196,12 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
       return 0.0;
     }
 
+    // خارج الجزائر: سعر توصيل المنطقة من site_config/shipping_SA (بعملة السوق)، للمنزل فقط
+    if (!_currencySvc.isDZ) {
+      if (sh['freeShipping'] == true) return 0.0;
+      return _currencySvc.marketShipping(_selectedRegion ?? _stateC.text.trim());
+    }
+
     // Check general shipping settings
     final freeShipping = sh['freeShipping'] ?? false;
     final freeShippingPickupOnly = sh['freeShippingPickupOnly'] ?? false;
@@ -316,6 +322,7 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
         'phone': _phoneC.text.trim(),
         'address': address,
         'country': country.code,
+        'currency': country.currencyCode,
         'paymentMethod': 'cod',
         'items': [
           {
@@ -349,7 +356,9 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
       final stockBackorder = stockSettings['allowBackorder'] ?? false;
       if (!isWaitlist && productId.toString().isNotEmpty && stockBackorder != true) {
         final pSnap = await FirebaseFirestore.instance.collection('products').doc(productId).get();
-        final pStock = (pSnap.data()?['stock'] as int?) ?? 0;
+        final pData = pSnap.data() ?? {};
+        final mkData = (pData['markets'] is Map) ? (pData['markets'] as Map)[_currencySvc.marketCode] : null;
+        final pStock = _currencySvc.isDZ ? ((pData['stock'] as int?) ?? 0) : ((mkData is Map ? mkData['stock'] as int? : null) ?? 0);
         if (pStock > 0 && _quantity > pStock) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -434,13 +443,16 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
           final freshSnap = await transaction.get(productRef);
           if (freshSnap.exists) {
             final freshData = freshSnap.data() as Map<String, dynamic>;
-            final stock = freshData['stock'] as int? ?? 0;
+            // مخزون كل سوق منفصل: الجزائر = stock، السعودية = markets.SA.stock
+            final mkCode = _currencySvc.marketCode ?? 'DZ';
+            final mkMap = (freshData['markets'] is Map) ? (freshData['markets'] as Map)[mkCode] : null;
+            final stock = mkCode == 'DZ' ? (freshData['stock'] as int? ?? 0) : ((mkMap is Map ? mkMap['stock'] as int? : null) ?? 0);
             final settings = freshData['settings'] as Map<String, dynamic>? ?? {};
             final allowBackorder = settings['allowBackorder'] ?? false;
             
             if (stock > 0 && !allowBackorder) {
               final newStock = stock - _quantity >= 0 ? stock - _quantity : 0;
-              transaction.update(productRef, {'stock': newStock});
+              transaction.update(productRef, {(mkCode == 'DZ' ? 'stock' : 'markets.$mkCode.stock'): newStock});
             }
           }
         });
@@ -1166,8 +1178,8 @@ class _LandingProductScreenState extends State<LandingProductScreen> {
                                             },
                                           ),
                                         ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
+                                        if (_currencySvc.isDZ) const SizedBox(width: 10),
+                                        if (_currencySvc.isDZ) Expanded(
                                           child: ChoiceChip(
                                             label: Center(child: Text(
                                               'استلام من المكتب\n${_shippingCostFor('pickup') == 0 ? 'مجاني' : _formatPrice(_shippingCostFor('pickup'))}',
